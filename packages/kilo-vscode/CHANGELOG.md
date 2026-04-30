@@ -592,7 +592,7 @@ No notable changes
 - Add support for medium reasoning with Gemini 3.1 (@rekram1-node)
 - Add support for .kilo configuration file
 - Add missing id, sessionID, and messageID to MCP tool attachments (@NatChung)
-- Token substitution in OPENCODE_CONFIG_CONTENT now works correctly (@ariane-emory)
+- Token substitution in KILO_CONFIG_CONTENT now works correctly (@ariane-emory)
 - Add custom tool and MCP call responses visible and collapsible in TUI (@yanosh-k)
 - Normalize file.status paths relative to instance directory (@shantur)
 - Various desktop app fixes: terminal rework, sidecar server, settings header, session navigation

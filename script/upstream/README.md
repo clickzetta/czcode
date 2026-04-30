@@ -109,7 +109,7 @@ Configuration is defined in `utils/config.ts`:
   // Package name mappings
   packageMappings: [
     { from: "opencode-ai", to: "@kilocode/cli" },
-    { from: "@opencode-ai/cli", to: "@kilocode/cli" },
+    { from: "@kilocode/cli", to: "@kilocode/cli" },
     // ...
   ],
 
