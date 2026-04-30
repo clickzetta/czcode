@@ -61,9 +61,9 @@ export interface MergeConfig {
 export const defaultConfig: MergeConfig = {
   packageMappings: [
     { from: "opencode-ai", to: "@kilocode/cli" },
-    { from: "@opencode-ai/cli", to: "@kilocode/cli" },
-    { from: "@opencode-ai/sdk", to: "@kilocode/sdk" },
-    { from: "@opencode-ai/plugin", to: "@kilocode/plugin" },
+    { from: "@kilocode/cli", to: "@kilocode/cli" },
+    { from: "@kilocode/sdk", to: "@kilocode/sdk" },
+    { from: "@kilocode/plugin", to: "@kilocode/plugin" },
   ],
 
   keepOurs: [

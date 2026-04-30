@@ -8,9 +8,9 @@
  * - @opencode-ai/sdk -> @kilocode/sdk
  * - @opencode-ai/plugin -> @kilocode/plugin
  * - OPENCODE_* -> KILO_* (env variables, excluding OPENCODE_API_KEY)
- * - x-opencode-* -> x-kilo-* (HTTP headers)
- * - opencode.db -> kilo.db (database filename)
- * - window.__OPENCODE__ -> window.__KILO__ (window global)
+ * - x-kilo-* -> x-kilo-* (HTTP headers)
+ * - kilo.db -> kilo.db (database filename)
+ * - window.__KILO__ -> window.__KILO__ (window global)
  */
 
 import { Glob } from "bun"
@@ -46,13 +46,13 @@ const PACKAGE_PATTERNS = [
   { pattern: /@opencode-ai\/sdk(?=\/|"|'|`|$)/g, replacement: "@kilocode/sdk" },
   { pattern: /@opencode-ai\/plugin(?=\/|"|'|`|$)/g, replacement: "@kilocode/plugin" },
 
-  // In import statements (supports subpaths like @opencode-ai/sdk/v2)
+  // In import statements (supports subpaths like @kilocode/sdk/v2)
   { pattern: /from\s+["']opencode-ai["']/g, replacement: 'from "@kilocode/cli"' },
   { pattern: /from\s+["']@opencode-ai\/cli(\/[^"']*)?["']/g, replacement: 'from "@kilocode/cli$1"' },
   { pattern: /from\s+["']@opencode-ai\/sdk(\/[^"']*)?["']/g, replacement: 'from "@kilocode/sdk$1"' },
   { pattern: /from\s+["']@opencode-ai\/plugin(\/[^"']*)?["']/g, replacement: 'from "@kilocode/plugin$1"' },
 
-  // In require statements (supports subpaths like @opencode-ai/sdk/v2)
+  // In require statements (supports subpaths like @kilocode/sdk/v2)
   { pattern: /require\(["']opencode-ai["']\)/g, replacement: 'require("@kilocode/cli")' },
   { pattern: /require\(["']@opencode-ai\/cli(\/[^"']*)?["']\)/g, replacement: 'require("@kilocode/cli$1")' },
   { pattern: /require\(["']@opencode-ai\/sdk(\/[^"']*)?["']\)/g, replacement: 'require("@kilocode/sdk$1")' },
@@ -62,27 +62,27 @@ const PACKAGE_PATTERNS = [
   { pattern: /opencode\.internal/g, replacement: "kilo.internal" },
 
   // In npx/npm commands
-  { pattern: /npx opencode-ai/g, replacement: "npx @kilocode/cli" },
-  { pattern: /npm install opencode-ai/g, replacement: "npm install @kilocode/cli" },
-  { pattern: /bun add opencode-ai/g, replacement: "bun add @kilocode/cli" },
+  { pattern: /npx @kilocode/cli/g, replacement: "npx @kilocode/cli" },
+  { pattern: /npm install @kilocode/cli/g, replacement: "npm install @kilocode/cli" },
+  { pattern: /bun add @kilocode/cli/g, replacement: "bun add @kilocode/cli" },
 
   // SDK public API renames (Opencode → Kilo)
   // Order matters: longer names first to avoid partial matches
-  { pattern: /OpencodeClientConfig/g, replacement: "KiloClientConfig" },
-  { pattern: /createOpencodeClient/g, replacement: "createKiloClient" },
-  { pattern: /createOpencodeServer/g, replacement: "createKiloServer" },
-  { pattern: /createOpencodeTui/g, replacement: "createKiloTui" },
-  { pattern: /OpencodeClient/g, replacement: "KiloClient" },
-  // createOpencode (without suffix) needs negative lookahead to avoid matching createOpencodeClient
+  { pattern: /KiloClientConfig/g, replacement: "KiloClientConfig" },
+  { pattern: /createKiloClient/g, replacement: "createKiloClient" },
+  { pattern: /createKiloServer/g, replacement: "createKiloServer" },
+  { pattern: /createKiloTui/g, replacement: "createKiloTui" },
+  { pattern: /KiloClient/g, replacement: "KiloClient" },
+  // createKilo (without suffix) needs negative lookahead to avoid matching createKiloClient
   { pattern: /\bcreateOpencode\b(?!Client|Server|Tui)/g, replacement: "createKilo" },
 
   // Branding: environment variables (exclude OPENCODE_API_KEY — upstream Zen SaaS key)
   { pattern: /\bOPENCODE_(?!API_KEY\b)([A-Z_]+)\b/g, replacement: "KILO_$1" },
-  { pattern: /VITE_OPENCODE_/g, replacement: "VITE_KILO_" },
-  { pattern: /_EXTENSION_OPENCODE_/g, replacement: "_EXTENSION_KILO_" },
+  { pattern: /VITE_KILO_/g, replacement: "VITE_KILO_" },
+  { pattern: /_EXTENSION_KILO_/g, replacement: "_EXTENSION_KILO_" },
 
   // Branding: HTTP header prefix
-  { pattern: /x-opencode-/g, replacement: "x-kilo-" },
+  { pattern: /x-kilo-/g, replacement: "x-kilo-" },
 
   // Branding: window global
   { pattern: /window\.__OPENCODE__/g, replacement: "window.__KILO__" },

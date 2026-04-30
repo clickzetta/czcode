@@ -22,7 +22,7 @@ interface StringReplacement {
 }
 
 const STRING_REPLACEMENTS: StringReplacement[] = [
-  // Package names in strings (no trailing \b to allow subpath matching like @opencode-ai/sdk/v2)
+  // Package names in strings (no trailing \b to allow subpath matching like @kilocode/sdk/v2)
   { pattern: /\bopencode-ai\b/g, replacement: "@kilocode/cli" },
   { pattern: /@opencode-ai\/cli(?=\/|"|'|`|$)/g, replacement: "@kilocode/cli" },
   { pattern: /@opencode-ai\/sdk(?=\/|"|'|`|$)/g, replacement: "@kilocode/sdk" },
@@ -41,12 +41,12 @@ const STRING_REPLACEMENTS: StringReplacement[] = [
   { pattern: /\bopencode upgrade\b/g, replacement: "kilo upgrade" },
 
   // HTTP header prefix
-  { pattern: /x-opencode-/g, replacement: "x-kilo-" },
+  { pattern: /x-kilo-/g, replacement: "x-kilo-" },
 
   // Environment variables (exclude OPENCODE_API_KEY - upstream Zen SaaS key)
   { pattern: /\bOPENCODE_(?!API_KEY\b)([A-Z_]+)\b/g, replacement: "KILO_$1" },
-  { pattern: /\bVITE_OPENCODE_/g, replacement: "VITE_KILO_" },
-  { pattern: /\b_EXTENSION_OPENCODE_/g, replacement: "_EXTENSION_KILO_" },
+  { pattern: /\bVITE_KILO_/g, replacement: "VITE_KILO_" },
+  { pattern: /\b_EXTENSION_KILO_/g, replacement: "_EXTENSION_KILO_" },
 ]
 
 export interface TransformResult {

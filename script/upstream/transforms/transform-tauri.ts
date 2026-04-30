@@ -168,7 +168,7 @@ const TAURI_REPLACEMENTS: TauriReplacement[] = [
     fileTypes: [".rs", ".tsx"],
   },
   {
-    pattern: /OPENCODE_PORT/g,
+    pattern: /KILO_PORT/g,
     replacement: "KILO_PORT",
     description: "Port env var",
   },

@@ -95,7 +95,8 @@
     "sst": "3.18.10",
     "turbo": "2.8.13",
     "@changesets/changelog-github": "^0.5.1",
-    "@changesets/cli": "^2.27.10"
+    "@changesets/cli": "^2.27.10",
+    "@types/bun": "catalog:"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1025.0",
@@ -147,6 +148,6 @@
     "solid-js@1.9.10": "patches/solid-js@1.9.10.patch",
     "stream-chat@9.38.0": "patches/stream-chat@9.38.0.patch"
   },
-  "version": "7.2.31",
+  "version": "7.2.30",
   "peerDependencies": {}
 }

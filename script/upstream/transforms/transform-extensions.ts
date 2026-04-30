@@ -87,7 +87,7 @@ const EXTENSION_REPLACEMENTS: ExtensionReplacement[] = [
 
   // Environment variables
   {
-    pattern: /_EXTENSION_OPENCODE_/g,
+    pattern: /_EXTENSION_KILO_/g,
     replacement: "_EXTENSION_KILO_",
     description: "Extension env var",
   },
