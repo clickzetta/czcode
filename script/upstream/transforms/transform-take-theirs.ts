@@ -131,6 +131,19 @@ const BRANDING_REPLACEMENTS: BrandingReplacement[] = [
     replacement: "_EXTENSION_KILO_",
     description: "Extension env var",
   },
+
+  // czcode_change start - use "dev" as fallback for unbuilt dev environments
+  {
+    pattern: /(\? KILO_VERSION : )"local"/g,
+    replacement: '$1"dev"',
+    description: "InstallationVersion dev fallback",
+  },
+  {
+    pattern: /(\? KILO_CHANNEL : )"local"/g,
+    replacement: '$1"dev"',
+    description: "InstallationChannel dev fallback",
+  },
+  // czcode_change end
 ]
 
 // Patterns that should NOT be replaced (preserved as-is)

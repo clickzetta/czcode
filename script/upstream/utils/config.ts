@@ -84,9 +84,6 @@ export const defaultConfig: MergeConfig = {
     "packages/opencode/script/publish-registries.ts",
     // Generated OpenAPI spec - kept ours and regenerated post-merge via script/generate.ts
     "packages/sdk/openapi.json",
-    // czcode_change start - installation version uses "dev" fallback instead of "local"
-    "packages/opencode/src/installation/version.ts",
-    // czcode_change end
     // GitHub Action - Kilo version is fully ported and complete
     "github/action.yml",
     "github/README.md",
