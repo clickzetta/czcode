@@ -169,4 +169,4 @@ Skills are loaded from `/Users/liangmo/Documents/GitHub/clickzetta-skills` (27 L
 | `~/.kilo` / `~/.kilocode` | `~/.czcode` (others still scanned) |
 | `kilo.db` | `czcode.db` |
 | `Kilo` / `KiloCode` | `ClickZetta` / `czcode` |
-| `https://kilo.ai/docs` | `https://docs.clickzetta.com` |
+| `https://kilo.ai/docs` | `https://yunqi.tech/documents` |
