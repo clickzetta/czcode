@@ -425,7 +425,7 @@ async function main() {
   if (opencodeBackup) {
     logger.info(`Backed up existing branch to: ${opencodeBackup}`)
   }
-  await git.checkout(targetVersion.commit)
+  await git.checkout(targetVersion.commit, true)
   await git.createBranch(opencodeBranch)
   logger.info(`Created opencode branch: ${opencodeBranch}`)
 
@@ -530,11 +530,10 @@ async function main() {
   // Step 7: Merge into Kilo branch
   logger.step(7, 8, "Merging into Kilo branch...")
 
-  // Remove any untracked files left by transforms before switching branches.
-  // New upstream files that weren't staged (e.g. files in dirs absent from main)
-  // would otherwise block the checkout with "untracked files would be overwritten".
+  // Force checkout: opencode branch may have new upstream files not in kilo branch,
+  // and kilo branch has czcode customizations not in opencode branch.
   await $`git clean -fd`.quiet().nothrow()
-  await git.checkout(kiloBranch)
+  await git.checkout(kiloBranch, true)
   const mergeResult = await git.merge(opencodeBranch)
 
   if (!mergeResult.success) {

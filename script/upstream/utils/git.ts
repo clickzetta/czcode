@@ -61,8 +61,12 @@ export async function fetchUpstream(): Promise<void> {
   }
 }
 
-export async function checkout(ref: string): Promise<void> {
-  await $`git checkout ${ref}`
+export async function checkout(ref: string, force = false): Promise<void> {
+  if (force) {
+    await $`git checkout -f ${ref}`
+  } else {
+    await $`git checkout ${ref}`
+  }
 }
 
 export async function createBranch(name: string, from?: string): Promise<void> {
