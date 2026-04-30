@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Rebuild kilocode_change markers for one file by comparing it with the last
+ * Rebuild czcode_change markers for one file by comparing it with the last
  * merged upstream version.
  *
  * Usage:
@@ -66,13 +66,13 @@ interface Marks {
 type Style = "slash" | "hash" | "jsx" | "block"
 
 const standalone = [
-  /^\s*\/\/\s*kilocode_change\b.*$/,
-  /^\s*#\s*kilocode_change\b.*$/,
-  /^\s*\{?\s*\/\*\s*kilocode_change\b.*\*\/\}?\s*$/,
+  /^\s*\/\/\s*(?:kilocode_change|czcode_change)\b.*$/,
+  /^\s*#\s*(?:kilocode_change|czcode_change)\b.*$/,
+  /^\s*\{?\s*\/\*\s*(?:kilocode_change|czcode_change)\b.*\*\/\}?\s*$/,
 ]
-const start = /\bkilocode_change\s+start\b/
-const end = /\bkilocode_change\s+end\b/
-const freshmark = /\bkilocode_change\s*-\s*new\s*file\b/
+const start = /\b(?:kilocode_change|czcode_change)\s+start\b/
+const end = /\b(?:kilocode_change|czcode_change)\s+end\b/
+const freshmark = /\b(?:kilocode_change|czcode_change)\s*-\s*new\s*file\b/
 const unsupported = new Set([".json", ".jsonc", ".lock", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico"])
 const styles = new Map<string, Style>([
   [".ts", "slash"],
@@ -88,17 +88,17 @@ const styles = new Map<string, Style>([
   [".zsh", "hash"],
 ])
 const workflows = [".github/workflows/publish.yml", ".github/workflows/beta.yml"]
-const url = "https://github.com/anomalyco/opencode.git"
+const url = "https://github.com/Kilo-Org/kilocode.git" // czcode_change
 const exempt = ["script/upstream/"]
 
 function usage() {
   console.log(`Usage: bun run script/upstream/fix-kilocode-markers.ts <repo-relative-file> [--dry-run]
 
-Rebuilds kilocode_change markers by:
+Rebuilds czcode_change markers by:
   1. Finding the newest upstream tag whose commit is already merged into HEAD.
   2. Applying upstream merge branding transforms to that upstream file.
   3. Comparing the transformed upstream file with the current working tree file.
-  4. Removing existing kilocode_change markers and adding fresh markers around remaining changed lines.
+  4. Removing existing czcode_change markers and adding fresh markers around remaining changed lines.
 
 Options:
   --dry-run  Show what would change without writing the file.
@@ -181,8 +181,8 @@ function join(text: Text) {
 
 function strip(file: string, line: string): { line: string | null; mark?: string } {
   if (standalone.some((item) => item.test(line))) return { line: null }
-  if (style(file) === "hash") return comment(line, [/^#\s*kilocode_change\b/])
-  return comment(line, [/^\{\/\*\s*kilocode_change\b/, /^\/\*\s*kilocode_change\b/, /^\/\/\s*kilocode_change\b/])
+  if (style(file) === "hash") return comment(line, [/^#\s*(?:kilocode_change|czcode_change)\b/])
+  return comment(line, [/^\{\/\*\s*(?:kilocode_change|czcode_change)\b/, /^\/\*\s*(?:kilocode_change|czcode_change)\b/, /^\/\/\s*(?:kilocode_change|czcode_change)\b/])
 }
 
 function comment(line: string, tokens: RegExp[]) {
@@ -371,17 +371,17 @@ function child(lines: string[], start: number) {
 }
 
 function block(mode: Style, pad: string) {
-  if (mode === "hash") return { start: `${pad}# kilocode_change start`, end: `${pad}# kilocode_change end` }
-  if (mode === "jsx") return { start: `${pad}{/* kilocode_change start */}`, end: `${pad}{/* kilocode_change end */}` }
-  if (mode === "block") return { start: `${pad}/* kilocode_change start */`, end: `${pad}/* kilocode_change end */` }
-  return { start: `${pad}// kilocode_change start`, end: `${pad}// kilocode_change end` }
+  if (mode === "hash") return { start: `${pad}# czcode_change start`, end: `${pad}# czcode_change end` }
+  if (mode === "jsx") return { start: `${pad}{/* czcode_change start */}`, end: `${pad}{/* czcode_change end */}` }
+  if (mode === "block") return { start: `${pad}/* czcode_change start */`, end: `${pad}/* czcode_change end */` }
+  return { start: `${pad}// czcode_change start`, end: `${pad}// czcode_change end` }
 }
 
 function note(mode: Style) {
-  if (mode === "hash") return " # kilocode_change"
-  if (mode === "jsx") return " {/* kilocode_change */}"
-  if (mode === "block") return " /* kilocode_change */"
-  return " // kilocode_change"
+  if (mode === "hash") return " # czcode_change"
+  if (mode === "jsx") return " {/* czcode_change */}"
+  if (mode === "block") return " /* czcode_change */"
+  return " // czcode_change"
 }
 
 function indent(line: string) {
@@ -496,7 +496,7 @@ function annotate(file: string, clean: Clean, found: Range[]) {
 function fresh(file: string, clean: Clean) {
   const lines = [...clean.text.lines]
   const mode = style(file)
-  const line = clean.marks.file ?? (mode === "hash" ? "# kilocode_change - new file" : "// kilocode_change - new file")
+  const line = clean.marks.file ?? (mode === "hash" ? "# czcode_change - new file" : "// czcode_change - new file")
   const at = lines[0]?.startsWith("#!") ? 1 : 0
   lines.splice(at, 0, line)
   return join({ ...clean.text, lines })
@@ -575,7 +575,7 @@ async function main() {
   if (!supported(file, current)) throw new Error(`Cannot safely add comment markers to ${file}`)
   if (current.includes("\0")) throw new Error(`${file} appears to be binary`)
 
-  header("Fix kilocode_change markers")
+  header("Fix czcode_change markers")
 
   const version = await last()
   success(`Last merged upstream: ${version.tag} (${version.commit.slice(0, 8)})`)
@@ -598,7 +598,7 @@ async function main() {
   }
 
   if (next === current) {
-    success(`${file} already has normalized kilocode_change markers`)
+    success(`${file} already has normalized czcode_change markers`)
     return
   }
 

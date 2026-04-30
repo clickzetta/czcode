@@ -1,118 +1,102 @@
-<p align="center">
-  <a href="https://marketplace.visualstudio.com/items?itemName=kilocode.Kilo-Code"><img src="https://raster.shields.io/badge/VS_Code_Marketplace-007ACC?style=flat&logo=visualstudiocode&logoColor=white" alt="VS Code Marketplace" height="20"></a>
-  <a href="https://x.com/kilocode"><img src="https://raster.shields.io/badge/kilocode-000000?style=flat&logo=x&logoColor=white" alt="X (Twitter)" height="20"></a>
-  <a href="https://blog.kilo.ai"><img src="https://raster.shields.io/badge/Blog-555?style=flat&logo=substack&logoColor=white" alt="Substack Blog" height="20"></a>
-  <a href="https://kilo.ai/discord"><img src="https://raster.shields.io/badge/Join%20Discord-5865F2?style=flat&logo=discord&logoColor=white" alt="Discord" height="20"></a>
-  <a href="https://www.reddit.com/r/kilocode/"><img src="https://raster.shields.io/badge/Join%20r%2Fkilocode-D84315?style=flat&logo=reddit&logoColor=white" alt="Reddit" height="20"></a>
-</p>
+# czcode — ClickZetta Lakehouse AI Agent
 
-<p align="center">
- <img width="250" alt="kilo-code-logo" src="https://github.com/user-attachments/assets/bdb0c174-b9fd-40ad-a47b-f3aab9b54e8d" />
-</p>
+czcode 是面向云器（ClickZetta）Lakehouse 数据团队的专用 AI 编程助手，基于 [kilocode](https://github.com/Kilo-Org/kilocode) fork 构建。
 
-> Kilo is the all-in-one agentic engineering platform. Build, ship, and iterate faster with the most popular open source coding agent.
+Fork 链：**opencode → kilocode → czcode**
 
-- ✨ Generate code from natural language
-- ✅ Checks its own work
-- 🧪 Run terminal commands
-- 🌐 Automate the browser
-- ⚡ Inline autocomplete suggestions
-- 🤖 Latest AI models
-- 🎁 API keys optional
+---
 
-## Quick Links
+## 核心能力
 
-- [VS Code Marketplace](https://kilo.ai/vscode-marketplace?utm_source=Readme) (download)
-- Install CLI: `npm install -g @kilocode/cli`
-- [Official Kilo.ai Home page](https://kilo.ai) (learn more)
+- **SQL 生成与执行** — 自然语言转 SQL，直接在 Lakehouse 上执行
+- **表结构查询** — 查看列名、类型、注释
+- **对象浏览** — 列出数据库/Schema/表/视图/Pipe/Stream
+- **执行计划分析** — EXPLAIN 查询优化
+- **27 个 Lakehouse Skills** — 云器领域知识库，覆盖 DDL、ETL、数据质量等
+- **3 个数据角色** — 数据工程师、数据分析师、DBA，权限隔离
+- **500+ AI 模型** — 默认使用 DashScope/Qwen，兼容 OpenAI、Anthropic 等
 
-## Key Features
+## 快速开始
 
-- **Code Generation:** Kilo can generate code using natural language.
-- **Inline Autocomplete:** Get intelligent code completions as you type, powered by AI.
-- **Task Automation:** Kilo can automate repetitive coding tasks to save time.
-- **Automated Refactoring:** Kilo can refactor and improve existing code efficiently.
-- **MCP Server Marketplace**: Kilo can easily find, and use MCP servers to extend the agent capabilities.
-- **Multi Mode**: Plan with Architect, Code with Coder, and Debug with Debugger, and make your own custom modes.
-
-## Get Started in Visual Studio Code
-
-1. Install the Kilo Code extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=kilocode.Kilo-Code).
-2. Create your account to access 500+ cutting-edge AI models including Gemini 3.1 Pro, Claude 4.6 Sonnet & Opus, and GPT-5.4 – with transparent pricing that matches provider rates exactly.
-3. Start coding with AI that adapts to your workflow. Watch our quick-start guide to see Kilo in action:
-
-<a href="https://youtu.be/pqGfYXgrhig"><img src="https://img.youtube.com/vi/pqGfYXgrhig/maxresdefault.jpg" alt="Watch the video" width="640" height="360"></a>
-
-## Get Started with the CLI
+### 安装依赖
 
 ```bash
-# npm
-npm install -g @kilocode/cli
-
-# Or run directly with npx
-npx @kilocode/cli
+# 需要 Bun 1.3.13+
+curl -fsSL https://bun.sh/install | bash
+bun install
 ```
 
-Then run `kilo` in any project directory to start.
+### 配置环境变量
 
-<!-- kilocode_change start -->
+在项目根目录创建 `.env`：
 
-### npm Install Note: Hidden `.kilo` File
+```env
+# DashScope / Qwen（默认模型）
+DASHSCOPE_API_KEY=sk-...
 
-On some systems and npm versions, installing `@kilocode/cli` can create a hidden `.kilo` file near the installed `kilo` command (for example in a global npm bin directory). This file is an npm-generated launcher helper, not project data.
+# ClickZetta Lakehouse 连接信息
+CLICKZETTA_INSTANCE=cn-shanghai-alicloud.api.clickzetta.com
+CLICKZETTA_WORKSPACE=your_workspace
+CLICKZETTA_USERNAME=your_username
+CLICKZETTA_PASSWORD=your_password
+```
 
-- Why it exists: npm may create helper artifacts while wiring CLI executables.
-- Size caveat: size can vary by platform, npm version, and install mode (symlink vs copied launcher), so a strict fixed size is not guaranteed.
-- Safety: it is safe to leave in place. Do not edit it manually. Use your package manager's uninstall (`npm uninstall -g @kilocode/cli`) to remove install artifacts cleanly.
-<!-- kilocode_change end -->
-
-### Install from GitHub Releases (Optional)
-
-Download the latest binary or source code from the [Releases page](https://github.com/Kilo-Org/kilocode/releases), use this quick guide:
-
-- `kilo-<os>-<arch>.zip` is the CLI binary for your OS and CPU architecture on Windows and macOS. (`kilo-linux-<arch>.tar.gz` for Linux)
-- `darwin` means macOS.
-- `x64` is standard 64-bit Intel/AMD CPUs.
-- `x64-baseline` is a compatibility build for older x64 CPUs(do not support AVX Instruction).
-- `arm64` is ARM-based Linux/MacOS.
-- `musl` is statically linked Linux build for Alpine/minimal Docker without glibc. Alpine/minimal Docker users should prefer the matching \*-musl asset.
-- `kilo-vscode-*.vsix` is the VS Code extension package and not the CLI binary.
-- `Source code` releases are for building from source, not normal installation.
-
-For most users:
-
-- **Windows (most PCs):** `kilo-windows-x64.zip`
-- **macOS Apple Silicon:** `kilo-darwin-arm64.zip`
-- **macOS Intel:** `kilo-darwin-x64.zip`
-- **Linux x64:** `kilo-linux-x64.tar.gz`
-- **Linux on ARM:** `kilo-linux-arm64.tar.gz`
-
-### Autonomous Mode (CI/CD)
-
-Use the `--auto` flag with `kilo run` to enable fully autonomous operation without user interaction. This is ideal for CI/CD pipelines and automated workflows:
+### 启动 TUI
 
 ```bash
-kilo run --auto "run tests and fix any failures"
+~/.bun/bin/bun dev
 ```
 
-**Important:** The `--auto` flag disables all permission prompts and allows the agent to execute any action without confirmation. Only use this in trusted environments like CI/CD pipelines.
+### 配置文件
 
-## Contributing
+在项目目录或 `~/.czcode/` 创建 `czcode.jsonc`：
 
-We welcome contributions from developers, writers, and enthusiasts!
-To get started, please read our [Contributing Guide](/CONTRIBUTING.md). It includes details on setting up your environment, coding standards, types of contribution and how to submit pull requests.
+```jsonc
+{
+  "model": "alibaba-cn/qwen3.5-plus",
+  "default_agent": "lh-engineer"
+}
+```
 
-See [RELEASING.md](RELEASING.md) for the release process.
+## 数据角色
 
-## Code of Conduct
+| 角色 | 说明 | SQL 权限 |
+|---|---|---|
+| `lh-engineer` | 数据工程师（默认） | DDL + DML + SELECT（写操作需确认） |
+| `lh-analyst` | 数据分析师 | 仅 SELECT |
+| `lh-dba` | DBA | 全部（需确认） |
 
-Our community is built on respect, inclusivity, and collaboration. Please review our [Code of Conduct](/CODE_OF_CONDUCT.md) to understand the expectations for all contributors and community members.
+## 项目结构
 
-## License
+```
+czcode/
+├── packages/
+│   ├── opencode/          # 核心引擎（fork 自 kilocode）
+│   ├── cli/               # CLI 入口
+│   └── czcode-lakehouse/  # Lakehouse 插件（czcode 专属）
+├── script/
+│   └── upstream/          # 上游同步工具
+└── CLAUDE.md              # 开发规范
+```
 
-This project is licensed under the MIT License.
-You’re free to use, modify, and distribute this code, including for commercial purposes as long as you include proper attribution and license notices. See [License](/LICENSE).
+## 上游同步
 
-### Where did Kilo CLI come from?
+czcode 跟踪 kilocode 发布版本。查看可用版本：
 
-Kilo CLI is a fork of [OpenCode](https://github.com/anomalyco/opencode), enhanced to work within the Kilo agentic engineering platform.
+```bash
+~/.bun/bin/bun run script/upstream/list-versions.ts
+```
+
+合并新版本：
+
+```bash
+~/.bun/bin/bun run script/upstream/merge.ts v7.x.y
+```
+
+## 贡献
+
+请阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 了解开发规范，以及 [CLAUDE.md](CLAUDE.md) 了解 `czcode_change` 标注规则。
+
+## 许可证
+
+MIT License — 基于 kilocode（MIT）和 opencode（MIT）。

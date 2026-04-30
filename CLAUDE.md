@@ -1,0 +1,172 @@
+# czcode — Development Guidelines
+
+czcode is a fork of [kilocode](https://github.com/Kilo-Org/kilocode), which is itself a fork of opencode.
+Fork chain: **opencode → kilocode → czcode**
+
+---
+
+## czcode_change Annotation Rules
+
+Every change to a file that also exists in the upstream (kilocode) repo **must** be annotated with a `czcode_change` marker. This lets the upstream sync tooling identify which lines are czcode-specific so they can be preserved during future merges.
+
+### Inline annotation (single line)
+
+```typescript
+export const APP_NAME = "ClickZetta" // czcode_change
+```
+
+### Block annotation (multiple lines)
+
+```typescript
+// czcode_change start
+export const KILO_CONFIG_FILES = ["czcode.jsonc", "czcode.json", "kilo.jsonc", "kilo.json"] as const
+export const KILO_DIR_SUFFIXES = [".czcode", ".kilo", ".kilocode"] as const
+// czcode_change end
+```
+
+### YAML / shell files
+
+```yaml
+# czcode_change start
+- name: czcode-specific step
+# czcode_change end
+```
+
+### New file (entire file is czcode-specific)
+
+Add this as the first non-shebang line:
+
+```typescript
+// czcode_change - new file
+```
+
+### Rules
+
+- Both `czcode_change` and `kilocode_change` markers are accepted by the CI checker.
+- Files in czcode-specific directories are **exempt** from annotation requirements (see below).
+- The CI workflow `check-opencode-annotations.yml` enforces annotations on every PR.
+
+---
+
+## czcode-Specific Directories (Exempt from Annotation)
+
+Changes in these directories do not need `czcode_change` markers:
+
+- `packages/czcode-lakehouse/` — Lakehouse plugin (ClickZetta-specific)
+- `script/upstream/` — upstream sync tooling
+- `docs/` — documentation
+
+---
+
+## Upstream Sync
+
+czcode tracks kilocode releases. The sync tooling lives in `script/upstream/`.
+
+### Setup (one-time)
+
+```bash
+git remote add upstream git@github.com:Kilo-Org/kilocode.git
+git fetch upstream --tags
+```
+
+### List available upstream versions
+
+```bash
+bun run script/upstream/list-versions.ts
+```
+
+### Merge a new upstream release
+
+```bash
+bun run script/upstream/merge.ts v7.x.y
+```
+
+The merge script applies brand transforms (kilo→czcode) to the upstream branch before merging, minimizing conflicts.
+
+### Analyze conflicts after merge
+
+```bash
+bun run script/upstream/analyze.ts
+```
+
+### Rebuild czcode_change markers for a file
+
+After resolving a merge conflict in a shared file, rebuild its markers:
+
+```bash
+bun run script/upstream/fix-kilocode-markers.ts packages/opencode/src/some/file.ts
+# dry-run first:
+bun run script/upstream/fix-kilocode-markers.ts packages/opencode/src/some/file.ts --dry-run
+```
+
+---
+
+## Project Structure
+
+```
+czcode/
+├── packages/
+│   ├── opencode/          # Core — forked from kilocode (annotate all changes)
+│   ├── cli/               # CLI entry point — forked from kilocode
+│   ├── czcode-lakehouse/  # Lakehouse plugin — czcode-specific, no annotation needed
+│   └── ...                # Other kilocode packages (inherit unchanged)
+├── script/
+│   └── upstream/          # Upstream sync tooling — czcode-specific
+├── .github/
+│   └── workflows/
+│       └── check-opencode-annotations.yml  # CI: enforces czcode_change markers
+└── CLAUDE.md              # This file
+```
+
+---
+
+## Running Locally
+
+```bash
+# Install dependencies
+~/.bun/bin/bun install
+
+# Start TUI dev server
+~/.bun/bin/bun dev
+
+# Run annotation check
+~/.bun/bin/bun run script/check-opencode-annotations.ts --base HEAD~1
+```
+
+### Environment variables
+
+Copy `.env.example` to `.env` at the repo root and fill in:
+
+```
+DASHSCOPE_API_KEY=sk-...          # Alibaba DashScope (Qwen models)
+CLICKZETTA_INSTANCE=...           # ClickZetta Lakehouse instance
+CLICKZETTA_WORKSPACE=...
+CLICKZETTA_USERNAME=...
+CLICKZETTA_PASSWORD=...
+```
+
+The `packages/opencode/.env` symlink points to `../../.env` so Bun picks it up automatically.
+
+---
+
+## Agent Roles
+
+| Agent | Role | SQL Permissions |
+|-------|------|-----------------|
+| `lh-engineer` | 数据工程师 (default) | DDL + DML + SELECT (with confirmation) |
+| `lh-analyst` | 数据分析师 | SELECT only |
+| `lh-dba` | DBA | All (with confirmation) |
+
+Skills are loaded from `/Users/liangmo/Documents/GitHub/clickzetta-skills` (27 Lakehouse domain skills).
+
+---
+
+## Brand Mapping
+
+| Upstream (kilocode) | czcode |
+|---------------------|--------|
+| `kilo.jsonc` / `kilo.json` | `czcode.jsonc` / `czcode.json` (kilo.* still works) |
+| `~/.kilo` / `~/.kilocode` | `~/.czcode` (others still scanned) |
+| `kilo.db` | `czcode.db` |
+| `Kilo` / `KiloCode` | `ClickZetta` / `czcode` |
+| `https://kilo.ai/docs` | `https://docs.clickzetta.com` |
