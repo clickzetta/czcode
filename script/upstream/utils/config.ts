@@ -124,6 +124,8 @@ export const defaultConfig: MergeConfig = {
     ".github/workflows/deploy.yml",
     ".github/workflows/docs-update.yml",
     ".github/workflows/docs-locale-sync.yml",
+    // czcode_change: czcode watches kilocode releases, not opencode directly
+    ".github/workflows/watch-opencode-releases.yml",
     // Vouch files (Kilo doesn't use Vouch).
     // Upstream currently ships VOUCHED.td (typo extension). The glob covers both
     // the current .td file and any future .md rename without another merge breaking.
