@@ -11,10 +11,24 @@ import { useLocal } from "../context/local"
 import { TuiPluginRuntime } from "../plugin"
 
 let once = false
+// czcode_change start - Lakehouse-focused placeholder prompts first
 const placeholder = {
-  normal: ["Fix a TODO in the codebase", "What is the tech stack of this project?", "Fix broken tests"],
+  normal: [
+    "列出 mcp_demo schema 下的所有表",
+    "查看 orders 表的结构和数据样例",
+    "统计过去 7 天每天的订单量和销售额",
+    "创建一个 ODS 层的用户行为事件表",
+    "分析 orders 表的数据质量，检查空值和异常值",
+    "帮我写一个从 MySQL 导入数据到 Lakehouse 的 Pipeline",
+    "查看当前 VCluster 的资源使用情况",
+    "优化这条慢查询的执行计划",
+    "Fix a TODO in the codebase",
+    "What is the tech stack of this project?",
+    "Fix broken tests",
+  ],
   shell: ["ls -la", "git status", "pwd"],
 }
+// czcode_change end
 
 export function Home() {
   const sync = useSync()

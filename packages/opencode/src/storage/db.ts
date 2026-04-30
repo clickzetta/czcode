@@ -27,9 +27,9 @@ export const NotFoundError = NamedError.create(
 
 const log = Log.create({ service: "db" })
 
-// kilocode_change start - always use kilo.db regardless of channel
+// kilocode_change start - always use czcode.db regardless of channel // czcode_change
 export function getChannelPath() {
-  return path.join(Global.Path.data, "kilo.db")
+  return path.join(Global.Path.data, "czcode.db") // czcode_change
 }
 // kilocode_change end
 

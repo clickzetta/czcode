@@ -16,7 +16,7 @@ async function main() {
   // Check upstream remote
   if (!(await hasUpstreamRemote())) {
     error("No 'upstream' remote found. Please add it:")
-    info("  git remote add upstream git@github.com:anomalyco/opencode.git")
+    info("  git remote add upstream git@github.com:Kilo-Org/kilocode.git") // czcode_change
     process.exit(1)
   }
 

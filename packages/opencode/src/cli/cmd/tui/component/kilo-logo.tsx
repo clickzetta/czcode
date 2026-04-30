@@ -9,12 +9,14 @@ import { useTheme, tint } from "@tui/context/theme"
 // ~ = shadow top only (▀ with fg=shadow)
 const SHADOW_MARKER = /[_^~]/
 
+// czcode_change start - ClickZetta CLI ASCII logo
 const ASCII_LOGO = [
-  `██ ▄█▀ ██ ██     ▄████▄   ▄█████ ██     ██ `,
-  `████   ██ ██     ██~~██   ██~~~~ ██     ██ `,
-  `██ ▀█▄ ██ ██████ ▀████▀   ▀█████ ██████ ██ `,
-  `~~  ~~ ~~ ~~~~~~  ~~~~     ~~~~~ ~~~~~~ ~~ `,
+  `▄███ ██   ██ ▄███ ██▄█ ████ ████ ████ ████ ▄██▄   ▄███ ██   ██`,
+  `██   ██   ██ ██   ███   ▄██ ███   ██   ██  ████   ██   ██   ██`,
+  `▀███ ████ ██ ▀███ ██▀█ ████ ████  ██   ██  ██ █   ▀███ ████ ██`,
+  `~~~~  ~~~~ ~~ ~~~~  ~~  ~~~~ ~~~~  ~~   ~~  ~~ ~   ~~~~  ~~~~ ~~`,
 ]
+// czcode_change end
 
 export function KiloLogo() {
   const { theme } = useTheme()

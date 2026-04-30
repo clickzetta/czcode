@@ -29,9 +29,9 @@ export namespace KilocodePaths {
     }
   }
 
-  /** Global Kilo directories in user home: ~/.kilocode and ~/.kilo (legacy first, .kilo wins later) */
+  /** Global czcode directories in user home: ~/.czcode (primary), ~/.kilo and ~/.kilocode (legacy) */ // czcode_change
   export function globalDirs(): string[] {
-    return [path.join(home(), ".kilocode"), path.join(home(), ".kilo")]
+    return [path.join(home(), ".kilocode"), path.join(home(), ".kilo"), path.join(home(), ".czcode")] // czcode_change - .czcode wins (loaded last = highest precedence)
   }
 
   /**
@@ -69,11 +69,11 @@ export namespace KilocodePaths {
       }
     }
 
-    // 3. Walk up from project dir to worktree root for .kilocode/ and .kilo/
+    // 3. Walk up from project dir to worktree root for .kilocode/ .kilo/ .czcode/
     // Returns parent directories (not skills/) because
     // the glob pattern "skills/[*]/SKILL.md" is applied from the parent
     // Loaded last so project-level skills take precedence over global
-    for (const target of [".kilocode", ".kilo"] as const) {
+    for (const target of [".kilocode", ".kilo", ".czcode"] as const) { // czcode_change - add .czcode
       const projectDirs = await Array.fromAsync(
         Filesystem.up({
           targets: [target],

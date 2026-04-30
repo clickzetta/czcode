@@ -1,7 +1,9 @@
 import { InstallationVersion } from "@/installation/version"
 
+// czcode_change start - ClickZetta branding
 export const DEFAULT_HEADERS = {
-  "HTTP-Referer": "https://kilocode.ai",
-  "X-Title": "Kilo Code",
-  "User-Agent": `Kilo-Code/${InstallationVersion}`,
+  "HTTP-Referer": "https://www.clickzetta.com",
+  "X-Title": "ClickZetta",
+  "User-Agent": `ClickZetta/${InstallationVersion}`,
 }
+// czcode_change end

@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 /**
  * Configuration for upstream merge automation
+ * czcode_change: upstream is Kilo-Org/kilocode (not anomalyco/opencode)
  */
 
 export interface PackageMapping {
@@ -201,6 +202,7 @@ export const defaultConfig: MergeConfig = {
     "nix/hashes.json",
   ],
 
+  // czcode_change start - kiloDirectories: preserve czcode-specific packages
   kiloDirectories: [
     "packages/opencode/src/kilocode",
     "packages/opencode/test/kilocode",
@@ -210,8 +212,10 @@ export const defaultConfig: MergeConfig = {
     "packages/kilo-ui",
     "packages/kilo-docs",
     "packages/kilo-i18n",
+    "packages/czcode-lakehouse",
     "script/upstream",
   ],
+  // czcode_change end
 
   excludePatterns: [
     "**/node_modules/**",

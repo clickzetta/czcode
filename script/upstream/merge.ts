@@ -245,7 +245,7 @@ async function main() {
 
   if (!(await git.hasUpstreamRemote())) {
     logger.error("No 'upstream' remote found. Please add it:")
-    logger.info("  git remote add upstream git@github.com:anomalyco/opencode.git")
+    logger.info("  git remote add upstream git@github.com:Kilo-Org/kilocode.git") // czcode_change
     process.exit(1)
   }
 

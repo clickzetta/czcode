@@ -348,7 +348,7 @@ export class Service extends Context.Service<Service, Interface>()("@opencode/Co
 
 function globalConfigFile() {
   // kilocode_change start
-  const candidates = ["kilo.jsonc", "kilo.json", "opencode.jsonc", "opencode.json", "config.json"].map((file) =>
+  const candidates = ["czcode.jsonc", "czcode.json", "kilo.jsonc", "kilo.json", "opencode.jsonc", "opencode.json", "config.json"].map((file) => // czcode_change - czcode config files take precedence
     // kilocode_change end
     path.join(Global.Path.config, file),
   )

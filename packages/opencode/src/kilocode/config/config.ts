@@ -39,25 +39,29 @@ export namespace KilocodeConfig {
 
   // ── Config file constants ────────────────────────────────────────────
 
-  /** Kilo-specific config file names (highest-to-lowest precedence within kilo). */
-  export const KILO_CONFIG_FILES = ["kilo.jsonc", "kilo.json"] as const
+  // czcode_change start - czcode config file names take highest precedence
+  /** czcode-specific config file names (highest-to-lowest precedence). */
+  export const KILO_CONFIG_FILES = ["czcode.jsonc", "czcode.json", "kilo.jsonc", "kilo.json"] as const
 
-  /** All config file names in precedence order (kilo + opencode). */
-  export const ALL_CONFIG_FILES = ["kilo.jsonc", "kilo.json", "opencode.jsonc", "opencode.json"] as const
+  /** All config file names in precedence order (czcode + kilo + opencode). */
+  export const ALL_CONFIG_FILES = ["czcode.jsonc", "czcode.json", "kilo.jsonc", "kilo.json", "opencode.jsonc", "opencode.json"] as const
 
-  /** Directory suffixes that Kilo recognizes in addition to .opencode. */
-  export const KILO_DIR_SUFFIXES = [".kilo", ".kilocode"] as const
+  /** Directory suffixes that czcode recognizes in addition to .opencode. */
+  export const KILO_DIR_SUFFIXES = [".czcode", ".kilo", ".kilocode"] as const
 
-  /** Path patterns for resolving kilo agent names from file paths. */
-  export const AGENT_PATTERNS = ["/.kilo/agent/", "/.kilo/agents/", "/.kilocode/agent/", "/.kilocode/agents/"] as const
+  /** Path patterns for resolving czcode agent names from file paths. */
+  export const AGENT_PATTERNS = ["/.czcode/agent/", "/.czcode/agents/", "/.kilo/agent/", "/.kilo/agents/", "/.kilocode/agent/", "/.kilocode/agents/"] as const
 
-  /** Path patterns for resolving kilo command names from file paths. */
+  /** Path patterns for resolving czcode command names from file paths. */
   export const COMMAND_PATTERNS = [
+    "/.czcode/command/",
+    "/.czcode/commands/",
     "/.kilo/command/",
     "/.kilo/commands/",
     "/.kilocode/command/",
     "/.kilocode/commands/",
   ] as const
+  // czcode_change end
 
   // ── Warning helpers ──────────────────────────────────────────────────
 
@@ -249,7 +253,9 @@ export namespace KilocodeConfig {
 
   // ── Bash permission migration ────────────────────────────────────────
 
-  const GLOBAL_CONFIG_FILES = ["config.json", "kilo.json", "kilo.jsonc", "opencode.json", "opencode.jsonc"]
+  // czcode_change start - include czcode config files
+  const GLOBAL_CONFIG_FILES = ["config.json", "czcode.json", "czcode.jsonc", "kilo.json", "kilo.jsonc", "opencode.json", "opencode.jsonc"]
+  // czcode_change end
 
   /**
    * Migrate bash permission for existing users before config is consumed.

@@ -31,13 +31,13 @@ export { KiloClawView } from "@/kilocode/claw/view"
 // ---------------------------------------------------------------------------
 
 /** Default terminal window title. */
-export const APP_TITLE = "Kilo CLI"
+export const APP_TITLE = "ClickZetta CLI"
 
 /** Public docs URL shown in the command palette. */
-export const DOCS_URL = "https://kilo.ai/docs"
+export const DOCS_URL = "https://docs.clickzetta.com" // czcode_change
 
 /** Human-readable product name used in user-facing messages. */
-export const APP_NAME = "Kilo"
+export const APP_NAME = "ClickZetta" // czcode_change
 
 // ---------------------------------------------------------------------------
 // Utilities
