@@ -63,7 +63,7 @@ export async function fetchUpstream(): Promise<void> {
 
 export async function checkout(ref: string, force = false): Promise<void> {
   if (force) {
-    await $`git checkout -f ${ref}`
+    await $`GIT_LFS_SKIP_SMUDGE=1 git checkout -f ${ref}`
   } else {
     await $`git checkout ${ref}`
   }
