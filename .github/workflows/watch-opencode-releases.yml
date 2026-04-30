@@ -45,9 +45,10 @@ jobs:
             curl -sf -X POST "$URL" -H "x-sync-secret: $SECRET" -H "Content-Type: application/json" -d '{}' || true
           fi
 
-      - if: steps.fetch.outputs.tag != '' && steps.cache.outputs.cache-hit != 'true' && secrets.OPENCODE_WATCH_SLACK_WEBHOOK != ''
+      - if: steps.fetch.outputs.tag != '' && steps.cache.outputs.cache-hit != 'true'
         name: Notify Slack
         uses: slackapi/slack-github-action@v2.0.0
+        continue-on-error: true
         with:
           webhook: ${{ secrets.OPENCODE_WATCH_SLACK_WEBHOOK }}
           webhook-type: incoming-webhook
