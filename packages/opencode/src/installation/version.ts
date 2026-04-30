@@ -4,8 +4,8 @@ declare global {
   const KILO_BUILD_KIND: string // kilocode_change
 }
 
-export const InstallationVersion = typeof KILO_VERSION === "string" ? KILO_VERSION : "local"
-export const InstallationChannel = typeof KILO_CHANNEL === "string" ? KILO_CHANNEL : "local"
+export const InstallationVersion = typeof KILO_VERSION === "string" ? KILO_VERSION : "dev"
+export const InstallationChannel = typeof KILO_CHANNEL === "string" ? KILO_CHANNEL : "dev"
 export const InstallationLocal = InstallationChannel === "local"
 // kilocode_change start - distinguish release builds from source / local builds
 export const InstallationBuildKind: "source" | "release" =
