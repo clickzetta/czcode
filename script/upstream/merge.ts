@@ -530,6 +530,10 @@ async function main() {
   // Step 7: Merge into Kilo branch
   logger.step(7, 8, "Merging into Kilo branch...")
 
+  // Remove any untracked files left by transforms before switching branches.
+  // New upstream files that weren't staged (e.g. files in dirs absent from main)
+  // would otherwise block the checkout with "untracked files would be overwritten".
+  await $`git clean -fd`.quiet().nothrow()
   await git.checkout(kiloBranch)
   const mergeResult = await git.merge(opencodeBranch)
 
