@@ -67,9 +67,11 @@ function View(props: { api: TuiPluginApi }) {
       </text>
       <text fg={theme().textMuted}>
         <span style={{ fg: theme().success }}>•</span>{" "}
+        {/* czcode_change start */}
         <span style={{ fg: theme().text }}>
           <b>czcode</b>
         </span>{" "}
+        {/* czcode_change end */}
         <span>{props.api.app.version}</span>
       </text>
     </box>
