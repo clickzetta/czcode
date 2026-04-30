@@ -26,6 +26,7 @@ import { parsePluginSpecifier, readPluginId, readV1Plugin, resolvePluginId } fro
 import { registerAdaptor } from "@/control-plane/adaptors"
 import type { WorkspaceAdaptor } from "@/control-plane/types"
 import { KiloAuthPlugin } from "@kilocode/kilo-gateway" // kilocode_change
+import { CzCodeLakehousePlugin } from "@czcode/lakehouse" // czcode_change
 
 const log = Log.create({ service: "plugin" })
 
@@ -64,6 +65,7 @@ const INTERNAL_PLUGINS: PluginInstance[] = [
   PoeAuthPlugin as unknown as PluginInstance,
   CloudflareWorkersAuthPlugin as unknown as PluginInstance,
   CloudflareAIGatewayAuthPlugin as unknown as PluginInstance,
+  CzCodeLakehousePlugin as unknown as PluginInstance, // czcode_change
 ] // kilocode_change end
 
 function isServerPlugin(value: unknown): value is PluginInstance {

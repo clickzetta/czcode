@@ -15,6 +15,11 @@ import PROMPT_DEBUG from "../../agent/prompt/debug.txt"
 import PROMPT_ORCHESTRATOR from "../../agent/prompt/orchestrator.txt"
 import PROMPT_ASK from "../../agent/prompt/ask.txt"
 import PROMPT_EXPLORE from "../../agent/prompt/explore.txt"
+// czcode_change start
+import PROMPT_LH_ENGINEER from "../../agent/prompt/lh-engineer.txt"
+import PROMPT_LH_ANALYST from "../../agent/prompt/lh-analyst.txt"
+import PROMPT_LH_DBA from "../../agent/prompt/lh-dba.txt"
+// czcode_change end
 
 export const bash: Record<string, "allow" | "ask" | "deny"> = {
   "*": "ask",
@@ -412,6 +417,75 @@ export function patchAgents(
     mode: "primary",
     native: true,
   }
+
+  // czcode_change start — Lakehouse data team agents
+  const lakehouseTools = Permission.fromConfig({
+    execute_sql: "allow",
+    describe_table: "allow",
+    list_objects: "allow",
+    explain_query: "allow",
+    skill: "allow",
+  })
+
+  agents["lh-engineer"] = {
+    name: "lh-engineer",
+    displayName: "数据工程师",
+    description: "云器 Lakehouse 数据工程师 — 创建表/Pipeline/数据导入/ETL",
+    prompt: PROMPT_LH_ENGINEER,
+    options: {},
+    color: "#0066CC",
+    permission: Permission.merge(
+      defaults,
+      lakehouseTools,
+      Permission.fromConfig({ read: "allow", write: "allow" }),
+      user,
+    ),
+    mode: "primary",
+    native: true,
+  }
+
+  agents["lh-analyst"] = {
+    name: "lh-analyst",
+    displayName: "数据分析师",
+    description: "云器 Lakehouse 数据分析师 — 查询数据/分析/报表（只读）",
+    prompt: PROMPT_LH_ANALYST,
+    options: {},
+    color: "#00AA44",
+    permission: Permission.merge(
+      defaults,
+      Permission.fromConfig({
+        execute_sql: "allow",
+        describe_table: "allow",
+        list_objects: "allow",
+        explain_query: "allow",
+        skill: "allow",
+        read: "allow",
+        write: "deny",
+        bash: "deny",
+      }),
+      user,
+    ),
+    mode: "primary",
+    native: true,
+  }
+
+  agents["lh-dba"] = {
+    name: "lh-dba",
+    displayName: "DBA",
+    description: "云器 Lakehouse DBA — 权限管理/性能调优/监控",
+    prompt: PROMPT_LH_DBA,
+    options: {},
+    color: "#CC6600",
+    permission: Permission.merge(
+      defaults,
+      lakehouseTools,
+      Permission.fromConfig({ read: "allow" }),
+      user,
+    ),
+    mode: "primary",
+    native: true,
+  }
+  // czcode_change end
 }
 
 export const RemoveError = NamedError.create(
