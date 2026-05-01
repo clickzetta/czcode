@@ -187,21 +187,67 @@ ANALYZE TABLE table_name;
 ```sql
 -- 查看 VCluster
 SHOW VCLUSTERS;
+SHOW VCLUSTERS WHERE vcluster_type = 'ANALYTICS';
+SHOW VCLUSTERS WHERE state = 'SUSPENDED';
+DESC VCLUSTER vc_name;
 
--- 修改 VCluster 参数
-ALTER VCLUSTER vc_name SET MIN_CLUSTER_COUNT = 1;
-ALTER VCLUSTER vc_name SET MAX_CLUSTER_COUNT = 3;
-ALTER VCLUSTER vc_name SET AUTO_SUSPEND = 300;
+-- 修改 VCluster 参数（正确参数名）
+ALTER VCLUSTER IF EXISTS vc_name SET VCLUSTER_SIZE = 16;
+ALTER VCLUSTER IF EXISTS vc_name SET AUTO_SUSPEND_IN_SECOND = 300;  -- ⚠️ 不是 AUTO_SUSPEND
+ALTER VCLUSTER IF EXISTS vc_name SET AUTO_RESUME = TRUE;
+-- 分析型专用
+ALTER VCLUSTER IF EXISTS bi_vc SET MIN_REPLICAS = 1 MAX_REPLICAS = 5 MAX_CONCURRENCY = 16;
 
--- 暂停/恢复
+-- 暂停/恢复（必须用 ALTER VCLUSTER，不是 SUSPEND/RESUME VCLUSTER）
+ALTER VCLUSTER IF EXISTS vc_name SUSPEND;        -- ✅ 等待当前作业完成
+ALTER VCLUSTER IF EXISTS vc_name SUSPEND FORCE;  -- ✅ 立即中断所有作业
+ALTER VCLUSTER IF EXISTS vc_name RESUME;         -- ✅ 启动集群
+
+-- ❌ 错误写法（不存在这种语法）
 SUSPEND VCLUSTER vc_name;
 RESUME VCLUSTER vc_name;
+
+-- 切换当前会话集群
+USE VCLUSTER vc_name;
 
 -- 查看当前 VCluster
 SELECT CURRENT_VCLUSTER();  -- 替代 CURRENT_WAREHOUSE()
 ```
 
-### 八、Volume 管理
+### 八、作业管理（高频错误：KILL vs CANCEL）
+
+```sql
+-- ✅ 查看作业（最近7天，最多10000条）
+SHOW JOBS;
+SHOW JOBS IN VCLUSTER vc_name;
+SHOW JOBS WHERE execution_time > INTERVAL 2 MINUTE;
+SHOW JOBS WHERE status = 'FAILED';
+SHOW JOBS LIMIT 100;
+
+-- ✅ 取消某集群的所有作业
+ALTER VCLUSTER IF EXISTS vc_name CANCEL ALL JOBS;
+
+-- ✅ 查看作业历史（information_schema）
+SELECT job_id, virtual_cluster, execution_time, status, start_time
+FROM sys.information_schema.job_history
+WHERE status = 'FAILED'
+ORDER BY start_time DESC
+LIMIT 50;
+
+-- ❌ 不存在 KILL JOB 命令（MySQL 惯例，ClickZetta 不支持）
+KILL JOB job_id;
+KILL QUERY job_id;
+
+-- ❌ 不存在 CANCEL JOB <job_id> 单独取消某个作业的语法
+CANCEL JOB job_id;
+
+-- ⚠️ 如需取消单个作业，只能通过取消整个集群的所有作业实现：
+ALTER VCLUSTER IF EXISTS vc_name CANCEL ALL JOBS;
+-- 或强制停止集群（会中断所有作业）：
+ALTER VCLUSTER IF EXISTS vc_name SUSPEND FORCE;
+```
+
+### 十、Volume 管理
 
 ```sql
 -- 查看 Volume
@@ -221,7 +267,7 @@ COPY INTO t FROM VOLUME v PATTERN = '.*\.csv'
 COPY INTO t FROM VOLUME v REGEXP '.*\.csv' USING CSV
 ```
 
-### 九、函数替换速查
+### 十一、函数替换速查
 
 | 错误写法 | ClickZetta 正确写法 | 注意 |
 |---|---|---|
@@ -235,7 +281,7 @@ COPY INTO t FROM VOLUME v REGEXP '.*\.csv' USING CSV
 | `NUMBER(p,s)` | `DECIMAL(p,s)` | |
 | `VARIANT` 类型 | `JSON` 类型 | |
 
-### 十、数据类型速查
+### 十二、数据类型速查
 
 ```
 整数：TINYINT / SMALLINT / INT / BIGINT

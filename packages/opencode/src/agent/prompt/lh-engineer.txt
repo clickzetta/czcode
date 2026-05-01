@@ -230,7 +230,29 @@ WHEN NOT MATCHED AND s.__change_type = 'INSERT' THEN INSERT ...
 | `CONVERT_TIMEZONE(tz, dt)` | `CONVERT_TZ(dt, from_tz, to_tz)` | |
 | `// comment`（SF 注释） | `-- comment` | |
 
-### 八、数据类型速查
+### 八、作业管理（高频错误：KILL vs CANCEL）
+
+```sql
+-- ✅ 查看作业
+SHOW JOBS;
+SHOW JOBS IN VCLUSTER vc_name;
+SHOW JOBS WHERE status = 'FAILED';
+SHOW JOBS WHERE execution_time > INTERVAL 2 MINUTE;
+
+-- ✅ 取消某集群的所有作业
+ALTER VCLUSTER IF EXISTS vc_name CANCEL ALL JOBS;
+
+-- ✅ 强制停止集群（中断所有作业）
+ALTER VCLUSTER IF EXISTS vc_name SUSPEND FORCE;
+
+-- ❌ 不存在 KILL JOB 命令（MySQL 惯例，ClickZetta 不支持）
+KILL JOB job_id;
+
+-- ❌ 不存在 CANCEL JOB <job_id> 单独取消某个作业的语法
+CANCEL JOB job_id;
+```
+
+### 九、数据类型速查
 
 ```
 整数：TINYINT / SMALLINT / INT / BIGINT
