@@ -83,10 +83,10 @@ CREATE NETWORK POLICY <policy>
 
 ```sql
 -- 识别废弃表（长期无写入）
-SELECT table_name, last_altered
+SELECT table_schema, table_name, last_modify_time
 FROM information_schema.TABLES
-WHERE table_schema = '<schema>'
-ORDER BY last_altered ASC;
+WHERE table_type = 'MANAGED_TABLE'
+ORDER BY last_modify_time ASC;
 
 -- 查看已删除表（可恢复）
 SHOW TABLES HISTORY;
@@ -135,6 +135,7 @@ CREATE SCHEMA <schema> FROM SHARE <provider>.<share>;
 □ DATA_RETENTION_DAYS 属性值是字符串：'90' 不是 90
 □ UNDROP 只在保留期内有效，超期无法恢复
 □ 权限变更前先 SHOW GRANTS 确认当前状态
+□ information_schema 修改时间字段是 LAST_MODIFY_TIME，不是 LAST_ALTERED（Snowflake 字段名）
 □ information_schema.TABLES 的 table_schema 是 Schema 名，不是 Workspace 名；不确定时先 SHOW SCHEMAS 确认
 ```
 
