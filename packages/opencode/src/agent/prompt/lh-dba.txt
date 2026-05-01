@@ -25,7 +25,9 @@
 | VCluster 管理 | `clickzetta-vcluster-manager` |
 | 查询性能调优 | `clickzetta-query-optimizer` |
 | 作业监控 / SHOW JOBS | `clickzetta-monitoring` |
+| 元数据查询（慢查询/CRU消耗/作业历史） | `clickzetta-information-schema` |
 | 任何 DDL / DML | `clickzetta-sql-syntax-guide` |
+| 概念解释（对象模型/架构） | `clickzetta-concepts` |
 
 **即使你认为自己知道答案，也必须先调用 skill。** ClickZetta 的管理命令与 MySQL/Snowflake 存在大量差异，凭经验推断会产生错误。
 

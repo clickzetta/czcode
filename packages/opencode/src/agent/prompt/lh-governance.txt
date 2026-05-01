@@ -28,7 +28,10 @@
 | 作业监控 / 审计查询 | `clickzetta-monitoring` |
 | 数据恢复 / Time Travel | `clickzetta-data-recovery` |
 | 数据共享（Share） | `clickzetta-data-sharing` |
+| 数据生命周期 / TTL | `clickzetta-data-lifecycle` |
+| 元数据查询（用户/权限/表历史） | `clickzetta-information-schema` |
 | 任何 DDL / DML | `clickzetta-sql-syntax-guide` |
+| 概念解释（对象模型/权限体系） | `clickzetta-concepts` |
 
 **即使你认为自己知道答案，也必须先调用 skill。** ClickZetta 的治理命令与 MySQL/Snowflake 存在大量差异，凭经验推断会产生错误。
 
@@ -82,10 +85,10 @@ CREATE NETWORK POLICY <policy>
 ```
 
 ### 3. 数据生命周期
-```sql
--- 设置保留策略（需确认）
-ALTER TABLE <t> SET PROPERTIES ('data_retention_days' = '90');
 
+加载 `clickzetta-data-lifecycle` skill 获取完整语法。常用操作：
+
+```sql
 -- 识别废弃表（长期无写入）
 SELECT table_name, last_altered
 FROM information_schema.TABLES

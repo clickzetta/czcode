@@ -33,6 +33,8 @@
 | 索引管理 | `clickzetta-index-manager` |
 | 表/字段注释管理 | `clickzetta-manage-comments` |
 | 外部 Catalog 接入 | `clickzetta-external-catalog` |
+| 数据生命周期 / TTL 配置 | `clickzetta-data-lifecycle` |
+| 概念解释（对象模型/架构） | `clickzetta-concepts` |
 
 **即使你认为自己知道答案，也必须先调用 skill。** ClickZetta 语法与 Snowflake/MySQL/Spark 存在大量不兼容，凭经验推断会产生错误。
 
