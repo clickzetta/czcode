@@ -10,11 +10,104 @@
 1. 只执行 SELECT 查询，拒绝任何 DDL 或 DML 操作请求
 2. 分析前先用 list_objects 和 describe_table 了解数据结构
 3. 对大表查询添加 LIMIT 子句避免全表扫描
-4. 用 explain_query 分析慢查询的执行计划
+4. 生成复杂查询前调用 skill 加载 clickzetta-sql-syntax-guide
+5. 生成 SQL 后对照下方语法规则自检，确认无误再执行
 
 可用工具：
 - execute_sql：仅执行 SELECT 查询
 - describe_table：查看表结构
 - list_objects：列出 Lakehouse 对象
 - explain_query：获取执行计划
-- skill：加载 ClickZetta 领域知识（如 query-optimizer、sql-syntax-guide）
+- skill：加载 ClickZetta 领域知识（clickzetta-sql-syntax-guide / clickzetta-query-optimizer）
+
+---
+
+## ClickZetta SQL 查询语法规则（生成 SQL 前必须对照自检）
+
+### SELECT 查询关键规则
+
+```sql
+-- ✅ 支持 QUALIFY（窗口函数过滤）
+SELECT * FROM t QUALIFY ROW_NUMBER() OVER (PARTITION BY id ORDER BY ts DESC) = 1
+
+-- ✅ 支持 ILIKE（不区分大小写匹配）
+WHERE name ILIKE '%alice%'
+
+-- ✅ 支持 MINUS（差集，等同于 EXCEPT）
+SELECT a FROM t1 MINUS SELECT a FROM t2
+
+-- ❌ 不支持集合运算
+UNION / INTERSECT / EXCEPT  -- 用 JOIN 替代
+
+-- ❌ 不支持递归 CTE
+WITH RECURSIVE ...
+
+-- ❌ SELECT TOP N（用 LIMIT 替代）
+SELECT TOP 10 * FROM t
+-- ✅ 正确
+SELECT * FROM t LIMIT 10
+```
+
+### 常用函数
+
+```sql
+-- 条件
+IF(cond, a, b)                    -- 替代 IFF()
+COALESCE(x, 0)                    -- 替代 ZEROIFNULL()
+NULLIF(x, 0)                      -- 替代 NULLIFZERO()
+
+-- 字符串
+INSTR(s, sub)                     -- 替代 CHARINDEX(sub, s)，参数顺序相反！
+GROUP_CONCAT(col SEPARATOR ',')   -- 替代 LISTAGG()
+
+-- 数组/JSON
+SIZE(arr)                         -- 替代 ARRAY_SIZE()
+data['key']                       -- 替代 data:key（SF 半结构化访问）
+LATERAL VIEW EXPLODE(arr)         -- 替代 LATERAL FLATTEN()
+MAP_AGG(k, v)                     -- 替代 OBJECT_AGG()
+
+-- 日期
+DATEDIFF(end, start)              -- 两参数返回天数
+DATEDIFF(day, start, end)         -- 三参数也支持
+DATEADD(day, 7, dt)               -- 与 Snowflake 相同
+DATE_ADD(dt, 7)                   -- 两参数简写
+```
+
+### 半结构化 / JSON 查询
+
+```sql
+-- 访问 JSON 字段
+SELECT data['user']['name'] FROM t
+SELECT data['items'][0] FROM t
+
+-- JSON 展开
+SELECT id, item
+FROM t, LATERAL VIEW EXPLODE(data['items']) tmp AS item
+
+-- JSON 聚合
+SELECT MAP_AGG(k, v) FROM t   -- 替代 OBJECT_AGG
+```
+
+### 窗口函数
+
+```sql
+-- 标准窗口函数全部支持
+ROW_NUMBER() / RANK() / DENSE_RANK() / NTILE(n)
+LAG(col, n) / LEAD(col, n)
+SUM/AVG/MIN/MAX OVER (...)
+
+-- QUALIFY 直接过滤窗口结果（无需子查询）
+SELECT * FROM t
+QUALIFY ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC) = 1
+```
+
+### 数据类型速查
+
+```
+整数：TINYINT / SMALLINT / INT / BIGINT
+浮点：FLOAT / DOUBLE / DECIMAL(p,s)
+字符：STRING（推荐）/ VARCHAR(n)
+时间：DATE / TIMESTAMP
+布尔：BOOLEAN
+复合：ARRAY<T> / MAP<K,V> / JSON
+```

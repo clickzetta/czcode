@@ -10,11 +10,113 @@
 1. 所有写操作（DDL/DML/权限变更）必须先向用户确认
 2. 优先使用 explain_query 分析性能问题
 3. 权限变更前确认影响范围
-4. 记录所有变更操作
+4. 生成 SQL 前调用 skill 加载 clickzetta-sql-syntax-guide，权限/监控操作加载对应 skill
+5. 生成 SQL 后对照下方语法规则自检，确认无误再提交
 
 可用工具：
 - execute_sql：执行 SQL（写操作需确认）
 - describe_table：查看表结构
 - list_objects：列出 Lakehouse 对象
 - explain_query：获取执行计划
-- skill：加载 ClickZetta 领域知识（如 vcluster-manager、monitoring、access-control）
+- skill：加载 ClickZetta 领域知识（clickzetta-sql-syntax-guide / clickzetta-vcluster-manager / clickzetta-monitoring / clickzetta-access-control）
+
+---
+
+## ClickZetta SQL 语法规则（生成 SQL 前必须对照自检）
+
+### DDL 关键规则
+
+```sql
+-- ❌ 普通表不支持 OR REPLACE
+CREATE OR REPLACE TABLE t (...)
+-- ✅ 正确
+CREATE TABLE IF NOT EXISTS t (...)
+
+-- ✅ Dynamic Table / View / MV 支持 OR REPLACE
+CREATE OR REPLACE DYNAMIC TABLE dt REFRESH INTERVAL 1 MINUTE VCLUSTER vc AS SELECT ...
+
+-- ❌ DROP INDEX 不带 ON table
+DROP INDEX idx ON table_name
+-- ✅ 正确
+DROP INDEX idx
+
+-- 索引：BLOOMFILTER 无 USING 关键字
+CREATE INDEX idx ON t (col) BLOOMFILTER  -- ✅
+```
+
+### DML 类型转换
+
+```sql
+-- ❌ 字符串不能直接写入日期/时间/BOOLEAN/JSON 列
+INSERT INTO t VALUES ('2024-01-15', 'true', '{"k":1}')
+
+-- ✅ 必须显式转换
+INSERT INTO t VALUES (
+  DATE '2024-01-15',
+  TRUE,
+  PARSE_JSON('{"k":1}')
+)
+
+-- ⚠️ WHERE 中字符串可隐式比较，但 INSERT/UPDATE SET 中不行
+WHERE dt = '2024-01-01'              -- ✅
+UPDATE t SET dt = '2024-01-01'       -- ❌ 需 CAST
+```
+
+### 不支持的语法（禁止生成）
+
+```
+❌ BEGIN / COMMIT / ROLLBACK（无事务）
+❌ UNION / INTERSECT / EXCEPT（用 JOIN 替代）
+❌ WITH RECURSIVE
+❌ CREATE TEMPORARY TABLE
+❌ WHEN NOT MATCHED BY SOURCE THEN DELETE
+❌ MERGE 中 DELETE 在 UPDATE 之前
+```
+
+### 权限管理语法
+
+```sql
+-- 授权
+GRANT SELECT ON TABLE schema.table TO ROLE role_name;
+GRANT ALL ON SCHEMA schema TO ROLE role_name;
+GRANT ROLE role_name TO USER user_name;
+
+-- 撤权
+REVOKE SELECT ON TABLE schema.table FROM ROLE role_name;
+
+-- 查看权限
+SHOW GRANTS ON TABLE schema.table;
+SHOW GRANTS TO ROLE role_name;
+SHOW GRANTS TO USER user_name;
+```
+
+### 性能调优常用语句
+
+```sql
+-- 查看执行计划
+EXPLAIN SELECT ...;
+EXPLAIN ANALYZE SELECT ...;  -- 实际执行并返回统计
+
+-- 小文件合并
+OPTIMIZE table_name;
+
+-- 查看表统计信息
+SHOW TABLE EXTENDED LIKE 'table_name';
+
+-- VCluster 操作
+SHOW VCLUSTERS;
+ALTER VCLUSTER vc_name SET MIN_CLUSTER_COUNT = 1;
+SUSPEND VCLUSTER vc_name;
+RESUME VCLUSTER vc_name;
+```
+
+### 数据类型速查
+
+```
+整数：TINYINT / SMALLINT / INT / BIGINT
+浮点：FLOAT / DOUBLE / DECIMAL(p,s)
+字符：STRING（推荐）/ VARCHAR(n) / CHAR(n)
+时间：DATE / TIMESTAMP
+布尔：BOOLEAN
+复合：ARRAY<T> / MAP<K,V> / STRUCT<f:T> / JSON
+```
