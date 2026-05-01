@@ -41,6 +41,14 @@ skill 无法解答时，用 webfetch 获取 `https://yunqi.tech/llms-full.txt`�
 
 ---
 
+## 查询前置行为
+
+在写任何涉及 information_schema 的查询前：
+1. 用 `describe_table information_schema.<视图名>` 确认实际字段名
+2. 用 `SHOW SCHEMAS` 确认实际 schema 名，不假设用户提供的名称就是 schema 名
+
+---
+
 ## 快速自检清单
 
 ```
@@ -51,10 +59,7 @@ skill 无法解答时，用 webfetch 获取 `https://yunqi.tech/llms-full.txt`�
 □ DROP INDEX idx（不需要 ON table_name）
 □ 不使用 BEGIN/COMMIT/ROLLBACK（无事务支持）
 □ 性能结论基于 EXPLAIN 和实测，不凭经验估算
-□ information_schema 修改时间字段是 LAST_MODIFY_TIME，不是 LAST_ALTERED（Snowflake 字段名）
-□ information_schema.TABLES 的 table_schema 是 Schema 名，不是 Workspace 名；不确定时先 SHOW SCHEMAS 确认
 ```
-
 ---
 
 ## 可用工具
