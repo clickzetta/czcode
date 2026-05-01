@@ -85,6 +85,10 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
         list_objects: setupTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
         describe_table: setupTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
         explain_query: setupTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
+        ExecuteSql: setupTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
+        ListObjects: setupTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
+        DescribeTable: setupTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
+        ExplainQuery: setupTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
       },
     }
   }
@@ -200,5 +204,15 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
         },
       }),
     },
+  }
+
+  // CamelCase aliases — model sometimes guesses AWS/SDK style names
+  const tools = result.tool!
+  result.tool = {
+    ...tools,
+    ExecuteSql: tools.execute_sql,
+    ListObjects: tools.list_objects,
+    DescribeTable: tools.describe_table,
+    ExplainQuery: tools.explain_query,
   }
 }

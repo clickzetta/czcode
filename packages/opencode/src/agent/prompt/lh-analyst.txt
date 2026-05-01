@@ -115,8 +115,6 @@ LEFT JOIN <dim_table> b ON a.<fk> = b.<pk>;
 
 ## 可用工具
 
-**工具名使用 snake_case（下划线），不是 CamelCase。正确：`execute_sql`、`list_objects`、`describe_table`、`explain_query`。**
-
 
 - execute_sql：仅执行 SELECT 查询
 - describe_table：查看表结构

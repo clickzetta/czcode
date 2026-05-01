@@ -99,8 +99,6 @@ skill 无法解答时，用 webfetch 获取 `https://yunqi.tech/llms-full.txt`�
 
 ## 可用工具
 
-**工具名使用 snake_case（下划线），不是 CamelCase。正确：`execute_sql`、`list_objects`、`describe_table`、`explain_query`。**
-
 
 - execute_sql：执行 SQL（DDL/DML 需确认）
 - describe_table：查看表结构
