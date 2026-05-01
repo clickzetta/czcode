@@ -53,34 +53,38 @@ function confirmLabel(sql: string): string {
 export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
   const rawConfig = options?.lakehouse ?? readConfigFromEnv()
   if (!rawConfig) {
-    // No Lakehouse config — register a setup guide tool so the agent can inform the user
+    const setupMessage = [
+      "⚠️  Lakehouse 未配置，无法连接 ClickZetta。",
+      "",
+      "请在工作目录创建 .env 文件并填写以下环境变量：",
+      "",
+      "  CLICKZETTA_SERVICE=<your-service-endpoint>   # 如 cn-shanghai-alicloud.api.clickzetta.com",
+      "  CLICKZETTA_INSTANCE=<your-instance>",
+      "  CLICKZETTA_WORKSPACE=<your-workspace>",
+      "  CLICKZETTA_USERNAME=<your-username>",
+      "  CLICKZETTA_PASSWORD=<your-password>",
+      "  CLICKZETTA_SCHEMA=<your-schema>           # 默认 public",
+      "  CLICKZETTA_VCLUSTER=<your-vcluster>       # 默认 default",
+      "",
+      "同时配置 AI 模型（二选一）：",
+      "  DASHSCOPE_API_KEY=sk-...   # 阿里云 DashScope/Qwen",
+      "  ANTHROPIC_API_KEY=sk-...   # Anthropic Claude",
+      "",
+      "配置完成后重启 czcode 即可连接 Lakehouse。",
+    ].join("\n")
+
+    const setupTool = (desc: string) => tool({
+      description: desc,
+      args: { sql: z.string().optional(), table: z.string().optional(), type: z.string().optional(), parent: z.string().optional() },
+      async execute() { return setupMessage },
+    })
+
     return {
       tool: {
-        execute_sql: tool({
-          description: "ClickZetta Lakehouse 未配置。调用此工具获取配置指引。",
-          args: { sql: z.string().optional() },
-          async execute() {
-            return [
-              "⚠️  Lakehouse 未配置，无法执行 SQL。",
-              "",
-              "请在工作目录创建 .env 文件并填写以下环境变量：",
-              "",
-              "  CLICKZETTA_SERVICE=<your-service-endpoint>   # 如 cn-shanghai-alicloud.api.clickzetta.com",
-              "  CLICKZETTA_INSTANCE=<your-instance>",
-              "  CLICKZETTA_WORKSPACE=<your-workspace>",
-              "  CLICKZETTA_USERNAME=<your-username>",
-              "  CLICKZETTA_PASSWORD=<your-password>",
-              "  CLICKZETTA_SCHEMA=<your-schema>           # 默认 public",
-              "  CLICKZETTA_VCLUSTER=<your-vcluster>       # 默认 default",
-              "",
-              "同时配置 AI 模型（二选一）：",
-              "  DASHSCOPE_API_KEY=sk-...   # 阿里云 DashScope/Qwen",
-              "  ANTHROPIC_API_KEY=sk-...   # Anthropic Claude",
-              "",
-              "配置完成后重启 czcode 即可连接 Lakehouse。",
-            ].join("\n")
-          },
-        }),
+        execute_sql: setupTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
+        list_objects: setupTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
+        describe_table: setupTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
+        explain_query: setupTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
       },
     }
   }
