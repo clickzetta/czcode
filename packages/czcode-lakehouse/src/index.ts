@@ -2,7 +2,7 @@ import { z } from "zod"
 import { tool } from "@kilocode/plugin"
 import type { Plugin } from "@kilocode/plugin"
 import { LakehouseConnector, type LakehouseConfig } from "./connector.js"
-import { classifySql, isHardRule } from "./sql-classifier.js"
+import { classifySql, getSqlRisk } from "./sql-classifier.js"
 import { formatQueryResult, formatTableSchema } from "./format.js"
 import { Effect } from "effect"
 
@@ -36,12 +36,23 @@ function readConfigFromEnv(): LakehouseConfig | null {
   }
 }
 
+const RISK_LABELS: Record<string, string> = {
+  destructive: "⚠️ 危险操作（不可逆）",
+  write: "✏️ 写操作",
+  admin: "🔐 权限变更",
+}
+
+function confirmLabel(sql: string): string {
+  const risk = getSqlRisk(sql)
+  const cat = classifySql(sql)
+  if (risk === "destructive") return RISK_LABELS.destructive
+  if (cat === "admin") return RISK_LABELS.admin
+  return RISK_LABELS.write
+}
+
 export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
-  // Options from config take precedence over env vars
   const rawConfig = options?.lakehouse ?? readConfigFromEnv()
-  if (!rawConfig) {
-    return {}
-  }
+  if (!rawConfig) return {}
 
   let config: LakehouseConfig
   try {
@@ -63,23 +74,32 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
     tool: {
       execute_sql: tool({
         description:
-          "在 ClickZetta Lakehouse 上执行 SQL 语句，返回结果集。支持 SELECT/DDL/DML。DDL 和 DML 操作会先请求用户确认。",
+          "在 ClickZetta Lakehouse 上执行 SQL 语句，返回结果集。SELECT 直接执行；DDL/DML/ADMIN 必须经用户确认；危险操作（DROP/TRUNCATE/REVOKE ALL）显示完整 SQL 并强制确认。readonly 模式下拒绝一切非 SELECT 语句。",
         args: {
           sql: z.string().describe("要执行的 SQL 语句"),
           limit: z.number().int().min(1).max(5000).default(200).describe("最大返回行数（默认 200）"),
+          readonly: z.boolean().default(false).describe("只读模式：true 时拒绝任何非 SELECT 语句"),
         },
         async execute(args, ctx) {
+          const risk = getSqlRisk(args.sql)
           const category = classifySql(args.sql)
-          const needsConfirm = category !== "select" || isHardRule(args.sql)
 
-          if (needsConfirm) {
-            const label = isHardRule(args.sql) ? "危险操作" : category.toUpperCase()
+          // Readonly enforcement — hard block at tool level
+          if (args.readonly && risk !== "safe") {
+            return `[只读模式] 拒绝执行 ${category.toUpperCase()} 语句。当前角色仅允许 SELECT 查询。`
+          }
+
+          // Human-in-loop for all write operations
+          if (risk !== "safe") {
+            const label = confirmLabel(args.sql)
+            // Show full SQL for destructive ops, truncated for others
+            const preview = risk === "destructive" ? args.sql : args.sql.slice(0, 200)
             await Effect.runPromise(
               ctx.ask({
                 permission: "execute_sql",
-                patterns: [args.sql.slice(0, 100)],
+                patterns: [preview],
                 always: [],
-                metadata: { sql: args.sql, category: label },
+                metadata: { sql: args.sql, category: label, risk },
               }),
             )
           }

@@ -40,7 +40,7 @@ skill 无法解答时，用 webfetch 获取 `https://yunqi.tech/llms-full.txt`�
 
 ## 只读原则
 
-只执行 SELECT 查询。拒绝任何 DDL 或 DML 操作请求。
+只执行 SELECT 查询。调用 execute_sql 时**必须**传入 `readonly: true`，工具层会强制拒绝任何非 SELECT 语句。
 
 ---
 
