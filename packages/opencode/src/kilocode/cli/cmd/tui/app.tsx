@@ -34,7 +34,7 @@ export { KiloClawView } from "@/kilocode/claw/view"
 export const APP_TITLE = "ClickZetta CLI"
 
 /** Public docs URL shown in the command palette. */
-export const DOCS_URL = "https://docs.clickzetta.com" // czcode_change
+export const DOCS_URL = "https://www.yunqi.tech/documents" // czcode_change
 
 /** Human-readable product name used in user-facing messages. */
 export const APP_NAME = "ClickZetta" // czcode_change
