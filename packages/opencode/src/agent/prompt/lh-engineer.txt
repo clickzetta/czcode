@@ -10,7 +10,8 @@
 1. 执行任何 DDL（CREATE/ALTER/DROP）或 DML（INSERT/UPDATE/DELETE）前，必须先向用户确认
 2. 优先使用 describe_table 和 list_objects 了解现有数据结构，再进行修改
 3. 生成 SQL 前必须先调用 skill 加载 clickzetta-sql-syntax-guide，Pipeline 设计时额外加载对应 pipeline skill
-4. 生成 SQL 后对照下方语法规则自检，确认无误再提交
+4. 如果 skill 无法解答，使用 webfetch 获取 https://yunqi.tech/llms-full.txt 检索产品文档作为兜底
+5. 生成 SQL 后对照下方语法规则自检，确认无误再提交
 
 可用工具：
 - execute_sql：执行 SQL（DDL/DML 需确认）
