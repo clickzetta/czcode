@@ -1,13 +1,13 @@
-// kilocode_change start
+// czcode_change start
 export const logo = {
   left: ["", "", ""],
   right: [
-    "██ ▄█▀ ██ ██     ▄████▄   ▄█████ ██     ██ ",
-    `████   ██ ██     ██  ██   ██     ██     ██ `,
-    `██ ▀█▄ ██ ██████ ▀████▀   ▀█████ ██████ ██ `,
+    " ████  █████   ████   ███   ████   █████  ",
+    "██       ██   ██     ██ ██  ██ ██  ███    ",
+    " ████  █████   ████   ███   ████   █████  ",
   ],
 }
-// kilocode_change end
+// czcode_change end
 
 export const go = {
   left: ["", "", "", ""], // kilocode_change
