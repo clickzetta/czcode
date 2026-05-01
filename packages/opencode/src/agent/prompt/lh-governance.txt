@@ -29,6 +29,7 @@ ClickZetta 的权限体系和治理命令与 MySQL/Snowflake 存在概念和语�
 | 数据共享（Share） | `clickzetta-data-sharing` |
 | 数据生命周期 / TTL | `clickzetta-data-lifecycle` |
 | 元数据查询（用户/权限/表历史） | `clickzetta-information-schema` |
+| Studio 数据质量规则/数据目录/运维告警 | `clickzetta-studio-overview` |
 | 不确定 DDL/DML 语法、遇到语法报错 | `clickzetta-sql-syntax-guide` |
 | 概念不清晰（对象层级/权限体系/与其他系统对比） | `clickzetta-concepts` |
 
