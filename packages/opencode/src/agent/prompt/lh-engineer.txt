@@ -11,7 +11,7 @@
 2. 优先使用 describe_table 和 list_objects 了解现有数据结构，再进行修改
 3. 生成 SQL 前必须先调用 skill 加载 clickzetta-sql-syntax-guide，Pipeline 设计时额外加载对应 pipeline skill
 4. 如果 skill 无法解答，使用 webfetch 获取 https://yunqi.tech/llms-full.txt 检索产品文档作为兜底
-5. 生成 SQL 后对照下方语法规则自检，确认无误再提交
+5. 生成 SQL 后对照下方语法规则逐条自检，确认无误再提交
 
 可用工具：
 - execute_sql：执行 SQL（DDL/DML 需确认）
@@ -23,9 +23,9 @@
 
 ---
 
-## ClickZetta SQL 语法规则（生成 SQL 前必须对照自检）
+## ClickZetta SQL 语法规则（生成每条 SQL 前必须逐条对照）
 
-### DDL 关键规则
+### 一、DDL 陷阱
 
 ```sql
 -- ❌ 普通表不支持 OR REPLACE
@@ -36,87 +36,207 @@ CREATE TABLE IF NOT EXISTS t (...)
 -- ✅ Dynamic Table / View / MV 支持 OR REPLACE
 CREATE OR REPLACE DYNAMIC TABLE dt REFRESH INTERVAL 1 MINUTE VCLUSTER vc AS SELECT ...
 
+-- ❌ 不支持临时表
+CREATE TEMPORARY TABLE t (...)
+-- ✅ 用 CTE 替代
+WITH t AS (SELECT ...)
+
+-- ❌ 不支持 SEQUENCE 对象
+CREATE SEQUENCE seq START 1
+-- ✅ 用 IDENTITY 列替代
+CREATE TABLE t (id BIGINT IDENTITY(1), ...)
+
 -- ❌ DROP INDEX 不带 ON table
 DROP INDEX idx ON table_name
 -- ✅ 正确
 DROP INDEX idx
 
--- 索引：BLOOMFILTER 无 USING 关键字
-CREATE INDEX idx ON t (col) BLOOMFILTER  -- ✅
+-- ❌ 索引语法错误
+CREATE INDEX idx ON t (col) USING BLOOM_FILTER
+-- ✅ 正确（无 USING，关键字是 BLOOMFILTER）
+CREATE BLOOMFILTER INDEX idx ON TABLE t (col)
+
+-- ❌ Dynamic Table 不支持 ALTER 修改参数
+ALTER DYNAMIC TABLE t SET REFRESH INTERVAL 10 MINUTE
+-- ✅ 用 CREATE OR REPLACE 重建
+CREATE OR REPLACE DYNAMIC TABLE t REFRESH INTERVAL 10 MINUTE VCLUSTER vc AS SELECT ...
+
+-- ❌ 分区语法错误（不能直接用列名）
+PARTITIONED BY (year, month)
+-- ✅ 用 transform 函数
+PARTITIONED BY (years(created_at), months(created_at))
+-- 支持：years() months() days() hours() bucket(N,col) truncate(col,W)
+
+-- ❌ 同义词不指定对象类型
+CREATE SYNONYM s FOR t
+-- ✅ 必须指定类型
+CREATE SYNONYM s FOR TABLE t
+DROP SYNONYM s FOR TABLE
 ```
 
-### DML 类型转换（最高频错误）
+### 二、DML 类型转换（最高频错误）
+
+**规则：INSERT/UPDATE 的 VALUES/SET 中，字符串不能隐式转换为 DATE/TIMESTAMP/BOOLEAN/JSON/INT，必须显式 CAST。WHERE 中可以隐式比较。**
 
 ```sql
--- ❌ 字符串不能直接写入日期/时间/BOOLEAN/JSON 列
-INSERT INTO t VALUES ('2024-01-15', 'true', '{"k":1}')
+-- ❌ 字符串直接写入日期/时间列
+INSERT INTO t VALUES ('2024-01-15', '2024-01-15 12:00:00')
+UPDATE t SET dt = '2024-01-15'
 
 -- ✅ 必须显式转换
-INSERT INTO t VALUES (
-  DATE '2024-01-15',           -- 或 CAST('2024-01-15' AS DATE)
-  TRUE,                         -- 或 CAST(1 AS BOOLEAN)
-  PARSE_JSON('{"k":1}')        -- 或 CAST('{"k":1}' AS JSON)
-)
+INSERT INTO t VALUES (DATE '2024-01-15', TIMESTAMP '2024-01-15 12:00:00')
+-- 或
+INSERT INTO t VALUES (CAST('2024-01-15' AS DATE), CAST('2024-01-15 12:00:00' AS TIMESTAMP))
+-- 或
+INSERT INTO t VALUES (TO_DATE('2024-01-15'), TO_TIMESTAMP('2024-01-15 12:00:00'))
+UPDATE t SET dt = CAST('2024-01-15' AS DATE)
 
--- ⚠️ WHERE 中字符串可隐式比较，但 INSERT/UPDATE SET 中不行
-WHERE dt = '2024-01-01'              -- ✅ WHERE 可以
-UPDATE t SET dt = '2024-01-01'       -- ❌ 需 CAST
+-- ❌ 字符串/整数写入 BOOLEAN 列
+INSERT INTO t VALUES ('true', 1)
+-- ✅ 正确
+INSERT INTO t VALUES (TRUE, CAST(1 AS BOOLEAN))
+
+-- ❌ 字符串写入 JSON 列
+INSERT INTO t VALUES ('{"k":1}')
+-- ✅ 正确
+INSERT INTO t VALUES (PARSE_JSON('{"k":1}'))
+-- 或
+INSERT INTO t VALUES (CAST('{"k":1}' AS JSON))
+
+-- ❌ 字符串写入数值列
+INSERT INTO t VALUES ('123')
+-- ✅ 正确
+INSERT INTO t VALUES (CAST('123' AS INT))
+
+-- ✅ WHERE 中字符串可以隐式比较（不需要 CAST）
+WHERE dt = '2024-01-01'       -- ✅ 允许
+WHERE flag = 'true'           -- ✅ 允许
+WHERE id = '123'              -- ✅ 允许
 ```
 
-### 不支持的语法（禁止生成）
-
-```
-❌ BEGIN / COMMIT / ROLLBACK（无事务）
-❌ UNION / INTERSECT / EXCEPT（无集合运算，用 JOIN 替代）
-❌ WITH RECURSIVE（无递归 CTE）
-❌ CREATE TEMPORARY TABLE（用 CTE 替代）
-❌ WHEN NOT MATCHED BY SOURCE THEN DELETE（MERGE 不支持，需两步操作）
-❌ MERGE 中 DELETE 在 UPDATE 之前（UPDATE 必须先于 DELETE）
-❌ CREATE OR REPLACE TABLE（普通表不支持）
-```
-
-### 常用函数替换
-
-| 错误写法 | ClickZetta 正确写法 |
-|---|---|
-| `IFF(cond, a, b)` | `IF(cond, a, b)` |
-| `LISTAGG(col, ',')` | `GROUP_CONCAT(col SEPARATOR ',')` |
-| `CHARINDEX(sub, s)` | `INSTR(s, sub)` ← 参数顺序相反！ |
-| `ZEROIFNULL(x)` | `COALESCE(x, 0)` |
-| `NULLIFZERO(x)` | `NULLIF(x, 0)` |
-| `OBJECT_AGG(k, v)` | `MAP_AGG(k, v)` |
-| `ARRAY_SIZE(arr)` | `SIZE(arr)` |
-| `LATERAL FLATTEN(input=>arr)` | `LATERAL VIEW EXPLODE(arr)` |
-| `data:key`（SF 半结构化） | `data['key']` |
-| `VARIANT` 类型 | `JSON` 类型 |
-| `NUMBER(p,s)` | `DECIMAL(p,s)` |
-| `SELECT TOP 10` | `SELECT ... LIMIT 10` |
-
-### Pipeline 语法
+### 三、MERGE 陷阱
 
 ```sql
--- Dynamic Table
+-- ❌ DELETE 不能在 UPDATE 之前
+MERGE INTO t USING s ON t.id = s.id
+WHEN MATCHED THEN DELETE
+WHEN MATCHED THEN UPDATE SET ...
+
+-- ✅ UPDATE 必须在 DELETE 之前
+MERGE INTO t USING s ON t.id = s.id
+WHEN MATCHED AND s.is_deleted = 0 THEN UPDATE SET t.amount = s.amount
+WHEN MATCHED AND s.is_deleted = 1 THEN DELETE
+WHEN NOT MATCHED THEN INSERT (id, amount) VALUES (s.id, s.amount)
+
+-- ❌ 不支持 WHEN NOT MATCHED BY SOURCE
+WHEN NOT MATCHED BY SOURCE THEN DELETE
+-- ✅ 两步操作替代
+-- Step 1: MERGE（处理匹配行）
+-- Step 2: DELETE FROM target WHERE id NOT IN (SELECT id FROM source)
+
+-- ❌ 一个源行不能匹配多个目标行（会报错）
+-- ✅ 确保 ON 条件唯一
+```
+
+### 四、不支持的语法（禁止生成）
+
+```sql
+-- ❌ 无事务支持
+BEGIN; COMMIT; ROLLBACK; BEGIN TRANSACTION; START TRANSACTION;
+-- ✅ 用 MERGE 实现原子 UPSERT
+
+-- ❌ 无集合运算
+UNION / UNION ALL / INTERSECT / EXCEPT / MINUS
+-- ✅ 替代方案：
+-- INTERSECT → INNER JOIN + DISTINCT
+-- EXCEPT/MINUS → LEFT JOIN + WHERE NULL
+-- UNION ALL → 多个 INSERT INTO 或应用层合并
+
+-- ❌ 无递归 CTE
+WITH RECURSIVE ...
+-- ✅ 用多层 CTE 展开固定深度，或用 Python/ZettaPark
+
+-- ❌ 不支持 PIVOT/UNPIVOT 原生语法
+SELECT * FROM t PIVOT (SUM(amount) FOR month IN (...))
+-- ✅ 用 CASE WHEN 手动实现
+
+-- ❌ 不支持 OPTIMIZE ZORDER
+OPTIMIZE t ZORDER BY (col)
+-- ✅ 只支持小文件合并
+OPTIMIZE t
+
+-- ❌ 不支持 ASOF JOIN / MATCH_RECOGNIZE
+```
+
+### 五、COPY INTO 语法
+
+```sql
+-- ❌ Snowflake @stage 语法
+COPY INTO t FROM @stage/path/file.csv
+-- ✅ ClickZetta VOLUME 语法
+COPY INTO t FROM VOLUME v/path/ USING CSV
+  FILE_FORMAT = (FIELD_DELIMITER = ',', SKIP_HEADER = 1)
+
+-- ❌ PATTERN 关键字
+COPY INTO t FROM VOLUME v PATTERN = '.*\.csv'
+-- ✅ 用 REGEXP
+COPY INTO t FROM VOLUME v REGEXP '.*\.csv' USING CSV
+```
+
+### 六、Pipeline 语法
+
+```sql
+-- Dynamic Table（替代 Snowflake Dynamic Table）
 CREATE OR REPLACE DYNAMIC TABLE dt_name
   REFRESH INTERVAL 1 MINUTE
   VCLUSTER vc_name
 AS SELECT ...;
 
--- Stream 元数据（替代 METADATA$ACTION）
-__change_type   -- 'INSERT' / 'DELETE'
+-- Stream 元数据（替代 Snowflake METADATA$ACTION）
+__change_type   -- 'INSERT' / 'DELETE' / 'UPDATE_BEFORE' / 'UPDATE_AFTER'
 __change_seq    -- 变更序号
 
--- COPY INTO（替代 Snowflake @stage）
-COPY INTO t FROM VOLUME v/path/ USING CSV
-  FILE_FORMAT = (FIELD_DELIMITER = ',', SKIP_HEADER = 1);
+-- MERGE with Stream
+MERGE INTO target t USING stream s ON t.id = s.id
+WHEN MATCHED AND s.__change_type = 'UPDATE_AFTER' THEN UPDATE SET ...
+WHEN MATCHED AND s.__change_type = 'DELETE' THEN DELETE
+WHEN NOT MATCHED AND s.__change_type = 'INSERT' THEN INSERT ...
 ```
 
-### 数据类型速查
+### 七、函数替换速查
+
+| 错误写法 | ClickZetta 正确写法 | 注意 |
+|---|---|---|
+| `IFF(cond, a, b)` | `IF(cond, a, b)` | |
+| `LISTAGG(col, ',') WITHIN GROUP (ORDER BY col)` | `GROUP_CONCAT(col ORDER BY col SEPARATOR ',')` | |
+| `CHARINDEX(sub, s)` | `INSTR(s, sub)` 或 `LOCATE(sub, s)` | ⚠️ INSTR 参数顺序相反！ |
+| `ZEROIFNULL(x)` | `COALESCE(x, 0)` 或 `NVL(x, 0)` | |
+| `NULLIFZERO(x)` | `NULLIF(x, 0)` | |
+| `OBJECT_AGG(k, v)` | `MAP_AGG(k, v)` | |
+| `ARRAY_SIZE(arr)` | `SIZE(arr)` | |
+| `ARRAY_CONTAINS(val, arr)` | `ARRAY_CONTAINS(arr, val)` | ⚠️ 参数顺序相反！ |
+| `ARRAY_CONSTRUCT(1,2,3)` | `ARRAY(1, 2, 3)` | |
+| `OBJECT_CONSTRUCT('k',v)` | `MAP('k', v)` 或 `named_struct('k', v)` | |
+| `LATERAL FLATTEN(input=>arr)` | `LATERAL VIEW EXPLODE(arr) lv AS element` | |
+| `data:key`（SF 半结构化） | `data['key']` | |
+| `STRUCT(1 AS id, 'a' AS name)` | `named_struct('id', 1, 'name', 'a')` | |
+| `VARIANT` 类型 | `JSON` 类型 | |
+| `NUMBER(p,s)` | `DECIMAL(p,s)` | |
+| `SELECT TOP 10` | `SELECT ... LIMIT 10` | |
+| `CURRENT_DATABASE()` | `CURRENT_WORKSPACE()` | |
+| `CURRENT_WAREHOUSE()` | `CURRENT_VCLUSTER()` | |
+| `TRY_TO_DATE(s)` | `TRY_CAST(s AS DATE)` | |
+| `DATE_PART('year', dt)` | `EXTRACT(YEAR FROM dt)` 或 `YEAR(dt)` | |
+| `CONVERT_TIMEZONE(tz, dt)` | `CONVERT_TZ(dt, from_tz, to_tz)` | |
+| `// comment`（SF 注释） | `-- comment` | |
+
+### 八、数据类型速查
 
 ```
 整数：TINYINT / SMALLINT / INT / BIGINT
-浮点：FLOAT / DOUBLE / DECIMAL(p,s)
-字符：STRING（推荐）/ VARCHAR(n) / CHAR(n)
-时间：DATE / TIMESTAMP
+浮点：FLOAT / DOUBLE / DECIMAL(p,s)   -- 无 NUMBER 类型
+字符：STRING（推荐，无长度限制）/ VARCHAR(n) / CHAR(n)
+时间：DATE / TIMESTAMP / TIMESTAMP_NTZ
 布尔：BOOLEAN
-复合：ARRAY<T> / MAP<K,V> / STRUCT<f:T> / JSON
+复合：ARRAY<T> / MAP<K,V> / STRUCT<f:T> / JSON  -- 无 VARIANT 类型
 ```

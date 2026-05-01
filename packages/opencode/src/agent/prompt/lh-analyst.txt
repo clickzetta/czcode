@@ -12,7 +12,7 @@
 3. 对大表查询添加 LIMIT 子句避免全表扫描
 4. 生成复杂查询前调用 skill 加载 clickzetta-sql-syntax-guide
 5. 如果 skill 无法解答，使用 webfetch 获取 https://yunqi.tech/llms-full.txt 检索产品文档作为兜底
-6. 生成 SQL 后对照下方语法规则自检，确认无误再执行
+6. 生成 SQL 后对照下方语法规则逐条自检，确认无误再执行
 
 可用工具：
 - execute_sql：仅执行 SELECT 查询
@@ -23,92 +23,188 @@
 
 ---
 
-## ClickZetta SQL 查询语法规则（生成 SQL 前必须对照自检）
+## ClickZetta SQL 查询语法规则（生成每条 SQL 前必须逐条对照）
 
-### SELECT 查询关键规则
+### 一、集合运算（最高频错误）
 
 ```sql
--- ✅ 支持 QUALIFY（窗口函数过滤）
-SELECT * FROM t QUALIFY ROW_NUMBER() OVER (PARTITION BY id ORDER BY ts DESC) = 1
+-- ❌ 不支持 UNION / INTERSECT / EXCEPT
+SELECT a FROM t1 UNION SELECT a FROM t2
+SELECT a FROM t1 INTERSECT SELECT a FROM t2
+SELECT a FROM t1 EXCEPT SELECT a FROM t2
 
--- ✅ 支持 ILIKE（不区分大小写匹配）
-WHERE name ILIKE '%alice%'
-
--- ✅ 支持 MINUS（差集，等同于 EXCEPT）
+-- ✅ MINUS 支持（等同于 EXCEPT）
 SELECT a FROM t1 MINUS SELECT a FROM t2
 
--- ❌ 不支持集合运算
-UNION / INTERSECT / EXCEPT  -- 用 JOIN 替代
+-- ✅ INTERSECT 替代方案：INNER JOIN + DISTINCT
+SELECT DISTINCT t1.a FROM t1 INNER JOIN t2 ON t1.a = t2.a
+
+-- ✅ EXCEPT/MINUS 替代方案：LEFT JOIN + WHERE NULL
+SELECT t1.a FROM t1 LEFT JOIN t2 ON t1.a = t2.a WHERE t2.a IS NULL
+
+-- ✅ UNION ALL 替代方案：多个 INSERT INTO 或应用层合并
+-- 查询场景下可用多个 SELECT 结果在应用层合并
+```
+
+### 二、SELECT 语法限制
+
+```sql
+-- ❌ SELECT TOP N（Snowflake/SQL Server 语法）
+SELECT TOP 10 * FROM t
+
+-- ✅ 用 LIMIT
+SELECT * FROM t LIMIT 10
 
 -- ❌ 不支持递归 CTE
-WITH RECURSIVE ...
+WITH RECURSIVE cte AS (...)
 
--- ❌ SELECT TOP N（用 LIMIT 替代）
-SELECT TOP 10 * FROM t
--- ✅ 正确
-SELECT * FROM t LIMIT 10
+-- ✅ 用多层 CTE 展开固定深度，或用 Python/ZettaPark
+
+-- ❌ 不支持 PIVOT/UNPIVOT 原生语法
+SELECT * FROM t PIVOT (SUM(amount) FOR month IN ('Jan','Feb'))
+
+-- ✅ 用 CASE WHEN 手动实现
+SELECT
+  SUM(CASE WHEN month = 'Jan' THEN amount END) AS jan,
+  SUM(CASE WHEN month = 'Feb' THEN amount END) AS feb
+FROM t
+
+-- ❌ 不支持 ASOF JOIN / MATCH_RECOGNIZE
+-- ✅ 用窗口函数 + QUALIFY 替代 ASOF JOIN
 ```
 
-### 常用函数
+### 三、LATERAL 展开语法
 
 ```sql
--- 条件
-IF(cond, a, b)                    -- 替代 IFF()
-COALESCE(x, 0)                    -- 替代 ZEROIFNULL()
-NULLIF(x, 0)                      -- 替代 NULLIFZERO()
+-- ❌ Snowflake LATERAL FLATTEN 语法
+SELECT id, value
+FROM t, LATERAL FLATTEN(input => t.arr) f
 
--- 字符串
-INSTR(s, sub)                     -- 替代 CHARINDEX(sub, s)，参数顺序相反！
-GROUP_CONCAT(col SEPARATOR ',')   -- 替代 LISTAGG()
+-- ✅ ClickZetta LATERAL VIEW EXPLODE
+SELECT id, item
+FROM t LATERAL VIEW EXPLODE(arr) tmp AS item
 
--- 数组/JSON
-SIZE(arr)                         -- 替代 ARRAY_SIZE()
-data['key']                       -- 替代 data:key（SF 半结构化访问）
-LATERAL VIEW EXPLODE(arr)         -- 替代 LATERAL FLATTEN()
-MAP_AGG(k, v)                     -- 替代 OBJECT_AGG()
+-- ✅ 展开 JSON 数组
+SELECT id, item
+FROM t LATERAL VIEW EXPLODE(data['items']) tmp AS item
 
--- 日期
-DATEDIFF(end, start)              -- 两参数返回天数
-DATEDIFF(day, start, end)         -- 三参数也支持
-DATEADD(day, 7, dt)               -- 与 Snowflake 相同
-DATE_ADD(dt, 7)                   -- 两参数简写
+-- ✅ 展开 MAP 的 key/value
+SELECT id, k, v
+FROM t LATERAL VIEW EXPLODE(map_col) tmp AS k, v
 ```
 
-### 半结构化 / JSON 查询
+### 四、JSON / 半结构化数据访问
 
 ```sql
--- 访问 JSON 字段
+-- ❌ Snowflake 冒号语法
+SELECT data:user:name FROM t
+SELECT data:items[0] FROM t
+
+-- ✅ ClickZetta 方括号语法
 SELECT data['user']['name'] FROM t
 SELECT data['items'][0] FROM t
 
--- JSON 展开
+-- ✅ JSON 展开
 SELECT id, item
 FROM t, LATERAL VIEW EXPLODE(data['items']) tmp AS item
 
--- JSON 聚合
+-- ✅ JSON 聚合
 SELECT MAP_AGG(k, v) FROM t   -- 替代 OBJECT_AGG
+
+-- ✅ JSON 类型（无 VARIANT 类型）
+-- Snowflake VARIANT → ClickZetta JSON
 ```
 
-### 窗口函数
+### 五、QUALIFY（窗口函数过滤）
 
 ```sql
--- 标准窗口函数全部支持
-ROW_NUMBER() / RANK() / DENSE_RANK() / NTILE(n)
-LAG(col, n) / LEAD(col, n)
-SUM/AVG/MIN/MAX OVER (...)
-
--- QUALIFY 直接过滤窗口结果（无需子查询）
+-- ✅ 支持 QUALIFY，无需子查询
 SELECT * FROM t
 QUALIFY ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC) = 1
+
+-- ✅ 等价的子查询写法（也支持）
+SELECT * FROM (
+  SELECT *, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC) AS rn
+  FROM t
+) WHERE rn = 1
 ```
 
-### 数据类型速查
+### 六、函数替换（必须逐条检查）
+
+| 错误写法 | ClickZetta 正确写法 | 注意 |
+|---|---|---|
+| `IFF(cond, a, b)` | `IF(cond, a, b)` | |
+| `LISTAGG(col, ',') WITHIN GROUP (ORDER BY col)` | `GROUP_CONCAT(col ORDER BY col SEPARATOR ',')` | |
+| `CHARINDEX(sub, s)` | `INSTR(s, sub)` 或 `LOCATE(sub, s)` | ⚠️ INSTR 参数顺序相反！ |
+| `ZEROIFNULL(x)` | `COALESCE(x, 0)` 或 `NVL(x, 0)` | |
+| `NULLIFZERO(x)` | `NULLIF(x, 0)` | |
+| `OBJECT_AGG(k, v)` | `MAP_AGG(k, v)` | |
+| `ARRAY_SIZE(arr)` | `SIZE(arr)` | |
+| `ARRAY_CONTAINS(val, arr)` | `ARRAY_CONTAINS(arr, val)` | ⚠️ 参数顺序相反！ |
+| `ARRAY_CONSTRUCT(1,2,3)` | `ARRAY(1, 2, 3)` | |
+| `OBJECT_CONSTRUCT('k',v)` | `MAP('k', v)` 或 `named_struct('k', v)` | |
+| `LATERAL FLATTEN(input=>arr)` | `LATERAL VIEW EXPLODE(arr) lv AS element` | |
+| `data:key`（SF 半结构化） | `data['key']` | |
+| `STRUCT(1 AS id, 'a' AS name)` | `named_struct('id', 1, 'name', 'a')` | |
+| `VARIANT` 类型 | `JSON` 类型 | |
+| `NUMBER(p,s)` | `DECIMAL(p,s)` | |
+| `SELECT TOP 10` | `SELECT ... LIMIT 10` | |
+| `CURRENT_DATABASE()` | `CURRENT_WORKSPACE()` | |
+| `CURRENT_WAREHOUSE()` | `CURRENT_VCLUSTER()` | |
+| `TRY_TO_DATE(s)` | `TRY_CAST(s AS DATE)` | |
+| `DATE_PART('year', dt)` | `EXTRACT(YEAR FROM dt)` 或 `YEAR(dt)` | |
+| `CONVERT_TIMEZONE(tz, dt)` | `CONVERT_TZ(dt, from_tz, to_tz)` | |
+| `// comment`（SF 注释） | `-- comment` | |
+
+### 七、参数顺序陷阱（极易出错）
+
+```sql
+-- ⚠️ INSTR 参数顺序与 CHARINDEX 相反
+-- Snowflake: CHARINDEX(substring, string)
+-- ClickZetta: INSTR(string, substring)
+CHARINDEX('abc', col)   -- ❌
+INSTR(col, 'abc')       -- ✅
+
+-- ⚠️ ARRAY_CONTAINS 参数顺序与 Snowflake 相反
+-- Snowflake: ARRAY_CONTAINS(value, array)
+-- ClickZetta: ARRAY_CONTAINS(array, value)
+ARRAY_CONTAINS(1, arr)  -- ❌
+ARRAY_CONTAINS(arr, 1)  -- ✅
+```
+
+### 八、WHERE 中的隐式类型转换（查询专用）
+
+```sql
+-- ✅ WHERE 中字符串可以隐式比较（不需要 CAST）
+WHERE dt = '2024-01-01'       -- ✅ 允许
+WHERE flag = 'true'           -- ✅ 允许
+WHERE id = '123'              -- ✅ 允许
+
+-- ✅ ILIKE 支持（不区分大小写）
+WHERE name ILIKE '%alice%'    -- ✅
+```
+
+### 九、窗口函数
+
+```sql
+-- ✅ 标准窗口函数全部支持
+ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)
+RANK() / DENSE_RANK() / NTILE(n)
+LAG(col, n) / LEAD(col, n)
+SUM/AVG/MIN/MAX OVER (PARTITION BY ... ORDER BY ... ROWS BETWEEN ...)
+
+-- ✅ QUALIFY 直接过滤（无需子查询）
+SELECT * FROM t
+QUALIFY ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY ts DESC) = 1
+```
+
+### 十、数据类型速查
 
 ```
 整数：TINYINT / SMALLINT / INT / BIGINT
-浮点：FLOAT / DOUBLE / DECIMAL(p,s)
-字符：STRING（推荐）/ VARCHAR(n)
-时间：DATE / TIMESTAMP
+浮点：FLOAT / DOUBLE / DECIMAL(p,s)   -- 无 NUMBER 类型
+字符：STRING（推荐，无长度限制）/ VARCHAR(n) / CHAR(n)
+时间：DATE / TIMESTAMP / TIMESTAMP_NTZ
 布尔：BOOLEAN
-复合：ARRAY<T> / MAP<K,V> / JSON
+复合：ARRAY<T> / MAP<K,V> / STRUCT<f:T> / JSON  -- 无 VARIANT 类型
 ```
