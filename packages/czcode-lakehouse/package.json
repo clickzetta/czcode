@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@kilocode/plugin": "workspace:*",
-    "clickzetta-js": "file:../../../clickzetta-js",
+    "clickzetta-js": "workspace:*",
     "effect": "catalog:",
     "zod": "catalog:"
   },

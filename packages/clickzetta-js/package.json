@@ -1,0 +1,13 @@
+{
+  "name": "clickzetta-js",
+  "version": "0.1.0",
+  "description": "ClickZetta Lakehouse JavaScript SDK",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
+  }
+}
