@@ -1,5 +1,5 @@
 ---
-description: 修正 clickzetta-skills 中经实际验证发现的错误，实现 skill 自进化
+description: 修正经实际执行验证的 skill 错误，写入本地 override，实现 skill 自进化
 subtask: true
 ---
 
@@ -7,34 +7,53 @@ subtask: true
 
 ## 任务
 
-1. **理解错误**：从对话上下文中提取：
-   - 哪个 skill 文件有问题（skill 名称 + 具体文件路径）
-   - 错误的内容是什么（字段名/语法/示例）
-   - 经过实际验证的正确内容是什么
+### 第一步：理解错误
 
-2. **定位文件**：在 `/Users/liangmo/Documents/GitHub/clickzetta-skills/` 目录下找到对应文件
+从对话上下文中提取：
+- 哪个 skill 有问题（skill 名称）
+- 错误的内容是什么（字段名/语法/示例 SQL）
+- 经过实际执行验证的正确内容是什么
 
-3. **修正内容**：
-   - 只修改有错误的部分，不改动其他内容
-   - 如果是字段不存在：从字段列表中删除，并在字段表格下方加一条 `> ⚠️ 注意：xxx 字段不存在，实际验证于 YYYY-MM-DD` 的说明
-   - 如果是语法错误：直接替换为正确语法，在旁边加注释说明差异
-   - 如果是示例 SQL 有误：修正示例，不需要额外注释
+### 第二步：定位原始 skill 文件
 
-4. **提交到 clickzetta-skills 仓库**：
-   ```
-   cd /Users/liangmo/Documents/GitHub/clickzetta-skills
-   git add <修改的文件>
-   git commit -m "fix(<skill-name>): <一句话描述修正内容>（经实际验证）"
-   git push origin main
-   ```
+在 `skills.paths` 配置的目录（如 `/Users/liangmo/Documents/GitHub/clickzetta-skills/`）中找到对应的 skill 目录，读取需要修正的文件。
 
-5. **报告结果**：说明修改了哪个文件的哪一行，以及修改前后的对比。
+### 第三步：写入本地 override
+
+**如果错误在 SKILL.md 主文件中**：
+将修正后的 SKILL.md 写入 `.opencode/skills/<skill-name>/SKILL.md`。
+skill 加载时，项目本地的同名 skill 会覆盖 `skills.paths` 中的版本（后加载覆盖先加载）。
+
+**如果错误在 references/*.md 引用文件中**：
+引用文件由 agent 通过 read 工具直接读取，不走 skill 覆盖机制。
+需要直接修改原始文件（需要仓库权限），或者在 SKILL.md 的 override 版本中内联正确内容，替代对引用文件的链接。
+
+### 第四步：追加修正日志
+
+在 `.opencode/skills/FIXLOG.md` 中追加一条记录（文件不存在则创建）：
+
+```markdown
+## YYYY-MM-DD：<skill-name> — <一句话描述>
+
+- **错误**：`<原始错误内容>`
+- **正确**：`<验证后的正确内容>`
+- **验证**：实际执行报错 `<error message>`，修正后成功
+- **文件**：`<skill-name>/references/<file>.md` 或 `SKILL.md`
+```
+
+这个日志可以提交给 skill 维护者，作为官方修正的依据。
+
+### 第五步：告知用户
+
+说明：
+1. override 已写入 `.opencode/skills/<skill-name>/SKILL.md`
+2. 需要重启 czcode 会话才能加载修正后的 skill
+3. 如果有 clickzetta-skills 仓库写权限，建议同步修正原始文件（路径：`/Users/liangmo/Documents/GitHub/clickzetta-skills/<skill-name>/...`）
 
 ## 约束
 
-- 只修改 `/Users/liangmo/Documents/GitHub/clickzetta-skills/` 下的文件
+- 只写入项目 `.opencode/skills/` 目录，不修改其他位置的文件（除非用户明确授权）
 - 必须有实际执行验证作为依据，不能基于推测修改
-- commit message 必须包含"经实际验证"字样，便于追溯
 
 ## 当前对话上下文
 

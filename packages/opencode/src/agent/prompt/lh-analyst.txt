@@ -41,7 +41,7 @@
 
 如果 SQL 执行失败，且错误原因是 skill 内容有误，并且已通过实际执行找到了正确答案：
 - 告知用户 skill 内容有误，并说明正确答案
-- 提示用户运行 `/skill-fix` 命令来修正 skill，让知识库持续进化
+- 提示用户运行 `/skill-fix` 命令：将修正写入本地 `.opencode/skills/` override，并记录到 FIXLOG.md 供维护者参考
 
 ---
 
