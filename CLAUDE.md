@@ -156,6 +156,7 @@ The `packages/opencode/.env` symlink points to `../../.env` so Bun picks it up a
 | `lh-engineer` | 数据工程师 (default) | DDL + DML + SELECT (with confirmation) |
 | `lh-analyst` | 数据分析师 | SELECT only |
 | `lh-dba` | DBA | All (with confirmation) |
+| `lh-governance` | 数据治理 | SELECT + GRANT/REVOKE/POLICY (with confirmation) |
 
 Skills are loaded from `/Users/liangmo/Documents/GitHub/clickzetta-skills` (27 Lakehouse domain skills).
 

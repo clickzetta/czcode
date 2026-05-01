@@ -19,6 +19,7 @@ import PROMPT_EXPLORE from "../../agent/prompt/explore.txt"
 import PROMPT_LH_ENGINEER from "../../agent/prompt/lh-engineer.txt"
 import PROMPT_LH_ANALYST from "../../agent/prompt/lh-analyst.txt"
 import PROMPT_LH_DBA from "../../agent/prompt/lh-dba.txt"
+import PROMPT_LH_GOVERNANCE from "../../agent/prompt/lh-governance.txt"
 // czcode_change end
 
 export const bash: Record<string, "allow" | "ask" | "deny"> = {
@@ -476,6 +477,23 @@ export function patchAgents(
     prompt: PROMPT_LH_DBA,
     options: {},
     color: "#CC6600",
+    permission: Permission.merge(
+      defaults,
+      lakehouseTools,
+      Permission.fromConfig({ read: "allow" }),
+      user,
+    ),
+    mode: "primary",
+    native: true,
+  }
+
+  agents["lh-governance"] = {
+    name: "lh-governance",
+    displayName: "数据治理",
+    description: "云器 Lakehouse 数据治理 — 权限审计/数据安全/质量/生命周期/合规",
+    prompt: PROMPT_LH_GOVERNANCE,
+    options: {},
+    color: "#7B2D8B",
     permission: Permission.merge(
       defaults,
       lakehouseTools,
