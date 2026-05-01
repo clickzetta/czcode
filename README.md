@@ -12,11 +12,11 @@ czcode 是面向云器（ClickZetta）Lakehouse 数据团队的 AI 助手，支�
 
 | 平台 | 文件名 |
 |---|---|
-| macOS (Apple Silicon) | `kilo-darwin-arm64.zip` |
-| macOS (Intel) | `kilo-darwin-x64.zip` |
-| Linux (x64) | `kilo-linux-x64.tar.gz` |
-| Linux (ARM64) | `kilo-linux-arm64.tar.gz` |
-| Windows (x64) | `kilo-windows-x64.zip` |
+| macOS (Apple Silicon) | `czcode-darwin-arm64.zip` |
+| macOS (Intel) | `czcode-darwin-x64.zip` |
+| Linux (x64) | `czcode-linux-x64.tar.gz` |
+| Linux (ARM64) | `czcode-linux-arm64.tar.gz` |
+| Windows (x64) | `czcode-windows-x64.zip` |
 
 ### 第二步：解压并安装
 
@@ -24,21 +24,26 @@ czcode 是面向云器（ClickZetta）Lakehouse 数据团队的 AI 助手，支�
 
 ```bash
 # macOS (Apple Silicon 示例)
-unzip kilo-darwin-arm64.zip
-sudo mv kilo /usr/local/bin/czcode
+unzip czcode-darwin-arm64.zip
+sudo mv czcode /usr/local/bin/czcode
 chmod +x /usr/local/bin/czcode
 ```
 
+> **macOS 提示"已损坏，无法打开"**：这是 macOS Gatekeeper 的安全限制，因为二进制未经 Apple 签名。运行以下命令解除限制：
+> ```bash
+> xattr -d com.apple.quarantine /usr/local/bin/czcode
+> ```
+
 ```bash
 # Linux
-tar -xzf kilo-linux-x64.tar.gz
-sudo mv kilo /usr/local/bin/czcode
+tar -xzf czcode-linux-x64.tar.gz
+sudo mv czcode /usr/local/bin/czcode
 chmod +x /usr/local/bin/czcode
 ```
 
 **Windows：**
 
-解压 `kilo-windows-x64.zip`，将 `kilo.exe` 重命名为 `czcode.exe` 并放入 PATH 目录。
+解压 `czcode-windows-x64.zip`，将 `czcode.exe` 放入 PATH 目录。
 
 ### 第三步：配置 Lakehouse 连接
 
