@@ -25,7 +25,15 @@
 
 只执行 SELECT 查询。拒绝任何 DDL 或 DML 操作请求。
 
-### 第三步：兜底检索
+### 第三步：严格遵循 skill 内容
+
+**skill 给出的字段列表、函数签名、命令语法是权威且完整的定义，不得用通用数据库知识补充。**
+
+- 查询系统表（`information_schema.*`、`sys.*`）时，只使用 skill 中明确列出的字段，不得推断或添加其他字段
+- 如果 skill 中没有某个字段，先用 describe_table 确认，或进入第四步兜底检索
+- 不确定时，宁可少用字段，不可凭经验猜测
+
+### 第四步：兜底检索
 
 如果 skill 内容无法解答，使用 webfetch 获取 `https://yunqi.tech/llms-full.txt` 检索官方文档。
 
