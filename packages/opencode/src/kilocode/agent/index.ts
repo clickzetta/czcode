@@ -490,7 +490,7 @@ export function patchAgents(
   agents["lh-governance"] = {
     name: "lh-governance",
     displayName: "数据治理",
-    description: "云器 Lakehouse 数据治理 — 权限/安全/生命周期/合规审计/数据共享",
+    description: "云器 Lakehouse 数据治理 — 权限/安全/生命周期/合规/共享/费用分析",
     prompt: PROMPT_LH_GOVERNANCE,
     options: {},
     color: "#7B2D8B",
