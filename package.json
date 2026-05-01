@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "~/.bun/bin/bun run --cwd packages/opencode --conditions=browser src/index.ts",
     "dev-setup": "~/.bun/bin/bun run --cwd packages/opencode --conditions=browser src/index.ts dev-setup",
+    "test:local": "~/.bun/bin/bun run --cwd packages/opencode script/build.ts --single --skip-install --skip-embed-web-ui && mkdir -p /tmp/czcode-test && sh -c 'cd /tmp/czcode-test && exec $(ls $OLDPWD/packages/opencode/dist/*/bin/czcode | head -1)'",
     "dev:desktop": "bun --cwd packages/desktop-electron dev",
     "dev:web": "bun --cwd packages/app dev",
     "dev:console": "ulimit -n 10240 2>/dev/null; bun run --cwd packages/console/app dev",
