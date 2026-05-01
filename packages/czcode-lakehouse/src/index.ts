@@ -52,7 +52,36 @@ function confirmLabel(sql: string): string {
 
 export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
   const rawConfig = options?.lakehouse ?? readConfigFromEnv()
-  if (!rawConfig) return {}
+  if (!rawConfig) {
+    // No Lakehouse config — register a setup guide tool so the agent can inform the user
+    return {
+      tool: {
+        execute_sql: tool({
+          description: "ClickZetta Lakehouse 未配置。调用此工具获取配置指引。",
+          args: { sql: z.string().optional() },
+          async execute() {
+            return [
+              "⚠️  Lakehouse 未配置，无法执行 SQL。",
+              "",
+              "请在工作目录创建 .env 文件并填写以下环境变量：",
+              "",
+              "  CLICKZETTA_SERVICE=<your-service-endpoint>",
+              "  CLICKZETTA_INSTANCE=<your-instance>",
+              "  CLICKZETTA_WORKSPACE=<your-workspace>",
+              "  CLICKZETTA_USERNAME=<your-username>",
+              "  CLICKZETTA_PASSWORD=<your-password>",
+              "",
+              "同时配置 AI 模型（二选一）：",
+              "  DASHSCOPE_API_KEY=sk-...   # 阿里云 DashScope/Qwen",
+              "  ANTHROPIC_API_KEY=sk-...   # Anthropic Claude",
+              "",
+              "配置完成后重启 czcode 即可连接 Lakehouse。",
+            ].join("\n")
+          },
+        }),
+      },
+    }
+  }
 
   let config: LakehouseConfig
   try {
