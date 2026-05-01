@@ -93,7 +93,7 @@ export class LakehouseConnector {
   ): Promise<string[]> {
     this.ensureConnected()
     const sql = parent ? `SHOW ${type.toUpperCase()}S IN ${parent}` : `SHOW ${type.toUpperCase()}S`
-    const result = (await this.conn!.execute(sql)) as Record<string, unknown>[]
+    const result = (await this.conn!.execute(sql)) as unknown as Record<string, unknown>[]
     return (result ?? [])
       .map((row) => String(row["name"] ?? row["table_name"] ?? row["schema_name"] ?? ""))
       .filter(Boolean)

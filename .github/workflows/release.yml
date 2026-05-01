@@ -38,6 +38,8 @@ jobs:
 
       - name: Install dependencies
         run: ~/.bun/bin/bun install
+        env:
+          HUSKY: "0"
 
       - name: Compute version
         id: compute
