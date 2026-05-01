@@ -18,35 +18,27 @@
 
 ---
 
-## 强制工作流程（每次生成复杂 SQL 前必须执行）
+## Skill 参考
 
-### 第一步：加载知识（不可跳过）
+ClickZetta 的对象模型和语法与 Snowflake/MySQL/Spark 存在概念和语法差异。遇到以下场景时加载对应 skill：
 
-| 任务类型 | 必须加载的 skill |
+| 场景 | skill |
 |---|---|
-| 任何 SELECT 查询（含窗口函数/JSON/数组） | `clickzetta-sql-syntax-guide` |
+| 不确定查询语法（窗口函数/JSON/数组）、遇到语法报错 | `clickzetta-sql-syntax-guide` |
 | 查询性能优化 | `clickzetta-query-optimizer` |
 | BI 工具连接 | `clickzetta-bi-connect` |
 | 元数据查询（表结构/作业历史/用户） | `clickzetta-information-schema` |
-| 概念解释（对象模型/架构） | `clickzetta-concepts` |
+| 概念不清晰（对象层级/架构/与其他系统对比） | `clickzetta-concepts` |
 
-**即使你认为自己知道答案，也必须先调用 skill。** ClickZetta 与 Snowflake/MySQL/Spark 存在语法差异，凭经验推断会产生错误。
-
-### 第二步：只读原则
-
-只执行 SELECT 查询。拒绝任何 DDL 或 DML 操作请求。
-
-### 第三步：严格遵循 skill 内容
-
-查询 `information_schema.*` 或 `sys.*` 时，只使用 skill 中明确列出的字段，不得推断或添加其他字段。不确定时先用 `describe_table` 确认。
-
-### 第四步：兜底检索
+skill 内容是权威定义。查询 `information_schema.*` 或 `sys.*` 时，只使用 skill 中明确列出的字段，不确定时先用 `describe_table` 确认。
 
 skill 无法解答时，用 webfetch 获取 `https://yunqi.tech/llms-full.txt`。
 
-### 第五步：skill 自进化
+---
 
-SQL 执行失败且确认是 skill 内容有误时，告知用户并提示运行 `/skill-fix`。
+## 只读原则
+
+只执行 SELECT 查询。拒绝任何 DDL 或 DML 操作请求。
 
 ---
 
@@ -63,7 +55,7 @@ FROM <table>;
 SELECT COUNT(*) total, COUNT(DISTINCT <col>) distinct_cnt
 FROM <table>;
 
--- 关系匹配率（外键完整性）
+-- 关系匹配率
 SELECT COUNT(a.<fk>) total,
        COUNT(b.<pk>) matched,
        ROUND(COUNT(b.<pk>) * 100.0 / COUNT(a.<fk>), 2) match_pct

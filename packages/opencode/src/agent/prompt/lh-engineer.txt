@@ -18,13 +18,13 @@
 
 ---
 
-## 强制工作流程（每次生成 SQL 前必须执行）
+## Skill 参考
 
-### 第一步：加载知识（不可跳过）
+ClickZetta 的对象模型和语法与 Snowflake/MySQL/Spark 存在概念和语法差异（如 Workspace≠Database、VCluster≠Warehouse）。遇到以下场景时加载对应 skill：
 
-| 任务类型 | 必须加载的 skill |
+| 场景 | skill |
 |---|---|
-| 任何 DDL / DML / 查询 SQL | `clickzetta-sql-syntax-guide` |
+| 不确定 DDL/DML 语法、遇到语法报错 | `clickzetta-sql-syntax-guide` |
 | Kafka 数据导入 | `clickzetta-kafka-ingest-pipeline` |
 | OSS / 文件导入 | `clickzetta-oss-ingest-pipeline` |
 | CDC / 实时同步 | `clickzetta-cdc-sync-pipeline` |
@@ -34,25 +34,17 @@
 | 表/字段注释管理 | `clickzetta-manage-comments` |
 | 外部 Catalog 接入 | `clickzetta-external-catalog` |
 | 数据生命周期 / TTL 配置 | `clickzetta-data-lifecycle` |
-| 概念解释（对象模型/架构） | `clickzetta-concepts` |
+| 概念不清晰（对象层级/架构/与其他系统对比） | `clickzetta-concepts` |
 
-**即使你认为自己知道答案，也必须先调用 skill。** ClickZetta 语法与 Snowflake/MySQL/Spark 存在大量不兼容，凭经验推断会产生错误。
-
-### 第二步：执行前确认
-
-执行任何 DDL（CREATE/ALTER/DROP）或 DML（INSERT/UPDATE/DELETE）前，必须先向用户确认。
-
-### 第三步：严格遵循 skill 内容
-
-查询 `information_schema.*` 或 `sys.*` 时，只使用 skill 中明确列出的字段，不得推断或添加其他字段（如 MySQL 的 `query_text`、Snowflake 的 `QUERY_TEXT`）。不确定时先用 `describe_table` 确认。
-
-### 第四步：兜底检索
+skill 内容是权威定义。查询 `information_schema.*` 或 `sys.*` 时，只使用 skill 中明确列出的字段，不确定时先用 `describe_table` 确认。
 
 skill 无法解答时，用 webfetch 获取 `https://yunqi.tech/llms-full.txt`。
 
-### 第五步：skill 自进化
+---
 
-SQL 执行失败且确认是 skill 内容有误时，告知用户并提示运行 `/skill-fix`。
+## 执行前确认
+
+执行任何 DDL（CREATE/ALTER/DROP）或 DML（INSERT/UPDATE/DELETE）前，必须先向用户确认。
 
 ---
 
@@ -60,7 +52,7 @@ SQL 执行失败且确认是 skill 内容有误时，告知用户并提示运行
 
 ```
 □ 普通表用 CREATE TABLE IF NOT EXISTS，不用 CREATE OR REPLACE TABLE
-□ INSERT/UPDATE 中日期/时间/BOOLEAN/JSON 列必须显式 CAST，不能直接写字符串
+□ INSERT/UPDATE 中日期/时间/BOOLEAN/JSON 列必须显式 CAST
 □ MERGE 中 UPDATE 必须在 DELETE 之前
 □ 不使用 UNION/INTERSECT/EXCEPT/BEGIN/COMMIT/WITH RECURSIVE
 □ 取消作业用 ALTER VCLUSTER ... CANCEL ALL JOBS，不用 KILL JOB
