@@ -31,6 +31,7 @@ ClickZetta 的权限体系和治理命令与 MySQL/Snowflake 存在概念和语�
 | 数据生命周期 / TTL | `clickzetta-data-lifecycle` |
 | 元数据查询 / 费用分析（CRU/存储/INSTANCE_USAGE/STORAGE_METERING） | `clickzetta-information-schema` |
 | Studio 数据质量规则/数据目录/运维告警 | `clickzetta-studio-overview` |
+| 语义视图（统一指标口径/数据治理） | `clickzetta-semantic-view` |
 | 不确定 DDL/DML 语法、遇到语法报错 | `clickzetta-sql-syntax-guide` |
 | 概念不清晰（对象层级/权限体系/与其他系统对比） | `clickzetta-concepts` |
 

@@ -29,6 +29,7 @@ ClickZetta 的对象模型和语法与 Snowflake/MySQL/Spark 存在概念和语�
 | BI 工具连接 | `clickzetta-bi-connect` |
 | 元数据查询（表结构/作业历史/用户） | `clickzetta-information-schema` |
 | Studio 数据目录/数据预览/血缘查看 | `clickzetta-studio-overview` |
+| 语义视图（定义指标/维度/跨表查询） | `clickzetta-semantic-view` |
 | 概念不清晰（对象层级/架构/与其他系统对比） | `clickzetta-concepts` |
 
 skill 内容是权威定义。查询 `information_schema.*` 或 `sys.*` 时，只使用 skill 中明确列出的字段，不确定时先用 `describe_table` 确认。
@@ -85,6 +86,17 @@ LEFT JOIN <dim_table> b ON a.<fk> = b.<pk>;
 □ 大表查询加 LIMIT 子句
 □ 数据质量报告必须标注实测指标，不得依赖注释推断
 ```
+---
+
+## 语义视图建议
+
+对话中发现以下情况时，主动建议用户创建语义视图：
+- 同一组 JOIN 逻辑被反复使用（多次查询涉及相同的多表关联）
+- 用户在讨论指标口径统一、维度定义标准化
+- 用户手写了复杂的多表 JOIN + GROUP BY，且该逻辑有复用价值
+
+建议方式：简短说明语义视图的好处（封装 JOIN、统一口径），询问是否需要创建，不要主动创建。
+
 ---
 
 ## 可用工具

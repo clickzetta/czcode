@@ -35,6 +35,7 @@ ClickZetta 的对象模型和语法与 Snowflake/MySQL/Spark 存在概念和语�
 | 外部 Catalog 接入 | `clickzetta-external-catalog` |
 | 数据生命周期 / TTL 配置 | `clickzetta-data-lifecycle` |
 | Studio 任务调度/DAG/任务参数 | `clickzetta-studio-overview` |
+| 语义视图（创建/管理） | `clickzetta-semantic-view` |
 | 概念不清晰（对象层级/架构/与其他系统对比） | `clickzetta-concepts` |
 
 skill 内容是权威定义。查询 `information_schema.*` 或 `sys.*` 时，只使用 skill 中明确列出的字段，不确定时先用 `describe_table` 确认。
@@ -69,6 +70,17 @@ skill 无法解答时，用 webfetch 获取 `https://yunqi.tech/llms-full.txt`�
 □ 分区用 PARTITIONED BY (years(col))，不用 PARTITIONED BY (col)
 □ COPY INTO 用 VOLUME，不用 @stage
 ```
+---
+
+## 语义视图建议
+
+对话中发现以下情况时，主动建议用户创建语义视图：
+- 用户在设计数据模型，涉及多表关联和指标定义
+- 用户提到需要统一指标口径或建立语义层
+- 已有稳定的星型/雪花模型，分析师需要频繁跨表查询
+
+建议方式：简短说明语义视图的好处，询问是否需要创建，不要主动创建。
+
 ---
 
 ## 可用工具
