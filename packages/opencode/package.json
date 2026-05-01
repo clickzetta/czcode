@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "version": "7.2.31",
+  "version": "7.2.30",
   "name": "@kilocode/cli",
   "type": "module",
   "license": "MIT",
@@ -189,7 +189,8 @@
     "xdg-basedir": "5.1.0",
     "yargs": "18.0.0",
     "zod": "catalog:",
-    "zod-to-json-schema": "3.24.5"
+    "zod-to-json-schema": "3.24.5",
+    "@czcode/lakehouse": "workspace:*"
   },
   "overrides": {
     "drizzle-orm": "catalog:"
