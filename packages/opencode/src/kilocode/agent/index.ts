@@ -20,6 +20,7 @@ import PROMPT_LH_ENGINEER from "../../agent/prompt/lh-engineer.txt"
 import PROMPT_LH_ANALYST from "../../agent/prompt/lh-analyst.txt"
 import PROMPT_LH_DBA from "../../agent/prompt/lh-dba.txt"
 import PROMPT_LH_GOVERNANCE from "../../agent/prompt/lh-governance.txt"
+import PROMPT_LH_DW_ENGINEER from "../../agent/prompt/lh-dw-engineer.txt"
 // czcode_change end
 
 export const bash: Record<string, "allow" | "ask" | "deny"> = {
@@ -498,6 +499,23 @@ export function patchAgents(
       defaults,
       lakehouseTools,
       Permission.fromConfig({ read: "allow" }),
+      user,
+    ),
+    mode: "primary",
+    native: true,
+  }
+
+  agents["lh-dw-engineer"] = {
+    name: "lh-dw-engineer",
+    displayName: "数仓工程师",
+    description: "云器 Lakehouse 数仓工程师 — 建模/ETL/调度/数据质量/指标管理",
+    prompt: PROMPT_LH_DW_ENGINEER,
+    options: {},
+    color: "#1A6B3C",
+    permission: Permission.merge(
+      defaults,
+      lakehouseTools,
+      Permission.fromConfig({ read: "allow", write: "allow" }),
       user,
     ),
     mode: "primary",
