@@ -74,6 +74,8 @@ export const defaultConfig: MergeConfig = {
     "PRIVACY.md",
     "SECURITY.md",
     "AGENTS.md",
+    // czcode_change: CLAUDE.md is czcode-specific, never take upstream version
+    "CLAUDE.md",
     // GitHub workflows - MANUAL REVIEW (can break CI/CD)
     ".github/workflows/publish.yml",
     ".github/workflows/close-stale-prs.yml",
