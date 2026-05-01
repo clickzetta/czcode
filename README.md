@@ -1,39 +1,51 @@
 # czcode — ClickZetta Lakehouse AI Agent
 
-czcode 是面向云器（ClickZetta）Lakehouse 数据团队的专用 AI 编程助手，基于 [kilocode](https://github.com/Kilo-Org/kilocode) fork 构建。
-
-Fork 链：**opencode → kilocode → czcode**
+czcode 是面向云器（ClickZetta）Lakehouse 数据团队的 AI 助手，支持自然语言查询、数仓建模向导、数据治理等场景。
 
 ---
 
-## 核心能力
+## 安装
 
-- **自然语言转 SQL** — 直接在 Lakehouse 上执行，SELECT 免确认，写操作弹窗审批
-- **数仓建模向导** — 探索现有数据后给出分层方案建议，支持传统分层/Medallion/混合模式
-- **33 个 Lakehouse Skills** — 覆盖 DDL、ETL、数据管道、数仓建模、治理、费用分析等领域
-- **5 个数据角色** — 数据分析师（默认）、数仓工程师、数据工程师、平台运维、数据治理
-- **Human-in-loop 写操作审批** — DDL/DML 弹窗确认，危险操作（DROP/TRUNCATE）显示完整 SQL
-- **Skills 自动更新** — 从 GitHub 拉取最新 skills，`/skill-update` 命令手动刷新
-- **500+ AI 模型** — 默认使用 DashScope/Qwen，兼容 OpenAI、Anthropic 等
+### 第一步：下载安装包
 
----
+前往 [Releases 页面](https://github.com/yunqiqiliang/czcode/releases/latest) 下载对应平台的安装包：
 
-## 快速开始
+| 平台 | 文件名 |
+|---|---|
+| macOS (Apple Silicon) | `kilo-darwin-arm64.zip` |
+| macOS (Intel) | `kilo-darwin-x64.zip` |
+| Linux (x64) | `kilo-linux-x64.tar.gz` |
+| Linux (ARM64) | `kilo-linux-arm64.tar.gz` |
+| Windows (x64) | `kilo-windows-x64.zip` |
 
-### 安装依赖
+### 第二步：解压并安装
+
+**macOS / Linux：**
 
 ```bash
-# 需要 Bun 1.3.13+
-curl -fsSL https://bun.sh/install | bash
-bun install
+# macOS (Apple Silicon 示例)
+unzip kilo-darwin-arm64.zip
+sudo mv kilo /usr/local/bin/czcode
+chmod +x /usr/local/bin/czcode
 ```
 
-### 配置环境变量
+```bash
+# Linux
+tar -xzf kilo-linux-x64.tar.gz
+sudo mv kilo /usr/local/bin/czcode
+chmod +x /usr/local/bin/czcode
+```
 
-在项目根目录创建 `.env`：
+**Windows：**
+
+解压 `kilo-windows-x64.zip`，将 `kilo.exe` 重命名为 `czcode.exe` 并放入 PATH 目录。
+
+### 第三步：配置 Lakehouse 连接
+
+在任意目录创建 `.env` 文件（或设置环境变量）：
 
 ```env
-# DashScope / Qwen（默认模型）
+# AI 模型（默认使用阿里云 DashScope/Qwen）
 DASHSCOPE_API_KEY=sk-...
 
 # ClickZetta Lakehouse 连接信息
@@ -44,114 +56,82 @@ CLICKZETTA_USERNAME=<your-username>
 CLICKZETTA_PASSWORD=<your-password>
 ```
 
-### 启动 TUI
+> 也支持 OpenAI、Anthropic 等其他 AI 模型，在配置文件中设置 `model` 字段即可。
+
+### 第四步：启动
 
 ```bash
-~/.bun/bin/bun dev
+czcode
 ```
 
-启动后 czcode 会自动从 GitHub 拉取最新的 ClickZetta Lakehouse Skills，无需手动配置。
-
-### 配置文件（可选）
-
-在项目目录或 `~/.czcode/` 创建 `czcode.jsonc` 覆盖默认配置：
-
-```jsonc
-{
-  "model": "alibaba-cn/qwen3.5-plus",
-  "default_agent": "lh-analyst"
-}
-```
+首次启动会自动从 GitHub 下载 33 个 ClickZetta Lakehouse Skills，需要网络连接，之后缓存在本地。
 
 ---
 
 ## 数据角色
 
-| 角色 | 说明 | SQL 权限 |
-|---|---|---|
-| `lh-analyst` | 数据分析师（**默认**）| 仅 SELECT，工具层强制只读 |
-| `lh-dw-engineer` | 数仓工程师 — 建模/ETL/调度/数据质量 | DDL + DML（写操作需确认） |
-| `lh-engineer` | 数据工程师 — 建表/Pipeline/ETL | DDL + DML（写操作需确认） |
-| `lh-dba` | 平台运维 — VCluster/查询调优/监控 | DDL + VCluster 操作（需确认） |
-| `lh-governance` | 数据治理 — 权限/安全/生命周期/费用 | GRANT/REVOKE/POLICY（需确认） |
+启动后默认进入**数据分析师**模式（只读）。在对话框输入 `@角色名` 切换：
 
-切换角色：在对话框输入 `@lh-dw-engineer` 或在配置中设置 `default_agent`。
+| 角色 | 说明 | 权限 |
+|---|---|---|
+| `@lh-analyst` | 数据分析师（默认） | 仅 SELECT，工具层强制只读 |
+| `@lh-dw-engineer` | 数仓工程师 | 建模/ETL/调度/数据质量，写操作需确认 |
+| `@lh-engineer` | 数据工程师 | 建表/Pipeline/ETL，写操作需确认 |
+| `@lh-dba` | 平台运维 | VCluster/查询调优/监控，写操作需确认 |
+| `@lh-governance` | 数据治理 | 权限/安全/生命周期/费用，写操作需确认 |
 
 ---
 
-## Skills 管理
+## 主要功能
 
-### 自动安装
+### 自然语言查询
+直接用中文描述需求，czcode 生成 SQL 并执行：
+- SELECT 查询直接执行
+- DDL/DML 操作弹窗确认，危险操作（DROP/TRUNCATE）显示完整 SQL
 
-czcode 启动时自动从以下地址拉取 ClickZetta Lakehouse Skills：
+### 数仓建模向导（`@lh-dw-engineer`）
+输入"帮我设计数仓分层"，czcode 会：
+1. 自动探索你的数据（SHOW SCHEMAS/TABLES，查表大小）
+2. 给出具体的分层方案选项（传统分层 / Medallion / 混合）
+3. 生成 DDL 模板和数据管道配置
 
-```
-https://yunqiqiliang.github.io/clickzetta-skills/.well-known/skills/
-```
-
-首次启动需要网络连接，之后缓存在本地。
-
-### 手动更新
-
-Skills 有更新时，在 czcode 中运行：
-
+### Skills 更新
+Skills 有更新时，在对话中运行：
 ```
 /skill-update
 ```
 
-这会清除本地缓存，下次启动时重新拉取最新版本。
-
-### 报告问题 / 提建议
-
-发现 skill 内容有误或希望新增内容，请到 GitHub Issues 提交：
-
-👉 **[提交 Skill 问题报告](https://github.com/yunqiqiliang/clickzetta-skills/issues/new?template=skill-bug.yml)**
-
-👉 **[提交改进建议](https://github.com/yunqiqiliang/clickzetta-skills/issues/new?template=skill-enhancement.yml)**
-
-也可以在 czcode 对话中运行 `/skill-fix` 将本次对话中发现的错误写入本地 override，并生成修正日志供维护者参考。
+### 报告 Skill 问题
+发现 skill 内容有误，可以：
+- 在对话中运行 `/skill-fix` 写入本地修正
+- 或到 GitHub 提交 Issue：[报告问题](https://github.com/yunqiqiliang/clickzetta-skills/issues/new?template=skill-bug.yml) | [提改进建议](https://github.com/yunqiqiliang/clickzetta-skills/issues/new?template=skill-enhancement.yml)
 
 ---
 
-## 项目结构
+## 可选配置
 
-```
-czcode/
-├── packages/
-│   ├── opencode/          # 核心引擎（fork 自 kilocode）
-│   ├── cli/               # CLI 入口
-│   └── czcode-lakehouse/  # Lakehouse 插件（czcode 专属）
-│       ├── src/connector.ts      # Lakehouse 连接器
-│       ├── src/index.ts          # execute_sql 工具（含 human-in-loop）
-│       └── src/sql-classifier.ts # SQL 风险分级
-├── .opencode/command/     # 自定义命令（/skill-fix, /skill-update）
-├── script/
-│   └── upstream/          # 上游同步工具
-└── CLAUDE.md              # 开发规范
+在工作目录创建 `czcode.jsonc` 自定义配置：
+
+```jsonc
+{
+  // 默认角色
+  "default_agent": "lh-analyst",
+
+  // AI 模型（支持 500+ 模型）
+  "model": "alibaba-cn/qwen3.5-plus",
+  // "model": "anthropic/claude-opus-4-7",
+  // "model": "openai/gpt-4o",
+}
 ```
 
 ---
 
-## 上游同步
+## 开发者文档
 
-czcode 跟踪 kilocode 发布版本。查看可用版本：
-
-```bash
-~/.bun/bin/bun run script/upstream/list-versions.ts
-```
-
-合并新版本：
-
-```bash
-~/.bun/bin/bun run script/upstream/merge.ts v7.x.y
-```
+如需从源码构建或参与开发，请参阅 [CONTRIBUTING.md](CONTRIBUTING.md) 和 [CLAUDE.md](CLAUDE.md)。
 
 ---
-
-## 贡献
-
-请阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 了解开发规范，以及 [CLAUDE.md](CLAUDE.md) 了解 `czcode_change` 标注规则。
 
 ## 许可证
 
-MIT License — 基于 kilocode（MIT）和 opencode（MIT）。
+MIT License

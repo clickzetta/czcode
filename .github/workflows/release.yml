@@ -1,0 +1,124 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version (e.g. 1.2.3) — leave empty to auto-bump patch"
+        required: false
+        type: string
+      bump:
+        description: "Version bump type (ignored if version is set)"
+        required: false
+        type: choice
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.compute.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Install dependencies
+        run: ~/.bun/bin/bun install
+
+      - name: Compute version
+        id: compute
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            # Auto-bump from latest GitHub release tag
+            LATEST=$(gh release list --limit 1 --json tagName --jq '.[0].tagName // "0.0.0"' | sed 's/^v//')
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$LATEST"
+            case "${{ inputs.bump }}" in
+              major) VERSION="$((MAJOR+1)).0.0" ;;
+              minor) VERSION="${MAJOR}.$((MINOR+1)).0" ;;
+              *)     VERSION="${MAJOR}.${MINOR}.$((PATCH+1))" ;;
+            esac
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Building version: $VERSION"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Create git tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "v${{ steps.compute.outputs.version }}"
+          git push origin "v${{ steps.compute.outputs.version }}"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Create GitHub Release (draft)
+        run: |
+          gh release create "v${{ steps.compute.outputs.version }}" \
+            --title "czcode v${{ steps.compute.outputs.version }}" \
+            --draft \
+            --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  build:
+    needs: version
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Install cross-platform native deps
+        run: |
+          ~/.bun/bin/bun install --os="*" --cpu="*" \
+            @opentui/core@$(node -p "require('./packages/opencode/package.json').dependencies['@opentui/core']") \
+            @parcel/watcher@$(node -p "require('./packages/opencode/package.json').dependencies['@parcel/watcher']")
+
+      - name: Build all platform binaries
+        run: ~/.bun/bin/bun run packages/opencode/script/build.ts --skip-install
+        env:
+          KILO_VERSION: ${{ needs.version.outputs.version }}
+          KILO_RELEASE: "true"
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+
+      - name: Upload archives to GitHub Release
+        run: |
+          gh release upload "v${{ needs.version.outputs.version }}" \
+            packages/opencode/dist/*.tar.gz \
+            packages/opencode/dist/*.zip \
+            --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  publish:
+    needs:
+      - version
+      - build
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Publish GitHub Release
+        run: |
+          gh release edit "v${{ needs.version.outputs.version }}" --draft=false
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
