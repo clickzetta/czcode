@@ -25,6 +25,7 @@ ClickZetta 的权限体系和治理命令与 MySQL/Snowflake 存在概念和语�
 | 场景 | skill |
 |---|---|
 | 权限管理（GRANT/REVOKE/ROLE） | `clickzetta-access-control` |
+| DBA 运维手册（用户/权限/安全/存储/成本综合参考） | `clickzetta-dba-guide` |
 | 作业监控 / 审计查询 | `clickzetta-monitoring` |
 | 数据恢复 / Time Travel | `clickzetta-data-recovery` |
 | 数据共享（Share） | `clickzetta-data-sharing` |

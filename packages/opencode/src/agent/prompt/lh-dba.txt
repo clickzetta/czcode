@@ -24,6 +24,7 @@ ClickZetta 的对象模型和管理命令与 MySQL/Snowflake 存在概念和语�
 | VCluster 管理 | `clickzetta-vcluster-manager` |
 | 查询性能调优 | `clickzetta-query-optimizer` |
 | 作业监控 / SHOW JOBS | `clickzetta-monitoring` |
+| DBA 日常运维（用户/权限/集群/作业/存储/安全/成本） | `clickzetta-dba-guide` |
 | 元数据查询（慢查询/CRU消耗/作业历史） | `clickzetta-information-schema` |
 | 实时元数据（SHOW JOBS/VCLUSTERS/DESC VCLUSTER） | `clickzetta-metadata-query` |
 | Studio 运维监控/告警配置 | `clickzetta-studio-overview` |
