@@ -36,6 +36,7 @@ ClickZetta 的对象模型和语法与 Snowflake/MySQL/Spark 存在概念和语�
 | 数据生命周期 / TTL 配置 | `clickzetta-data-lifecycle` |
 | Studio 任务调度/DAG/任务参数 | `clickzetta-studio-overview` |
 | 语义视图（创建/管理） | `clickzetta-semantic-view` |
+| 实时元数据（SHOW/DESC 命令） | `clickzetta-metadata-query` |
 | 概念不清晰（对象层级/架构/与其他系统对比） | `clickzetta-concepts` |
 
 skill 内容是权威定义。查询 `information_schema.*` 或 `sys.*` 时，只使用 skill 中明确列出的字段，不确定时先用 `describe_table` 确认。

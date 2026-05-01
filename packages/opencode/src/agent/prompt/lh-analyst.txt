@@ -28,6 +28,7 @@ ClickZetta 的对象模型和语法与 Snowflake/MySQL/Spark 存在概念和语�
 | 查询性能优化 | `clickzetta-query-optimizer` |
 | BI 工具连接 | `clickzetta-bi-connect` |
 | 元数据查询（表结构/作业历史/用户） | `clickzetta-information-schema` |
+| 实时元数据（SHOW/DESC 命令） | `clickzetta-metadata-query` |
 | Studio 数据目录/数据预览/血缘查看 | `clickzetta-studio-overview` |
 | 语义视图（定义指标/维度/跨表查询） | `clickzetta-semantic-view` |
 | 概念不清晰（对象层级/架构/与其他系统对比） | `clickzetta-concepts` |
