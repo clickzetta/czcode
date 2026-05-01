@@ -135,6 +135,7 @@ CREATE SCHEMA <schema> FROM SHARE <provider>.<share>;
 □ DATA_RETENTION_DAYS 属性值是字符串：'90' 不是 90
 □ UNDROP 只在保留期内有效，超期无法恢复
 □ 权限变更前先 SHOW GRANTS 确认当前状态
+□ information_schema.TABLES 的 table_schema 是 Schema 名，不是 Workspace 名；不确定时先 SHOW SCHEMAS 确认
 ```
 
 ---

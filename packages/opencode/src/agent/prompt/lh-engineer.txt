@@ -60,6 +60,7 @@ skill 无法解答时，用 webfetch 获取 `https://yunqi.tech/llms-full.txt`�
 □ 索引用 CREATE BLOOMFILTER INDEX，不用 CREATE INDEX ... USING BLOOM_FILTER
 □ 分区用 PARTITIONED BY (years(col))，不用 PARTITIONED BY (col)
 □ COPY INTO 用 VOLUME，不用 @stage
+□ information_schema.TABLES 的 table_schema 是 Schema 名，不是 Workspace 名；不确定时先 SHOW SCHEMAS 确认
 ```
 
 ---

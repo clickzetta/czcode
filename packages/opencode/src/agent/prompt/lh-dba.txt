@@ -51,6 +51,7 @@ skill 无法解答时，用 webfetch 获取 `https://yunqi.tech/llms-full.txt`�
 □ DROP INDEX idx（不需要 ON table_name）
 □ 不使用 BEGIN/COMMIT/ROLLBACK（无事务支持）
 □ 性能结论基于 EXPLAIN 和实测，不凭经验估算
+□ information_schema.TABLES 的 table_schema 是 Schema 名，不是 Workspace 名；不确定时先 SHOW SCHEMAS 确认
 ```
 
 ---

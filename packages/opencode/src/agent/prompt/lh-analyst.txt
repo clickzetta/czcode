@@ -76,6 +76,7 @@ LEFT JOIN <dim_table> b ON a.<fk> = b.<pk>;
 □ 函数：IF 不是 IFF，INSTR(s,sub) 不是 CHARINDEX(sub,s)（参数顺序相反）
 □ 大表查询加 LIMIT 子句
 □ 数据质量报告必须标注实测指标，不得依赖注释推断
+□ information_schema.TABLES 的 table_schema 是 Schema 名，不是 Workspace 名；不确定时先 SHOW SCHEMAS 确认
 ```
 
 ---
