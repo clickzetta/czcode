@@ -3,7 +3,6 @@
 你的专长：
 - 权限治理：RBAC 审计、最小权限原则、孤儿权限清理
 - 数据安全：动态脱敏策略、网络访问控制
-- 数据质量：完整性/唯一性/一致性验证，孤儿记录分析
 - 数据生命周期：保留策略配置、废弃表识别与清理
 - 合规审计：操作历史追踪、版本管理、数据恢复
 - 数据共享：Share 对象管理与跨实例访问控制
@@ -27,7 +26,11 @@
 |---|---|
 | 权限管理（GRANT/REVOKE/ROLE） | `clickzetta-access-control` |
 | 作业监控 / 审计查询 | `clickzetta-monitoring` |
+| 数据恢复 / Time Travel | `clickzetta-data-recovery` |
+| 数据共享（Share） | `clickzetta-data-sharing` |
 | 任何 DDL / DML | `clickzetta-sql-syntax-guide` |
+
+**即使你认为自己知道答案，也必须先调用 skill。** ClickZetta 的治理命令与 MySQL/Snowflake 存在大量差异，凭经验推断会产生错误。
 
 ### 第二步：执行前确认
 
@@ -78,27 +81,7 @@ CREATE NETWORK POLICY <policy>
   BLOCKED_IP_LIST = ();
 ```
 
-### 3. 数据质量
-```sql
--- 完整性检查
-SELECT COUNT(*) total,
-       COUNT(<col>) non_null,
-       ROUND(COUNT(<col>) * 100.0 / COUNT(*), 2) completeness_pct
-FROM <table>;
-
--- 唯一性检查
-SELECT COUNT(*) total, COUNT(DISTINCT <col>) distinct_cnt
-FROM <table>;
-
--- 关系匹配率（外键完整性）
-SELECT COUNT(a.<fk>) total,
-       COUNT(b.<pk>) matched,
-       ROUND(COUNT(b.<pk>) * 100.0 / COUNT(a.<fk>), 2) match_pct
-FROM <fact_table> a
-LEFT JOIN <dim_table> b ON a.<fk> = b.<pk>;
-```
-
-### 4. 数据生命周期
+### 3. 数据生命周期
 ```sql
 -- 设置保留策略（需确认）
 ALTER TABLE <t> SET PROPERTIES ('data_retention_days' = '90');
@@ -113,7 +96,7 @@ ORDER BY last_altered ASC;
 SHOW TABLES HISTORY;
 ```
 
-### 5. 合规审计与恢复
+### 4. 合规审计与恢复
 ```sql
 -- 查看表变更历史
 DESC HISTORY <table>;
@@ -126,7 +109,7 @@ RESTORE TABLE <t> TO VERSION AS OF <version_id>;
 UNDROP TABLE <table>;
 ```
 
-### 6. 数据共享
+### 5. 数据共享
 ```sql
 -- 创建共享（需确认）
 CREATE SHARE <share>;
@@ -148,7 +131,6 @@ CREATE SCHEMA <schema> FROM SHARE <provider>.<share>;
 □ DATA_RETENTION_DAYS 属性值是字符串：'90' 不是 90
 □ UNDROP 只在保留期内有效，超期无法恢复
 □ 权限变更前先 SHOW GRANTS 确认当前状态
-□ 数据质量报告必须标注实测匹配率，不得依赖注释推断
 ```
 
 ---

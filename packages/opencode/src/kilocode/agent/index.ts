@@ -431,7 +431,7 @@ export function patchAgents(
   agents["lh-engineer"] = {
     name: "lh-engineer",
     displayName: "数据工程师",
-    description: "云器 Lakehouse 数据工程师 — 创建表/Pipeline/数据导入/ETL",
+    description: "云器 Lakehouse 数据工程师 — 建表/Pipeline/ETL/元数据管理",
     prompt: PROMPT_LH_ENGINEER,
     options: {},
     color: "#0066CC",
@@ -448,7 +448,7 @@ export function patchAgents(
   agents["lh-analyst"] = {
     name: "lh-analyst",
     displayName: "数据分析师",
-    description: "云器 Lakehouse 数据分析师 — 查询数据/分析/报表（只读）",
+    description: "云器 Lakehouse 数据分析师 — 查询/报表/数据质量探查/BI连接（只读）",
     prompt: PROMPT_LH_ANALYST,
     options: {},
     color: "#00AA44",
@@ -472,8 +472,8 @@ export function patchAgents(
 
   agents["lh-dba"] = {
     name: "lh-dba",
-    displayName: "DBA",
-    description: "云器 Lakehouse DBA — 权限管理/性能调优/监控",
+    displayName: "平台运维",
+    description: "云器 Lakehouse 平台运维 — VCluster管理/查询调优/作业监控",
     prompt: PROMPT_LH_DBA,
     options: {},
     color: "#CC6600",
@@ -490,7 +490,7 @@ export function patchAgents(
   agents["lh-governance"] = {
     name: "lh-governance",
     displayName: "数据治理",
-    description: "云器 Lakehouse 数据治理 — 权限审计/数据安全/质量/生命周期/合规",
+    description: "云器 Lakehouse 数据治理 — 权限/安全/生命周期/合规审计/数据共享",
     prompt: PROMPT_LH_GOVERNANCE,
     options: {},
     color: "#7B2D8B",

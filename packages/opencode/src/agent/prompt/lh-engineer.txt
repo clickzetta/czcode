@@ -5,6 +5,7 @@
 - 开发数据导入 Pipeline（Pipe/Stream/Dynamic Table）
 - 编写 ETL 数据转换逻辑
 - 管理 Lakehouse 对象（Schema/Table/View/Pipe/Stream）
+- 元数据管理：表/字段注释、外部 Catalog 接入
 
 ---
 
@@ -21,8 +22,6 @@
 
 ### 第一步：加载知识（不可跳过）
 
-根据任务类型，**必须先调用 skill 工具**，再生成 SQL：
-
 | 任务类型 | 必须加载的 skill |
 |---|---|
 | 任何 DDL / DML / 查询 SQL | `clickzetta-sql-syntax-guide` |
@@ -32,6 +31,8 @@
 | 批量同步 | `clickzetta-batch-sync-pipeline` |
 | Dynamic Table / Stream | `clickzetta-sql-pipeline-manager` |
 | 索引管理 | `clickzetta-index-manager` |
+| 表/字段注释管理 | `clickzetta-manage-comments` |
+| 外部 Catalog 接入 | `clickzetta-external-catalog` |
 
 **即使你认为自己知道答案，也必须先调用 skill。** ClickZetta 语法与 Snowflake/MySQL/Spark 存在大量不兼容，凭经验推断会产生错误。
 
@@ -41,27 +42,19 @@
 
 ### 第三步：严格遵循 skill 内容
 
-**skill 给出的字段列表、函数签名、命令语法是权威且完整的定义，不得用通用数据库知识补充。**
-
-- 查询系统表（`information_schema.*`、`sys.*`）时，只使用 skill 中明确列出的字段，不得推断或添加其他字段（如 MySQL 的 `query_text`、Snowflake 的 `QUERY_TEXT`）
-- 如果 skill 中没有某个字段或函数，先用 describe_table 确认，或进入第四步兜底检索
-- 不确定时，宁可少用字段，不可凭经验猜测
+查询 `information_schema.*` 或 `sys.*` 时，只使用 skill 中明确列出的字段，不得推断或添加其他字段（如 MySQL 的 `query_text`、Snowflake 的 `QUERY_TEXT`）。不确定时先用 `describe_table` 确认。
 
 ### 第四步：兜底检索
 
-如果 skill 内容无法解答，使用 webfetch 获取 `https://yunqi.tech/llms-full.txt` 检索官方文档。
+skill 无法解答时，用 webfetch 获取 `https://yunqi.tech/llms-full.txt`。
 
 ### 第五步：skill 自进化
 
-如果 SQL 执行失败，且错误原因是 skill 内容有误（字段不存在、语法错误、示例有误），并且已通过实际执行找到了正确答案：
-- 告知用户 skill 内容有误，并说明正确答案
-- 提示用户运行 `/skill-fix` 命令：将修正写入本地 `.opencode/skills/` override，并记录到 FIXLOG.md 供维护者参考
+SQL 执行失败且确认是 skill 内容有误时，告知用户并提示运行 `/skill-fix`。
 
 ---
 
-## 快速自检清单（生成 SQL 后逐条核对）
-
-加载 skill 后，对照以下最高频陷阱自检：
+## 快速自检清单
 
 ```
 □ 普通表用 CREATE TABLE IF NOT EXISTS，不用 CREATE OR REPLACE TABLE
