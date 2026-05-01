@@ -21,13 +21,63 @@
 
 ---
 
+## 建模工作模式：先探索，再建议
+
+**用户提出建模需求时，不要问问卷式问题。先动手探索数据，再给出有依据的建议。**
+
+### 第一阶段：自主探索（无需用户回答）
+
+立即执行以下探索，加载 `clickzetta-dw-modeling` skill：
+
+```sql
+-- 1. 看有哪些 schema
+SHOW SCHEMAS;
+
+-- 2. 看各 schema 下的表
+SHOW TABLES IN <schema>;
+
+-- 3. 查表大小和行数（先 describe_table 确认字段名）
+SELECT table_schema, table_name, table_type,
+       ROUND(bytes/1024/1024/1024, 2) AS size_gb, row_count
+FROM information_schema.tables
+ORDER BY bytes DESC NULLS LAST
+LIMIT 20;
+
+-- 4. 对关键表抽样看数据特征
+SELECT * FROM <table> LIMIT 5;
+```
+
+### 第二阶段：给出有依据的建议（选择题，不是填空题）
+
+基于探索结果，向用户呈现：
+1. **数据现状摘要**：发现了什么表、大概多大、像什么业务数据
+2. **具体方案选项**（A/B/C），每个选项说明适用理由
+3. **只问用户看不到的信息**：业务含义、主要查询场景、更新频率
+
+示例：
+> 我看了一下你的数据：
+> - `raw` schema 下有 orders(2.3GB)、users(450MB)，像是从 MySQL 同步的业务库
+> - `events` schema 下有 user_events(18GB)，像是埋点日志
+>
+> 建议两个方向：
+> **A. 传统分层**：raw 作为 ODS，补 DWD 清洗层 + DWS 聚合层（适合 BI 报表为主）
+> **B. Medallion**：raw 作为 Bronze，建 Silver 标准化 + Gold 指标层（适合多场景复用）
+>
+> 你们主要用这些数据做什么？（BI 报表 / 实时看板 / 数据科学）
+
+### 第三阶段：方案确认后执行
+
+用户选择方向后，给出完整方案（分层设计 + 管道配置 + DDL 模板），确认后执行。
+
+---
+
 ## Skill 参考
 
 ClickZetta 的对象模型和语法与 Snowflake/MySQL/Spark 存在概念和语法差异。遇到以下场景时加载对应 skill：
 
 | 场景 | skill |
 |---|---|
-| 数仓建模（分层设计/表结构/DDL模板） | `clickzetta-dw-modeling` |
+| 数仓建模（分层/表类型/DDL/管道路由） | `clickzetta-dw-modeling` |
 | 不确定 DDL/DML 语法、遇到语法报错 | `clickzetta-sql-syntax-guide` |
 | Kafka 数据导入 | `clickzetta-kafka-ingest-pipeline` |
 | OSS / 文件导入 | `clickzetta-oss-ingest-pipeline` |
@@ -53,22 +103,6 @@ skill 无法解答时，用 webfetch 获取 `https://yunqi.tech/llms-full.txt`�
 ## 执行前确认
 
 执行任何 DDL（CREATE/ALTER/DROP）或 DML（INSERT/UPDATE/DELETE）前，必须先向用户确认。
-
----
-
-## 建模向导
-
-用户提出建模需求时，加载 `clickzetta-dw-modeling` skill，按向导步骤引导：
-
-1. 选择分层模式（传统/Medallion/混合）
-2. 了解业务场景和数据源
-3. 推荐各层表类型
-4. 设计分区/分桶策略
-5. 规划数据质量卡点
-6. 设计调度依赖
-7. 生成 DDL 模板
-
-不要跳过步骤直接给出方案，每步等用户确认后再推进。
 
 ---
 
