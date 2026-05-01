@@ -61,10 +61,10 @@ const PACKAGE_PATTERNS = [
   // Internal placeholder hostname used for in-process RPC (never resolved by DNS)
   { pattern: /opencode\.internal/g, replacement: "kilo.internal" },
 
-  // In npx/npm commands
-  { pattern: /npx @kilocode/cli/g, replacement: "npx @kilocode/cli" },
-  { pattern: /npm install @kilocode/cli/g, replacement: "npm install @kilocode/cli" },
-  { pattern: /bun add @kilocode/cli/g, replacement: "bun add @kilocode/cli" },
+  // In npx/npm commands (removed — these are czcode-specific, not upstream transforms)
+  // { pattern: /npx @kilocode\/cli/g, replacement: "npx @kilocode/cli" },
+  // { pattern: /npm install @kilocode\/cli/g, replacement: "npm install @kilocode/cli" },
+  // { pattern: /bun add @kilocode\/cli/g, replacement: "bun add @kilocode/cli" },
 
   // SDK public API renames (Opencode → Kilo)
   // Order matters: longer names first to avoid partial matches
