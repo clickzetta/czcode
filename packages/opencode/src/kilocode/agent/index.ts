@@ -474,8 +474,8 @@ export function patchAgents(
 
   agents["lh-dba"] = {
     name: "lh-dba",
-    displayName: "平台运维",
-    description: "云器 Lakehouse 平台运维 — VCluster管理/查询调优/作业监控",
+    displayName: "数据运维",
+    description: "云器 Lakehouse 数据运维 — VCluster管理/查询调优/作业监控",
     prompt: PROMPT_LH_DBA,
     options: {},
     color: "#CC6600",
