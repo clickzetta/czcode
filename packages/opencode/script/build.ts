@@ -308,6 +308,22 @@ for (const item of targets) {
 }
 
 if (Script.release) {
+  // czcode_change start — bundle clickzetta-skills into release archives
+  console.log("Downloading clickzetta-skills for bundling...")
+  const skillsTmp = path.resolve("dist", "_skills_tmp")
+  await $`rm -rf ${skillsTmp}`
+  await $`git clone --depth 1 https://github.com/yunqiqiliang/clickzetta-skills.git ${skillsTmp}`.quiet().nothrow()
+  // Remove .git to save space
+  await $`rm -rf ${skillsTmp}/.git`
+
+  for (const key of Object.keys(binaries)) {
+    const binDir = `dist/${key}/bin`
+    await $`cp -r ${skillsTmp} ${binDir}/clickzetta-skills`.quiet().nothrow()
+  }
+  await $`rm -rf ${skillsTmp}`
+  console.log("Bundled clickzetta-skills into all platform archives")
+  // czcode_change end
+
   const archives: string[] = [] // kilocode_change
   for (const key of Object.keys(binaries)) {
     const archive = key.replace(pkg.name, "czcode") // czcode_change

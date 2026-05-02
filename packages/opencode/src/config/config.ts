@@ -474,9 +474,15 @@ export const layer = Layer.effect(
     const loadGlobal = Effect.fnUntraced(function* () {
       yield* Effect.promise(() => KilocodeConfig.migrateBashPermission()) // kilocode_change
       // czcode_change start — seed default skills URL and builtin commands
+      // Add bundled skills path (next to the binary) for offline use
+      const bundledSkillsPath = path.join(path.dirname(process.execPath), "clickzetta-skills")
+      const skillsPaths = existsSync(bundledSkillsPath) ? [bundledSkillsPath] : []
       let result: Info = pipe(
         {
-          skills: { urls: ["https://yunqiqiliang.github.io/clickzetta-skills/.well-known/skills/"] },
+          skills: {
+            urls: ["https://yunqiqiliang.github.io/clickzetta-skills/.well-known/skills/"],
+            paths: skillsPaths,
+          },
           command: builtinCommandMap,
         } as Info,
         mergeDeep(yield* loadFile(path.join(Global.Path.config, "config.json"))),
