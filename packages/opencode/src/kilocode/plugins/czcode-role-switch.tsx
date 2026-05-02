@@ -2,9 +2,10 @@
 /**
  * czcode agent role switcher plugin.
  *
- * Registers a /cz_role command that triggers agent switching via @lh-xxx.
+ * /cz_role — opens a role picker to switch between data agents.
  */
 import type { TuiPlugin, TuiPluginModule } from "@kilocode/plugin/tui"
+import { DialogSelect } from "@tui/ui/dialog-select"
 
 const id = "internal:czcode-role-switch"
 
@@ -28,24 +29,21 @@ const tui: TuiPlugin = async (api) => {
           title: `${r.label} — ${r.desc}`,
           value: r.id,
         }))
-        api.ui.dialog.replace(() => {
-          const DialogSelect = api.ui.DialogSelect
-          return (
-            <DialogSelect
-              title="切换角色"
-              options={options}
-              onSelect={(option) => {
-                api.ui.dialog.clear()
-                const value = option.value as string
-                api.command.trigger(`@${value}`)
-                const role = ROLES.find((r) => r.id === value)
-                if (role) {
-                  api.ui.toast({ message: `已切换到 ${role.label}`, variant: "success", duration: 2000 })
-                }
-              }}
-            />
-          )
-        })
+        api.ui.dialog.replace(() => (
+          <DialogSelect
+            title="切换角色"
+            options={options}
+            onSelect={(option: any) => {
+              api.ui.dialog.clear()
+              const value = option.value as string
+              api.command.trigger(`@${value}`)
+              const role = ROLES.find((r) => r.id === value)
+              if (role) {
+                api.ui.toast({ message: `已切换到 ${role.label}`, variant: "success", duration: 2000 })
+              }
+            }}
+          />
+        ))
       },
     },
   ])

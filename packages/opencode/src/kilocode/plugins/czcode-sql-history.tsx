@@ -2,12 +2,11 @@
 /**
  * czcode SQL History plugin.
  *
- * Registers a /cz_sql_history command that shows past SQL queries.
- * Selecting an entry copies the SQL to clipboard.
- * Pressing Esc closes the dialog.
+ * /cz_sql_history — shows past SQL queries, copies selected to clipboard.
  */
 import type { TuiPlugin, TuiPluginModule } from "@kilocode/plugin/tui"
 import type { Message, ToolPart } from "@kilocode/sdk/v2"
+import { DialogSelect } from "@tui/ui/dialog-select"
 import * as Clipboard from "@tui/util/clipboard"
 
 const id = "internal:czcode-sql-history"
@@ -23,8 +22,7 @@ function extractSql(messages: readonly Message[], parts: (id: string) => readonl
     if (msg.role !== "assistant") continue
     for (const part of parts(msg.id)) {
       const p = part as ToolPart
-      if (p.type !== "tool") continue
-      if (!p.state) continue
+      if (p.type !== "tool" || !p.state) continue
       if (p.tool !== "read_query" && p.tool !== "write_query") continue
       const input = p.state.input as Record<string, unknown> | undefined
       const sql = input?.sql
@@ -63,26 +61,21 @@ const tui: TuiPlugin = async (api) => {
           value: String(i),
         }))
 
-        const close = () => api.ui.dialog.clear()
-
-        api.ui.dialog.replace(
-          () => (
-            <api.ui.DialogSelect
-              title={`SQL 历史 (${entries.length})`}
-              options={options}
-              onSelect={async (option) => {
-                close()
-                const idx = Number(option.value)
-                const entry = entries[idx]
-                if (entry) {
-                  await Clipboard.copy(entry.sql)
-                  api.ui.toast({ message: "已复制到剪贴板", variant: "success", duration: 2000 })
-                }
-              }}
-            />
-          ),
-          close,
-        )
+        api.ui.dialog.replace(() => (
+          <DialogSelect
+            title={`SQL 历史 (${entries.length})`}
+            options={options}
+            onSelect={async (option: any) => {
+              api.ui.dialog.clear()
+              const idx = Number(option.value)
+              const entry = entries[idx]
+              if (entry) {
+                await Clipboard.copy(entry.sql)
+                api.ui.toast({ message: "已复制到剪贴板", variant: "success", duration: 2000 })
+              }
+            }}
+          />
+        ))
       },
     },
   ])
