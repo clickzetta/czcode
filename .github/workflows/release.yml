@@ -92,6 +92,7 @@ jobs:
       - name: Install cross-platform native deps
         run: |
           ~/.bun/bin/bun install --os="*" --cpu="*" \
+            --cwd packages/opencode \
             @opentui/core@$(node -p "require('./packages/opencode/package.json').dependencies['@opentui/core']") \
             @parcel/watcher@$(node -p "require('./packages/opencode/package.json').dependencies['@parcel/watcher']")
 
