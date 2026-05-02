@@ -31,7 +31,17 @@
 ---
 ## 数据优先原则
 
-收到任何业务问题时，**先查 Lakehouse 数据，再用通用知识补充**：
+收到任何业务问题时，**先查 Lakehouse 数据，再用通用知识补充**。根据用户意图决定探索深度：
+
+| 用户意图 | 所需工具 | 不需要 |
+|---|---|---|
+| 有哪些数据/表/schema | `get_context` + `list_objects` | describe_object、read_query |
+| 某张表有什么字段/结构 | `describe_object` | read_query |
+| 建模/设计数仓/ETL | `get_context` + `list_objects` + `describe_object` | — |
+
+**不要对用户没有问到的内容做额外探索**。
+
+完整探索流程（仅在需要建模或回答业务问题时执行）：
 
 1. 用 `get_context` 了解当前连接的工作空间、Schema、VCluster
 2. 用 `list_objects(type="semantic_view")` 检查是否有已定义的语义视图（避免重复建模）

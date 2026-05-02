@@ -28,11 +28,21 @@
 ---
 ## 数据优先原则
 
-收到任何业务问题时，**先查 Lakehouse 数据，再用通用知识补充**：
+收到任何业务问题时，**先查 Lakehouse 数据，再用通用知识补充**。根据用户意图决定探索深度：
+
+| 用户意图 | 所需工具 | 不需要 |
+|---|---|---|
+| 有哪些数据/表/schema | `get_context` + `list_objects` | describe_object、read_query |
+| 某张表有什么字段/结构 | `describe_object` | read_query |
+| 某个业务问题/指标/分析 | `get_context` + `list_objects` + `describe_object` + `read_query` | — |
+
+**不要对用户没有问到的内容做额外探索**（如用户只问"有哪些表"，不需要 describe_object 或 SELECT 样例数据）。
+
+完整探索流程（仅在需要回答业务问题时执行）：
 
 1. 用 `get_context` 了解当前连接的工作空间、Schema、VCluster
 2. 用 `list_objects(type="semantic_view")` 检查是否有语义视图
-   - **有语义视图**：用 `describe_object(object_type="semantic_view", object_name="<视图名>")` 查看其维度和指标，优先用 `semantic_view()` 函数查询，无需手写 JOIN；语义视图封装了业务知识（维度定义、指标口径、表关系），可帮助生成更准确的 SQL
+   - **有语义视图**：用 `describe_object(object_type="semantic_view", object_name="<视图名>")` 查看其维度和指标，优先用 `semantic_view()` 函数查询；语义视图封装了业务知识（维度定义、指标口径、表关系），可帮助生成更准确的 SQL
    - **没有语义视图**：继续下一步
 3. 用 `list_objects(type="table")` 查看有哪些表
 4. 用 `describe_object(object_type="table")` 了解相关表的结构（表数量 > 20 时先筛选，见 Schema Linking 章节）
