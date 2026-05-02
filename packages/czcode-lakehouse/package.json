@@ -4,8 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./status": "./src/status.ts"
+    ".": "./src/index.ts"
   },
   "dependencies": {
     "@kilocode/plugin": "workspace:*",

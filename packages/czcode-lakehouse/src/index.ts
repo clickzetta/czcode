@@ -5,7 +5,6 @@ import { LakehouseConnector, type LakehouseConfig } from "./connector.js"
 import { classifySql, getSqlRisk } from "./sql-classifier.js"
 import { formatQueryResult, formatTableSchema } from "./format.js"
 import { Effect } from "effect"
-import { setLakehouseStatus } from "./status.js"
 
 const LakehouseConfigSchema = z.object({
   service: z.string(),
@@ -126,7 +125,6 @@ function buildDescSql(objectType: string, objectName: string, extended = false):
 export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
   const rawConfig = options?.lakehouse ?? readConfigFromEnv()
   if (!rawConfig) {
-    setLakehouseStatus({ state: "unconfigured" })
     const setupMessage = [
       "⚠️  Lakehouse 未配置，无法连接 ClickZetta。",
       "",
@@ -171,23 +169,14 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
     config = LakehouseConfigSchema.parse(rawConfig)
   } catch (err) {
     console.warn("[czcode-lakehouse] Invalid lakehouse config:", err)
-    setLakehouseStatus({ state: "failed", error: "配置格式错误" })
     return {}
   }
 
-  setLakehouseStatus({ state: "connecting" })
   const connector = new LakehouseConnector(config)
   try {
     await connector.connect()
-    setLakehouseStatus({
-      state: "connected",
-      workspace: config.workspace,
-      schema: config.schema ?? "public",
-      vcluster: config.vcluster ?? "default",
-    })
   } catch (err) {
     console.warn("[czcode-lakehouse] Failed to connect to Lakehouse:", (err as Error).message)
-    setLakehouseStatus({ state: "failed", error: (err as Error).message })
     return {}
   }
 
