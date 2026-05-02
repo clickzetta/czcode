@@ -27,6 +27,7 @@ function View(props: { api: TuiPluginApi }) {
       { label: "Workspace", value: process.env.CLICKZETTA_WORKSPACE ?? "" },
       { label: "Schema", value: process.env.CLICKZETTA_SCHEMA ?? "public" },
       { label: "VCluster", value: process.env.CLICKZETTA_VCLUSTER ?? "default" },
+      { label: "User", value: process.env.CLICKZETTA_USERNAME ?? "" },
     ].filter((i) => i.value)
   })
 
