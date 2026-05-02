@@ -1,12 +1,8 @@
 // czcode_change - new file
 /**
  * czcode VCluster Dashboard plugin.
- *
- * Sidebar: extracts VCluster info from session tool history
- * (list_objects type=vcluster, read_query with SHOW VCLUSTERS).
- * Command: /cz_vcluster sends a pre-built prompt to the agent.
- * Order 370 — after Schema Browser (360), before Todo (400).
  */
+import "@/kilocode/plugins/czcode-dotenv"
 import type { TuiPlugin, TuiPluginApi, TuiPluginModule } from "@kilocode/plugin/tui"
 import type { Message, ToolPart } from "@kilocode/sdk/v2"
 import { createMemo, For, Show } from "solid-js"

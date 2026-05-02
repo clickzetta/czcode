@@ -1,11 +1,8 @@
 // czcode_change - new file
 /**
  * czcode Lakehouse connection status sidebar plugin.
- *
- * Displays ClickZetta connection info in the session sidebar.
- * Reads initial values from env, then tracks switch_context tool calls
- * in session history to show the latest schema/vcluster.
  */
+import "@/kilocode/plugins/czcode-dotenv"
 import type { TuiPlugin, TuiPluginApi, TuiPluginModule } from "@kilocode/plugin/tui"
 import type { Message, ToolPart } from "@kilocode/sdk/v2"
 import { createMemo, Show } from "solid-js"

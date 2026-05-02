@@ -1,11 +1,8 @@
 // czcode_change - new file
 /**
  * czcode Schema Browser sidebar plugin.
- *
- * Displays Lakehouse schema names in the session sidebar.
- * Extracts from list_objects(type=schema) tool calls in session history.
- * Order 360 — after Lakehouse status (350), before VCluster (370).
  */
+import "@/kilocode/plugins/czcode-dotenv"
 import type { TuiPlugin, TuiPluginApi, TuiPluginModule } from "@kilocode/plugin/tui"
 import type { Message, ToolPart } from "@kilocode/sdk/v2"
 import { createMemo, For, Show } from "solid-js"
