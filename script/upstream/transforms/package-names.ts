@@ -68,12 +68,12 @@ const PACKAGE_PATTERNS = [
 
   // SDK public API renames (Opencode → Kilo)
   // Order matters: longer names first to avoid partial matches
-  { pattern: /KiloClientConfig/g, replacement: "KiloClientConfig" },
-  { pattern: /createKiloClient/g, replacement: "createKiloClient" },
-  { pattern: /createKiloServer/g, replacement: "createKiloServer" },
-  { pattern: /createKiloTui/g, replacement: "createKiloTui" },
-  { pattern: /KiloClient/g, replacement: "KiloClient" },
-  // createKilo (without suffix) needs negative lookahead to avoid matching createKiloClient
+  { pattern: /OpencodeClientConfig/g, replacement: "KiloClientConfig" },
+  { pattern: /createOpencodeClient/g, replacement: "createKiloClient" },
+  { pattern: /createOpencodeServer/g, replacement: "createKiloServer" },
+  { pattern: /createOpencodeTui/g, replacement: "createKiloTui" },
+  { pattern: /OpencodeClient/g, replacement: "KiloClient" },
+  // createOpencode (without suffix) needs negative lookahead to avoid matching createOpencodeClient
   { pattern: /\bcreateOpencode\b(?!Client|Server|Tui)/g, replacement: "createKilo" },
 
   // Branding: environment variables (exclude OPENCODE_API_KEY — upstream Zen SaaS key)

@@ -185,6 +185,7 @@ const KILO_DEPENDENCIES: Record<string, Record<string, string>> = {
   "packages/opencode/package.json": {
     "@kilocode/kilo-gateway": "workspace:*",
     "@kilocode/kilo-telemetry": "workspace:*",
+    "@czcode/lakehouse": "workspace:*", // czcode_change
   },
   // packages/app/package.json needs these
   "packages/app/package.json": {

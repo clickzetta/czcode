@@ -173,6 +173,9 @@ export const Info = Schema.Struct({
   remote_control: Schema.optional(Schema.Boolean).annotate({
     description: "Enable remote control of sessions via Kilo Cloud. Equivalent to running /remote on startup.",
   }),
+  auto_collapse_reasoning: Schema.optional(Schema.Boolean).annotate({
+    description: "Automatically collapse reasoning blocks after the agent finishes writing them",
+  }),
   indexing: Schema.optional(IndexingRef).annotate({ description: "Codebase indexing configuration" }), // kilocode_change
   terminal_command_display: Schema.optional(Schema.Literals(["expanded", "collapsed"])).annotate({
     description:
@@ -293,6 +296,9 @@ export const Info = Schema.Struct({
       // kilocode_change start
       semantic_indexing: Schema.optional(Schema.Boolean).annotate({
         description: "Enable semantic codebase indexing and the semantic_search tool",
+      }),
+      agent_manager_tool: Schema.optional(Schema.Boolean).annotate({
+        description: "Enable the VS Code Agent Manager orchestration tool",
       }),
       // kilocode_change end
       // kilocode_change start - enable telemetry by default
@@ -932,15 +938,19 @@ export const layer = Layer.effect(
     // kilocode_change end
 
     const update = Effect.fn("Config.update")(function* (config: Info) {
-      const dir = yield* InstanceState.directory
-      const file = path.join(dir, "config.json")
-      const existing = yield* loadFile(file)
-      yield* fs
-        .writeFileString(
-          file,
-          JSON.stringify(KilocodeConfig.mergeConfig(writable(existing), writable(config)), null, 2),
-        )
-        .pipe(Effect.orDie) // kilocode_change
+      // kilocode_change start - delegate Kilo project config update behavior.
+      const ctx = yield* InstanceState.context
+      yield* KilocodeConfig.updateProjectConfig({
+        fs,
+        directory: ctx.directory,
+        worktree: ctx.worktree,
+        config,
+        read: readConfigFile,
+        parse: (input, file) => ConfigParse.schema(Info.zod, ConfigParse.jsonc(input, file), file),
+        patch: (input, patch) => patchJsonc(input, patch),
+        writable,
+      })
+      // kilocode_change end
       yield* Effect.promise(() => Instance.dispose())
     })
 

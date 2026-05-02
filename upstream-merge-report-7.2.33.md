@@ -1,0 +1,399 @@
+# Upstream Merge Conflict Report
+
+Generated: 2026-05-02T09:35:45.278Z
+
+## Summary
+
+- **Upstream Version**: 7.2.33
+- **Upstream Commit**: `5bf9e821`
+- **Base Branch**: main
+- **Merge Branch**: yunqiqiliang/kilo-opencode-v7.2.33
+- **Total Files Changed**: 183
+
+## Files by Recommendation
+
+### Package.json Transform (Auto)
+
+- `package.json` (package)
+  - Package.json: take upstream, transform names, inject Kilo deps, preserve version
+- `packages/app/package.json` (package)
+  - Package.json: take upstream, transform names, inject Kilo deps, preserve version
+- `packages/desktop-electron/package.json` (package)
+  - Package.json: take upstream, transform names, inject Kilo deps, preserve version
+- `packages/desktop/package.json` (package)
+  - Package.json: take upstream, transform names, inject Kilo deps, preserve version
+- `packages/kilo-indexing/package.json` (package)
+  - Package.json: take upstream, transform names, inject Kilo deps, preserve version
+- `packages/opencode/package.json` (package)
+  - Package.json: take upstream, transform names, inject Kilo deps, preserve version
+- `packages/plugin/package.json` (package)
+  - Package.json: take upstream, transform names, inject Kilo deps, preserve version
+- `packages/sdk/js/package.json` (package)
+  - Package.json: take upstream, transform names, inject Kilo deps, preserve version
+- `packages/shared/package.json` (package)
+  - Package.json: take upstream, transform names, inject Kilo deps, preserve version
+- `packages/storybook/package.json` (package)
+  - Package.json: take upstream, transform names, inject Kilo deps, preserve version
+- `packages/ui/package.json` (package)
+  - Package.json: take upstream, transform names, inject Kilo deps, preserve version
+- `sdks/vscode/package.json` (package)
+  - Package.json: take upstream, transform names, inject Kilo deps, preserve version
+
+### Script Transform (Auto)
+
+- `packages/script/package.json` (script)
+  - Script file: take upstream and transform GitHub references
+
+### Extension Transform (Auto)
+
+- `packages/extensions/zed/extension.toml` (extension)
+  - Extension file: take upstream and apply Kilo branding
+
+### Keep Kilo Version (Ours)
+
+- `.changeset/center-sidebar-toolbar.md` (markdown)
+  - Markdown files are typically Kilo-specific documentation
+- `.changeset/external-directory-read-prompts.md` (markdown)
+  - Markdown files are typically Kilo-specific documentation
+- `.changeset/remote-status-badge.md` (markdown)
+  - Markdown files are typically Kilo-specific documentation
+- `.changeset/terminal-command-display.md` (markdown)
+  - Markdown files are typically Kilo-specific documentation
+- `packages/kilo-docs/lib/nav/ai-providers.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/lib/nav/contributing.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/lib/nav/kiloclaw.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/package.json` (package)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/anthropic.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/bedrock.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/cerebras.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/chutes-ai.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/claude-code.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/deepseek.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/fireworks.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/gemini.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/glama.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/groq.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/human-relay.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/inception.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/kilocode.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/lmstudio.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/minimax.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/mistral.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/moonshot.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/ollama.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/openai-chatgpt-plus-pro.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/openai-compatible.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/openai.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/openrouter.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/ovhcloud.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/requesty.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/sap-ai-core.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/synthetic.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/unbound.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/v0.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/vercel-ai-gateway.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/vertex.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/virtual-quota-fallback.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/vscode-lm.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/xai.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/ai-providers/zenmux.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/automate/agent-manager-workflows.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/automate/agent-manager.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/automate/extending/plugins.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/contributing/architecture/per-message-feedback.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/getting-started/byok.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/getting-started/settings/index.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/getting-started/troubleshooting/troubleshooting-extension.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/index.tsx` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/kiloclaw/tools/index.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/pages/kiloclaw/tools/other-tools.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/previous-docs-redirects.js` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/public/img/screenshot-tests/kilo-vscode/visual-regression/settings/indexing-provider-blur-race-chromium-linux.png` (other)
+  - File is in a Kilo-specific directory
+- `packages/kilo-docs/public/img/screenshot-tests/kilo-vscode/visual-regression/settings/mode-edit-permissions-chromium-linux.png` (other)
+  - File is in a Kilo-specific directory
+- `packages/kilo-gateway/package.json` (package)
+  - File is in a Kilo-specific directory
+- `packages/kilo-gateway/src/api/constants.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-i18n/package.json` (package)
+  - File is in a Kilo-specific directory
+- `packages/kilo-i18n/src/ar.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-i18n/src/br.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-i18n/src/bs.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-i18n/src/da.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-i18n/src/de.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-i18n/src/en.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-i18n/src/es.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-i18n/src/fr.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-i18n/src/ja.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-i18n/src/ko.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-i18n/src/nl.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-i18n/src/no.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-i18n/src/pl.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-i18n/src/ru.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-i18n/src/th.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-i18n/src/tr.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-i18n/src/uk.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-i18n/src/zh.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-i18n/src/zht.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-telemetry/package.json` (package)
+  - File is in a Kilo-specific directory
+- `packages/kilo-telemetry/src/__tests__/telemetry.test.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-telemetry/src/index.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-telemetry/src/otel-exporter.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-telemetry/src/telemetry.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-telemetry/src/tracer.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-ui/package.json` (package)
+  - File is in a Kilo-specific directory
+- `packages/kilo-ui/src/components/message-part.css` (other)
+  - File is in a Kilo-specific directory
+- `packages/kilo-ui/src/components/message-part.tsx` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-ui/src/stories/message-part.stories.tsx` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/CHANGELOG.md` (markdown)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/package.json` (package)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/src/KiloProvider.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/src/agent-manager/AgentManagerProvider.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/src/agent-manager/setup-script-template.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/src/agent-manager/tool-start.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/src/services/autocomplete/classic-auto-complete/AutocompleteInlineCompletionProvider.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/src/services/autocomplete/continuedev/core/autocomplete/context/ContextRetrievalService.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/src/services/autocomplete/continuedev/core/autocomplete/context/ImportDefinitionsService.test.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/src/services/autocomplete/continuedev/core/autocomplete/context/ImportDefinitionsService.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/src/services/autocomplete/continuedev/core/index.d.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/src/services/autocomplete/continuedev/core/vscode-test-harness/src/VSCodeIde.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/tests/unit/agent-manager-tool-start.test.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/tests/unit/config-utils.test.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/tests/unit/navigate.test.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/tests/unit/permission-editor.test.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/agent-manager/AgentManagerApp.tsx` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/agent-manager/navigate.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/App.tsx` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/components/chat/AssistantMessage.tsx` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/components/settings/AutoApproveTab.tsx` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/components/settings/DisplayTab.tsx` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/components/settings/ExperimentalTab.tsx` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/components/settings/ModeEditView.tsx` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/components/settings/PermissionEditor.tsx` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/components/settings/permission-utils.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/components/settings/settings-io.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/context/config.tsx` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/context/display.tsx` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/i18n/ar.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/i18n/br.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/i18n/bs.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/i18n/da.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/i18n/de.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/i18n/en.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/i18n/es.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/i18n/fr.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/i18n/ja.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/i18n/ko.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/i18n/nl.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/i18n/no.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/i18n/pl.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/i18n/ru.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/i18n/th.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/i18n/tr.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/i18n/uk.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/i18n/zh.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/i18n/zht.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/stories/StoryProviders.tsx` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/stories/settings.stories.tsx` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/styles/notifications.css` (other)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/types/messages/config.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/types/messages/permissions.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/kilo-vscode/webview-ui/src/types/messages/webview-messages.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/opencode/CHANGELOG.md` (markdown)
+  - Markdown files are typically Kilo-specific documentation
+- `packages/opencode/src/kilocode/agent-manager/event.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/opencode/src/kilocode/agent/index.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/opencode/src/kilocode/config/config.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/opencode/src/kilocode/tool/agent-manager.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/opencode/src/kilocode/tool/agent-manager.txt` (other)
+  - File is in a Kilo-specific directory
+- `packages/opencode/src/kilocode/tool/registry.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/opencode/test/kilocode/agent-manager-tool.test.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/opencode/test/kilocode/permission/next.always-rules.test.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/opencode/test/kilocode/project-config-update.test.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/opencode/test/kilocode/system-prompt.test.ts` (code)
+  - File is in a Kilo-specific directory
+- `packages/sdk/openapi.json` (config)
+  - File is Kilo-specific and should not be overwritten
+- `script/upstream/find-conflict-markers.sh` (script)
+  - File is in a Kilo-specific directory
+- `script/upstream/package.json` (script)
+  - File is in a Kilo-specific directory
+
+### Manual Review Required
+
+- `bun.lock` (other)
+  - File needs manual review
+- `nix/hashes.json` (config)
+  - Config files may have Kilo-specific settings
+- `packages/opencode/src/config/config.ts` (code)
+  - Code files need manual review for kilocode_change markers
+- `packages/opencode/src/config/permission.ts` (code)
+  - Code files need manual review for kilocode_change markers
+- `packages/opencode/src/config/provider.ts` (code)
+  - Code files need manual review for kilocode_change markers
+- `packages/opencode/src/global/index.ts` (code)
+  - Code files need manual review for kilocode_change markers
+- `packages/opencode/src/permission/index.ts` (code)
+  - Code files need manual review for kilocode_change markers
+- `packages/opencode/src/session/llm.ts` (code)
+  - Code files need manual review for kilocode_change markers
+- `packages/opencode/src/session/prompt/kilocode-gpt-5.5.txt` (other)
+  - File needs manual review
+- `packages/opencode/src/session/system.ts` (code)
+  - Code files need manual review for kilocode_change markers
+- `packages/opencode/test/config/config.test.ts` (code)
+  - Code files need manual review for kilocode_change markers
+- `packages/opencode/test/permission/next.test.ts` (code)
+  - Code files need manual review for kilocode_change markers
+- `packages/sdk/js/src/v2/gen/types.gen.ts` (code)
+  - Code files need manual review for kilocode_change markers
+- `packages/shared/src/global.ts` (code)
+  - Code files need manual review for kilocode_change markers
+
+## Recommendations
+
+- 155 files will keep Kilo's version
+- 14 files require manual review
