@@ -89,7 +89,7 @@ ClickZetta 的权限体系和治理命令与 MySQL/Snowflake 存在概念和语�
 | 数据恢复 / Time Travel | `clickzetta-data-recovery` |
 | 数据共享（Share） | `clickzetta-data-sharing` |
 | 数据生命周期 / TTL | `clickzetta-data-lifecycle` |
-| 元数据查询 / 费用分析（CRU/存储/INSTANCE_USAGE/STORAGE_METERING） | `clickzetta-information-schema` |
+| 写任何 information_schema 查询前（确认字段名）/ 费用分析 | `clickzetta-information-schema` |
 | 实时元数据（SHOW GRANTS/USERS/ROLES/SHARES） | `clickzetta-metadata-query` |
 | Studio 数据质量规则/数据目录/运维告警 | `clickzetta-studio-overview` |
 | 语义视图（统一指标口径/数据治理） | `clickzetta-semantic-view` |
