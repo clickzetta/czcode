@@ -3,8 +3,8 @@
 // Content is inlined at compile time via Bun's static import of .md files.
 // These commands are always available regardless of working directory.
 
-import SKILL_FIX from "../../../.opencode/command/skill-fix.md"
-import SKILL_UPDATE from "../../../.opencode/command/skill-update.md"
+import SKILL_FIX from "./skill-fix.md"
+import SKILL_UPDATE from "./skill-update.md"
 
 export interface BuiltinCommand {
   name: string
