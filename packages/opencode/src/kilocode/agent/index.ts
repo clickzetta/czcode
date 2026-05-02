@@ -476,7 +476,7 @@ export function patchAgents(
   agents["lh-dba"] = {
     name: "lh-dba",
     displayName: "数据运维",
-    description: "云器 Lakehouse 数据运维 — VCluster管理/查询调优/作业监控",
+    description: "云器 Lakehouse 数据运维 — VCluster管理/查询调优/作业监控/费用分析",
     prompt: PROMPT_LH_DBA + "\n\n" + PROMPT_LH_BASE,
     options: {},
     color: "#CC6600",
@@ -493,7 +493,7 @@ export function patchAgents(
   agents["lh-governance"] = {
     name: "lh-governance",
     displayName: "数据治理",
-    description: "云器 Lakehouse 数据治理 — 权限/安全/生命周期/合规/共享/费用分析",
+    description: "云器 Lakehouse 数据治理 — 权限/安全/生命周期/合规/共享",
     prompt: PROMPT_LH_GOVERNANCE + "\n\n" + PROMPT_LH_BASE,
     options: {},
     color: "#7B2D8B",

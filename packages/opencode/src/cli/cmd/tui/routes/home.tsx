@@ -34,14 +34,14 @@ const placeholdersByAgent: Record<string, string[]> = {
     "优化这条慢查询的执行计划",
     "查看最近失败的作业",
     "暂停 default VCluster",
-    "查看 CRU 消耗最多的用户",
+    "本月的计算和存储费用是多少？",
   ],
   "lh-governance": [
     "查看当前用户的权限",
     "哪些表没有设置数据生命周期？",
-    "本月的计算和存储费用是多少？",
     "给用户 alice 授予 mcp_demo schema 的查询权限",
     "查看 orders 表的变更历史",
+    "创建一个动态脱敏策略",
   ],
 }
 
