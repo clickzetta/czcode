@@ -126,12 +126,17 @@ czcode/
 # Install dependencies
 ~/.bun/bin/bun install
 
-# Start TUI dev server
+# Start TUI dev server (from source, auto-loads .env)
 ~/.bun/bin/bun dev
+
+# Test compiled binary locally (builds + runs from dist/, loads .env from cwd)
+~/.bun/bin/bun test:local
 
 # Run annotation check
 ~/.bun/bin/bun run script/check-opencode-annotations.ts --base HEAD~1
 ```
+
+> **`bun dev` vs `bun test:local`**：`bun dev` 直接从源码运行，适合开发调试。`bun test:local` 先编译成二进制再运行，模拟用户实际使用的方式，适合发布前验证。
 
 ### Environment variables
 

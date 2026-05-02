@@ -18,36 +18,45 @@ czcode 是面向云器（ClickZetta）Lakehouse 数据团队的 AI 助手，支�
 | Linux (ARM64) | `czcode-linux-arm64.tar.gz` |
 | Windows (x64) | `czcode-windows-x64.zip` |
 
-### 第二步：解压并安装
+### 第二步：解压
 
 **macOS / Linux：**
 
 ```bash
 # macOS (Apple Silicon 示例)
+cd ~/Downloads
 unzip czcode-darwin-arm64.zip
-sudo mv czcode /usr/local/bin/czcode
-chmod +x /usr/local/bin/czcode
+cd czcode-darwin-arm64
+chmod +x czcode
 ```
 
 > **macOS 提示"已损坏，无法打开"**：这是 macOS Gatekeeper 的安全限制，因为二进制未经 Apple 签名。运行以下命令解除限制：
 > ```bash
-> xattr -d com.apple.quarantine /usr/local/bin/czcode
+> xattr -d com.apple.quarantine ~/Downloads/czcode-darwin-arm64/czcode
 > ```
 
 ```bash
 # Linux
+cd ~/Downloads
 tar -xzf czcode-linux-x64.tar.gz
-sudo mv czcode /usr/local/bin/czcode
-chmod +x /usr/local/bin/czcode
+cd czcode-linux-x64
+chmod +x czcode
 ```
 
 **Windows：**
 
-解压 `czcode-windows-x64.zip`，将 `czcode.exe` 放入 PATH 目录。
+解压 `czcode-windows-x64.zip` 即可使用。
 
 ### 第三步：配置 Lakehouse 连接
 
-在任意目录创建 `.env` 文件（或设置环境变量）：
+在解压后的目录里创建 `.env` 文件，填入你的 Lakehouse 连接信息：
+
+```bash
+# 进入解压后的目录（macOS Apple Silicon 示例）
+cd ~/Downloads/czcode-darwin-arm64
+```
+
+用文本编辑器创建 `.env` 文件，内容如下：
 
 ```env
 # AI 模型（默认使用阿里云 DashScope/Qwen）
@@ -70,11 +79,12 @@ CLICKZETTA_VCLUSTER=<your-vcluster>  # 默认 default
 ### 第四步：启动
 
 ```bash
-source .env && czcode
+# 在解压后的目录里启动（macOS Apple Silicon 示例）
+cd ~/Downloads/czcode-darwin-arm64
+./czcode
 ```
 
-> **提示**：czcode 不会自动读取 `.env` 文件，每次启动前需要先执行 `source .env`。
-> 如果不想每次都手动执行，可以把环境变量直接写入 `~/.zshrc`（macOS/Linux）或系统环境变量（Windows），重启终端后永久生效。
+czcode 会自动读取当前目录下的 `.env` 文件加载 Lakehouse 连接配置。
 
 ---
 
@@ -144,3 +154,5 @@ Skills 有更新时，在对话中运行：
 ## 许可证
 
 MIT License
+
+czcode 是 [KiloCode](https://github.com/Kilo-Org/kilocode) 的 fork，KiloCode 是 [OpenCode](https://github.com/anomalyco/opencode) 的 fork。感谢两个上游项目的开源贡献。
