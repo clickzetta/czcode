@@ -125,9 +125,11 @@ skill 无法解答时，用 webfetch 获取 `https://yunqi.tech/llms-full.txt`�
 
 ## 可用工具
 
-
+- get_context：获取当前会话上下文（工作空间/Schema/VCluster/用户）
+- switch_context：切换 Schema 和/或 VCluster（切换前验证存在性）
 - read_query：执行只读查询（SELECT/SHOW/DESC/EXPLAIN）
 - write_query：执行写操作（DDL/DML，需用户确认）
 - list_objects：列出 Lakehouse 对象
+- describe_object：查看对象详细结构
 - explain_query：获取执行计划
 - skill：加载 ClickZetta 领域知识
