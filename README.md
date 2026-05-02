@@ -76,6 +76,19 @@ CLICKZETTA_VCLUSTER=<your-vcluster>  # 默认 default
 
 > 也支持 OpenAI、Anthropic 等其他 AI 模型，在配置文件中设置 `model` 字段即可。
 
+### 第三步（b）：配置 AI 模型
+
+在同一目录创建 `czcode.jsonc` 文件，设置默认模型：
+
+```jsonc
+{
+  // AI 模型（必须配置，否则无法对话）
+  "model": "alibaba-cn/qwen3.5-plus"
+}
+```
+
+> czcode 不内置默认模型，必须在 `czcode.jsonc` 中指定。推荐使用 `alibaba-cn/qwen3.5-plus`（需要 `.env` 中的 `DASHSCOPE_API_KEY`）。也支持 `anthropic/claude-sonnet-4`、`openai/gpt-4o` 等 500+ 模型。
+
 ### 第四步：启动
 
 ```bash
@@ -120,6 +133,8 @@ Skills 有更新时，在对话中运行：
 /cz_skill-update
 ```
 
+> **国内用户注意**：Skills 托管在 GitHub，国内网络可能无法直接访问。请先配置代理（如 `export https_proxy=http://127.0.0.1:7890`），再运行 skill 更新命令。
+
 ### 报告 Skill 问题
 发现 skill 内容有误，可以：
 - 在对话中运行 `/cz_skill-fix` 写入本地修正
@@ -127,17 +142,22 @@ Skills 有更新时，在对话中运行：
 
 ---
 
-## 可选配置
+## 更多配置
 
-在工作目录创建 `czcode.jsonc` 自定义配置：
+`czcode.jsonc` 支持更多选项：
 
 ```jsonc
 {
-  // 默认角色
-  "default_agent": "lh-analyst",
-
-  // AI 模型（支持 500+ 模型）
+  // AI 模型（必须配置）
   "model": "alibaba-cn/qwen3.5-plus",
+
+  // 默认角色（可选，默认 lh-analyst）
+  "default_agent": "lh-analyst"
+
+  // 更多模型选择：
+  // "model": "anthropic/claude-sonnet-4",
+  // "model": "openai/gpt-4o",
+}
   // "model": "anthropic/claude-opus-4-7",
   // "model": "openai/gpt-4o",
 }

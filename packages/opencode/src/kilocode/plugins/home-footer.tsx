@@ -123,7 +123,7 @@ function LakehouseStatus(props: { api: TuiPluginApi }) {
   })
 
   return (
-    <Show when={connected()} fallback={<text fg={theme().warning}>◇ Lakehouse 未配置</text>}>
+    <Show when={connected()}>
       <box flexDirection="row" gap={1} flexShrink={0}>
         <text fg={theme().success}>◆</text>
         <text fg={theme().text}>ClickZetta</text>
