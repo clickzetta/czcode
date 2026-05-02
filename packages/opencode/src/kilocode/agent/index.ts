@@ -15,6 +15,7 @@ import PROMPT_ORCHESTRATOR from "../../agent/prompt/orchestrator.txt"
 import PROMPT_ASK from "../../agent/prompt/ask.txt"
 import PROMPT_EXPLORE from "../../agent/prompt/explore.txt"
 // czcode_change start
+import PROMPT_LH_BASE from "../../agent/prompt/lh-base.txt"
 import PROMPT_LH_ENGINEER from "../../agent/prompt/lh-engineer.txt"
 import PROMPT_LH_ANALYST from "../../agent/prompt/lh-analyst.txt"
 import PROMPT_LH_DBA from "../../agent/prompt/lh-dba.txt"
@@ -443,7 +444,7 @@ export function patchAgents(
     name: "lh-engineer",
     displayName: "数据工程师",
     description: "云器 Lakehouse 数据工程师 — 数据接入/建表/ETL/数仓建模/调度/指标管理",
-    prompt: PROMPT_LH_ENGINEER,
+    prompt: PROMPT_LH_ENGINEER + "\n\n" + PROMPT_LH_BASE,
     options: {},
     color: "#0066CC",
     permission: Permission.merge(
@@ -460,7 +461,7 @@ export function patchAgents(
     name: "lh-analyst",
     displayName: "数据分析师",
     description: "云器 Lakehouse 数据分析师 — 查询/报表/数据质量探查/BI连接（只读）",
-    prompt: PROMPT_LH_ANALYST,
+    prompt: PROMPT_LH_ANALYST + "\n\n" + PROMPT_LH_BASE,
     options: {},
     color: "#00AA44",
     permission: Permission.merge(
@@ -476,7 +477,7 @@ export function patchAgents(
     name: "lh-dba",
     displayName: "数据运维",
     description: "云器 Lakehouse 数据运维 — VCluster管理/查询调优/作业监控",
-    prompt: PROMPT_LH_DBA,
+    prompt: PROMPT_LH_DBA + "\n\n" + PROMPT_LH_BASE,
     options: {},
     color: "#CC6600",
     permission: Permission.merge(
@@ -493,7 +494,7 @@ export function patchAgents(
     name: "lh-governance",
     displayName: "数据治理",
     description: "云器 Lakehouse 数据治理 — 权限/安全/生命周期/合规/共享/费用分析",
-    prompt: PROMPT_LH_GOVERNANCE,
+    prompt: PROMPT_LH_GOVERNANCE + "\n\n" + PROMPT_LH_BASE,
     options: {},
     color: "#7B2D8B",
     permission: Permission.merge(
