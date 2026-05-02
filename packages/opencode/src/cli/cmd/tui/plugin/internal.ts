@@ -11,6 +11,8 @@ import KiloSidebarUsage from "@/kilocode/plugins/sidebar-usage"
 // czcode_change start
 import CzCodeConnectionStatus from "@/kilocode/plugins/czcode-connection-status"
 import CzCodeRoleSwitch from "@/kilocode/plugins/czcode-role-switch"
+import CzCodeSchemaBrowser from "@/kilocode/plugins/czcode-schema-browser"
+import CzCodeSqlHistory from "@/kilocode/plugins/czcode-sql-history"
 // czcode_change end
 import SidebarContext from "../feature-plugins/sidebar/context"
 import SidebarMcp from "../feature-plugins/sidebar/mcp"
@@ -35,6 +37,8 @@ export const INTERNAL_TUI_PLUGINS: InternalTuiPlugin[] = [
   KiloSidebarUsage, // kilocode_change
   CzCodeConnectionStatus, // czcode_change
   CzCodeRoleSwitch, // czcode_change
+  CzCodeSchemaBrowser, // czcode_change
+  CzCodeSqlHistory, // czcode_change
   HomeFooter,
   HomeTips,
   SidebarContext,
