@@ -8,7 +8,15 @@
  * - @opencode-ai/sdk -> @kilocode/sdk
  * - @opencode-ai/plugin -> @kilocode/plugin
  * - OPENCODE_* -> KILO_* (env variables, excluding OPENCODE_API_KEY)
+<<<<<<< HEAD
  * - x-kilo-* -> x-kilo-* (HTTP headers)
+||||||| 12f7967ca4
+ * - x-opencode-* -> x-kilo-* (HTTP headers)
+ * - opencode.db -> kilo.db (database filename)
+ * - window.__OPENCODE__ -> window.__KILO__ (window global)
+=======
+ * - x-opencode-* -> x-kilo-* (HTTP headers)
+>>>>>>> yunqiqiliang/opencode-v7.2.33
  * - kilo.db -> kilo.db (database filename)
  * - window.__KILO__ -> window.__KILO__ (window global)
  */
@@ -68,12 +76,28 @@ const PACKAGE_PATTERNS = [
 
   // SDK public API renames (Opencode → Kilo)
   // Order matters: longer names first to avoid partial matches
+<<<<<<< HEAD
   { pattern: /KiloClientConfig/g, replacement: "KiloClientConfig" },
   { pattern: /createKiloClient/g, replacement: "createKiloClient" },
   { pattern: /createKiloServer/g, replacement: "createKiloServer" },
   { pattern: /createKiloTui/g, replacement: "createKiloTui" },
   { pattern: /KiloClient/g, replacement: "KiloClient" },
   // createKilo (without suffix) needs negative lookahead to avoid matching createKiloClient
+||||||| 12f7967ca4
+  { pattern: /OpencodeClientConfig/g, replacement: "KiloClientConfig" },
+  { pattern: /createOpencodeClient/g, replacement: "createKiloClient" },
+  { pattern: /createOpencodeServer/g, replacement: "createKiloServer" },
+  { pattern: /createOpencodeTui/g, replacement: "createKiloTui" },
+  { pattern: /OpencodeClient/g, replacement: "KiloClient" },
+  // createOpencode (without suffix) needs negative lookahead to avoid matching createOpencodeClient
+=======
+  { pattern: /OpencodeClientConfig/g, replacement: "KiloClientConfig" },
+  { pattern: /createOpencodeClient/g, replacement: "createKiloClient" },
+  { pattern: /createOpencodeServer/g, replacement: "createKiloServer" },
+  { pattern: /createOpencodeTui/g, replacement: "createKiloTui" },
+  { pattern: /OpencodeClient/g, replacement: "KiloClient" },
+  // createKilo (without suffix) needs negative lookahead to avoid matching createOpencodeClient
+>>>>>>> yunqiqiliang/opencode-v7.2.33
   { pattern: /\bcreateOpencode\b(?!Client|Server|Tui)/g, replacement: "createKilo" },
 
   // Branding: environment variables (exclude OPENCODE_API_KEY — upstream Zen SaaS key)

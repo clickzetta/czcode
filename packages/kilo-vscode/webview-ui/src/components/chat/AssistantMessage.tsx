@@ -18,6 +18,7 @@ import type {
 } from "@kilocode/sdk/v2"
 import { useData } from "@kilocode/kilo-ui/context/data"
 import { useSession } from "../../context/session"
+import { useDisplay } from "../../context/display"
 import { useConfig } from "../../context/config"
 import { QuestionDock } from "./QuestionDock"
 import { SuggestBar } from "./SuggestBar"
@@ -112,6 +113,7 @@ function BashToolCard(props: { part: ToolPart; defaultOpen: boolean }) {
 export const AssistantMessage: Component<AssistantMessageProps> = (props) => {
   const data = useData()
   const session = useSession()
+  const display = useDisplay()
   const { config } = useConfig()
   const open = createMemo(() => config().terminal_command_display !== "collapsed")
 
@@ -164,6 +166,7 @@ export const AssistantMessage: Component<AssistantMessageProps> = (props) => {
                                   part={part}
                                   message={props.message as SDKMessage}
                                   showAssistantCopyPartID={props.showAssistantCopyPartID}
+                                  reasoningAutoCollapse={display.reasoningAutoCollapse()}
                                   animate={
                                     part.type === "tool" &&
                                     ((part as unknown as ToolPart).state?.status === "pending" ||

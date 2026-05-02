@@ -31,5 +31,6 @@
     "@types/bun": "catalog:",
     "typescript": "catalog:",
     "@typescript/native-preview": "catalog:"
-  }
+  },
+  "peerDependencies": {}
 }

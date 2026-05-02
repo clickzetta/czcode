@@ -590,6 +590,30 @@ export type EventVcsBranchUpdated = {
   }
 }
 
+export type EventKilocodeAgentManagerStart = {
+  type: "kilocode.agent_manager.start"
+  properties: {
+    requestID: string
+    sessionID: string
+    mode: "worktree" | "local"
+    versions?: boolean
+    tasks: Array<{
+      /**
+       * Initial prompt to send to the new session
+       */
+      prompt?: string
+      /**
+       * Short display name for the Agent Manager card
+       */
+      name?: string
+      /**
+       * Git branch name seed for worktree mode
+       */
+      branchName?: string
+    }>
+  }
+}
+
 export type EventSessionCompacted = {
   type: "session.compacted"
   properties: {
@@ -1331,6 +1355,7 @@ export type GlobalEvent = {
     | EventSessionIdle
     | EventTodoUpdated
     | EventVcsBranchUpdated
+    | EventKilocodeAgentManagerStart
     | EventSessionCompacted
     | EventKiloSessionsRemoteStatusChanged
     | EventWorktreeReady
@@ -1539,6 +1564,7 @@ export type PermissionConfig =
       lsp?: PermissionRuleConfig
       doom_loop?: PermissionActionConfig
       skill?: PermissionRuleConfig
+      agent_manager?: PermissionRuleConfig
       [key: string]: PermissionRuleConfig | PermissionActionConfig | undefined
     }
 
@@ -1646,6 +1672,7 @@ export type ProviderConfig = {
       id?: string
       name?: string
       family?: string
+      prompt?: "codex" | "gemini" | "beast" | "anthropic" | "trinity" | "anthropic_without_todo" | "ling" | "gpt55"
       release_date?: string
       attachment?: boolean
       reasoning?: boolean
@@ -1855,6 +1882,10 @@ export type Config = {
    * Enable remote control of sessions via Kilo Cloud. Equivalent to running /remote on startup.
    */
   remote_control?: boolean
+  /**
+   * Automatically collapse reasoning blocks after the agent finishes writing them
+   */
+  auto_collapse_reasoning?: boolean
   indexing?: IndexingConfig
   /**
    * Controls whether terminal command blocks are expanded or collapsed by default in the VS Code chat UI
@@ -2022,6 +2053,10 @@ export type Config = {
      */
     semantic_indexing?: boolean
     /**
+     * Enable the VS Code Agent Manager orchestration tool
+     */
+    agent_manager_tool?: boolean
+    /**
      * Enable telemetry. Set to false to opt-out.
      */
     openTelemetry?: boolean
@@ -2160,7 +2195,7 @@ export type Model = {
     }
   }
   recommendedIndex?: number
-  prompt?: "codex" | "gemini" | "beast" | "anthropic" | "trinity" | "anthropic_without_todo" | "ling"
+  prompt?: "codex" | "gemini" | "beast" | "anthropic" | "trinity" | "anthropic_without_todo" | "ling" | "gpt55"
   isFree?: boolean
   ai_sdk_provider?: "alibaba" | "anthropic" | "openai" | "openai-compatible" | "openrouter"
 }
@@ -2453,6 +2488,7 @@ export type Event =
   | EventSessionIdle
   | EventTodoUpdated
   | EventVcsBranchUpdated
+  | EventKilocodeAgentManagerStart
   | EventSessionCompacted
   | EventKiloSessionsRemoteStatusChanged
   | EventWorktreeReady

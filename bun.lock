@@ -33,7 +33,13 @@
     },
     "packages/app": {
       "name": "@opencode-ai/app",
+<<<<<<< HEAD
       "version": "7.2.30",
+||||||| 12f7967ca4
+      "version": "7.2.31",
+=======
+      "version": "7.2.33",
+>>>>>>> yunqiqiliang/opencode-v7.2.33
       "dependencies": {
         "@kilocode/kilo-i18n": "workspace:*",
         "@kilocode/kilo-ui": "workspace:*",
@@ -109,7 +115,13 @@
     },
     "packages/desktop": {
       "name": "@opencode-ai/desktop",
+<<<<<<< HEAD
       "version": "7.2.30",
+||||||| 12f7967ca4
+      "version": "7.2.31",
+=======
+      "version": "7.2.33",
+>>>>>>> yunqiqiliang/opencode-v7.2.33
       "dependencies": {
         "@opencode-ai/app": "workspace:*",
         "@opencode-ai/ui": "workspace:*",
@@ -142,7 +154,13 @@
     },
     "packages/desktop-electron": {
       "name": "@opencode-ai/desktop-electron",
+<<<<<<< HEAD
       "version": "7.2.30",
+||||||| 12f7967ca4
+      "version": "7.2.31",
+=======
+      "version": "7.2.33",
+>>>>>>> yunqiqiliang/opencode-v7.2.33
       "dependencies": {
         "@opencode-ai/app": "workspace:*",
         "@opencode-ai/ui": "workspace:*",
@@ -194,7 +212,13 @@
     },
     "packages/kilo-docs": {
       "name": "@kilocode/kilo-docs",
+<<<<<<< HEAD
       "version": "7.2.30",
+||||||| 12f7967ca4
+      "version": "7.2.31",
+=======
+      "version": "7.2.33",
+>>>>>>> yunqiqiliang/opencode-v7.2.33
       "dependencies": {
         "@docsearch/css": "^4",
         "@docsearch/js": "^4",
@@ -223,7 +247,13 @@
     },
     "packages/kilo-gateway": {
       "name": "@kilocode/kilo-gateway",
+<<<<<<< HEAD
       "version": "7.2.30",
+||||||| 12f7967ca4
+      "version": "7.2.31",
+=======
+      "version": "7.2.33",
+>>>>>>> yunqiqiliang/opencode-v7.2.33
       "dependencies": {
         "@ai-sdk/alibaba": "1.0.17",
         "@ai-sdk/anthropic": "3.0.71",
@@ -259,7 +289,13 @@
     },
     "packages/kilo-i18n": {
       "name": "@kilocode/kilo-i18n",
+<<<<<<< HEAD
       "version": "7.2.30",
+||||||| 12f7967ca4
+      "version": "7.2.31",
+=======
+      "version": "7.2.33",
+>>>>>>> yunqiqiliang/opencode-v7.2.33
       "devDependencies": {
         "@tsconfig/node22": "catalog:",
         "@types/bun": "catalog:",
@@ -269,7 +305,13 @@
     },
     "packages/kilo-indexing": {
       "name": "@kilocode/kilo-indexing",
+<<<<<<< HEAD
       "version": "7.2.30",
+||||||| 12f7967ca4
+      "version": "7.2.31",
+=======
+      "version": "7.2.33",
+>>>>>>> yunqiqiliang/opencode-v7.2.33
       "dependencies": {
         "@aws-sdk/client-bedrock-runtime": "3.1005.0",
         "@aws-sdk/credential-provider-ini": "3.972.31",
@@ -304,15 +346,15 @@
     },
     "packages/kilo-telemetry": {
       "name": "@kilocode/kilo-telemetry",
+<<<<<<< HEAD
       "version": "7.2.30",
+||||||| 12f7967ca4
+      "version": "7.2.31",
+=======
+      "version": "7.2.33",
+>>>>>>> yunqiqiliang/opencode-v7.2.33
       "dependencies": {
         "@kilocode/kilo-gateway": "workspace:*",
-        "@opentelemetry/api": "1.9.0",
-        "@opentelemetry/core": "2.6.1",
-        "@opentelemetry/resources": "2.6.1",
-        "@opentelemetry/sdk-trace-base": "2.6.1",
-        "@opentelemetry/sdk-trace-node": "2.6.1",
-        "@opentelemetry/semantic-conventions": "1.40.0",
         "posthog-node": "4.4.0",
       },
       "devDependencies": {
@@ -324,7 +366,13 @@
     },
     "packages/kilo-ui": {
       "name": "@kilocode/kilo-ui",
+<<<<<<< HEAD
       "version": "7.2.30",
+||||||| 12f7967ca4
+      "version": "7.2.31",
+=======
+      "version": "7.2.33",
+>>>>>>> yunqiqiliang/opencode-v7.2.33
       "dependencies": {
         "@kobalte/core": "0.13.11",
         "@opencode-ai/shared": "workspace:*",
@@ -359,7 +407,13 @@
     },
     "packages/kilo-vscode": {
       "name": "kilo-code",
+<<<<<<< HEAD
       "version": "7.2.30",
+||||||| 12f7967ca4
+      "version": "7.2.31",
+=======
+      "version": "7.2.33",
+>>>>>>> yunqiqiliang/opencode-v7.2.33
       "dependencies": {
         "@anthropic-ai/sdk": "^0.39.0",
         "@kilocode/kilo-i18n": "workspace:*",
@@ -420,7 +474,13 @@
     },
     "packages/opencode": {
       "name": "@kilocode/cli",
+<<<<<<< HEAD
       "version": "7.2.30",
+||||||| 12f7967ca4
+      "version": "7.2.31",
+=======
+      "version": "7.2.33",
+>>>>>>> yunqiqiliang/opencode-v7.2.33
       "bin": {
         "czcode": "./bin/kilo",
         "kilo": "./bin/kilo",
@@ -580,7 +640,13 @@
     },
     "packages/plugin": {
       "name": "@kilocode/plugin",
+<<<<<<< HEAD
       "version": "7.2.30",
+||||||| 12f7967ca4
+      "version": "7.2.31",
+=======
+      "version": "7.2.33",
+>>>>>>> yunqiqiliang/opencode-v7.2.33
       "dependencies": {
         "@kilocode/sdk": "workspace:*",
         "effect": "catalog:",
@@ -605,7 +671,13 @@
     },
     "packages/script": {
       "name": "@opencode-ai/script",
+<<<<<<< HEAD
       "version": "7.2.30",
+||||||| 12f7967ca4
+      "version": "7.2.31",
+=======
+      "version": "7.2.33",
+>>>>>>> yunqiqiliang/opencode-v7.2.33
       "dependencies": {
         "semver": "^7.6.3",
       },
@@ -616,7 +688,13 @@
     },
     "packages/sdk/js": {
       "name": "@kilocode/sdk",
+<<<<<<< HEAD
       "version": "7.2.30",
+||||||| 12f7967ca4
+      "version": "7.2.31",
+=======
+      "version": "7.2.33",
+>>>>>>> yunqiqiliang/opencode-v7.2.33
       "dependencies": {
         "cross-spawn": "catalog:",
       },
@@ -631,7 +709,13 @@
     },
     "packages/shared": {
       "name": "@opencode-ai/shared",
+<<<<<<< HEAD
       "version": "7.2.30",
+||||||| 12f7967ca4
+      "version": "7.2.31",
+=======
+      "version": "7.2.33",
+>>>>>>> yunqiqiliang/opencode-v7.2.33
       "bin": {
         "opencode": "./bin/opencode",
       },
@@ -655,7 +739,13 @@
     },
     "packages/storybook": {
       "name": "@opencode-ai/storybook",
+<<<<<<< HEAD
       "version": "7.2.30",
+||||||| 12f7967ca4
+      "version": "7.2.31",
+=======
+      "version": "7.2.33",
+>>>>>>> yunqiqiliang/opencode-v7.2.33
       "devDependencies": {
         "@opencode-ai/ui": "workspace:*",
         "@solidjs/meta": "catalog:",
@@ -678,7 +768,13 @@
     },
     "packages/ui": {
       "name": "@opencode-ai/ui",
+<<<<<<< HEAD
       "version": "7.2.30",
+||||||| 12f7967ca4
+      "version": "7.2.31",
+=======
+      "version": "7.2.33",
+>>>>>>> yunqiqiliang/opencode-v7.2.33
       "dependencies": {
         "@kilocode/sdk": "workspace:*",
         "@kobalte/core": "catalog:",

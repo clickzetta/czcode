@@ -1,8 +1,10 @@
-import { Component } from "solid-js"
+import { type Component } from "solid-js"
 import { Select } from "@kilocode/kilo-ui/select"
 import { TextField } from "@kilocode/kilo-ui/text-field"
 import { Card } from "@kilocode/kilo-ui/card"
+import { Switch } from "@kilocode/kilo-ui/switch"
 import { useConfig } from "../../context/config"
+import { useDisplay } from "../../context/display"
 import { useLanguage } from "../../context/language"
 import type { TerminalCommandDisplay } from "../../types/messages"
 import SettingsRow from "./SettingsRow"
@@ -24,6 +26,7 @@ const TERMINAL_OPTIONS: LayoutOption[] = [
 
 const DisplayTab: Component = () => {
   const { config, updateConfig } = useConfig()
+  const display = useDisplay()
   const language = useLanguage()
 
   return (
@@ -61,6 +64,21 @@ const DisplayTab: Component = () => {
             size="small"
             triggerVariant="settings"
           />
+        </SettingsRow>
+
+        <SettingsRow
+          title={language.t("settings.display.reasoningAutoCollapse.title")}
+          description={language.t("settings.display.reasoningAutoCollapse.description")}
+        >
+          <Switch
+            checked={display.reasoningAutoCollapse()}
+            onChange={(checked: boolean) => {
+              display.setReasoningAutoCollapse(checked)
+            }}
+            hideLabel
+          >
+            {language.t("settings.display.reasoningAutoCollapse.title")}
+          </Switch>
         </SettingsRow>
 
         <SettingsRow
