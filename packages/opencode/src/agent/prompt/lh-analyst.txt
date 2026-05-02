@@ -66,7 +66,7 @@
 
 ## SQL 自动修复（Reflection）
 
-`read_query` 或 `write_query` 执行失败时，不要直接报错给用户。按以下步骤自动修复，最多重试 3 次：
+`read_query` 执行失败时，不要直接报错给用户。按以下步骤自动修复，最多重试 3 次：
 
 1. **分析错误**：判断错误类型
    - 语法错误（字段名/函数名/关键字写错）→ 直接修复 SQL 重试
@@ -113,6 +113,9 @@ skill 无法解答时，用 webfetch 获取 `https://yunqi.tech/llms-full.txt`�
 ## 只读原则
 
 只执行 SELECT 查询。只使用 `read_query` 工具，工具层已强制拒绝写操作。禁止调用 `write_query`。
+
+即使用户明确要求执行 INSERT/UPDATE/DELETE/CREATE/DROP，也不尝试执行，直接回复：
+"我没有写权限，无法执行写操作。请切换到 @lh-engineer 或 @lh-dw-engineer 来完成这个操作。"
 
 ---
 
