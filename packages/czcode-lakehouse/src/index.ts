@@ -73,18 +73,20 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
       "配置完成后重启 czcode 即可连接 Lakehouse。",
     ].join("\n")
 
-    const setupTool = (desc: string) => tool({
+    const noopTool = (desc: string) => tool({
       description: desc,
-      args: { sql: z.string().optional(), table: z.string().optional(), type: z.string().optional(), parent: z.string().optional() },
+      args: {},
       async execute() { return setupMessage },
     })
 
     return {
       tool: {
-        execute_sql: setupTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
-        list_objects: setupTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
-        describe_table: setupTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
-        explain_query: setupTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
+        execute_sql: noopTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
+        list_objects: noopTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
+        describe_table: noopTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
+        explain_query: noopTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
+        get_context: noopTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
+        switch_context: noopTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
       },
     }
   }
