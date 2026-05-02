@@ -154,26 +154,32 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
       }),
 
       describe_table: tool({
-        description: "查看 ClickZetta Lakehouse 表结构，包括列名、数据类型、是否可空和注释。",
+        description: "查看 ClickZetta Lakehouse 表结构或语义视图定义。对普通表返回列名/类型/注释；对语义视图（在名称前加 'semantic:' 前缀）返回逻辑表、维度、指标定义。",
         args: {
-          table: z.string().describe("表名，可包含 schema 前缀，如 mcp_demo.orders"),
+          table: z.string().describe("表名或语义视图名，可含 schema 前缀。语义视图用 'semantic:<视图名>' 格式，如 'semantic:tpch_rev_analysis'"),
         },
         async execute(args) {
           try {
+            // semantic view: use DESC EXTENDED
+            if (args.table.startsWith("semantic:")) {
+              const viewName = args.table.slice("semantic:".length)
+              const result = await connector.execute(`DESC EXTENDED ${viewName}`, 200)
+              return formatQueryResult(result)
+            }
             const schema = await connector.describeTable(args.table)
             return formatTableSchema(schema)
           } catch (err) {
-            return `获取表结构失败: ${(err as Error).message}`
+            return `获取结构失败: ${(err as Error).message}`
           }
         },
       }),
 
       list_objects: tool({
-        description: "列出 ClickZetta Lakehouse 中的对象（数据库/Schema/表/视图/Pipe/Stream）。",
+        description: "列出 ClickZetta Lakehouse 中的对象（数据库/Schema/表/视图/Pipe/Stream/语义视图）。semantic_view 类型可列出当前 Schema 下所有语义视图。",
         args: {
           type: z
-            .enum(["database", "schema", "table", "view", "pipe", "stream"])
-            .describe("对象类型"),
+            .enum(["database", "schema", "table", "view", "pipe", "stream", "semantic_view"])
+            .describe("对象类型，semantic_view 用于列出语义视图"),
           parent: z.string().optional().describe("父对象名称，如 schema 名或 database 名"),
         },
         async execute(args) {

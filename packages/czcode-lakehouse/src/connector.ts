@@ -88,11 +88,13 @@ export class LakehouseConnector {
   }
 
   async listObjects(
-    type: "database" | "schema" | "table" | "view" | "pipe" | "stream",
+    type: "database" | "schema" | "table" | "view" | "pipe" | "stream" | "semantic_view",
     parent?: string,
   ): Promise<string[]> {
     this.ensureConnected()
-    const sql = parent ? `SHOW ${type.toUpperCase()}S IN ${parent}` : `SHOW ${type.toUpperCase()}S`
+    // semantic_view uses "SHOW SEMANTIC VIEWS" syntax
+    const showType = type === "semantic_view" ? "SEMANTIC VIEWS" : `${type.toUpperCase()}S`
+    const sql = parent ? `SHOW ${showType} IN ${parent}` : `SHOW ${showType}`
     const result = (await this.conn!.execute(sql)) as unknown as Record<string, unknown>[]
     return (result ?? [])
       .map((row) => String(row["name"] ?? row["table_name"] ?? row["schema_name"] ?? ""))
