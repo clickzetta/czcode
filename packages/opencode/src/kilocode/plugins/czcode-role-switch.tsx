@@ -22,7 +22,7 @@ const tui: TuiPlugin = async (api) => {
       value: "czcode-role",
       description: "切换 Lakehouse 数据角色",
       category: "czcode",
-      slash: { name: "role", aliases: ["r"] },
+      slash: { name: "cz_role", aliases: ["cz_r"] },
       onSelect() {
         const options = ROLES.map((r) => ({
           title: `${r.label} — ${r.desc}`,

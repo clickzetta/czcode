@@ -144,7 +144,7 @@ const tui: TuiPlugin = async (api) => {
       value: "czcode-vcluster",
       description: "查看 Lakehouse VCluster 运行状态",
       category: "czcode",
-      slash: { name: "vcluster", aliases: ["vc"] },
+      slash: { name: "cz_vcluster", aliases: ["cz_vc"] },
       onSelect() {
         const route = api.route.current
         if (route.name !== "session") {

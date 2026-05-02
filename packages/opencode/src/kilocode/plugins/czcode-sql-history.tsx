@@ -2,9 +2,8 @@
 /**
  * czcode SQL History plugin.
  *
- * Registers a /history command that shows past SQL queries from the
- * current session's tool call history. Extracts SQL from read_query
- * and write_query tool parts in the message stream.
+ * Registers a /cz_sql_history command that shows past SQL queries from the
+ * current session's tool call history.
  */
 import type { TuiPlugin, TuiPluginModule } from "@kilocode/plugin/tui"
 import type { Message, ToolPart } from "@kilocode/sdk/v2"
@@ -42,10 +41,10 @@ const tui: TuiPlugin = async (api) => {
   api.command.register(() => [
     {
       title: "SQL 历史",
-      value: "czcode-history",
+      value: "czcode-sql-history",
       description: "查看当前会话的 SQL 执行历史",
       category: "czcode",
-      slash: { name: "history", aliases: ["h"] },
+      slash: { name: "cz_sql_history", aliases: ["cz_sh"] },
       onSelect() {
         const route = api.route.current
         if (route.name !== "session") {
@@ -66,23 +65,21 @@ const tui: TuiPlugin = async (api) => {
           value: String(i),
         }))
 
-        api.ui.dialog.replace(() => {
-          const DialogSelect = api.ui.DialogSelect
-          return (
-            <DialogSelect
-              title={`SQL 历史 (${entries.length})`}
-              options={options}
-              onSelect={(option) => {
-                api.ui.dialog.clear()
-                const idx = Number(option.value)
-                const entry = entries[idx]
-                if (entry) {
-                  api.ui.toast({ message: `${entry.sql.slice(0, 50)}`, variant: "info" })
-                }
-              }}
-            />
-          )
-        })
+        api.ui.dialog.replace(
+          () => {
+            const DialogSelect = api.ui.DialogSelect
+            return (
+              <DialogSelect
+                title={`SQL 历史 (${entries.length})`}
+                options={options}
+                onSelect={() => {
+                  api.ui.dialog.clear()
+                }}
+              />
+            )
+          },
+          () => api.ui.dialog.clear(),
+        )
       },
     },
   ])

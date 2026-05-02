@@ -25,6 +25,6 @@ function parseCommand(name: string, content: string): BuiltinCommand {
 }
 
 export const BUILTIN_COMMANDS: BuiltinCommand[] = [
-  parseCommand("skill-fix", SKILL_FIX),
-  parseCommand("skill-update", SKILL_UPDATE),
+  parseCommand("cz_skill-fix", SKILL_FIX),
+  parseCommand("cz_skill-update", SKILL_UPDATE),
 ]
