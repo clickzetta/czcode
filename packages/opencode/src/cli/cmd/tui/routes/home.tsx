@@ -1,5 +1,5 @@
 import { Prompt, type PromptRef } from "@tui/component/prompt"
-import { createEffect, createSignal } from "solid-js"
+import { createEffect, createMemo, createSignal } from "solid-js"
 import { Logo } from "../component/logo"
 import { useProject } from "../context/project"
 import { useSync } from "../context/sync"
@@ -11,23 +11,51 @@ import { useLocal } from "../context/local"
 import { TuiPluginRuntime } from "../plugin"
 
 let once = false
-// czcode_change start - Lakehouse-focused placeholder prompts first
-const placeholder = {
-  normal: [
-    "列出 mcp_demo schema 下的所有表",
-    "查看 orders 表的结构和数据样例",
+// czcode_change start - per-agent placeholder prompts
+const placeholdersByAgent: Record<string, string[]> = {
+  "lh-analyst": [
+    "我有哪些数据？",
     "统计过去 7 天每天的订单量和销售额",
-    "创建一个 ODS 层的用户行为事件表",
     "分析 orders 表的数据质量，检查空值和异常值",
+    "查看 orders 表的结构和数据样例",
+    "帮我做一个销售趋势分析",
+    "哪些客户的消费金额最高？",
+  ],
+  "lh-engineer": [
+    "创建一个 ODS 层的用户行为事件表",
     "帮我写一个从 MySQL 导入数据到 Lakehouse 的 Pipeline",
+    "给 orders 表加一个 bloomfilter 索引",
+    "查看当前 Schema 下所有 Pipe 的状态",
+    "帮我创建一个 Dynamic Table 做增量聚合",
+  ],
+  "lh-dw-engineer": [
+    "帮我设计数仓分层方案",
+    "创建一个 ODS 层的用户行为事件表",
+    "帮我写一个从 MySQL 导入数据到 Lakehouse 的 Pipeline",
+    "设计一个 DWS 层的用户订单汇总表",
+    "帮我建一个语义视图统一指标口径",
+  ],
+  "lh-dba": [
     "查看当前 VCluster 的资源使用情况",
     "优化这条慢查询的执行计划",
-    "Fix a TODO in the codebase",
-    "What is the tech stack of this project?",
-    "Fix broken tests",
+    "查看最近失败的作业",
+    "暂停 default VCluster",
+    "查看 CRU 消耗最多的用户",
   ],
-  shell: ["ls -la", "git status", "pwd"],
+  "lh-governance": [
+    "查看当前用户的权限",
+    "哪些表没有设置数据生命周期？",
+    "本月的计算和存储费用是多少？",
+    "给用户 alice 授予 mcp_demo schema 的查询权限",
+    "查看 orders 表的变更历史",
+  ],
 }
+
+const defaultPlaceholders = [
+  "我有哪些数据？",
+  "统计过去 7 天每天的订单量和销售额",
+  "查看当前 VCluster 的资源使用情况",
+]
 // czcode_change end
 
 export function Home() {
@@ -39,6 +67,14 @@ export function Home() {
   const args = useArgs()
   const local = useLocal()
   let sent = false
+
+  // czcode_change start - dynamic placeholders based on current agent
+  const placeholder = createMemo(() => {
+    const agentName = local.agent.current()?.name ?? ""
+    const normals = placeholdersByAgent[agentName] ?? defaultPlaceholders
+    return { normal: normals, shell: ["ls -la", "git status", "pwd"] }
+  })
+  // czcode_change end
 
   const bind = (r: PromptRef | undefined) => {
     setRef(r)
@@ -88,7 +124,7 @@ export function Home() {
               ref={bind}
               workspaceID={project.workspace.current()}
               right={<TuiPluginRuntime.Slot name="home_prompt_right" workspace_id={project.workspace.current()} />}
-              placeholders={placeholder}
+              placeholders={placeholder()}
             />
           </TuiPluginRuntime.Slot>
         </box>
