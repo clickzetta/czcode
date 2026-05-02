@@ -461,9 +461,16 @@ export const layer = Layer.effect(
 
     const loadGlobal = Effect.fnUntraced(function* () {
       yield* Effect.promise(() => KilocodeConfig.migrateBashPermission()) // kilocode_change
-      // czcode_change start — seed default skills URL so end users get Lakehouse skills out of the box
+      // czcode_change start — seed default skills URL and builtin commands
+      const { BUILTIN_COMMANDS } = await import("@/kilocode/commands/builtin")
+      const builtinCommandMap = Object.fromEntries(
+        BUILTIN_COMMANDS.map((c) => [c.name, { template: c.template, description: c.description, subtask: c.subtask }])
+      )
       let result: Info = pipe(
-        { skills: { urls: ["https://yunqiqiliang.github.io/clickzetta-skills/.well-known/skills/"] } } as Info,
+        {
+          skills: { urls: ["https://yunqiqiliang.github.io/clickzetta-skills/.well-known/skills/"] },
+          command: builtinCommandMap,
+        } as Info,
         mergeDeep(yield* loadFile(path.join(Global.Path.config, "config.json"))),
         // kilocode_change start
         mergeDeep(yield* loadFile(path.join(Global.Path.config, "kilo.json"))),
