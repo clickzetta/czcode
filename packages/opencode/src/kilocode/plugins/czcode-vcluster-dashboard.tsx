@@ -99,7 +99,7 @@ function View(props: { api: TuiPluginApi; session_id: string }) {
           <b>VClusters</b>
         </text>
         <Show when={empty()}>
-          <text fg={theme().textMuted}>输入 /vcluster 查看状态</text>
+          <text fg={theme().textMuted}>输入 /cz_vcluster 查看状态</text>
         </Show>
         <For each={vclusters()}>
           {(vc) => (
