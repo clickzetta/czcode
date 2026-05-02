@@ -424,6 +424,8 @@ export function patchAgents(
     switch_context: "allow",
     skill: "allow",
     read: "allow",
+    webfetch: "allow", // czcode_change — external data fusion for business analysis
+    websearch: "allow", // czcode_change — external data fusion for business analysis
     write: "deny",
     bash: "deny",
   })
@@ -500,7 +502,11 @@ export function patchAgents(
     permission: Permission.merge(
       defaults,
       lakehouseTools,
-      Permission.fromConfig({ read: "allow" }),
+      Permission.fromConfig({
+        read: "allow",
+        webfetch: "allow", // czcode_change — compliance regulations and security standards
+        websearch: "allow", // czcode_change — compliance regulations and security standards
+      }),
       user,
     ),
     mode: "primary",

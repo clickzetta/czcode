@@ -85,10 +85,9 @@ source .env && czcode
 | 角色 | 说明 | 权限 |
 |---|---|---|
 | `@lh-analyst` | 数据分析师（默认） | 仅 SELECT，工具层强制只读 |
-| `@lh-dw-engineer` | 数仓工程师 | 建模/ETL/调度/数据质量，写操作需确认 |
-| `@lh-engineer` | 数据工程师 | 建表/Pipeline/ETL，写操作需确认 |
-| `@lh-dba` | 平台运维 | VCluster/查询调优/监控，写操作需确认 |
-| `@lh-governance` | 数据治理 | 权限/安全/生命周期/费用，写操作需确认 |
+| `@lh-engineer` | 数据工程师 | 建表/建模/ETL/Pipeline/调度，写操作需确认 |
+| `@lh-dba` | 数据运维 | VCluster/查询调优/监控/费用分析，写操作需确认 |
+| `@lh-governance` | 数据治理 | 权限/安全/生命周期/合规/共享，写操作需确认 |
 
 ---
 
@@ -99,7 +98,7 @@ source .env && czcode
 - SELECT 查询直接执行
 - DDL/DML 操作弹窗确认，危险操作（DROP/TRUNCATE）显示完整 SQL
 
-### 数仓建模向导（`@lh-dw-engineer`）
+### 数仓建模向导（`@lh-engineer`）
 输入"帮我设计数仓分层"，czcode 会：
 1. 自动探索你的数据（SHOW SCHEMAS/TABLES，查表大小）
 2. 给出具体的分层方案选项（传统分层 / Medallion / 混合）
