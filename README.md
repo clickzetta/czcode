@@ -70,12 +70,11 @@ CLICKZETTA_VCLUSTER=<your-vcluster>  # 默认 default
 ### 第四步：启动
 
 ```bash
-# 加载环境变量后启动
-set -a && source .env && set +a
-czcode
+source .env && czcode
 ```
 
-> **说明**：czcode 二进制不自动读取 `.env` 文件，需要先将环境变量导入当前 shell 再启动。也可以直接在 shell 配置文件（`~/.zshrc` 或 `~/.bashrc`）中设置环境变量，这样每次启动都无需手动 source。
+> **提示**：czcode 不会自动读取 `.env` 文件，每次启动前需要先执行 `source .env`。
+> 如果不想每次都手动执行，可以把环境变量直接写入 `~/.zshrc`（macOS/Linux）或系统环境变量（Windows），重启终端后永久生效。
 
 ---
 
