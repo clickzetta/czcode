@@ -103,6 +103,33 @@ function Version(props: { api: TuiPluginApi }) {
 }
 
 // czcode_change start — Lakehouse connection status in footer
+import { readFileSync, existsSync } from "node:fs"
+import { join } from "node:path"
+
+// Ensure .env is loaded (compiled binary doesn't auto-load like bun dev)
+function ensureDotEnvLoaded() {
+  if (process.env.__CZCODE_DOTENV_LOADED) return
+  const envPath = join(process.cwd(), ".env")
+  if (!existsSync(envPath)) return
+  try {
+    const content = readFileSync(envPath, "utf-8")
+    for (const line of content.split("\n")) {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith("#")) continue
+      const eq = trimmed.indexOf("=")
+      if (eq === -1) continue
+      let key = trimmed.slice(0, eq).trim()
+      if (key.startsWith("export ")) key = key.slice(7).trim()
+      let val = trimmed.slice(eq + 1).trim()
+      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'")))
+        val = val.slice(1, -1)
+      if (!process.env[key]) process.env[key] = val
+    }
+    process.env.__CZCODE_DOTENV_LOADED = "1"
+  } catch {}
+}
+ensureDotEnvLoaded()
+
 function LakehouseStatus(props: { api: TuiPluginApi }) {
   const theme = () => props.api.theme.current
   const connected = () =>
