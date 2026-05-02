@@ -70,10 +70,12 @@ CLICKZETTA_VCLUSTER=<your-vcluster>  # 默认 default
 ### 第四步：启动
 
 ```bash
+# 加载环境变量后启动
+set -a && source .env && set +a
 czcode
 ```
 
-首次启动会自动从 GitHub 下载 33 个 ClickZetta Lakehouse Skills，需要网络连接，之后缓存在本地。
+> **说明**：czcode 二进制不自动读取 `.env` 文件，需要先将环境变量导入当前 shell 再启动。也可以直接在 shell 配置文件（`~/.zshrc` 或 `~/.bashrc`）中设置环境变量，这样每次启动都无需手动 source。
 
 ---
 
