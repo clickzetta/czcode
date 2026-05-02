@@ -23,7 +23,10 @@ import { join } from "node:path"
 // Load .env from cwd (compiled binary doesn't auto-load like bun dev)
 function loadDotEnv() {
   const envPath = join(process.cwd(), ".env")
-  if (!existsSync(envPath)) return
+  if (!existsSync(envPath)) {
+    console.warn(`[czcode-lakehouse] .env not found at ${envPath}`)
+    return
+  }
   try {
     const content = readFileSync(envPath, "utf-8")
     for (const line of content.split("\n")) {
@@ -31,7 +34,9 @@ function loadDotEnv() {
       if (!trimmed || trimmed.startsWith("#")) continue
       const eq = trimmed.indexOf("=")
       if (eq === -1) continue
-      const key = trimmed.slice(0, eq).trim()
+      let key = trimmed.slice(0, eq).trim()
+      // Strip optional "export " prefix
+      if (key.startsWith("export ")) key = key.slice(7).trim()
       let val = trimmed.slice(eq + 1).trim()
       // Strip surrounding quotes
       if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
