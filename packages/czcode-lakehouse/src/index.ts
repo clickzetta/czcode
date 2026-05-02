@@ -199,6 +199,32 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
           }
         },
       }),
+
+      get_context: tool({
+        description:
+          "获取当前 Lakehouse 会话的完整上下文信息：实例ID、工作空间、Schema、VCluster、当前用户等。" +
+          "在回答任何数据问题前调用此工具，了解当前连接的环境。",
+        args: {},
+        async execute() {
+          try {
+            const result = await connector.execute(
+              `SELECT
+                current_instance_id()  AS instance_id,
+                current_workspace()    AS workspace,
+                current_workspace_id() AS workspace_id,
+                current_schema()       AS schema,
+                current_vcluster()     AS vcluster,
+                current_user()         AS current_user,
+                current_user_id()      AS user_id,
+                current_session_id()   AS session_id`,
+              1,
+            )
+            return formatQueryResult(result)
+          } catch (err) {
+            return `获取上下文失败: ${(err as Error).message}`
+          }
+        },
+      }),
     },
   }
 }

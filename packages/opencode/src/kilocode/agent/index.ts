@@ -426,6 +426,7 @@ export function patchAgents(
     describe_table: "allow",
     list_objects: "allow",
     explain_query: "allow",
+    get_context: "allow",
     skill: "allow",
   })
 
