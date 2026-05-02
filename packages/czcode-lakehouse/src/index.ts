@@ -50,6 +50,78 @@ function confirmLabel(sql: string): string {
   return RISK_LABELS.write
 }
 
+// Build SHOW SQL for list_objects, handling ClickZetta-specific quirks:
+// - VIEWS/DYNAMIC TABLES/MATERIALIZED VIEWS use SHOW TABLES WHERE is_xxx=true
+// - VOLUMES does not support IN SCHEMA, use WHERE workspace_name instead
+// - SEMANTIC VIEWS use SHOW SEMANTIC VIEWS
+function buildShowSql(
+  type: string,
+  parent?: string,
+  limit = 100,
+): string {
+  const t = type.toUpperCase()
+
+  if (t === "SEMANTIC_VIEW") {
+    const base = parent ? `SHOW SEMANTIC VIEWS IN ${parent}` : "SHOW SEMANTIC VIEWS"
+    return `${base} LIMIT ${limit}`
+  }
+
+  // These types don't have their own SHOW command — use SHOW TABLES WHERE
+  const tableWhereMap: Record<string, string> = {
+    VIEW: "is_view=true",
+    DYNAMIC_TABLE: "is_dynamic=true",
+    MATERIALIZED_VIEW: "is_materialized_view=true",
+    EXTERNAL_TABLE: "is_external=true",
+  }
+  if (tableWhereMap[t]) {
+    const where = tableWhereMap[t]
+    if (parent) {
+      return `SHOW TABLES IN ${parent} WHERE ${where} LIMIT ${limit}`
+    }
+    return `SHOW TABLES WHERE ${where} LIMIT ${limit}`
+  }
+
+  // TABLE: exclude all special types
+  if (t === "TABLE") {
+    const where = "is_view=false AND is_dynamic=false AND is_materialized_view=false AND is_external=false"
+    if (parent) {
+      return `SHOW TABLES IN ${parent} WHERE ${where} LIMIT ${limit}`
+    }
+    return `SHOW TABLES WHERE ${where} LIMIT ${limit}`
+  }
+
+  // VOLUME: does not support IN SCHEMA syntax
+  if (t === "VOLUME") {
+    const base = parent ? `SHOW VOLUMES WHERE workspace_name='${parent}'` : "SHOW VOLUMES"
+    return `${base} LIMIT ${limit}`
+  }
+
+  // Standard: SHOW <TYPE>S [IN <parent>] LIMIT n
+  const plural = t.endsWith("S") ? t : `${t}S`
+  const base = parent ? `SHOW ${plural} IN ${parent}` : `SHOW ${plural}`
+  return `${base} LIMIT ${limit}`
+}
+
+// Build DESC SQL for describe_object, handling ClickZetta-specific quirks:
+// - TABLE/VIEW/DYNAMIC TABLE/MATERIALIZED VIEW/EXTERNAL TABLE all use DESC TABLE syntax
+// - SEMANTIC VIEW uses DESC EXTENDED
+// - Other types use DESC <TYPE> <name>
+function buildDescSql(objectType: string, objectName: string, extended = false): string {
+  const t = objectType.toUpperCase().replace(/_/g, " ")
+
+  if (t === "SEMANTIC VIEW" || t === "SEMANTIC_VIEW") {
+    return `DESC EXTENDED ${objectName}`
+  }
+
+  const tableTypes = ["TABLE", "VIEW", "DYNAMIC TABLE", "MATERIALIZED VIEW", "EXTERNAL TABLE"]
+  if (tableTypes.includes(t)) {
+    return extended ? `DESC TABLE EXTENDED ${objectName}` : `DESC TABLE ${objectName}`
+  }
+
+  // Other types: SCHEMA, CONNECTION, VCLUSTER, PIPE, FUNCTION, USER, ROLE, INDEX, etc.
+  return `DESC ${t} ${objectName}`
+}
+
 export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
   const rawConfig = options?.lakehouse ?? readConfigFromEnv()
   if (!rawConfig) {
@@ -81,9 +153,10 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
 
     return {
       tool: {
-        execute_sql: noopTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
+        read_query: noopTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
+        write_query: noopTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
         list_objects: noopTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
-        describe_table: noopTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
+        describe_object: noopTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
         explain_query: noopTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
         get_context: noopTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
         switch_context: noopTool("ClickZetta Lakehouse 未配置。调用此工具获取配置指引。"),
@@ -109,38 +182,19 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
 
   return {
     tool: {
-      execute_sql: tool({
+      read_query: tool({
         description:
-          "在 ClickZetta Lakehouse 上执行 SQL 语句，返回结果集。SELECT 直接执行；DDL/DML/ADMIN 必须经用户确认；危险操作（DROP/TRUNCATE/REVOKE ALL）显示完整 SQL 并强制确认。readonly 模式下拒绝一切非 SELECT 语句。",
+          "执行只读 SQL 查询（SELECT/SHOW/DESC/EXPLAIN），返回结果集。不接受任何写操作。" +
+          "默认返回最多 200 行，可用 LIMIT 子句控制（最大 5000）。",
         args: {
-          sql: z.string().describe("要执行的 SQL 语句"),
+          sql: z.string().describe("只读 SQL 语句：SELECT、SHOW、DESC、EXPLAIN 等"),
           limit: z.number().int().min(1).max(5000).default(200).describe("最大返回行数（默认 200）"),
-          readonly: z.boolean().default(false).describe("只读模式：true 时拒绝任何非 SELECT 语句"),
         },
-        async execute(args, ctx) {
+        async execute(args) {
           const risk = getSqlRisk(args.sql)
-          const category = classifySql(args.sql)
-
-          // Readonly enforcement — hard block at tool level
-          if (args.readonly && risk !== "safe") {
-            return `[只读模式] 拒绝执行 ${category.toUpperCase()} 语句。当前角色仅允许 SELECT 查询。`
-          }
-
-          // Human-in-loop for all write operations
           if (risk !== "safe") {
-            const label = confirmLabel(args.sql)
-            // Show full SQL for destructive ops, truncated for others
-            const preview = risk === "destructive" ? args.sql : args.sql.slice(0, 200)
-            await Effect.runPromise(
-              ctx.ask({
-                permission: "execute_sql",
-                patterns: [preview],
-                always: [],
-                metadata: { sql: args.sql, category: label, risk },
-              }),
-            )
+            return `[read_query] 拒绝执行写操作。请使用 write_query 工具执行 DDL/DML 操作。`
           }
-
           try {
             const result = await connector.execute(args.sql, args.limit)
             return {
@@ -148,47 +202,105 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
               metadata: { rowCount: result.rowCount, truncated: result.truncated },
             }
           } catch (err) {
-            return `SQL 执行失败: ${(err as Error).message}`
+            return `查询失败: ${(err as Error).message}`
           }
         },
       }),
 
-      describe_table: tool({
-        description: "查看 ClickZetta Lakehouse 表结构或语义视图定义。对普通表返回列名/类型/注释；对语义视图（在名称前加 'semantic:' 前缀）返回逻辑表、维度、指标定义。",
+      write_query: tool({
+        description:
+          "执行写操作 SQL（DDL/DML/权限管理），必须经用户确认后才执行。" +
+          "支持：CREATE/ALTER/DROP/INSERT/UPDATE/DELETE/MERGE/GRANT/REVOKE 等。" +
+          "危险操作（DROP/TRUNCATE/REVOKE ALL）会显示完整 SQL 并强制确认。",
         args: {
-          table: z.string().describe("表名或语义视图名，可含 schema 前缀。语义视图用 'semantic:<视图名>' 格式，如 'semantic:tpch_rev_analysis'"),
+          sql: z.string().describe("写操作 SQL 语句"),
         },
-        async execute(args) {
+        async execute(args, ctx) {
+          const risk = getSqlRisk(args.sql)
+          if (risk === "safe") {
+            return `[write_query] 此 SQL 是只读查询，请使用 read_query 工具执行。`
+          }
+
+          const label = confirmLabel(args.sql)
+          const preview = risk === "destructive" ? args.sql : args.sql.slice(0, 200)
+          await Effect.runPromise(
+            ctx.ask({
+              permission: "write_query",
+              patterns: [preview],
+              always: [],
+              metadata: { sql: args.sql, category: label, risk },
+            }),
+          )
+
           try {
-            // semantic view: use DESC EXTENDED
-            if (args.table.startsWith("semantic:")) {
-              const viewName = args.table.slice("semantic:".length)
-              const result = await connector.execute(`DESC EXTENDED ${viewName}`, 200)
-              return formatQueryResult(result)
+            const result = await connector.execute(args.sql, 100)
+            return {
+              output: formatQueryResult(result),
+              metadata: { rowCount: result.rowCount, truncated: result.truncated },
             }
-            const schema = await connector.describeTable(args.table)
-            return formatTableSchema(schema)
           } catch (err) {
-            return `获取结构失败: ${(err as Error).message}`
+            return `执行失败: ${(err as Error).message}`
           }
         },
       }),
 
       list_objects: tool({
-        description: "列出 ClickZetta Lakehouse 中的对象（数据库/Schema/表/视图/Pipe/Stream/语义视图）。semantic_view 类型可列出当前 Schema 下所有语义视图。",
+        description:
+          "列出 ClickZetta Lakehouse 中的对象。" +
+          "支持类型：schema/table/view/dynamic_table/materialized_view/external_table/" +
+          "pipe/stream/semantic_view/volume/vcluster/function/user/role/share/connection/catalog。" +
+          "注意：view/dynamic_table/materialized_view 内部使用 SHOW TABLES WHERE 过滤，" +
+          "volume 不支持 IN SCHEMA 语法。",
         args: {
-          type: z
-            .enum(["database", "schema", "table", "view", "pipe", "stream", "semantic_view"])
-            .describe("对象类型，semantic_view 用于列出语义视图"),
-          parent: z.string().optional().describe("父对象名称，如 schema 名或 database 名"),
+          type: z.string().describe(
+            "对象类型（小写）：schema/table/view/dynamic_table/materialized_view/" +
+            "external_table/pipe/stream/semantic_view/volume/vcluster/function/user/role/share/connection/catalog"
+          ),
+          parent: z.string().optional().describe("父对象名称，如 schema 名"),
+          limit: z.number().int().min(1).max(200).default(50).describe("最大返回数量（默认 50）"),
         },
         async execute(args) {
           try {
-            const objects = await connector.listObjects(args.type, args.parent)
-            if (objects.length === 0) return `没有找到 ${args.type} 对象。`
-            return `找到 ${objects.length} 个 ${args.type}:\n${objects.join("\n")}`
+            const sql = buildShowSql(args.type, args.parent, args.limit)
+            const result = await connector.execute(sql, args.limit)
+            if (result.rowCount === 0) return `没有找到 ${args.type} 对象。`
+            // Extract name column from result
+            const nameKeys = ["name", "table_name", "schema_name", "vcluster_name", "function_name"]
+            const names = result.rows.map((row) => {
+              for (const k of nameKeys) {
+                if (row[k]) return String(row[k])
+              }
+              return Object.values(row)[0] ? String(Object.values(row)[0]) : ""
+            }).filter(Boolean)
+            return `找到 ${names.length} 个 ${args.type}:\n${names.join("\n")}`
           } catch (err) {
             return `列出对象失败: ${(err as Error).message}`
+          }
+        },
+      }),
+
+      describe_object: tool({
+        description:
+          "查看 ClickZetta Lakehouse 对象的详细结构。" +
+          "支持类型：table/view/dynamic_table/materialized_view/external_table/semantic_view/" +
+          "schema/vcluster/volume/connection/pipe/function/user/role/index。" +
+          "注意：view/dynamic_table/materialized_view 统一使用 DESC TABLE 语法（ClickZetta 规范）。" +
+          "semantic_view 使用 DESC EXTENDED 返回维度/指标/逻辑表定义，可用于理解业务语义。",
+        args: {
+          object_type: z.string().describe(
+            "对象类型（小写）：table/view/dynamic_table/materialized_view/external_table/" +
+            "semantic_view/schema/vcluster/volume/connection/pipe/function/user/role/index"
+          ),
+          object_name: z.string().describe("对象名称，可含 schema 前缀，如 mcp_demo.orders"),
+          extended: z.boolean().default(false).describe("是否使用 EXTENDED 模式获取更多详情（表/视图类型支持）"),
+        },
+        async execute(args) {
+          try {
+            const sql = buildDescSql(args.object_type, args.object_name, args.extended)
+            const result = await connector.execute(sql, 500)
+            return formatQueryResult(result)
+          } catch (err) {
+            return `获取对象结构失败: ${(err as Error).message}`
           }
         },
       }),
@@ -250,17 +362,16 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
           const results: string[] = []
 
           if (args.schema) {
-            // Verify schema exists
-            const schemas = await connector.listObjects("schema")
-            if (!schemas.includes(args.schema)) {
-              return `Schema "${args.schema}" 不存在。可用的 Schema：${schemas.join(", ")}`
+            const schemas = await connector.execute("SHOW SCHEMAS", 200)
+            const schemaNames = schemas.rows.map((r) => String(r["schema_name"] ?? r["name"] ?? "")).filter(Boolean)
+            if (schemaNames.length > 0 && !schemaNames.includes(args.schema)) {
+              return `Schema "${args.schema}" 不存在。可用的 Schema：${schemaNames.join(", ")}`
             }
             await connector.execute(`USE SCHEMA ${args.schema}`)
             results.push(`✓ 已切换到 Schema: ${args.schema}`)
           }
 
           if (args.vcluster) {
-            // Verify vcluster exists by listing all and checking
             let vcNames: string[] = []
             try {
               const allVc = await connector.execute(`SHOW VCLUSTERS`, 100)

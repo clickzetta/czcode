@@ -422,9 +422,10 @@ export function patchAgents(
 
   // czcode_change start — Lakehouse data team agents
   const lakehouseTools = Permission.fromConfig({
-    execute_sql: "allow",
-    describe_table: "allow",
+    read_query: "allow",
+    write_query: "allow",
     list_objects: "allow",
+    describe_object: "allow",
     explain_query: "allow",
     get_context: "allow",
     switch_context: "allow",
@@ -458,10 +459,13 @@ export function patchAgents(
     permission: Permission.merge(
       defaults,
       Permission.fromConfig({
-        execute_sql: "allow",
-        describe_table: "allow",
+        read_query: "allow",
+        write_query: "deny",
         list_objects: "allow",
+        describe_object: "allow",
         explain_query: "allow",
+        get_context: "allow",
+        switch_context: "allow",
         skill: "allow",
         read: "allow",
         write: "deny",
