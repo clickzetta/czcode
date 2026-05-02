@@ -79,20 +79,6 @@ export function Footer() {
         {/* kilocode_change start */}
         <RemoteIndicator sdk={sdk} theme={theme} kilo={sync.data.provider_next.connected.includes("kilo")} event={event} />
         {/* kilocode_change end */}
-        {/* czcode_change start — Lakehouse connection status */}
-        <Show when={!!(process.env.CLICKZETTA_SERVICE && process.env.CLICKZETTA_WORKSPACE)}>
-          <text fg={theme.text}>
-            <span style={{ fg: theme.success }}>◆</span> ClickZetta{" "}
-            <span style={{ fg: theme.textMuted }}>
-              {[
-                process.env.CLICKZETTA_WORKSPACE && `ws:${process.env.CLICKZETTA_WORKSPACE}`,
-                process.env.CLICKZETTA_SCHEMA && `schema:${process.env.CLICKZETTA_SCHEMA}`,
-                process.env.CLICKZETTA_VCLUSTER && `vc:${process.env.CLICKZETTA_VCLUSTER}`,
-              ].filter(Boolean).join(" / ")}
-            </span>
-          </text>
-        </Show>
-        {/* czcode_change end */}
         <Switch>
           <Match when={store.welcome}>
             <text fg={theme.text}>
