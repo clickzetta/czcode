@@ -256,10 +256,12 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
             return `[read_query] 拒绝执行写操作。请使用 write_query 工具执行 DDL/DML 操作。`
           }
           try {
+            const start = Date.now()
             const result = await connector.execute(args.sql, args.limit)
+            const elapsed = ((Date.now() - start) / 1000).toFixed(1)
             return {
-              output: formatQueryResult(result),
-              metadata: { rowCount: result.rowCount, truncated: result.truncated },
+              output: `${formatQueryResult(result)}\n⏱ ${elapsed}s`,
+              metadata: { rowCount: result.rowCount, truncated: result.truncated, elapsed },
             }
           } catch (err) {
             return `查询失败: ${(err as Error).message}`
