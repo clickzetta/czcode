@@ -48,7 +48,7 @@ const tui: TuiPlugin = async (api) => {
       onSelect() {
         const route = api.route.current
         if (route.name !== "session") {
-          api.ui.toast({ message: "请先进入一个会话", variant: "warning" })
+          api.ui.toast({ message: "请先进入一个会话", variant: "warning", duration: 2000 })
           return
         }
         const sessionID = (route.params as { sessionID: string }).sessionID
@@ -56,7 +56,7 @@ const tui: TuiPlugin = async (api) => {
         const entries = extractSql(messages, (id) => api.state.part(id))
 
         if (entries.length === 0) {
-          api.ui.toast({ message: "当前会话没有 SQL 执行记录", variant: "info" })
+          api.ui.toast({ message: "当前会话没有 SQL 执行记录", variant: "info", duration: 2000 })
           return
         }
 

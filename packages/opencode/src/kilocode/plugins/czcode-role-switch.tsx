@@ -2,7 +2,7 @@
 /**
  * czcode agent role switcher plugin.
  *
- * Registers a /role command that triggers agent switching via @lh-xxx.
+ * Registers a /cz_role command that triggers agent switching via @lh-xxx.
  */
 import type { TuiPlugin, TuiPluginModule } from "@kilocode/plugin/tui"
 
@@ -40,7 +40,7 @@ const tui: TuiPlugin = async (api) => {
                 api.command.trigger(`@${value}`)
                 const role = ROLES.find((r) => r.id === value)
                 if (role) {
-                  api.ui.toast({ message: `已切换到 ${role.label}`, variant: "success" })
+                  api.ui.toast({ message: `已切换到 ${role.label}`, variant: "success", duration: 2000 })
                 }
               }}
             />

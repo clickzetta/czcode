@@ -4,7 +4,7 @@
  *
  * Sidebar: extracts VCluster info from session tool history
  * (list_objects type=vcluster, read_query with SHOW VCLUSTERS).
- * Command: /vcluster sends a pre-built prompt to the agent.
+ * Command: /cz_vcluster sends a pre-built prompt to the agent.
  * Order 370 — after Schema Browser (360), before Todo (400).
  */
 import type { TuiPlugin, TuiPluginApi, TuiPluginModule } from "@kilocode/plugin/tui"
@@ -137,7 +137,7 @@ const tui: TuiPlugin = async (api) => {
     },
   })
 
-  // Command: /vcluster triggers agent to query VCluster status
+  // Command: /cz_vcluster triggers agent to query VCluster status
   api.command.register(() => [
     {
       title: "VCluster 状态",
@@ -148,7 +148,7 @@ const tui: TuiPlugin = async (api) => {
       onSelect() {
         const route = api.route.current
         if (route.name !== "session") {
-          api.ui.toast({ message: "请先进入一个会话", variant: "warning" })
+          api.ui.toast({ message: "请先进入一个会话", variant: "warning", duration: 2000 })
           return
         }
         // Send the prompt to the agent

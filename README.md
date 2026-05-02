@@ -107,12 +107,12 @@ source .env && czcode
 ### Skills 更新
 Skills 有更新时，在对话中运行：
 ```
-/skill-update
+/cz_skill-update
 ```
 
 ### 报告 Skill 问题
 发现 skill 内容有误，可以：
-- 在对话中运行 `/skill-fix` 写入本地修正
+- 在对话中运行 `/cz_skill-fix` 写入本地修正
 - 或到 GitHub 提交 Issue：[报告问题](https://github.com/yunqiqiliang/clickzetta-skills/issues/new?template=skill-bug.yml) | [提改进建议](https://github.com/yunqiqiliang/clickzetta-skills/issues/new?template=skill-enhancement.yml)
 
 ---
