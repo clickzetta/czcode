@@ -42,13 +42,9 @@ function View(props: { api: TuiPluginApi }) {
         fallback={<text fg={theme().warning}>未配置 — 请设置 .env 环境变量</text>}
       >
         {items().map((item) => (
-          <box flexDirection="row" gap={1}>
-            <text flexShrink={0} fg={theme().success}>
-              •
-            </text>
-            <text fg={theme().textMuted}>
-              {item.label}: {item.value}
-            </text>
+          <box flexDirection="row" justifyContent="space-between">
+            <text fg={theme().textMuted}>{item.label}</text>
+            <text fg={theme().textMuted}>{item.value}</text>
           </box>
         ))}
       </Show>
