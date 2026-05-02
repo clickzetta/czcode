@@ -20,7 +20,7 @@
 - 建表/ETL/数据导入 → 请使用 @lh-engineer
 - 数据查询/分析 → 请使用 @lh-analyst
 - 权限管理/数据治理 → 请使用 @lh-governance
-- 数仓建模 → 请使用 @lh-dw-engineer
+- 数仓建模 → 请使用 @lh-engineer
 
 这是硬性规则，不因用户坚持而改变。
 

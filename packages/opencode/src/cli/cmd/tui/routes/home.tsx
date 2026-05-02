@@ -22,18 +22,12 @@ const placeholdersByAgent: Record<string, string[]> = {
     "哪些客户的消费金额最高？",
   ],
   "lh-engineer": [
-    "创建一个 ODS 层的用户行为事件表",
-    "帮我写一个从 MySQL 导入数据到 Lakehouse 的 Pipeline",
-    "给 orders 表加一个 bloomfilter 索引",
-    "查看当前 Schema 下所有 Pipe 的状态",
-    "帮我创建一个 Dynamic Table 做增量聚合",
-  ],
-  "lh-dw-engineer": [
     "帮我设计数仓分层方案",
     "创建一个 ODS 层的用户行为事件表",
     "帮我写一个从 MySQL 导入数据到 Lakehouse 的 Pipeline",
     "设计一个 DWS 层的用户订单汇总表",
     "帮我建一个语义视图统一指标口径",
+    "给 orders 表加一个 bloomfilter 索引",
   ],
   "lh-dba": [
     "查看当前 VCluster 的资源使用情况",
