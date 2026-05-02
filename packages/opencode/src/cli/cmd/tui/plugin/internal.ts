@@ -9,6 +9,7 @@ import KiloSidebarPr from "@/kilocode/plugins/sidebar-pr"
 import KiloSidebarUsage from "@/kilocode/plugins/sidebar-usage"
 // kilocode_change end
 // czcode_change start
+import CzCodeConnectionStatus from "@/kilocode/plugins/czcode-connection-status"
 import CzCodeRoleSwitch from "@/kilocode/plugins/czcode-role-switch"
 // czcode_change end
 import SidebarContext from "../feature-plugins/sidebar/context"
@@ -32,6 +33,7 @@ export const INTERNAL_TUI_PLUGINS: InternalTuiPlugin[] = [
   KiloSidebarFooter, // kilocode_change
   KiloSidebarPr, // kilocode_change
   KiloSidebarUsage, // kilocode_change
+  CzCodeConnectionStatus, // czcode_change
   CzCodeRoleSwitch, // czcode_change
   HomeFooter,
   HomeTips,
