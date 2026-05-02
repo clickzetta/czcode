@@ -33,7 +33,7 @@
     },
     "packages/app": {
       "name": "@opencode-ai/app",
-      "version": "7.2.31",
+      "version": "7.2.30",
       "dependencies": {
         "@kilocode/kilo-i18n": "workspace:*",
         "@kilocode/kilo-ui": "workspace:*",
@@ -87,12 +87,19 @@
         "vite-plugin-solid": "catalog:",
       },
     },
+    "packages/clickzetta-js": {
+      "name": "clickzetta-js",
+      "version": "0.1.0",
+      "devDependencies": {
+        "typescript": "catalog:",
+      },
+    },
     "packages/czcode-lakehouse": {
       "name": "@czcode/lakehouse",
       "version": "0.1.0",
       "dependencies": {
         "@kilocode/plugin": "workspace:*",
-        "clickzetta-js": "file:../../../clickzetta-js",
+        "clickzetta-js": "workspace:*",
         "effect": "catalog:",
         "zod": "catalog:",
       },
@@ -102,7 +109,7 @@
     },
     "packages/desktop": {
       "name": "@opencode-ai/desktop",
-      "version": "7.2.31",
+      "version": "7.2.30",
       "dependencies": {
         "@opencode-ai/app": "workspace:*",
         "@opencode-ai/ui": "workspace:*",
@@ -135,7 +142,7 @@
     },
     "packages/desktop-electron": {
       "name": "@opencode-ai/desktop-electron",
-      "version": "7.2.31",
+      "version": "7.2.30",
       "dependencies": {
         "@opencode-ai/app": "workspace:*",
         "@opencode-ai/ui": "workspace:*",
@@ -187,7 +194,7 @@
     },
     "packages/kilo-docs": {
       "name": "@kilocode/kilo-docs",
-      "version": "7.2.31",
+      "version": "7.2.30",
       "dependencies": {
         "@docsearch/css": "^4",
         "@docsearch/js": "^4",
@@ -216,7 +223,7 @@
     },
     "packages/kilo-gateway": {
       "name": "@kilocode/kilo-gateway",
-      "version": "7.2.31",
+      "version": "7.2.30",
       "dependencies": {
         "@ai-sdk/alibaba": "1.0.17",
         "@ai-sdk/anthropic": "3.0.71",
@@ -252,7 +259,7 @@
     },
     "packages/kilo-i18n": {
       "name": "@kilocode/kilo-i18n",
-      "version": "7.2.31",
+      "version": "7.2.30",
       "devDependencies": {
         "@tsconfig/node22": "catalog:",
         "@types/bun": "catalog:",
@@ -262,7 +269,7 @@
     },
     "packages/kilo-indexing": {
       "name": "@kilocode/kilo-indexing",
-      "version": "7.2.31",
+      "version": "7.2.30",
       "dependencies": {
         "@aws-sdk/client-bedrock-runtime": "3.1005.0",
         "@aws-sdk/credential-provider-ini": "3.972.31",
@@ -293,10 +300,11 @@
     },
     "packages/kilo-jetbrains": {
       "name": "@kilocode/kilo-jetbrains",
+      "version": "7.2.30",
     },
     "packages/kilo-telemetry": {
       "name": "@kilocode/kilo-telemetry",
-      "version": "7.2.31",
+      "version": "7.2.30",
       "dependencies": {
         "@kilocode/kilo-gateway": "workspace:*",
         "@opentelemetry/api": "1.9.0",
@@ -316,7 +324,7 @@
     },
     "packages/kilo-ui": {
       "name": "@kilocode/kilo-ui",
-      "version": "7.2.31",
+      "version": "7.2.30",
       "dependencies": {
         "@kobalte/core": "0.13.11",
         "@opencode-ai/shared": "workspace:*",
@@ -351,7 +359,7 @@
     },
     "packages/kilo-vscode": {
       "name": "kilo-code",
-      "version": "7.2.31",
+      "version": "7.2.30",
       "dependencies": {
         "@anthropic-ai/sdk": "^0.39.0",
         "@kilocode/kilo-i18n": "workspace:*",
@@ -412,7 +420,7 @@
     },
     "packages/opencode": {
       "name": "@kilocode/cli",
-      "version": "7.2.31",
+      "version": "7.2.30",
       "bin": {
         "czcode": "./bin/kilo",
         "kilo": "./bin/kilo",
@@ -572,7 +580,7 @@
     },
     "packages/plugin": {
       "name": "@kilocode/plugin",
-      "version": "7.2.31",
+      "version": "7.2.30",
       "dependencies": {
         "@kilocode/sdk": "workspace:*",
         "effect": "catalog:",
@@ -597,7 +605,7 @@
     },
     "packages/script": {
       "name": "@opencode-ai/script",
-      "version": "7.2.31",
+      "version": "7.2.30",
       "dependencies": {
         "semver": "^7.6.3",
       },
@@ -608,7 +616,7 @@
     },
     "packages/sdk/js": {
       "name": "@kilocode/sdk",
-      "version": "7.2.31",
+      "version": "7.2.30",
       "dependencies": {
         "cross-spawn": "catalog:",
       },
@@ -623,7 +631,7 @@
     },
     "packages/shared": {
       "name": "@opencode-ai/shared",
-      "version": "7.2.31",
+      "version": "7.2.30",
       "bin": {
         "opencode": "./bin/opencode",
       },
@@ -647,7 +655,7 @@
     },
     "packages/storybook": {
       "name": "@opencode-ai/storybook",
-      "version": "7.2.31",
+      "version": "7.2.30",
       "devDependencies": {
         "@opencode-ai/ui": "workspace:*",
         "@solidjs/meta": "catalog:",
@@ -670,7 +678,7 @@
     },
     "packages/ui": {
       "name": "@opencode-ai/ui",
-      "version": "7.2.31",
+      "version": "7.2.30",
       "dependencies": {
         "@kilocode/sdk": "workspace:*",
         "@kobalte/core": "catalog:",
@@ -2893,6 +2901,8 @@
 
     "cli-truncate": ["cli-truncate@4.0.0", "", { "dependencies": { "slice-ansi": "^5.0.0", "string-width": "^7.0.0" } }, "sha512-nPdaFdQ0h/GEigbPClz11D0v/ZJEwxmeVZGeMo3Z5StPtUTkA9o1lD6QwoirYiSDzbcwn2XcjwmCp68W1IS4TA=="],
 
+    "clickzetta-js": ["clickzetta-js@workspace:packages/clickzetta-js"],
+
     "client-only": ["client-only@0.0.1", "", {}, "sha512-IV3Ou0jSMzZrd3pZ48nLkT9DA7Ag1pnPzaiQhpW7c3RbcqqzvzzVu+L8gfqMp/8IM2MQtSiqaCxrrcfu8I8rMA=="],
 
     "clipboardy": ["clipboardy@4.0.0", "", { "dependencies": { "execa": "^8.0.1", "is-wsl": "^3.1.0", "is64bit": "^2.0.0" } }, "sha512-5mOlNS0mhX0707P2I0aZ2V/cmHUEO/fL7VFLqszkhUsxt7RwnmrInf/eEQKlf5GzvYeHIjT+Ov1HRfNmymlG0w=="],
@@ -5105,8 +5115,6 @@
 
     "@changesets/write/prettier": ["prettier@2.8.8", "", { "bin": { "prettier": "bin-prettier.js" } }, "sha512-tdN8qQGvNjw4CHbY+XXk0JgCXn9QiF21a55rBe5LJAU+kDyC4WQn4+awm2Xfk2lQMk5fKup9XgzTZtGkjBdP9Q=="],
 
-    "@czcode/lakehouse/clickzetta-js": ["clickzetta-js@file:../clickzetta-js", { "devDependencies": { "@types/node": "^25.6.0", "typescript": "^5.4.0" } }],
-
     "@develar/schema-utils/ajv": ["ajv@6.14.0", "", { "dependencies": { "fast-deep-equal": "^3.1.1", "fast-json-stable-stringify": "^2.0.0", "json-schema-traverse": "^0.4.1", "uri-js": "^4.2.2" } }, "sha512-IWrosm/yrn43eiKqkfkHis7QioDleaXQHdDVPKg0FSwwd/DuvyX79TZnFOnYpB7dcsFAMmtFztZuXPDvSePkFw=="],
 
     "@effect/platform-node/undici": ["undici@8.1.0", "", {}, "sha512-E9MkTS4xXLnRPYqxH2e6Hr2/49e7WFDKczKcCaFH4VaZs2iNvHMqeIkyUAD9vM8kujy9TjVrRlQ5KkdEJxB2pw=="],
@@ -5886,8 +5894,6 @@
     "@aws-crypto/util/@smithy/util-utf8/@smithy/util-buffer-from": ["@smithy/util-buffer-from@2.2.0", "", { "dependencies": { "@smithy/is-array-buffer": "^2.2.0", "tslib": "^2.6.2" } }, "sha512-IJdWBbTcMQ6DA0gdNhh/BwrLkDR+ADW5Kr1aZmd4k3DIF6ezMV4R2NIAmT08wQJ3yUK82thHWmC/TnK/wpMMIA=="],
 
     "@babel/helper-compilation-targets/lru-cache/yallist": ["yallist@3.1.1", "", {}, "sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g=="],
-
-    "@czcode/lakehouse/clickzetta-js/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
     "@develar/schema-utils/ajv/json-schema-traverse": ["json-schema-traverse@0.4.1", "", {}, "sha512-xbbCH5dCYU5T8LcEhhuh7HJ88HXuW3qsI3Y0zOZFKfZEHcpWiHU/Jxzk629Brsab/mMiHQti9wMP+845RPe3Vg=="],
 
