@@ -53,6 +53,32 @@ function confirmLabel(sql: string): string {
   return RISK_LABELS.write
 }
 
+// Extract target object name from DDL/DML SQL for metadata lookup
+function extractTargetObject(sql: string): { name: string; schema?: string } | null {
+  // DROP TABLE [IF EXISTS] [schema.]table
+  const drop = sql.match(/^\s*(?:DROP|TRUNCATE)\s+(?:TABLE|DYNAMIC\s+TABLE|MATERIALIZED\s+VIEW|VIEW)\s+(?:IF\s+EXISTS\s+)?(\S+)/i)
+  if (drop) {
+    const parts = drop[1].replace(/;$/, "").split(".")
+    if (parts.length >= 2) return { schema: parts[parts.length - 2], name: parts[parts.length - 1] }
+    return { name: parts[0] }
+  }
+  // ALTER TABLE [schema.]table
+  const alter = sql.match(/^\s*ALTER\s+(?:TABLE|DYNAMIC\s+TABLE)\s+(?:IF\s+EXISTS\s+)?(\S+)/i)
+  if (alter) {
+    const parts = alter[1].replace(/;$/, "").split(".")
+    if (parts.length >= 2) return { schema: parts[parts.length - 2], name: parts[parts.length - 1] }
+    return { name: parts[0] }
+  }
+  // DELETE FROM [schema.]table
+  const del = sql.match(/^\s*DELETE\s+FROM\s+(\S+)/i)
+  if (del) {
+    const parts = del[1].replace(/;$/, "").split(".")
+    if (parts.length >= 2) return { schema: parts[parts.length - 2], name: parts[parts.length - 1] }
+    return { name: parts[0] }
+  }
+  return null
+}
+
 // Build SHOW SQL for list_objects, handling ClickZetta-specific quirks:
 // - VIEWS/DYNAMIC TABLES/MATERIALIZED VIEWS use SHOW TABLES WHERE is_xxx=true
 // - VOLUMES does not support IN SCHEMA, use WHERE workspace_name instead
@@ -226,12 +252,42 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
 
           const label = confirmLabel(args.sql)
           const preview = risk === "destructive" ? args.sql : args.sql.slice(0, 200)
+
+          // DDL confirmation enhancement: gather target object metadata for destructive ops
+          let context = ""
+          if (risk === "destructive") {
+            const target = extractTargetObject(args.sql)
+            if (target) {
+              try {
+                const meta = await connector.execute(
+                  `SELECT table_schema, table_name, table_type, row_count, ` +
+                  `ROUND(bytes/1024/1024, 1) AS size_mb, last_modify_time ` +
+                  `FROM information_schema.tables ` +
+                  `WHERE UPPER(table_name) = UPPER('${target.name}')` +
+                  (target.schema ? ` AND UPPER(table_schema) = UPPER('${target.schema}')` : "") +
+                  ` LIMIT 1`,
+                  1,
+                )
+                if (meta.rows.length > 0) {
+                  const row = meta.rows[0]
+                  const parts = []
+                  if (row.size_mb !== undefined && row.size_mb !== null) parts.push(`${row.size_mb} MB`)
+                  if (row.row_count !== undefined && row.row_count !== null) parts.push(`${Number(row.row_count).toLocaleString()} rows`)
+                  if (row.last_modify_time) parts.push(`last modified: ${row.last_modify_time}`)
+                  if (parts.length > 0) context = `\n📋 Target: ${parts.join(" | ")}`
+                }
+              } catch {
+                // metadata query failed — proceed without context
+              }
+            }
+          }
+
           await Effect.runPromise(
             ctx.ask({
               permission: "write_query",
-              patterns: [preview],
+              patterns: [preview + context],
               always: [],
-              metadata: { sql: args.sql, category: label, risk },
+              metadata: { sql: args.sql, category: label, risk, context },
             }),
           )
 
@@ -372,7 +428,6 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
             if (schemaNames.length > 0 && !schemaNames.includes(args.schema)) {
               return `Schema "${args.schema}" 不存在。可用的 Schema：${schemaNames.join(", ")}`
             }
-            await connector.execute(`USE SCHEMA ${args.schema}`)
             results.push(`✓ 已切换到 Schema: ${args.schema}`)
           }
 
@@ -387,9 +442,12 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
             if (vcNames.length > 0 && !vcNames.includes(args.vcluster)) {
               return `VCluster "${args.vcluster}" 不存在。可用的 VCluster：${vcNames.join(", ")}`
             }
-            await connector.execute(`USE VCLUSTER ${args.vcluster}`)
             results.push(`✓ 已切换到 VCluster: ${args.vcluster}`)
           }
+
+          // Reconnect with updated context — USE SCHEMA/VCLUSTER SQL does not
+          // update per-request defaultNamespace/virtualCluster in clickzetta-js.
+          await connector.switchContext(args.schema, args.vcluster)
 
           return results.join("\n")
         },

@@ -101,6 +101,23 @@ export class LakehouseConnector {
       .filter(Boolean)
   }
 
+  // Reconnect with updated schema/vcluster — USE SCHEMA/VCLUSTER SQL does not
+  // update the per-request defaultNamespace/virtualCluster in clickzetta-js.
+  async switchContext(schema?: string, vcluster?: string): Promise<void> {
+    if (schema) this.config.schema = schema
+    if (vcluster) this.config.vcluster = vcluster
+    this.conn?.destroy()
+    await this.connect()
+  }
+
+  currentSchema(): string {
+    return this.config.schema ?? "public"
+  }
+
+  currentVcluster(): string {
+    return this.config.vcluster ?? "default"
+  }
+
   destroy(): void {
     this.conn?.destroy()
     this.conn = null
