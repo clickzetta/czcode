@@ -52,9 +52,11 @@ const placeholdersByAgent: Record<string, string[]> = {
 }
 
 const defaultPlaceholders = [
-  "我有哪些数据？",
-  "统计过去 7 天每天的订单量和销售额",
-  "查看当前 VCluster 的资源使用情况",
+  "Fix a TODO in the codebase",
+  "What is the tech stack of this project?",
+  "Fix broken tests",
+  "Explain how this code works",
+  "Refactor this function",
 ]
 // czcode_change end
 
@@ -71,7 +73,10 @@ export function Home() {
   // czcode_change start - dynamic placeholders based on current agent
   const placeholder = createMemo(() => {
     const agentName = local.agent.current()?.name ?? ""
-    const normals = placeholdersByAgent[agentName] ?? defaultPlaceholders
+    // Only override placeholders for Lakehouse data agents (lh-* prefix)
+    const normals = agentName.startsWith("lh-")
+      ? (placeholdersByAgent[agentName] ?? defaultPlaceholders)
+      : defaultPlaceholders
     return { normal: normals, shell: ["ls -la", "git status", "pwd"] }
   })
   // czcode_change end
