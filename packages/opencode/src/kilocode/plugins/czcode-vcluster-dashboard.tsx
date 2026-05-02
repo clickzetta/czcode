@@ -151,8 +151,14 @@ const tui: TuiPlugin = async (api) => {
           api.ui.toast({ message: "请先进入一个会话", variant: "warning", duration: 2000 })
           return
         }
-        // Send the prompt to the agent
-        api.command.trigger(VCLUSTER_PROMPT)
+        const sessionID = (route.params as { sessionID: string }).sessionID
+        // Send prompt to agent via SDK
+        api.client.session.prompt({
+          sessionID,
+          parts: [{ type: "text", text: VCLUSTER_PROMPT }],
+        }).catch(() => {
+          api.ui.toast({ message: "发送失败", variant: "error", duration: 2000 })
+        })
       },
     },
   ])
