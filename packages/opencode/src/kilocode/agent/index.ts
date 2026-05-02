@@ -421,6 +421,22 @@ export function patchAgents(
   }
 
   // czcode_change start — Lakehouse data team agents
+
+  // Read-only tool set — no write_query, no file write, no bash
+  const analystTools = Permission.fromConfig({
+    read_query: "allow",
+    list_objects: "allow",
+    describe_object: "allow",
+    explain_query: "allow",
+    get_context: "allow",
+    switch_context: "allow",
+    skill: "allow",
+    read: "allow",
+    write: "deny",
+    bash: "deny",
+  })
+
+  // Full Lakehouse tool set (read + write, no file system write)
   const lakehouseTools = Permission.fromConfig({
     read_query: "allow",
     write_query: "allow",
@@ -458,19 +474,7 @@ export function patchAgents(
     color: "#00AA44",
     permission: Permission.merge(
       defaults,
-      Permission.fromConfig({
-        read_query: "allow",
-        write_query: "deny",
-        list_objects: "allow",
-        describe_object: "allow",
-        explain_query: "allow",
-        get_context: "allow",
-        switch_context: "allow",
-        skill: "allow",
-        read: "allow",
-        write: "deny",
-        bash: "deny",
-      }),
+      analystTools,
       user,
     ),
     mode: "primary",
