@@ -2,7 +2,7 @@ import { z } from "zod"
 import { tool } from "@kilocode/plugin"
 import type { Plugin } from "@kilocode/plugin"
 import { LakehouseConnector, type LakehouseConfig } from "./connector.js"
-import { classifySql, getSqlRisk } from "./sql-classifier.js"
+import { classifySql, getSqlRisk, getUndropHint, isUndropSupported } from "./sql-classifier.js"
 import { formatQueryResult, formatTableSchema } from "./format.js"
 import { Effect } from "effect"
 
@@ -38,6 +38,7 @@ function readConfigFromEnv(): LakehouseConfig | null {
 
 const RISK_LABELS: Record<string, string> = {
   destructive: "⚠️ 危险操作（不可逆）",
+  destructive_recoverable: "⚠️ 危险操作（可 UNDROP 恢复）",
   write: "✏️ 写操作",
   admin: "🔐 权限变更",
 }
@@ -45,7 +46,9 @@ const RISK_LABELS: Record<string, string> = {
 function confirmLabel(sql: string): string {
   const risk = getSqlRisk(sql)
   const cat = classifySql(sql)
-  if (risk === "destructive") return RISK_LABELS.destructive
+  if (risk === "destructive") {
+    return isUndropSupported(sql) ? RISK_LABELS.destructive_recoverable : RISK_LABELS.destructive
+  }
   if (cat === "admin") return RISK_LABELS.admin
   return RISK_LABELS.write
 }
@@ -234,8 +237,10 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
 
           try {
             const result = await connector.execute(args.sql, 100)
+            const undropHint = getUndropHint(args.sql)
+            const output = formatQueryResult(result)
             return {
-              output: formatQueryResult(result),
+              output: undropHint ? `${output}\n\n${undropHint}` : output,
               metadata: { rowCount: result.rowCount, truncated: result.truncated },
             }
           } catch (err) {

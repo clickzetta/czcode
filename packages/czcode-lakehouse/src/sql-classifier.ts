@@ -12,6 +12,25 @@ const ADMIN_PATTERN = /^\s*(GRANT|REVOKE|CREATE\s+USER|DROP\s+USER|ALTER\s+USER|
 const DESTRUCTIVE_PATTERN =
   /^\s*(DROP\s+(TABLE|DATABASE|SCHEMA|PIPE|STREAM|VIEW|DYNAMIC\s+TABLE|MATERIALIZED\s+VIEW|SEMANTIC\s+VIEW|SHARE|VOLUME|CONNECTION|INDEX|ROLE|USER|NETWORK\s+POLICY|MASKING\s+POLICY)|TRUNCATE|REVOKE\s+ALL)\b/i
 
+// Objects that support UNDROP in ClickZetta (recoverable within retention period)
+const UNDROP_SUPPORTED_PATTERN = /^\s*DROP\s+(TABLE|DYNAMIC\s+TABLE|MATERIALIZED\s+VIEW)\b/i
+
+// Returns an UNDROP recovery hint if the SQL drops a recoverable object type.
+export function getUndropHint(sql: string): string | null {
+  const trimmed = sql.trim()
+  const match = trimmed.match(
+    /^\s*DROP\s+(TABLE|DYNAMIC\s+TABLE|MATERIALIZED\s+VIEW)\s+(?:IF\s+EXISTS\s+)?(\S+)/i,
+  )
+  if (!match) return null
+  const objType = match[1].replace(/\s+/g, " ").toUpperCase()
+  const objName = match[2].replace(/;$/, "")
+  return `💡 ${objType} 支持 UNDROP，可在保留期内恢复：\`UNDROP ${objType} ${objName}\``
+}
+
+export function isUndropSupported(sql: string): boolean {
+  return UNDROP_SUPPORTED_PATTERN.test(sql.trim())
+}
+
 export function classifySql(sql: string): SqlCategory {
   const trimmed = sql.trim()
   if (ADMIN_PATTERN.test(trimmed)) return "admin"

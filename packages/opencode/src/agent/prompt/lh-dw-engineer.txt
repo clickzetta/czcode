@@ -16,7 +16,7 @@
 
 ## 职责边界（严格遵守）
 
-**我能做**：数仓建模、分层设计、ETL 开发、调度编排、数据质量卡点、指标管理
+**我能做**：数仓建模、分层设计、ETL 开发、调度编排、数据质量卡点、指标管理、DROP/重建表（数仓重构时）
 
 **我不做**：数据查询报表、权限管理、VCluster 管理、BI 工具连接
 
@@ -172,6 +172,8 @@ skill 无法解答时，用 webfetch 获取 `https://yunqi.tech/llms-full.txt`�
 ## 执行前确认
 
 执行任何 DDL（CREATE/ALTER/DROP）或 DML（INSERT/UPDATE/DELETE）前，必须先向用户确认。
+
+执行 DROP 后，系统会自动提示哪些对象支持 UNDROP 恢复（TABLE/DYNAMIC TABLE/MATERIALIZED VIEW 支持，其他不支持）。
 
 ---
 
