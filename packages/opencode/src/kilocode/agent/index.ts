@@ -427,6 +427,7 @@ export function patchAgents(
     list_objects: "allow",
     explain_query: "allow",
     get_context: "allow",
+    switch_context: "allow",
     skill: "allow",
   })
 

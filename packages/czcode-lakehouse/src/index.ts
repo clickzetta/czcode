@@ -225,6 +225,51 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
           }
         },
       }),
+
+      switch_context: tool({
+        description:
+          "切换当前会话的 Schema 和/或 VCluster。切换前会验证目标对象存在，不存在则报错。" +
+          "schema 和 vcluster 参数至少提供一个。",
+        args: {
+          schema: z.string().optional().describe("要切换到的 Schema 名称"),
+          vcluster: z.string().optional().describe("要切换到的 VCluster 名称"),
+        },
+        async execute(args) {
+          if (!args.schema && !args.vcluster) {
+            return "请至少提供 schema 或 vcluster 参数之一。"
+          }
+
+          const results: string[] = []
+
+          if (args.schema) {
+            // Verify schema exists
+            const schemas = await connector.listObjects("schema")
+            if (!schemas.includes(args.schema)) {
+              return `Schema "${args.schema}" 不存在。可用的 Schema：${schemas.join(", ")}`
+            }
+            await connector.execute(`USE SCHEMA ${args.schema}`)
+            results.push(`✓ 已切换到 Schema: ${args.schema}`)
+          }
+
+          if (args.vcluster) {
+            // Verify vcluster exists by listing all and checking
+            let vcNames: string[] = []
+            try {
+              const allVc = await connector.execute(`SHOW VCLUSTERS`, 100)
+              vcNames = allVc.rows.map((r) => String(r["name"] ?? r["vcluster_name"] ?? "")).filter(Boolean)
+            } catch (err) {
+              return `获取 VCluster 列表失败: ${(err as Error).message}`
+            }
+            if (vcNames.length > 0 && !vcNames.includes(args.vcluster)) {
+              return `VCluster "${args.vcluster}" 不存在。可用的 VCluster：${vcNames.join(", ")}`
+            }
+            await connector.execute(`USE VCLUSTER ${args.vcluster}`)
+            results.push(`✓ 已切换到 VCluster: ${args.vcluster}`)
+          }
+
+          return results.join("\n")
+        },
+      }),
     },
   }
 }
