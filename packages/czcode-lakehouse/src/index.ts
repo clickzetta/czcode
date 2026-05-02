@@ -17,7 +17,33 @@ const LakehouseConfigSchema = z.object({
   protocol: z.enum(["https", "http"]).default("https"),
 })
 
+import { readFileSync, existsSync } from "node:fs"
+import { join } from "node:path"
+
+// Load .env from cwd (compiled binary doesn't auto-load like bun dev)
+function loadDotEnv() {
+  const envPath = join(process.cwd(), ".env")
+  if (!existsSync(envPath)) return
+  try {
+    const content = readFileSync(envPath, "utf-8")
+    for (const line of content.split("\n")) {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith("#")) continue
+      const eq = trimmed.indexOf("=")
+      if (eq === -1) continue
+      const key = trimmed.slice(0, eq).trim()
+      let val = trimmed.slice(eq + 1).trim()
+      // Strip surrounding quotes
+      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+        val = val.slice(1, -1)
+      }
+      if (!process.env[key]) process.env[key] = val
+    }
+  } catch {}
+}
+
 function readConfigFromEnv(): LakehouseConfig | null {
+  loadDotEnv()
   const service = process.env.CLICKZETTA_SERVICE
   const instance = process.env.CLICKZETTA_INSTANCE
   const workspace = process.env.CLICKZETTA_WORKSPACE
