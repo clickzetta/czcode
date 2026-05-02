@@ -83,7 +83,11 @@ CLICKZETTA_VCLUSTER=<your-vcluster>  # 默认 default
 ```jsonc
 {
   // AI 模型（必须配置，否则无法对话）
-  "model": "alibaba-cn/qwen3.5-plus"
+  "model": "alibaba-cn/qwen3.5-plus",
+
+  // 默认角色（可选，不设置则使用 lh-analyst）
+  // 可选值：lh-analyst | lh-engineer | lh-dba | lh-governance
+  "default_agent": "lh-analyst"
 }
 ```
 
