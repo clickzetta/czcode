@@ -5,6 +5,25 @@ import { LakehouseConnector, type LakehouseConfig } from "./connector.js"
 import { classifySql, getSqlRisk } from "./sql-classifier.js"
 import { formatQueryResult, formatTableSchema } from "./format.js"
 import { Effect } from "effect"
+import { readFileSync, existsSync } from "fs"
+import { join } from "path"
+
+// Load .env from cwd — autoloadDotenv is disabled in the compiled binary
+function loadDotenv() {
+  const envPath = join(process.cwd(), ".env")
+  if (!existsSync(envPath)) return
+  const lines = readFileSync(envPath, "utf-8").split("\n")
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith("#")) continue
+    const eq = trimmed.indexOf("=")
+    if (eq === -1) continue
+    const key = trimmed.slice(0, eq).trim()
+    const val = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, "")
+    if (key && !(key in process.env)) process.env[key] = val
+  }
+}
+loadDotenv()
 
 const LakehouseConfigSchema = z.object({
   service: z.string(),
