@@ -43,6 +43,48 @@ import { DialogSkill } from "../dialog-skill"
 import { DialogWorkspaceCreate, restoreWorkspaceSession } from "../dialog-workspace-create"
 import { DialogWorkspaceUnavailable } from "../dialog-workspace-unavailable"
 import { useArgs } from "@tui/context/args"
+// czcode_change start - Lakehouse status badge
+import { getLakehouseStatus, onLakehouseStatusChange, type LakehouseStatus } from "@czcode/lakehouse/status"
+
+function LakehouseStatusBadge(props: { theme: ReturnType<typeof import("@tui/context/theme").useTheme>["theme"] }) {
+  const [status, setStatus] = createSignal<LakehouseStatus>(getLakehouseStatus())
+  const unsub = onLakehouseStatusChange(setStatus)
+  onCleanup(unsub)
+
+  const icon = "⬡"
+  return (
+    <Show when={status().state !== "connected"} fallback={
+      <text fg={props.theme.success}>
+        {icon}{" "}
+        <span style={{ fg: props.theme.text }}>
+          {(status() as Extract<LakehouseStatus, { state: "connected" }>).workspace}
+          {" · "}
+          {(status() as Extract<LakehouseStatus, { state: "connected" }>).schema}
+          {" · "}
+          {(status() as Extract<LakehouseStatus, { state: "connected" }>).vcluster}
+        </span>
+      </text>
+    }>
+      <Show when={status().state === "connecting"} fallback={
+        <text fg={props.theme.error}>
+          {icon}{" "}
+          <span style={{ fg: props.theme.error }}>
+            {status().state === "unconfigured" ? "Lakehouse 未配置" : "连接失败"}
+          </span>
+          {"  "}
+          <span style={{ fg: props.theme.textMuted }}>
+            {status().state === "unconfigured"
+              ? "source .env && czcode"
+              : (status() as Extract<LakehouseStatus, { state: "failed" }>).error.slice(0, 40)}
+          </span>
+        </text>
+      }>
+        <text fg={props.theme.warning}>{icon} 连接中...</text>
+      </Show>
+    </Show>
+  )
+}
+// czcode_change end
 
 export type PromptProps = {
   sessionID?: string
@@ -1423,6 +1465,9 @@ export function Prompt(props: PromptProps) {
                 </text>
               </Show>
               {/* kilocode_change end */}
+              {/* czcode_change start - Lakehouse connection status */}
+              <LakehouseStatusBadge theme={theme} />
+              {/* czcode_change end */}
               <Show when={editorFileLabelDisplay()}>{(file) => <text fg={theme.secondary}>{file()}</text>}</Show>
               <Switch>
                 <Match when={store.mode === "normal"}>
