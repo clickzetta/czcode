@@ -47,6 +47,12 @@ import { Npm } from "@/npm"
 import { KilocodeConfig } from "../kilocode/config/config"
 import { KilocodeDefaultPlugins } from "@/kilocode/config/default-plugins" // kilocode_change
 import { IndexingConfig as KiloIndexingConfig } from "@kilocode/kilo-indexing/config" // kilocode_change
+// czcode_change start — builtin commands (skill-fix, skill-update)
+import { BUILTIN_COMMANDS } from "@/kilocode/commands/builtin"
+const builtinCommandMap = Object.fromEntries(
+  BUILTIN_COMMANDS.map((c) => [c.name, { template: c.template, description: c.description, subtask: c.subtask }])
+)
+// czcode_change end
 import { makeRuntime } from "@/effect/run-service"
 import { unique } from "remeda"
 // kilocode_change end
@@ -462,10 +468,6 @@ export const layer = Layer.effect(
     const loadGlobal = Effect.fnUntraced(function* () {
       yield* Effect.promise(() => KilocodeConfig.migrateBashPermission()) // kilocode_change
       // czcode_change start — seed default skills URL and builtin commands
-      const { BUILTIN_COMMANDS } = await import("@/kilocode/commands/builtin")
-      const builtinCommandMap = Object.fromEntries(
-        BUILTIN_COMMANDS.map((c) => [c.name, { template: c.template, description: c.description, subtask: c.subtask }])
-      )
       let result: Info = pipe(
         {
           skills: { urls: ["https://yunqiqiliang.github.io/clickzetta-skills/.well-known/skills/"] },
