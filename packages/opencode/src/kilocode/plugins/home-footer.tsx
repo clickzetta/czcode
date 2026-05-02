@@ -102,6 +102,38 @@ function Version(props: { api: TuiPluginApi }) {
   )
 }
 
+// czcode_change start — Lakehouse connection status in footer
+function LakehouseStatus(props: { api: TuiPluginApi }) {
+  const theme = () => props.api.theme.current
+  const connected = () =>
+    !!(
+      process.env.CLICKZETTA_SERVICE &&
+      process.env.CLICKZETTA_INSTANCE &&
+      process.env.CLICKZETTA_WORKSPACE &&
+      process.env.CLICKZETTA_USERNAME &&
+      process.env.CLICKZETTA_PASSWORD
+    )
+  const label = createMemo(() => {
+    if (!connected()) return null
+    const parts = []
+    if (process.env.CLICKZETTA_WORKSPACE) parts.push(`ws:${process.env.CLICKZETTA_WORKSPACE}`)
+    if (process.env.CLICKZETTA_SCHEMA) parts.push(`schema:${process.env.CLICKZETTA_SCHEMA}`)
+    if (process.env.CLICKZETTA_VCLUSTER) parts.push(`vc:${process.env.CLICKZETTA_VCLUSTER}`)
+    return parts.join(" / ")
+  })
+
+  return (
+    <Show when={connected()} fallback={<text fg={theme().warning}>◇ Lakehouse 未配置</text>}>
+      <box flexDirection="row" gap={1} flexShrink={0}>
+        <text fg={theme().success}>◆</text>
+        <text fg={theme().text}>ClickZetta</text>
+        <text fg={theme().textMuted}>{label()}</text>
+      </box>
+    </Show>
+  )
+}
+// czcode_change end
+
 // ---------------------------------------------------------------------------
 // Main footer view
 // ---------------------------------------------------------------------------
@@ -134,6 +166,7 @@ function View(props: { api: TuiPluginApi }) {
     >
       <Directory api={props.api} />
       <box gap={1} flexDirection="row" flexShrink={0}>
+        <LakehouseStatus api={props.api} />
         <RemoteIndicator api={props.api} kilo={kilo()} />
         <Mcp api={props.api} />
         <Show when={indexingOn()}>

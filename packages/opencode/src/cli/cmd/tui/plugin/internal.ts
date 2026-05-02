@@ -8,6 +8,9 @@ import KiloSidebarFooter from "@/kilocode/plugins/sidebar-footer"
 import KiloSidebarPr from "@/kilocode/plugins/sidebar-pr"
 import KiloSidebarUsage from "@/kilocode/plugins/sidebar-usage"
 // kilocode_change end
+// czcode_change start
+import CzCodeRoleSwitch from "@/kilocode/plugins/czcode-role-switch"
+// czcode_change end
 import SidebarContext from "../feature-plugins/sidebar/context"
 import SidebarMcp from "../feature-plugins/sidebar/mcp"
 import SidebarLsp from "../feature-plugins/sidebar/lsp"
@@ -29,6 +32,7 @@ export const INTERNAL_TUI_PLUGINS: InternalTuiPlugin[] = [
   KiloSidebarFooter, // kilocode_change
   KiloSidebarPr, // kilocode_change
   KiloSidebarUsage, // kilocode_change
+  CzCodeRoleSwitch, // czcode_change
   HomeFooter,
   HomeTips,
   SidebarContext,
