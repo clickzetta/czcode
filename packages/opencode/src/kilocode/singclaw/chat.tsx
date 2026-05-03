@@ -155,7 +155,7 @@ export function SingClawChat(props: {
           >
             <Show when={active()} fallback={<text fg={theme.textMuted}>{placeholder()}</text>}>
               <textarea
-                ref={(r: TextareaRenderable) => { input = r }}
+                ref={(r: TextareaRenderable) => { input = r; setTimeout(() => r?.focus(), 100) }}
                 placeholder="输入消息... (Enter 发送，Shift+Enter 换行)"
                 textColor={theme.text}
                 focusedTextColor={theme.text}
