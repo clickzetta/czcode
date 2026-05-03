@@ -74,7 +74,7 @@ CLICKZETTA_SCHEMA=<your-schema>      # 默认 public
 CLICKZETTA_VCLUSTER=<your-vcluster>  # 默认 default
 ```
 
-> 也支持 OpenAI、Anthropic 等其他 AI 模型，在配置文件中设置 `model` 字段即可。
+> 也支持 OpenAI、Anthropic 等其他 AI 模型，在 `czcode.jsonc` 中设置 `model` 字段即可（见下方"配置 AI 模型"）。
 
 ### 第三步（b）：配置 AI 模型
 
@@ -91,7 +91,7 @@ CLICKZETTA_VCLUSTER=<your-vcluster>  # 默认 default
 }
 ```
 
-> czcode 不内置默认模型，必须在 `czcode.jsonc` 中指定。推荐使用 `alibaba-cn/qwen3.5-plus`（需要 `.env` 中的 `DASHSCOPE_API_KEY`）。也支持 `anthropic/claude-sonnet-4`、`openai/gpt-4o` 等 500+ 模型。
+> 推荐在 `czcode.jsonc` 中指定模型和默认角色，否则启动后使用内置默认值（通用 code agent，非 Lakehouse 专用）。推荐使用 `alibaba-cn/qwen3.5-plus`（需要 `.env` 中的 `DASHSCOPE_API_KEY`）。也支持 `anthropic/claude-sonnet-4-6`、`openai/gpt-4o` 等 500+ 模型。
 
 ### 第四步：启动
 
@@ -160,9 +160,7 @@ Skills 有更新时，在对话中运行：
   "default_agent": "lh-analyst"
 
   // 更多模型选择：
-  // "model": "anthropic/claude-sonnet-4",
-  // "model": "openai/gpt-4o",
-}
+  // "model": "anthropic/claude-sonnet-4-6",
   // "model": "anthropic/claude-opus-4-7",
   // "model": "openai/gpt-4o",
 }
