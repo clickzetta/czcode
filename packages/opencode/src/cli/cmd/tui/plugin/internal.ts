@@ -15,6 +15,8 @@ import CzCodeSchemaBrowser from "@/kilocode/plugins/czcode-schema-browser"
 import CzCodeSqlHistory from "@/kilocode/plugins/czcode-sql-history"
 import CzCodeVClusterDashboard from "@/kilocode/plugins/czcode-vcluster-dashboard"
 import CzCodeSample from "@/kilocode/plugins/czcode-sample"
+import CzCodeCount from "@/kilocode/plugins/czcode-count"
+import CzCodeProfile from "@/kilocode/plugins/czcode-profile"
 // czcode_change end
 import SidebarContext from "../feature-plugins/sidebar/context"
 import SidebarMcp from "../feature-plugins/sidebar/mcp"
@@ -43,6 +45,8 @@ export const INTERNAL_TUI_PLUGINS: InternalTuiPlugin[] = [
   CzCodeSqlHistory, // czcode_change
   CzCodeVClusterDashboard, // czcode_change
   CzCodeSample, // czcode_change
+  CzCodeCount, // czcode_change
+  CzCodeProfile, // czcode_change
   HomeFooter,
   HomeTips,
   SidebarContext,
