@@ -121,6 +121,7 @@ czcode 内置 5 个数据角色，通过 **Tab 键**循环切换，或输入 `/c
 | `/cz_role` | `/cz_r` | 角色切换：弹出选择框切换数据角色 |
 | `/cz_vcluster` | `/cz_vc` | VCluster 状态：查看所有 VCluster 的运行状态和规格 |
 | `/cz_sql_history` | `/cz_sh` | SQL 历史：浏览当前会话的 SQL 执行记录，选中即复制到剪贴板 |
+| `/cz_singclaw` | — | SingClaw：连接本地 SingClaw 服务进行对话 |
 | `/cz_skill-update` | — | 更新 ClickZetta 领域知识（Skills） |
 | `/cz_skill-fix` | — | 修正 Skill 内容错误 |
 
