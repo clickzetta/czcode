@@ -83,7 +83,7 @@ Python 代码中操作 Lakehouse 时：
 | 场景 | skill |
 |---|---|
 | 数据科学工作流/ZettaPark/特征工程/EDA | `clickzetta-data-science` |
-| DDL/DML 语法不确定或报错 | `clickzetta-sql-syntax-guide` |
+| 生成任何 DDL 或 DML 之前 | `clickzetta-sql-syntax-guide` |
 | ZettaPark 向量检索/AI 函数 | `clickzetta-ai-vector-search` |
 | 数据生命周期/TTL（中间表清理） | `clickzetta-data-lifecycle` |
 | information_schema 查询 | `clickzetta-information-schema` |

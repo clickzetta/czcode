@@ -51,7 +51,7 @@
 | 场景 | skill |
 |---|---|
 | 数仓建模（分层/表类型/DDL） | `clickzetta-dw-modeling` |
-| DDL/DML 语法不确定或报错 | `clickzetta-sql-syntax-guide` |
+| 生成任何 DDL 或 DML 之前 | `clickzetta-sql-syntax-guide` |
 | Kafka 导入 | `clickzetta-kafka-ingest-pipeline` |
 | OSS/文件导入 | `clickzetta-oss-ingest-pipeline` |
 | CDC/实时同步 | `clickzetta-cdc-sync-pipeline` |

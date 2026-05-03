@@ -33,7 +33,7 @@
 | SHOW GRANTS/USERS/ROLES 元数据 | `clickzetta-metadata-query` |
 | Studio 数据质量/目录/告警 | `clickzetta-studio-overview` |
 | 语义视图（治理视角） | `clickzetta-semantic-view` |
-| DDL/DML 语法不确定或报错 | `clickzetta-sql-syntax-guide` |
+| 生成任何 DDL 或 DML 之前 | `clickzetta-sql-syntax-guide` |
 | 概念/架构疑问 | `clickzetta-concepts` |
 
 skill 无法解答时，webfetch `https://yunqi.tech/llms-full.txt`。
