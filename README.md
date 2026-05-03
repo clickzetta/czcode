@@ -74,24 +74,7 @@ CLICKZETTA_SCHEMA=<your-schema>      # 默认 public
 CLICKZETTA_VCLUSTER=<your-vcluster>  # 默认 default
 ```
 
-> 也支持 OpenAI、Anthropic 等其他 AI 模型，在 `czcode.jsonc` 中设置 `model` 字段即可（见下方"配置 AI 模型"）。
-
-### 第三步（b）：配置 AI 模型
-
-在同一目录创建 `czcode.jsonc` 文件，设置默认模型：
-
-```jsonc
-{
-  // AI 模型（必须配置，否则无法对话）
-  "model": "alibaba-cn/qwen3.5-plus",
-
-  // 默认角色（可选，不设置则使用 lh-analyst）
-  // 可选值：lh-analyst | lh-engineer | lh-dba | lh-governance
-  "default_agent": "lh-analyst"
-}
-```
-
-> 推荐在 `czcode.jsonc` 中指定模型和默认角色，否则启动后使用内置默认值（通用 code agent，非 Lakehouse 专用）。推荐使用 `alibaba-cn/qwen3.5-plus`（需要 `.env` 中的 `DASHSCOPE_API_KEY`）。也支持 `anthropic/claude-sonnet-4-6`、`openai/gpt-4o` 等 500+ 模型。
+> 也支持 OpenAI、Anthropic 等其他 AI 模型，详见下方"配置说明"。
 
 ### 第四步：启动
 
@@ -107,15 +90,17 @@ czcode 会自动读取当前目录下的 `.env` 文件加载 Lakehouse 连接配
 
 ## 数据角色
 
-启动后默认进入**数据分析师**模式（只读）。在对话框输入 `@角色名` 切换：
+czcode 内置 5 个数据角色，通过 **Tab 键**循环切换，或输入 `/cz_role` 命令选择：
 
 | 角色 | 说明 | 权限 |
 |---|---|---|
-| `@lh-analyst` | 数据分析师（默认） | 仅 SELECT，工具层强制只读 |
-| `@lh-engineer` | 数据工程师 | 建表/建模/ETL/Pipeline/调度，写操作需确认 |
-| `@lh-data-scientist` | 数据科学家 | Python/Jupyter/EDA/特征工程/模型推理，写操作需确认 |
-| `@lh-dba` | 数据运维 | VCluster/查询调优/监控/费用分析，写操作需确认 |
-| `@lh-governance` | 数据治理 | 权限/安全/生命周期/合规/共享，写操作需确认 |
+| 数据分析师（默认） | 查询/报表/数据质量探查/BI 连接 | 仅 SELECT，工具层强制只读 |
+| 数据工程师 | 建表/建模/ETL/Pipeline/调度/指标管理 | DDL + DML + SELECT，写操作需确认 |
+| 数据科学家 | Python/Jupyter/EDA/特征工程/模型推理 | 写操作需确认 |
+| 数据运维 | VCluster 管理/查询调优/作业监控/费用分析 | DDL + VCluster ops，写操作需确认 |
+| 数据治理 | 权限/安全/生命周期/合规/共享 | GRANT/REVOKE/POLICY，写操作需确认 |
+
+> 除了数据角色，czcode 也保留了 kilocode 原有的 Code/Plan 等代码开发角色。
 
 ---
 
@@ -123,25 +108,56 @@ czcode 会自动读取当前目录下的 `.env` 文件加载 Lakehouse 连接配
 
 ### 自然语言查询
 直接用中文描述需求，czcode 生成 SQL 并执行：
-- SELECT 查询直接执行
-- DDL/DML 操作弹窗确认，危险操作（DROP/TRUNCATE）显示完整 SQL
+- SELECT 查询直接执行，结果以表格展示，附带执行耗时（⏱ 1.2s）
+- DDL/DML 操作弹窗确认，危险操作（DROP/TRUNCATE）显示目标表大小、行数、最后修改时间
 
-### 数仓建模向导（`@lh-engineer`）
-输入"帮我设计数仓分层"，czcode 会：
+### 快捷命令
+
+| 命令 | 别名 | 功能 |
+|------|------|------|
+| `/cz_sample` | `/cz_s` | 快速采样：输入表名，自动执行 `SELECT * FROM table LIMIT 5` |
+| `/cz_count` | `/cz_c` | 行数统计：一键查看表的总行数 |
+| `/cz_profile` | `/cz_p` | 数据画像：自动分析每列的 NULL 比例、唯一值、最大最小值 |
+| `/cz_role` | `/cz_r` | 角色切换：弹出选择框切换数据角色 |
+| `/cz_vcluster` | `/cz_vc` | VCluster 状态：查看所有 VCluster 的运行状态和规格 |
+| `/cz_sql_history` | `/cz_sh` | SQL 历史：浏览当前会话的 SQL 执行记录，选中即复制到剪贴板 |
+| `/cz_skill-update` | — | 更新 ClickZetta 领域知识（Skills） |
+| `/cz_skill-fix` | — | 修正 Skill 内容错误 |
+
+### 侧边栏信息
+
+session 页面右侧边栏实时显示：
+- **Lakehouse 连接状态**：Workspace / Schema / VCluster / User（跟随 `switch_context` 自动更新）
+- **Schemas**：对话中使用 `list_objects` 后自动填充
+- **VClusters**：对话中查询 VCluster 后自动填充
+
+### 数仓建模向导
+
+切换到数据工程师角色后，输入"帮我设计数仓分层"，czcode 会：
 1. 自动探索你的数据（SHOW SCHEMAS/TABLES，查表大小）
 2. 给出具体的分层方案选项（传统分层 / Medallion / 混合）
 3. 生成 DDL 模板和数据管道配置
 
-### Skills 更新
-Skills 有更新时，在对话中运行：
+### DDL 确认增强
+
+执行危险操作（DROP/TRUNCATE/ALTER/DELETE）时，确认弹窗会额外显示：
+- 目标表大小（MB）
+- 行数
+- 最后修改时间
+- 支持 UNDROP 的对象会提示恢复命令
+
+### Skills（领域知识）
+
+czcode 内置 27 个 ClickZetta Lakehouse 领域 Skill，覆盖 SQL 语法、数据导入、索引管理、VCluster 运维等场景。Skills 随安装包一起分发，无需网络即可使用。
+
+更新 Skills：
 ```
 /cz_skill-update
 ```
 
-> **国内用户注意**：Skills 托管在 GitHub，国内网络可能无法直接访问。请先配置代理（如 `export https_proxy=http://127.0.0.1:7890`），再运行 skill 更新命令。
+> **国内用户注意**：Skills 更新需要访问 GitHub。如无法访问，请配置代理（如 `export https_proxy=http://127.0.0.1:7890`）后再运行。
 
-### 报告 Skill 问题
-发现 skill 内容有误，可以：
+报告 Skill 问题：
 - 在对话中运行 `/cz_skill-fix` 写入本地修正
 - 或到 GitHub 提交 Issue：[报告问题](https://github.com/yunqiqiliang/clickzetta-skills/issues/new?template=skill-bug.yml) | [提改进建议](https://github.com/yunqiqiliang/clickzetta-skills/issues/new?template=skill-enhancement.yml)
 
