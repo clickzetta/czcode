@@ -25,6 +25,7 @@ import { initializeTUIDependencies } from "@kilocode/kilo-gateway/tui"
 
 // Re-export so upstream can render the route without importing directly
 export { KiloClawView } from "@/kilocode/claw/view"
+export { SingClawView } from "@/kilocode/singclaw/view" // czcode_change
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -97,6 +98,7 @@ export function getTerminalTitle(
   base: string,
 ): string | undefined {
   if (route.data.type === "kiloclaw") return `${base} | KiloClaw`
+  if (route.data.type === "singclaw") return `${base} | SingClaw` // czcode_change
   return undefined
 }
 

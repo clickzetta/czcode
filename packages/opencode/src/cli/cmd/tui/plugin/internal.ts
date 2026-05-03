@@ -17,6 +17,7 @@ import CzCodeVClusterDashboard from "@/kilocode/plugins/czcode-vcluster-dashboar
 import CzCodeSample from "@/kilocode/plugins/czcode-sample"
 import CzCodeCount from "@/kilocode/plugins/czcode-count"
 import CzCodeProfile from "@/kilocode/plugins/czcode-profile"
+import CzCodeSingClaw from "@/kilocode/plugins/czcode-singclaw"
 // czcode_change end
 import SidebarContext from "../feature-plugins/sidebar/context"
 import SidebarMcp from "../feature-plugins/sidebar/mcp"
@@ -47,6 +48,7 @@ export const INTERNAL_TUI_PLUGINS: InternalTuiPlugin[] = [
   CzCodeSample, // czcode_change
   CzCodeCount, // czcode_change
   CzCodeProfile, // czcode_change
+  CzCodeSingClaw, // czcode_change
   HomeFooter,
   HomeTips,
   SidebarContext,

@@ -25,7 +25,13 @@ export type PluginRoute = {
   data?: Record<string, unknown>
 }
 
-export type Route = HomeRoute | SessionRoute | PluginRoute | KiloClawRoute // kilocode_change
+// czcode_change start
+export type SingClawRoute = {
+  type: "singclaw"
+}
+// czcode_change end
+
+export type Route = HomeRoute | SessionRoute | PluginRoute | KiloClawRoute | SingClawRoute // czcode_change
 
 export const { use: useRoute, provider: RouteProvider } = createSimpleContext({
   name: "Route",

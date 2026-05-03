@@ -901,6 +901,11 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
             <KiloApp.KiloClawView />
           </Match>
           {/* kilocode_change end */}
+          {/* czcode_change start */}
+          <Match when={route.data.type === "singclaw"}>
+            <KiloApp.SingClawView />
+          </Match>
+          {/* czcode_change end */}
         </Switch>
       </Show>
       {plugin()}

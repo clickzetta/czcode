@@ -81,6 +81,13 @@ function routeNavigate(route: ReturnType<typeof useRoute>, name: string, params?
     return
   }
 
+  // czcode_change start
+  if (name === "singclaw") {
+    route.navigate({ type: "singclaw" })
+    return
+  }
+  // czcode_change end
+
   route.navigate({ type: "plugin", id: name, data: params })
 }
 
@@ -99,6 +106,10 @@ function routeCurrent(route: ReturnType<typeof useRoute>): TuiPluginApi["route"]
   // kilocode_change start
   if (route.data.type === "kiloclaw") return { name: "kiloclaw" }
   // kilocode_change end
+
+  // czcode_change start
+  if (route.data.type === "singclaw") return { name: "singclaw" }
+  // czcode_change end
 
   return {
     name: route.data.id,
