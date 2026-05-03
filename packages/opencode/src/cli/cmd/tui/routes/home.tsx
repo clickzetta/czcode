@@ -43,6 +43,14 @@ const placeholdersByAgent: Record<string, string[]> = {
     "查看 orders 表的变更历史",
     "创建一个动态脱敏策略",
   ],
+  "lh-data-scientist": [
+    "帮我对 orders 表做 EDA 探索性分析",
+    "生成一个 Jupyter notebook，分析用户购买行为",
+    "用 ZettaPark 读取 Lakehouse 数据并做特征工程",
+    "帮我构建一个用户流失预测的特征表",
+    "把模型预测结果写回 Lakehouse",
+    "从 Kaggle 接入外部数据集并与 Lakehouse 数据融合",
+  ],
 }
 
 const defaultPlaceholders = [
