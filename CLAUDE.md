@@ -176,3 +176,23 @@ Skills are loaded from `/Users/liangmo/Documents/GitHub/clickzetta-skills` (27 L
 | `kilo.db` | `czcode.db` |
 | `Kilo` / `KiloCode` | `ClickZetta` / `czcode` |
 | `https://kilo.ai/docs` | `https://yunqi.tech/documents` |
+
+---
+
+## Debugging Best Practices (Lessons Learned)
+
+### 1. 修 bug 前先全局搜索所有调用点
+
+修 "Copied to clipboard" toast 不消失时，只改了 `app.tsx` 一处，但实际有 3 处调用（`app.tsx`、`selection.ts`、`dialog-provider.tsx`）。**修任何 UI 行为前，先 `grep -rn` 搜索所有相关调用点，一次性全部修完。**
+
+### 2. 不要猜，先确认执行顺序
+
+修 "Lakehouse 未配置" 显示问题时，猜测是 TUI 插件先于 server 插件渲染。实际上是 `process.env` 在编译后的二进制里不会自动加载 `.env`。**遇到"有时工作有时不工作"的问题，先确认 `bun dev` vs 编译二进制的行为差异。**
+
+### 3. 正则解析结构化数据容易出错
+
+用正则从 `get_context` 的表格输出里提取 workspace，结果匹配到了 `workspace_id` 列名。**解析表格数据用列索引（split + indexOf），不用正则。**
+
+### 4. 上游合并后做冒烟测试
+
+合并 v7.2.33 后没有测试 toast 行为变化。**每次上游合并后，至少测试：基本对话、复制粘贴、角色切换、工具执行。**
