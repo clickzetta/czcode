@@ -3,12 +3,14 @@
 /**
  * SingClaw gateway HTTP client
  *
- * Connects to the local SingClaw gateway (localhost:17925) using the
+ * Connects to the local SingClaw gateway (127.0.0.1:17925) using the
  * auth token from ~/.singclaw/singclaw-gateway.json.
  *
- * SingClaw embeds an opencode server, so we use the standard opencode
- * session API: POST /session to create, POST /session/:id/prompt_async
- * to send messages, GET /session/:id/message to poll replies.
+ * SingClaw embeds an openclaw server (NOT opencode). API:
+ *   POST /chat          { message, session_id? }  → { session_id, reply }
+ *   GET  /chat/:id/history                        → [{ role, content }]
+ *   GET  /health                                  → { ok, status }
+ * Auth: X-OpenClaw-Token header
  */
 
 import { existsSync, readFileSync } from "fs"
@@ -40,11 +42,13 @@ function readGatewayConfig(): { port: number; token: string } {
 export async function isSingClawRunning(): Promise<boolean> {
   const { port, token } = readGatewayConfig()
   try {
-    const res = await fetch(`http://localhost:${port}/app`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    const headers: Record<string, string> = {}
+    if (token) headers["X-OpenClaw-Token"] = token
+    const res = await fetch(`http://127.0.0.1:${port}/health`, {
+      headers,
       signal: AbortSignal.timeout(2000),
     })
-    return res.ok || res.status === 401
+    return res.ok
   } catch {
     return false
   }
@@ -61,115 +65,49 @@ export class SingClawClient {
 
   constructor() {
     const { port, token } = readGatewayConfig()
-    this.baseUrl = `http://localhost:${port}`
+    this.baseUrl = `http://127.0.0.1:${port}`
     this.token = token
   }
 
   private headers(): Record<string, string> {
     const h: Record<string, string> = { "Content-Type": "application/json" }
-    if (this.token) h["Authorization"] = `Bearer ${this.token}`
+    if (this.token) h["X-OpenClaw-Token"] = this.token
     return h
   }
 
-  async createSession(): Promise<SingClawSession> {
-    const res = await fetch(`${this.baseUrl}/session`, {
-      method: "POST",
-      headers: this.headers(),
-      body: JSON.stringify({}),
-    })
-    if (!res.ok) throw new Error(`Failed to create session: ${res.status}`)
-    const data = await res.json()
-    return { id: data.id, title: data.title }
+  createSession(): SingClawSession {
+    // Generate a local session ID; openclaw will create the server session on first message
+    return { id: `sc-${Date.now()}` }
   }
 
-  async sendMessage(sessionId: string, text: string): Promise<void> {
-    const res = await fetch(`${this.baseUrl}/session/${sessionId}/prompt_async`, {
+  async sendMessage(sessionId: string, text: string): Promise<SingClawMessage> {
+    const res = await fetch(`${this.baseUrl}/chat`, {
       method: "POST",
       headers: this.headers(),
-      body: JSON.stringify({ parts: [{ type: "text", text }] }),
+      body: JSON.stringify({ message: text, session_id: sessionId }),
     })
     if (!res.ok) throw new Error(`Failed to send message: ${res.status}`)
+    const data = await res.json()
+    return {
+      id: String(Date.now()),
+      role: "assistant",
+      content: data.reply ?? "",
+      createdAt: new Date(),
+    }
   }
 
-  async getMessages(sessionId: string): Promise<SingClawMessage[]> {
-    const res = await fetch(`${this.baseUrl}/session/${sessionId}/message`, {
+  async getHistory(sessionId: string): Promise<SingClawMessage[]> {
+    const res = await fetch(`${this.baseUrl}/chat/${sessionId}/history`, {
       headers: this.headers(),
     })
-    if (!res.ok) throw new Error(`Failed to get messages: ${res.status}`)
+    if (!res.ok) throw new Error(`Failed to get history: ${res.status}`)
     const data = await res.json()
     const items: any[] = Array.isArray(data) ? data : (data?.messages ?? [])
-    return items.map((m: any) => ({
-      id: m.id ?? String(Math.random()),
+    return items.map((m: any, i: number) => ({
+      id: m.id ?? String(i),
       role: m.role === "assistant" ? "assistant" : "user",
-      content: extractText(m),
-      createdAt: m.metadata?.time?.created ? new Date(m.metadata.time.created) : new Date(),
+      content: typeof m.content === "string" ? m.content : "",
+      createdAt: m.created_at ? new Date(m.created_at) : new Date(),
     }))
   }
-
-  // Poll for new messages using SSE event stream
-  subscribeMessages(
-    sessionId: string,
-    onMessage: (msg: SingClawMessage) => void,
-    onError: (err: string) => void,
-  ): () => void {
-    const controller = new AbortController()
-    const headers = this.headers()
-    delete headers["Content-Type"]
-
-    const run = async () => {
-      try {
-        const res = await fetch(`${this.baseUrl}/session/${sessionId}/event`, {
-          headers,
-          signal: controller.signal,
-        })
-        if (!res.ok || !res.body) {
-          onError(`Event stream failed: ${res.status}`)
-          return
-        }
-        const reader = res.body.getReader()
-        const decoder = new TextDecoder()
-        let buf = ""
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          buf += decoder.decode(value, { stream: true })
-          const lines = buf.split("\n")
-          buf = lines.pop() ?? ""
-          for (const line of lines) {
-            if (!line.startsWith("data: ")) continue
-            try {
-              const evt = JSON.parse(line.slice(6))
-              if (evt?.type === "message.updated" || evt?.type === "message.created") {
-                const m = evt.properties
-                if (m) {
-                  onMessage({
-                    id: m.id ?? String(Math.random()),
-                    role: m.role === "assistant" ? "assistant" : "user",
-                    content: extractText(m),
-                    createdAt: m.metadata?.time?.created ? new Date(m.metadata.time.created) : new Date(),
-                  })
-                }
-              }
-            } catch {}
-          }
-        }
-      } catch (err: any) {
-        if (err?.name !== "AbortError") onError(err?.message ?? "Stream error")
-      }
-    }
-
-    run()
-    return () => controller.abort()
-  }
-}
-
-function extractText(m: any): string {
-  if (typeof m.content === "string") return m.content
-  if (Array.isArray(m.parts)) {
-    return m.parts
-      .filter((p: any) => p.type === "text")
-      .map((p: any) => p.text ?? "")
-      .join("")
-  }
-  return ""
 }
