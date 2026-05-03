@@ -49,16 +49,26 @@ function resolveContext(messages: readonly Message[], parts: (id: string) => rea
       }
 
       if (p.tool === "get_context" && p.state.status === "completed") {
-        // Parse the table output for current values
+        // Parse structured table output by column index
+        // Format: | col1 | col2 | ... (header row, then data row)
         const output = p.state.output ?? ""
-        const wsMatch = output.match(/workspace\s*\|\s*(\S+)/i)
-        const schemaMatch = output.match(/schema\s*\|\s*(\S+)/i)
-        const vcMatch = output.match(/vcluster\s*\|\s*(\S+)/i)
-        const userMatch = output.match(/current_user\s*\|\s*(\S+)/i)
-        if (wsMatch) state.workspace = wsMatch[1]
-        if (schemaMatch) state.schema = schemaMatch[1]
-        if (vcMatch) state.vcluster = vcMatch[1]
-        if (userMatch) state.user = userMatch[1]
+        const rows = output.split("\n").filter((l: string) => l.startsWith("|") && !l.startsWith("+"))
+        if (rows.length >= 2) {
+          const headers = rows[0].split("|").map((c: string) => c.trim()).filter(Boolean)
+          const values = rows[1].split("|").map((c: string) => c.trim()).filter(Boolean)
+          const col = (name: string) => {
+            const idx = headers.indexOf(name)
+            return idx >= 0 && values[idx] ? values[idx] : undefined
+          }
+          const ws = col("workspace")
+          const sc = col("schema")
+          const vc = col("vcluster")
+          const usr = col("current_user")
+          if (ws) state.workspace = ws
+          if (sc) state.schema = sc
+          if (vc) state.vcluster = vc
+          if (usr) state.user = usr
+        }
       }
     }
   }
