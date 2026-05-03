@@ -307,7 +307,7 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
     if (!text || text.length === 0) return
 
     await Clipboard.copy(text)
-      .then(() => toast.show({ message: "Copied to clipboard", variant: "info" }))
+      .then(() => toast.show({ message: "Copied to clipboard", variant: "info", duration: 2000 })) // czcode_change - auto-dismiss
       .catch(toast.error)
 
     renderer.clearSelection()
