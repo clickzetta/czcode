@@ -4,8 +4,10 @@
  *
  * /cz_role — opens a role picker to switch between data agents.
  */
-import type { TuiPlugin, TuiPluginModule } from "@kilocode/plugin/tui"
+import type { TuiPlugin, TuiPluginModule, TuiToast } from "@kilocode/plugin/tui"
 import { DialogSelect } from "@tui/ui/dialog-select"
+import { useLocal } from "@/cli/cmd/tui/context/local"
+import { useDialog } from "@tui/ui/dialog"
 
 const id = "internal:czcode-role-switch"
 
@@ -17,6 +19,33 @@ const ROLES = [
   { id: "lh-governance", label: "🔐 数据治理", desc: "GRANT/REVOKE/POLICY" },
 ]
 
+function RoleSwitchDialog(props: { toast: (input: TuiToast) => void }) {
+  const local = useLocal()
+  const dialog = useDialog()
+
+  const options = ROLES.map((r) => ({
+    title: `${r.label} — ${r.desc}`,
+    value: r.id,
+  }))
+
+  return (
+    <DialogSelect
+      title="切换角色"
+      current={local.agent.current()?.name ?? ""}
+      options={options}
+      onSelect={(option: any) => {
+        const value = option.value as string
+        local.agent.set(value)
+        dialog.clear()
+        const role = ROLES.find((r) => r.id === value)
+        if (role) {
+          props.toast({ message: `已切换到 ${role.label}`, variant: "success", duration: 2000 })
+        }
+      }}
+    />
+  )
+}
+
 const tui: TuiPlugin = async (api) => {
   api.command.register(() => [
     {
@@ -26,25 +55,7 @@ const tui: TuiPlugin = async (api) => {
       category: "czcode",
       slash: { name: "cz_role", aliases: ["cz_r"] },
       onSelect() {
-        const options = ROLES.map((r) => ({
-          title: `${r.label} — ${r.desc}`,
-          value: r.id,
-        }))
-        api.ui.dialog.replace(() => (
-          <DialogSelect
-            title="切换角色"
-            options={options}
-            onSelect={(option: any) => {
-              api.ui.dialog.clear()
-              const value = option.value as string
-              api.command.trigger(`@${value}`)
-              const role = ROLES.find((r) => r.id === value)
-              if (role) {
-                api.ui.toast({ message: `已切换到 ${role.label}`, variant: "success", duration: 2000 })
-              }
-            }}
-          />
-        ))
+        api.ui.dialog.replace(() => <RoleSwitchDialog toast={api.ui.toast} />)
       },
     },
   ])
