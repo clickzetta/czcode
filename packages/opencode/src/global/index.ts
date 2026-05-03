@@ -5,7 +5,7 @@ import os from "os"
 import { Filesystem } from "../util"
 import { Flock } from "@opencode-ai/shared/util/flock"
 
-const app = "kilo" // kilocode_change
+const app = "czcode" // czcode_change
 
 // kilocode_change start
 // Defensively strip newline characters from the resolved XDG paths.
@@ -23,9 +23,9 @@ const state = path.join(clean(xdgState)!, app)
 // kilocode_change end
 
 export const Path = {
-  // Allow override via KILO_TEST_HOME for test isolation
+  // Allow override via CZCODE_TEST_HOME for test isolation
   get home() {
-    return (process.env.KILO_TEST_HOME || os.homedir()).trim() // kilocode_change — defensive trim, see above
+    return (process.env.CZCODE_TEST_HOME || process.env.KILO_TEST_HOME || os.homedir()).trim() // czcode_change — defensive trim, see above
   },
   data,
   bin: path.join(cache, "bin"),

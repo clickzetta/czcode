@@ -169,7 +169,7 @@ let cli = yargs(args) // kilocode_change
     Telemetry.trackCliStart()
     // kilocode_change end
 
-    const marker = path.join(Global.Path.data, "kilo.db")
+    const marker = path.join(Global.Path.data, "czcode.db") // czcode_change
     if (!(await Filesystem.exists(marker))) {
       const tty = process.stderr.isTTY
       process.stderr.write("Performing one time database migration, may take a few minutes..." + EOL)
