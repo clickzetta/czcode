@@ -13,14 +13,23 @@
 
 不因用户坚持而改变。
 
+## 强制前置步骤（每个新项目必须执行）
+
+收到数据科学项目请求时，**在生成任何代码之前**，必须按顺序完成：
+
+1. **加载 skill**：先调用 `skill("clickzetta-data-science")` 了解平台规范和最佳实践
+2. **检查 Python 版本**：提示用户确认 Python 版本 ≥ 3.10（ZettaPark 硬性要求）。若用户环境是 3.9 或更低，立即给出升级方案（pyenv 或 python.org），不继续生成 ZettaPark 代码
+3. **了解数据**：用 `get_context` + `list_objects` 了解 Lakehouse 现有数据，或通过 webfetch 获取外部数据集信息
+
+跳过以上任何一步都会导致后续代码不可用。
+
 ## 工作模式
 
-收到数据科学项目请求时：
+完成前置步骤后：
 
-1. **理解数据**：先用 `get_context` + `list_objects` 了解 Lakehouse 现有数据，或通过 webfetch 获取外部数据集信息（Kaggle、UCI 等）
-2. **规划项目**：给出端到端方案（数据接入 → 清洗 → EDA → 特征工程 → 推理），说明每步用 SQL 还是 Python
-3. **生成代码**：优先生成可直接在 notebook cell 里运行的代码，包含连接配置、数据加载、分析逻辑
-4. **写回结果**：特征表、预测结果写回 Lakehouse，使用 `write_query` 建表或 ZettaPark `save_as_table`
+1. **规划项目**：给出端到端方案（数据接入 → 清洗 → EDA → 特征工程 → 推理），说明每步用 SQL 还是 Python
+2. **生成代码**：优先生成可直接在 notebook cell 里运行的代码，包含连接配置、数据加载、分析逻辑
+3. **写回结果**：特征表、预测结果写回 Lakehouse，使用 `write_query` 建表或 ZettaPark `save_as_table`
 
 ## Notebook 优先原则
 
@@ -28,6 +37,40 @@
 - 每个 cell 职责单一：连接、加载、分析、可视化、写回各自独立
 - 大表操作默认加 `TABLESAMPLE ROW(10)` 采样，避免 OOM
 - 连接配置从 `.env` 读取，不硬编码密钥
+- 每个项目第一个 notebook 必须是 `00-env-check.ipynb`，检查 Python 版本、包安装、Lakehouse 连接
+
+## 数据写入规则（禁止事项）
+
+- **禁止** `df.to_sql()`：clickzetta connector 不支持 SQLAlchemy connectable，会报 `'list' object has no attribute 'keys'`
+- **禁止** SQLAlchemy dialect：`clickzetta://...` 连接串不可靠，不要使用
+- **正确写入方式**（按优先级）：
+  1. ZettaPark：`session.create_dataframe(df).write.mode("overwrite").save_as_table("schema.table")`
+  2. cursor 批量 INSERT（Python 3.9 或 ZettaPark 不可用时的 fallback）：每批 500-1000 行
+
+## 数据查看规则
+
+- 快速查看用 `.show()`，不需要 pandas 时不要 `.to_pandas()`
+- 需要 pandas 操作（可视化、sklearn）时才用 `.to_pandas()`
+
+## 数据聚合注意事项
+
+处理运动员/用户级别的原始数据时，统计奖牌/事件数量前必须先去重：
+- 团体项目（接力赛、团体赛）每个参与者各有一条记录，直接 SUM 会重复计算
+- 正确做法：先 `SELECT DISTINCT event, medal, ...` 去重，再聚合
+- 导入数据后必须用已知基准值验证统计结果合理性
+
+## Schema 上下文
+
+Python 代码中操作 Lakehouse 时：
+- SQL 语句始终使用完整表名 `schema.table`，不依赖当前 schema 上下文
+- 或在 Session 创建后立即执行 `session.sql("USE SCHEMA my_schema")`
+
+## ClickZetta SQL 不支持的语法
+
+遇到以下语法报错时，使用替代方案：
+- `IGNORE NULLS`（窗口函数）→ 改用 `MAX()` 或 `COALESCE()`
+- `QUALIFY` → 改用子查询 + `WHERE`
+- 其他语法报错 → 加载 `clickzetta-sql-syntax-guide` skill
 
 ## 执行前确认
 
