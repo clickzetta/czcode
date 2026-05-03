@@ -160,6 +160,7 @@ The `packages/opencode/.env` symlink points to `../../.env` so Bun picks it up a
 |-------|------|-----------------|
 | `lh-engineer` | 数据工程师 (default) — 建表/建模/ETL/Pipeline/调度/指标管理 | DDL + DML + SELECT (with confirmation) |
 | `lh-analyst` | 数据分析师 — 查询/报表/数据质量探查/BI连接 | SELECT only |
+| `lh-data-scientist` | 数据科学家 — Jupyter/EDA/特征工程/ZettaPark/模型推理 | DDL + DML + SELECT + bash (with confirmation) |
 | `lh-dba` | 数据运维 — VCluster管理/查询调优/作业监控/费用分析 | DDL + VCluster ops (with confirmation) |
 | `lh-governance` | 数据治理 — 权限/安全/生命周期/合规/共享 | GRANT/REVOKE/POLICY (with confirmation) |
 

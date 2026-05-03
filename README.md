@@ -113,6 +113,7 @@ czcode 会自动读取当前目录下的 `.env` 文件加载 Lakehouse 连接配
 |---|---|---|
 | `@lh-analyst` | 数据分析师（默认） | 仅 SELECT，工具层强制只读 |
 | `@lh-engineer` | 数据工程师 | 建表/建模/ETL/Pipeline/调度，写操作需确认 |
+| `@lh-data-scientist` | 数据科学家 | Python/Jupyter/EDA/特征工程/模型推理，写操作需确认 |
 | `@lh-dba` | 数据运维 | VCluster/查询调优/监控/费用分析，写操作需确认 |
 | `@lh-governance` | 数据治理 | 权限/安全/生命周期/合规/共享，写操作需确认 |
 

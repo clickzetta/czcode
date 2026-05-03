@@ -20,6 +20,7 @@ import PROMPT_LH_ENGINEER from "../../agent/prompt/lh-engineer.txt"
 import PROMPT_LH_ANALYST from "../../agent/prompt/lh-analyst.txt"
 import PROMPT_LH_DBA from "../../agent/prompt/lh-dba.txt"
 import PROMPT_LH_GOVERNANCE from "../../agent/prompt/lh-governance.txt"
+import PROMPT_LH_DATA_SCIENTIST from "../../agent/prompt/lh-data-scientist.txt"
 // czcode_change end
 
 export const bash: Record<string, "allow" | "ask" | "deny"> = {
@@ -506,6 +507,29 @@ export function patchAgents(
         read: "allow",
         webfetch: "allow", // czcode_change — compliance regulations and security standards
         websearch: "allow", // czcode_change — compliance regulations and security standards
+      }),
+      user,
+    ),
+    mode: "primary",
+    native: true,
+  }
+
+  agents["lh-data-scientist"] = {
+    name: "lh-data-scientist",
+    displayName: "数据科学家",
+    description: "云器 Lakehouse 数据科学家 — 数据科学项目/Jupyter/EDA/特征工程/模型推理",
+    prompt: PROMPT_LH_DATA_SCIENTIST + "\n\n" + PROMPT_LH_BASE,
+    options: {},
+    color: "#E67E00",
+    permission: Permission.merge(
+      defaults,
+      lakehouseTools,
+      Permission.fromConfig({
+        read: "allow",
+        write: "allow",
+        bash: bash, // czcode_change — execute Python/jupyter commands
+        webfetch: "allow", // czcode_change — fetch external datasets (Kaggle, UCI, etc.)
+        websearch: "allow", // czcode_change — search for data science methods and datasets
       }),
       user,
     ),

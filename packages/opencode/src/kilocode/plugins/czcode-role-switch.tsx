@@ -12,6 +12,7 @@ const id = "internal:czcode-role-switch"
 const ROLES = [
   { id: "lh-analyst", label: "📊 数据分析师", desc: "仅 SELECT" },
   { id: "lh-engineer", label: "🔧 数据工程师", desc: "DDL + DML + SELECT" },
+  { id: "lh-data-scientist", label: "🔬 数据科学家", desc: "Python + Jupyter + ML" },
   { id: "lh-dba", label: "⚙️ 数据运维", desc: "VCluster + DDL + 费用分析" },
   { id: "lh-governance", label: "🔐 数据治理", desc: "GRANT/REVOKE/POLICY" },
 ]
