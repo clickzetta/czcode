@@ -485,6 +485,7 @@ export const layer = Layer.effect(
           },
           command: builtinCommandMap,
         } as Info,
+        // czcode_change end
         mergeDeep(yield* loadFile(path.join(Global.Path.config, "config.json"))),
         // kilocode_change start
         mergeDeep(yield* loadFile(path.join(Global.Path.config, "kilo.json"))),
