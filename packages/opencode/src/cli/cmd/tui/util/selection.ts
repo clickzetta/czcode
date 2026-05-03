@@ -1,7 +1,7 @@
 import * as Clipboard from "./clipboard"
 
 type Toast = {
-  show: (input: { message: string; variant: "info" | "success" | "warning" | "error" }) => void
+  show: (input: { message: string; variant: "info" | "success" | "warning" | "error"; duration?: number }) => void // czcode_change - add duration
   error: (err: unknown) => void
 }
 
@@ -15,7 +15,7 @@ export function copy(renderer: Renderer, toast: Toast): boolean {
   if (!text) return false
 
   Clipboard.copy(text)
-    .then(() => toast.show({ message: "Copied to clipboard", variant: "info" }))
+    .then(() => toast.show({ message: "Copied to clipboard", variant: "info", duration: 2000 }))
     .catch(toast.error)
 
   renderer.clearSelection()
