@@ -1,6 +1,6 @@
 // czcode_change - new file
 
-import { createSignal, onMount } from "solid-js"
+import { createSignal, onMount, onCleanup } from "solid-js"
 import type { SingClawMessage, SingClawSession } from "./types"
 import { SingClawClient } from "./client"
 import { Log } from "@/util"
@@ -20,23 +20,21 @@ export function createSingClawChat() {
   const send = async (text: string): Promise<boolean> => {
     const s = session()
     if (!s || waiting()) return false
-    // Add user message immediately
     const userMsg: SingClawMessage = {
       id: `u-${Date.now()}`,
       role: "user",
       content: text,
       createdAt: new Date(),
     }
-    setMessages((prev) => [...prev, userMsg])
-    // Add placeholder for assistant reply
     const placeholderId = `a-${Date.now()}`
     setMessages((prev) => [
       ...prev,
+      userMsg,
       { id: placeholderId, role: "assistant", content: "", createdAt: new Date() },
     ])
     setWaiting(true)
     try {
-      const reply = await client.sendMessage(s.id, text)
+      const reply = await client.sendMessage(s, text)
       setMessages((prev) =>
         prev.map((m) => (m.id === placeholderId ? { ...m, content: reply.content } : m)),
       )
@@ -51,12 +49,19 @@ export function createSingClawChat() {
     }
   }
 
-  onMount(() => {
-    const s = client.createSession()
-    setSession(s)
-    log.info("singclaw session ready", { id: s.id })
-    setConnected(true)
-    setLoading(false)
+  onMount(async () => {
+    onCleanup(() => client.close())
+    try {
+      await client.connect()
+      const s = await client.createSession()
+      setSession(s)
+      setConnected(true)
+      setLoading(false)
+    } catch (err: any) {
+      log.error("singclaw init failed", { error: err?.message })
+      setError(err?.message ?? "连接 SingClaw 失败")
+      setLoading(false)
+    }
   })
 
   return { messages, connected, loading, error, waiting, send }

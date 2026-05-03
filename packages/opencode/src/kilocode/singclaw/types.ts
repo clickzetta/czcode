@@ -11,5 +11,6 @@ export type SingClawMessage = {
 
 export type SingClawSession = {
   id: string
+  key: string
   title?: string
 }

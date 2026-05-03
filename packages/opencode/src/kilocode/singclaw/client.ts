@@ -1,16 +1,20 @@
 // czcode_change - new file
 
 /**
- * SingClaw gateway HTTP client
+ * SingClaw gateway WebSocket client
  *
- * Connects to the local SingClaw gateway (127.0.0.1:17925) using the
- * auth token from ~/.singclaw/singclaw-gateway.json.
+ * SingClaw embeds an openclaw gateway (WebSocket RPC protocol).
+ * Connection: ws://127.0.0.1:17925/gateway with Origin: http://127.0.0.1:17925
  *
- * SingClaw embeds an openclaw server (NOT opencode). API:
- *   POST /chat          { message, session_id? }  → { session_id, reply }
- *   GET  /chat/:id/history                        → [{ role, content }]
- *   GET  /health                                  → { ok, status }
- * Auth: X-OpenClaw-Token header
+ * Handshake:
+ *   1. Server sends { type:"event", event:"connect.challenge", payload:{nonce} }
+ *   2. Client sends { type:"req", id, method:"connect", params:{...} }
+ *   3. Server sends { type:"res", id, ok:true, payload:{type:"hello-ok"} }
+ *
+ * Sending a message:
+ *   sessions.create → { key, sessionId }
+ *   sessions.send   { key, message }
+ *   Listen for { type:"event", event:"chat", payload:{state:"final", message:{...}} }
  */
 
 import { existsSync, readFileSync } from "fs"
@@ -21,6 +25,7 @@ import type { SingClawMessage, SingClawSession } from "./types"
 const SINGCLAW_APP = "/Applications/Singclaw.app"
 const SINGCLAW_CONFIG = join(homedir(), ".singclaw", "singclaw-gateway.json")
 const GATEWAY_PORT = 17925
+const GATEWAY_ORIGIN = `http://127.0.0.1:${GATEWAY_PORT}`
 
 export function isSingClawInstalled(): boolean {
   return existsSync(SINGCLAW_APP)
@@ -60,54 +65,184 @@ export async function launchSingClaw(): Promise<void> {
 }
 
 export class SingClawClient {
-  private baseUrl: string
+  private port: number
   private token: string
+  private ws: WebSocket | null = null
+  private pendingRequests = new Map<string, { resolve: (v: any) => void; reject: (e: Error) => void }>()
+  private eventHandlers = new Map<string, ((payload: any) => void)[]>()
+  private reqCounter = 0
+  private connected = false
+  private connectPromise: Promise<void> | null = null
 
   constructor() {
-    const { port, token } = readGatewayConfig()
-    this.baseUrl = `http://127.0.0.1:${port}`
-    this.token = token
+    const cfg = readGatewayConfig()
+    this.port = cfg.port
+    this.token = cfg.token
   }
 
-  private headers(): Record<string, string> {
-    const h: Record<string, string> = { "Content-Type": "application/json" }
-    if (this.token) h["X-OpenClaw-Token"] = this.token
-    return h
+  private nextId(): string {
+    return `czcode-${++this.reqCounter}`
   }
 
-  createSession(): SingClawSession {
-    // Generate a local session ID; openclaw will create the server session on first message
-    return { id: `sc-${Date.now()}` }
-  }
+  connect(): Promise<void> {
+    if (this.connectPromise) return this.connectPromise
+    this.connectPromise = new Promise((resolve, reject) => {
+      const ws = new WebSocket(`ws://127.0.0.1:${this.port}/gateway`, {
+        headers: { Origin: GATEWAY_ORIGIN },
+      } as any)
+      this.ws = ws
 
-  async sendMessage(sessionId: string, text: string): Promise<SingClawMessage> {
-    const res = await fetch(`${this.baseUrl}/chat`, {
-      method: "POST",
-      headers: this.headers(),
-      body: JSON.stringify({ message: text, session_id: sessionId }),
+      const timeout = setTimeout(() => {
+        ws.close()
+        reject(new Error("连接 SingClaw 超时"))
+      }, 10000)
+
+      ws.onmessage = (e: MessageEvent) => {
+        let msg: any
+        try { msg = JSON.parse(e.data as string) } catch { return }
+
+        if (msg.type === "event" && msg.event === "connect.challenge") {
+          const id = this.nextId()
+          this.pendingRequests.set(id, {
+            resolve: () => {
+              clearTimeout(timeout)
+              this.connected = true
+              resolve()
+            },
+            reject: (err) => {
+              clearTimeout(timeout)
+              reject(err)
+            },
+          })
+          ws.send(JSON.stringify({
+            type: "req",
+            id,
+            method: "connect",
+            params: {
+              minProtocol: 3,
+              maxProtocol: 3,
+              client: {
+                id: "openclaw-control-ui",
+                displayName: "czcode",
+                version: "1.0.0",
+                mode: "ui",
+                platform: process.platform,
+              },
+              caps: [],
+              auth: this.token ? { token: this.token } : undefined,
+              role: "operator",
+              scopes: ["operator.admin", "operator.read", "operator.write"],
+            },
+          }))
+          return
+        }
+
+        if (msg.type === "res") {
+          const pending = this.pendingRequests.get(msg.id)
+          if (pending) {
+            this.pendingRequests.delete(msg.id)
+            if (msg.ok) pending.resolve(msg.payload)
+            else pending.reject(new Error(msg.error?.message ?? "Request failed"))
+          }
+          return
+        }
+
+        if (msg.type === "event") {
+          const handlers = this.eventHandlers.get(msg.event) ?? []
+          for (const h of handlers) h(msg.payload)
+        }
+      }
+
+      ws.onerror = () => {
+        clearTimeout(timeout)
+        reject(new Error("SingClaw WebSocket 连接失败"))
+      }
+
+      ws.onclose = () => {
+        this.connected = false
+        this.connectPromise = null
+        // Reject any pending requests
+        for (const [, p] of this.pendingRequests) p.reject(new Error("连接已断开"))
+        this.pendingRequests.clear()
+      }
     })
-    if (!res.ok) throw new Error(`Failed to send message: ${res.status}`)
-    const data = await res.json()
-    return {
-      id: String(Date.now()),
-      role: "assistant",
-      content: data.reply ?? "",
-      createdAt: new Date(),
+    return this.connectPromise
+  }
+
+  private request(method: string, params?: any): Promise<any> {
+    return new Promise((resolve, reject) => {
+      if (!this.ws || !this.connected) {
+        reject(new Error("未连接"))
+        return
+      }
+      const id = this.nextId()
+      this.pendingRequests.set(id, { resolve, reject })
+      this.ws.send(JSON.stringify({ type: "req", id, method, params }))
+    })
+  }
+
+  on(event: string, handler: (payload: any) => void): () => void {
+    const handlers = this.eventHandlers.get(event) ?? []
+    handlers.push(handler)
+    this.eventHandlers.set(event, handlers)
+    return () => {
+      const h = this.eventHandlers.get(event)
+      if (h) this.eventHandlers.set(event, h.filter((x) => x !== handler))
     }
   }
 
-  async getHistory(sessionId: string): Promise<SingClawMessage[]> {
-    const res = await fetch(`${this.baseUrl}/chat/${sessionId}/history`, {
-      headers: this.headers(),
-    })
-    if (!res.ok) throw new Error(`Failed to get history: ${res.status}`)
-    const data = await res.json()
-    const items: any[] = Array.isArray(data) ? data : (data?.messages ?? [])
-    return items.map((m: any, i: number) => ({
-      id: m.id ?? String(i),
-      role: m.role === "assistant" ? "assistant" : "user",
-      content: typeof m.content === "string" ? m.content : "",
-      createdAt: m.created_at ? new Date(m.created_at) : new Date(),
-    }))
+  async createSession(): Promise<SingClawSession> {
+    const data = await this.request("sessions.create", {})
+    return { id: data.sessionId, key: data.key }
   }
+
+  async sendMessage(session: SingClawSession, text: string): Promise<SingClawMessage> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        off()
+        reject(new Error("等待回复超时"))
+      }, 60000)
+
+      const off = this.on("chat", (payload: any) => {
+        if (payload?.sessionKey !== session.key) return
+        if (payload?.state === "final") {
+          clearTimeout(timeout)
+          off()
+          const content = extractText(payload.message)
+          resolve({
+            id: `a-${Date.now()}`,
+            role: "assistant",
+            content,
+            createdAt: new Date(),
+          })
+        }
+      })
+
+      this.request("sessions.send", { key: session.key, message: text }).catch((err) => {
+        clearTimeout(timeout)
+        off()
+        reject(err)
+      })
+    })
+  }
+
+  close() {
+    this.ws?.close()
+    this.ws = null
+    this.connected = false
+    this.connectPromise = null
+  }
+}
+
+function extractText(message: any): string {
+  if (!message) return ""
+  const content = message.content
+  if (typeof content === "string") return content
+  if (Array.isArray(content)) {
+    return content
+      .filter((p: any) => p.type === "text")
+      .map((p: any) => p.text ?? "")
+      .join("")
+  }
+  return ""
 }
