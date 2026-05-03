@@ -147,21 +147,58 @@ Skills 有更新时，在对话中运行：
 
 ---
 
-## 更多配置
+## 配置说明
 
-`czcode.jsonc` 支持更多选项：
+czcode 有两层配置，优先级从高到低：
+
+### 1. 项目配置（当前目录）
+
+在 czcode 运行目录创建 `czcode.jsonc`，只影响当前项目：
 
 ```jsonc
 {
-  // AI 模型（必须配置）
+  "model": "alibaba-cn/qwen3.5-plus",
+  "default_agent": "lh-analyst"
+}
+```
+
+### 2. 全局配置（用户目录）
+
+全局配置在 `~/.czcode/config.json`，影响所有项目：
+
+```json
+{
+  "model": "alibaba-cn/qwen3.5-plus",
+  "default_agent": "lh-analyst",
+  "skills": {
+    "paths": ["/path/to/local/clickzetta-skills"]
+  }
+}
+```
+
+> **macOS 路径**：`~/.config/czcode/config.json`
+> **Linux 路径**：`~/.config/czcode/config.json`（遵循 XDG 规范）
+
+### 默认值
+
+不创建任何配置文件时，czcode 使用以下默认值：
+
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| `model` | `alibaba-cn/qwen3.5-plus` | 需要 `.env` 中的 `DASHSCOPE_API_KEY` |
+| `default_agent` | `lh-analyst` | 数据分析师（只读） |
+
+### 更多模型选择
+
+```jsonc
+{
+  // 阿里云 DashScope（默认，需要 DASHSCOPE_API_KEY）
   "model": "alibaba-cn/qwen3.5-plus",
 
-  // 默认角色（可选，默认 lh-analyst）
-  "default_agent": "lh-analyst"
-
-  // 更多模型选择：
+  // Anthropic（需要 ANTHROPIC_API_KEY）
   // "model": "anthropic/claude-sonnet-4-6",
-  // "model": "anthropic/claude-opus-4-7",
+
+  // OpenAI（需要 OPENAI_API_KEY）
   // "model": "openai/gpt-4o",
 }
 ```
