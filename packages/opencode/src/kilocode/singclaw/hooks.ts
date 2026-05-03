@@ -17,6 +17,13 @@ export function createSingClawChat() {
 
   const client = new SingClawClient()
 
+  client.setReconnectHandler((newSession) => {
+    log.info("singclaw reconnected", { id: newSession.id })
+    setSession(newSession)
+    setConnected(true)
+    setError(null)
+  })
+
   const send = async (text: string): Promise<boolean> => {
     const s = session()
     if (!s || waiting()) return false
@@ -34,7 +41,12 @@ export function createSingClawChat() {
     ])
     setWaiting(true)
     try {
-      const reply = await client.sendMessage(s, text)
+      const reply = await client.sendMessage(s, text, (accumulated) => {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === placeholderId ? { ...m, content: accumulated } : m)),
+        )
+      })
+      // Ensure final content is set
       setMessages((prev) =>
         prev.map((m) => (m.id === placeholderId ? { ...m, content: reply.content } : m)),
       )

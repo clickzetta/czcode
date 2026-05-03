@@ -73,11 +73,17 @@ export class SingClawClient {
   private reqCounter = 0
   private connected = false
   private connectPromise: Promise<void> | null = null
+  private intentionallyClosed = false
+  private reconnectHandler?: (session: SingClawSession) => void
 
   constructor() {
     const cfg = readGatewayConfig()
     this.port = cfg.port
     this.token = cfg.token
+  }
+
+  setReconnectHandler(fn: (session: SingClawSession) => void) {
+    this.reconnectHandler = fn
   }
 
   private nextId(): string {
@@ -161,12 +167,24 @@ export class SingClawClient {
       ws.onclose = () => {
         this.connected = false
         this.connectPromise = null
-        // Reject any pending requests
         for (const [, p] of this.pendingRequests) p.reject(new Error("连接已断开"))
         this.pendingRequests.clear()
+        if (!this.intentionallyClosed) {
+          setTimeout(() => this.reconnect(), 2000)
+        }
       }
     })
     return this.connectPromise
+  }
+
+  private async reconnect() {
+    try {
+      await this.connect()
+      const session = await this.createSession()
+      this.reconnectHandler?.(session)
+    } catch {
+      // next onclose will schedule another retry
+    }
   }
 
   private request(method: string, params?: any): Promise<any> {
@@ -196,7 +214,11 @@ export class SingClawClient {
     return { id: data.sessionId, key: data.key }
   }
 
-  async sendMessage(session: SingClawSession, text: string): Promise<SingClawMessage> {
+  async sendMessage(
+    session: SingClawSession,
+    text: string,
+    onDelta?: (accumulated: string) => void,
+  ): Promise<SingClawMessage> {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         off()
@@ -205,14 +227,15 @@ export class SingClawClient {
 
       const off = this.on("chat", (payload: any) => {
         if (payload?.sessionKey !== session.key) return
-        if (payload?.state === "final") {
+        if (payload?.state === "delta" && onDelta) {
+          onDelta(extractText(payload.message))
+        } else if (payload?.state === "final") {
           clearTimeout(timeout)
           off()
-          const content = extractText(payload.message)
           resolve({
             id: `a-${Date.now()}`,
             role: "assistant",
-            content,
+            content: extractText(payload.message),
             createdAt: new Date(),
           })
         }
@@ -227,6 +250,7 @@ export class SingClawClient {
   }
 
   close() {
+    this.intentionallyClosed = true
     this.ws?.close()
     this.ws = null
     this.connected = false
