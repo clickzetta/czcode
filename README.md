@@ -309,6 +309,8 @@ czcode 有两层配置，优先级从高到低：
 
 ### 更多模型选择
 
+`model` 字段格式为 `<providerID>/<modelID>`，providerID 决定了调用哪个服务端点和使用哪个 API Key：
+
 ```jsonc
 {
   // 阿里云 DashScope（默认，需要 DASHSCOPE_API_KEY）
@@ -319,6 +321,56 @@ czcode 有两层配置，优先级从高到低：
 
   // OpenAI（需要 OPENAI_API_KEY）
   // "model": "openai/gpt-4o",
+}
+```
+
+### 自定义 Base URL（代理 / 私有部署）
+
+如果你通过代理或私有部署访问模型，可以在 `provider` 字段里覆盖 base URL 和 API Key，而不需要改变 `model` 字段的 providerID：
+
+```jsonc
+{
+  // 仍然用 openai 的模型 ID，但请求打到你自己的代理
+  "model": "openai/gpt-4o",
+  "provider": {
+    "openai": {
+      "options": {
+        "baseURL": "https://your-proxy.example.com/v1",
+        "apiKey": "your-key"
+      }
+    }
+  }
+}
+```
+
+对于 OpenAI 兼容接口（如 vLLM、Ollama、LiteLLM、各类国内代理），用 `openai` 作为 providerID 并覆盖 `baseURL` 即可：
+
+```jsonc
+{
+  "model": "openai/your-model-name",
+  "provider": {
+    "openai": {
+      "options": {
+        "baseURL": "http://localhost:11434/v1",  // Ollama 示例
+        "apiKey": "ollama"
+      }
+    }
+  }
+}
+```
+
+阿里云 DashScope 代理同理：
+
+```jsonc
+{
+  "model": "alibaba-cn/qwen3.5-plus",
+  "provider": {
+    "alibaba-cn": {
+      "options": {
+        "baseURL": "https://your-dashscope-proxy.example.com/compatible-mode/v1"
+      }
+    }
+  }
 }
 ```
 
