@@ -1,6 +1,6 @@
 # czcode — ClickZetta Lakehouse AI Agent
 
-czcode 是基于 Claude Code 的 AI 编程助手，专为 ClickZetta Lakehouse 用户打造。
+czcode 是专为 ClickZetta Lakehouse 用户打造的 AI 编程助手，基于开源项目 [KiloCode](https://github.com/Kilo-Org/kilocode) 构建，使用 Claude、Qwen 等大模型驱动。
 
 ---
 
