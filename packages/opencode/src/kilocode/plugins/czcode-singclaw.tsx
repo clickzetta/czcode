@@ -207,19 +207,29 @@ const tui: TuiPlugin = async (api) => {
             if (messages[i].role === "user") { lastUserIdx = i; break }
           }
           if (lastUserIdx >= 0) {
-            const results: string[] = []
+            const parts: string[] = []
+            // Include the user's original question
+            const userMsg = messages[lastUserIdx]
+            if (userMsg.role === "user") {
+              const userParts = api.state.part(userMsg.id)
+              const text = userParts.filter((p: any) => p.type === "text").map((p: any) => p.text ?? "").join("")
+              if (text) parts.push(`用户问题：${text}`)
+            }
+            // Collect all read_query SQL + results
             for (let i = lastUserIdx; i < messages.length; i++) {
               const msg = messages[i]
               if (msg.role !== "assistant") continue
               for (const part of api.state.part(msg.id)) {
                 const p = part as any
                 if (p.type === "tool" && p.tool === "read_query" && p.state?.status === "completed" && p.state.output) {
-                  results.push(p.state.output)
+                  const sql = (p.state.input as any)?.sql
+                  if (sql) parts.push(`SQL：${sql}`)
+                  parts.push(`结果：\n${p.state.output}`)
                 }
               }
             }
-            if (results.length > 0) {
-              context = results.join("\n\n---\n\n")
+            if (parts.length > 0) {
+              context = parts.join("\n\n")
             }
           }
         }
