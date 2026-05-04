@@ -195,8 +195,27 @@ const tui: TuiPlugin = async (api) => {
           return
         }
 
-        // 3. Navigate to chat view
-        api.route.navigate("singclaw")
+        // 3. Navigate to chat view, optionally with last query result as context
+        const route = api.route.current
+        let context: string | undefined
+        if (route.name === "session") {
+          const sessionID = (route.params as { sessionID: string }).sessionID
+          const messages = api.state.session.messages(sessionID)
+          // Find the last read_query tool result
+          for (let i = messages.length - 1; i >= 0; i--) {
+            const msg = messages[i]
+            if (msg.role !== "assistant") continue
+            for (const part of api.state.part(msg.id)) {
+              const p = part as any
+              if (p.type === "tool" && p.tool === "read_query" && p.state?.status === "completed") {
+                context = p.state.output
+                break
+              }
+            }
+            if (context) break
+          }
+        }
+        api.route.navigate("singclaw", { context })
       },
     },
   ])

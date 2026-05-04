@@ -7,18 +7,34 @@ import { Log } from "@/util"
 
 const log = Log.create({ service: "singclaw" })
 
-export function createSingClawChat() {
-  const [session, setSession] = createSignal<SingClawSession | null>(null)
-  const [messages, setMessages] = createSignal<SingClawMessage[]>([])
+// Module-level client and message cache — survives route navigation
+let sharedClient: SingClawClient | null = null
+let cachedMessages: SingClawMessage[] = []
+let cachedSession: SingClawSession | null = null
+
+export function createSingClawChat(initialContext?: string) {
+  const [session, setSession] = createSignal<SingClawSession | null>(cachedSession)
+  const [messages, setMessages] = createSignal<SingClawMessage[]>(cachedMessages)
   const [connected, setConnected] = createSignal(false)
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal<string | null>(null)
   const [waiting, setWaiting] = createSignal(false)
 
-  const client = new SingClawClient()
+  // Sync messages to cache on every update
+  const updateMessages = (fn: (prev: SingClawMessage[]) => SingClawMessage[]) => {
+    setMessages((prev) => {
+      const next = fn(prev)
+      cachedMessages = next
+      return next
+    })
+  }
+
+  const client = sharedClient ?? new SingClawClient()
+  if (!sharedClient) sharedClient = client
 
   client.setReconnectHandler((newSession) => {
     log.info("singclaw reconnected", { id: newSession.id })
+    cachedSession = newSession
     setSession(newSession)
     setConnected(true)
     setError(null)
@@ -34,7 +50,7 @@ export function createSingClawChat() {
       createdAt: new Date(),
     }
     const placeholderId = `a-${Date.now()}`
-    setMessages((prev) => [
+    updateMessages((prev) => [
       ...prev,
       userMsg,
       { id: placeholderId, role: "assistant", content: "", createdAt: new Date() },
@@ -42,18 +58,17 @@ export function createSingClawChat() {
     setWaiting(true)
     try {
       const reply = await client.sendMessage(s, text, (accumulated) => {
-        setMessages((prev) =>
+        updateMessages((prev) =>
           prev.map((m) => (m.id === placeholderId ? { ...m, content: accumulated } : m)),
         )
       })
-      // Ensure final content is set
-      setMessages((prev) =>
+      updateMessages((prev) =>
         prev.map((m) => (m.id === placeholderId ? { ...m, content: reply.content } : m)),
       )
       return true
     } catch (err: any) {
       log.error("send failed", { error: err?.message })
-      setMessages((prev) => prev.filter((m) => m.id !== placeholderId))
+      updateMessages((prev) => prev.filter((m) => m.id !== placeholderId))
       setError("发送失败: " + (err?.message ?? "未知错误"))
       return false
     } finally {
@@ -62,13 +77,34 @@ export function createSingClawChat() {
   }
 
   onMount(async () => {
-    onCleanup(() => client.close())
+    // Don't close client on unmount — keep it alive for session resumption
+    onCleanup(() => {
+      // Only disconnect event handlers, not the WebSocket
+    })
+
+    // If already connected with a session, just restore state
+    if (cachedSession && client.isConnected()) {
+      setSession(cachedSession)
+      setConnected(true)
+      setLoading(false)
+      return
+    }
+
     try {
       await client.connect()
-      const s = await client.createSession()
+      const { session: s, resumed } = await client.resumeOrCreateSession()
+      cachedSession = s
       setSession(s)
       setConnected(true)
       setLoading(false)
+      if (resumed) {
+        log.info("resumed singclaw session", { id: s.id })
+      }
+      // Auto-send context from czcode session if provided
+      if (initialContext && !resumed) {
+        const prompt = `以下是从 ClickZetta Lakehouse 查询的数据，请帮我分析：\n\n${initialContext}`
+        send(prompt)
+      }
     } catch (err: any) {
       log.error("singclaw init failed", { error: err?.message })
       setError(err?.message ?? "连接 SingClaw 失败")

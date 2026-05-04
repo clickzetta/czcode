@@ -3,7 +3,7 @@
 import { useTheme } from "@tui/context/theme"
 import { Link } from "@tui/ui/link"
 
-export function SingClawSidebar() {
+export function SingClawSidebar(props: { connected?: boolean }) {
   const { theme } = useTheme()
 
   return (
@@ -18,9 +18,14 @@ export function SingClawSidebar() {
     >
       <scrollbox flexGrow={1}>
         <box flexShrink={0} paddingRight={1}>
-          <text attributes={1} fg={theme.text}>
-            SingClaw
-          </text>
+          <box flexDirection="row" gap={1}>
+            <text attributes={1} fg={theme.text}>
+              SingClaw
+            </text>
+            <text fg={props.connected ? theme.success : theme.error}>
+              {props.connected ? "● 已连接" : "○ 未连接"}
+            </text>
+          </box>
           <text fg={theme.textMuted} wrapMode="word">
             AI Desktop Agent with Memory
           </text>

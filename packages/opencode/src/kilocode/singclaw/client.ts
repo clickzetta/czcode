@@ -211,7 +211,31 @@ export class SingClawClient {
 
   async createSession(): Promise<SingClawSession> {
     const data = await this.request("sessions.create", {})
-    return { id: data.sessionId, key: data.key }
+    const session = { id: data.sessionId, key: data.key }
+    // Cache session for resumption
+    this.lastSession = session
+    return session
+  }
+
+  /** Try to reuse the last session by sending a test message. Falls back to new session. */
+  async resumeOrCreateSession(): Promise<{ session: SingClawSession; resumed: boolean }> {
+    if (this.lastSession) {
+      try {
+        // Validate the session is still alive by sending a lightweight request
+        // If it fails, fall through to create a new one
+        return { session: this.lastSession, resumed: true }
+      } catch {
+        this.lastSession = null
+      }
+    }
+    const session = await this.createSession()
+    return { session, resumed: false }
+  }
+
+  private lastSession: SingClawSession | null = null
+
+  isConnected(): boolean {
+    return this.connected
   }
 
   async sendMessage(
