@@ -22,7 +22,11 @@ czcode 覆盖三类场景，通过角色切换在同一个工具里完成：
 - **运维管理**：VCluster 启停扩缩容、作业监控、慢查询分析、权限管理
 - **安全确认**：DDL/DML 操作弹窗确认，DROP/TRUNCATE 显示表大小和行数，防止误操作
 
-**角色切换**：在输入框按 **Tab 键**循环切换角色；或输入 `/cz_role` 弹出选择列表；或在 `czcode.jsonc` 中设置 `default_agent` 固定默认角色。
+**角色切换**：
+- **`/agents`** — 弹出完整角色列表，可切换所有角色（数据角色 + code/plan/debug/ask）
+- **`/cz_role`** — 仅显示数据角色列表（数据分析师/工程师/科学家/运维/治理）
+- **Tab 键** — 在输入框按 Tab 循环切换角色
+- **`czcode.jsonc`** 中设置 `default_agent` 固定默认角色
 
 ---
 
@@ -52,7 +56,7 @@ czcode 完整继承自 [KiloCode](https://github.com/Kilo-Org/kilocode)，具备
 - **调试**：分析报错、定位 bug、修复问题
 - **项目规划**：`plan` 角色设计架构方案，`debug` 角色专注问题排查
 
-**角色切换**：在输入框按 **Tab 键**循环切换（数据角色 → code → plan → debug → ask → 循环）；或输入 `/cz_role` 弹出选择列表；或在 `czcode.jsonc` 中设置 `default_agent` 固定默认角色。
+**角色切换**：输入 `/agents` 弹出完整角色列表（包含所有数据角色和 code/plan/debug/ask）；或在输入框按 **Tab 键**循环切换；或在 `czcode.jsonc` 中设置 `default_agent` 固定默认角色。
 
 ---
 
@@ -172,6 +176,8 @@ czcode 内置 5 个数据角色 + ask 角色，共 6 个，在输入框按 **Tab
 
 | 命令 | 别名 | 功能 |
 |------|------|------|
+| `/agents` | — | 角色切换：弹出完整列表，切换所有角色（数据角色 + code/plan/debug/ask） |
+| `/cz_role` | `/cz_r` | 角色切换：仅显示数据角色列表 |
 | `/cz_sample` | `/cz_s` | 快速采样：输入表名，自动执行 `SELECT * FROM table LIMIT 5` |
 | `/cz_count` | `/cz_c` | 行数统计：一键查看表的总行数 |
 | `/cz_profile` | `/cz_p` | 数据画像：自动分析每列的 NULL 比例、唯一值、最大最小值 |
