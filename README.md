@@ -1,6 +1,54 @@
 # czcode — ClickZetta Lakehouse AI Agent
 
-czcode 是面向云器（ClickZetta）Lakehouse 数据团队的 AI 助手，支持自然语言查询、数仓建模向导、数据治理等场景。
+czcode 是基于 Claude Code 的 AI 编程助手，专为 ClickZetta Lakehouse 用户打造。
+
+---
+
+## 你可以用 czcode 做什么
+
+czcode 覆盖三类场景，通过角色切换在同一个工具里完成：
+
+### 场景一：Lakehouse 数据工作（数据角色）
+
+面向数据分析师、数据工程师、数据科学家、数据运维、数据治理人员。czcode 理解 Lakehouse 的对象模型、SQL 方言和运维体系，可以：
+
+- **自然语言查询**：用中文描述需求，自动生成 SQL 并执行，结果以表格展示
+- **数仓建模**：设计分层架构（ODS/DWD/DWS/ADS 或 Medallion），生成 DDL 和数据管道
+- **数据探查**：`/cz_sample` 采样、`/cz_count` 行数、`/cz_profile` 数据画像
+- **运维管理**：VCluster 启停扩缩容、作业监控、慢查询分析、权限管理
+- **安全确认**：DDL/DML 操作弹窗确认，DROP/TRUNCATE 显示表大小和行数，防止误操作
+
+切换方式：**Tab 键**循环切换，或 `/cz_role` 选择角色。
+
+---
+
+### 场景二：Lakehouse 应用开发（Code/Plan 角色 + Lakehouse Skills）
+
+面向需要在应用程序中集成 Lakehouse 的开发者。czcode 内置 Lakehouse 应用开发 Skills，让 AI 在写代码时自动掌握正确的 SDK 用法：
+
+- **Python 应用集成**：`clickzetta-connector-python` 查询、参数绑定、批量插入；`clickzetta-ingestion-python` BulkLoad 高吞吐写入；SQLAlchemy dialect
+- **Java SDK**：BulkloadStream 批量写入（列索引 API）、RealtimeStream Kafka 实时写入（列名 API），自动区分两者的 URL 参数差异
+- **Spark / Flink**：Spark DataFrame 读写、Flink CDC 同步（`igs-dynamic-table`）和仅追加模式，自动处理主键表限制
+- **Dynamic Table**：设计自动刷新数据管道，支持参数化刷新（`SESSION_CONFIGS()`），替代传统调度器的 `${bizdate}` 变量
+
+示例：在 `code` 角色下直接描述需求：
+```
+用 Java SDK 消费 Kafka topic "orders"，实时写入 Lakehouse 的 realtime_orders 表
+```
+czcode 会自动选择 RealtimeStream（而非 BulkloadStream），使用列名 API，URL 用 `vcluster=` 参数，生成完整可运行的代码。
+
+---
+
+### 场景三：通用软件开发（Code/Plan/Debug 角色）
+
+czcode 完整继承自 [KiloCode](https://github.com/Kilo-Org/kilocode)，具备完整的通用代码开发能力，与 Lakehouse 无关的项目同样适用：
+
+- **多语言支持**：Python、Java、TypeScript、Go、Rust 等
+- **代码生成与重构**：实现功能、重构代码、解释代码
+- **调试**：分析报错、定位 bug、修复问题
+- **项目规划**：`plan` 角色设计架构方案，`debug` 角色专注问题排查
+
+切换方式：在对话框输入 `/` 选择角色，或在启动时通过 `czcode.jsonc` 设置 `default_agent`。
 
 ---
 
@@ -104,7 +152,7 @@ czcode 内置 5 个数据角色，通过 **Tab 键**循环切换，或输入 `/c
 | 数据运维 | VCluster 管理/查询调优/作业监控/费用分析 | DDL + VCluster ops，写操作需确认 |
 | 数据治理 | 权限/安全/生命周期/合规/共享 | GRANT/REVOKE/POLICY，写操作需确认 |
 
-> 除了数据角色，czcode 也保留了 kilocode 原有的 Code/Plan 等代码开发角色。
+> 切换到 Code/Plan/Debug 等通用开发角色后，可进行与 Lakehouse 无关的软件开发任务，详见上方"场景三"。
 
 ---
 
