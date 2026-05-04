@@ -172,11 +172,18 @@ const en: Record<string, string> = {
 }
 
 function detectLocale(): "zh" | "en" {
+  // 1. Check CZCODE_LANG env (highest priority, can be set in .env)
+  const czLang = process.env.CZCODE_LANG?.toLowerCase()
+  if (czLang === "en" || czLang === "english") return "en"
+  if (czLang === "zh" || czLang === "chinese" || czLang === "cn") return "zh"
+
+  // 2. Check system LANG/LC_ALL
   const lang = (process.env.LANG ?? process.env.LC_ALL ?? "").toLowerCase()
+  if (lang.startsWith("en")) return "en"
   if (lang.startsWith("zh") || lang.includes("cn") || lang.includes("chinese")) return "zh"
-  // Default to zh for czcode (primary audience is Chinese data teams)
-  if (!lang || lang === "c" || lang === "posix") return "zh"
-  return "en"
+
+  // 3. Default to zh for czcode (primary audience is Chinese data teams)
+  return "zh"
 }
 
 const locale = detectLocale()
