@@ -72,6 +72,10 @@ CLICKZETTA_PASSWORD=<your-password>
 # ClickZetta Lakehouse 连接信息（可选，有默认值）
 CLICKZETTA_SCHEMA=<your-schema>      # 默认 public
 CLICKZETTA_VCLUSTER=<your-vcluster>  # 默认 default
+
+# 界面语言（可选，默认中文）
+# CZCODE_LANG=en                     # 英文界面
+# CZCODE_LANG=zh                     # 中文界面（默认）
 ```
 
 > 也支持 OpenAI、Anthropic 等其他 AI 模型，详见下方"配置说明"。
@@ -181,7 +185,7 @@ czcode 有两层配置，优先级从高到低：
 
 ### 2. 全局配置（用户目录）
 
-全局配置在 `~/.czcode/config.json`，影响所有项目：
+全局配置在 `~/.config/czcode/config.json`，影响所有项目：
 
 ```json
 {
