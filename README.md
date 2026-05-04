@@ -184,14 +184,14 @@ czcode 有三个主要页面，不同页面能做的事差别很大。
 
 ### SingClaw 页（本地 AI 服务对话）
 
-输入 `/cz_singclaw` 从任意页面进入 SingClaw 页。SingClaw 是 ClickZetta 本地部署的 AI 服务，适合需要数据不出域的场景：
+输入 `/cz_singclaw` 从任意页面进入 SingClaw 页。[SingClaw](https://www.singclaw.ai/documents/introduction) 是一款本地运行的 AI 数据分析 Agent（Mac/Windows 桌面应用），数据不出本地，适合对数据隐私有要求的场景：
 
 - 与本地 SingClaw 服务进行流式对话
 - 从**对话页**进入时，自动携带当前会话的上下文（最近的 SQL 和数据结果）
 - 从**欢迎页**进入时，为纯对话模式，无会话上下文
 - 对话结束后按 **Esc** 返回原来的页面
 
-> 使用前需要在本地启动 SingClaw 服务（openclaw-gateway），默认连接 `localhost:9999`。
+> 使用前需要在本地启动 SingClaw（openclaw-gateway），默认连接 `localhost:9999`。详见 [SingClaw 文档](https://www.singclaw.ai/documents/introduction)。
 
 ---
 
@@ -416,6 +416,8 @@ https://<region>.api.clickzetta.com/<workspace>/<endpoint-name>
 - `apiKey` 从云器平台"模型管理 → API KEY"页面生成
 - 每个模型的 `provider.api` 填对应 Endpoint 的访问地址（从 Endpoint 详情页复制）
 - 切换模型只需改 `"model"` 字段中的模型名，无需改 URL
+
+> 详见 [云器 AI Gateway 文档](https://yunqi.tech/documents/AI_Gateway)
 
 ---
 
