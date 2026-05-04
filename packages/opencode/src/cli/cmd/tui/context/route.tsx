@@ -28,6 +28,7 @@ export type PluginRoute = {
 // czcode_change start
 export type SingClawRoute = {
   type: "singclaw"
+  context?: string // czcode_change — last query result from czcode session
 }
 // czcode_change end
 

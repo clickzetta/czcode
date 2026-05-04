@@ -8,11 +8,10 @@ import { SingClawChat } from "./chat"
 import { SingClawSidebar } from "./sidebar"
 import { createSingClawChat } from "./hooks"
 
-export function SingClawView(props: { params?: Record<string, unknown> }) {
+export function SingClawView(props: { context?: string }) {
   const route = useRoute()
   const command = useCommandDialog()
-  const context = props.params?.context as string | undefined
-  const chat = createSingClawChat(context)
+  const chat = createSingClawChat(props.context)
 
   useKeyboard((evt) => {
     if (evt.name === "escape") {
