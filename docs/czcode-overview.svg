@@ -152,22 +152,24 @@
   <!-- ══════════════════════════════════════════════════════ -->
   <!-- BOTTOM CENTER: Scenario 2 — App Dev -->
   <!-- ══════════════════════════════════════════════════════ -->
-  <rect x="330" y="376" width="240" height="168" rx="10" fill="url(#codeGrad)" stroke="#34d399" stroke-width="1.2" filter="url(#softShadow)"/>
+  <rect x="330" y="376" width="240" height="200" rx="10" fill="url(#codeGrad)" stroke="#34d399" stroke-width="1.2" filter="url(#softShadow)"/>
 
   <text x="450" y="401" text-anchor="middle" font-size="12" font-weight="700" fill="#34d399" filter="url(#glowGreen)">场景二</text>
   <text x="450" y="417" text-anchor="middle" font-size="10.5" fill="#6ee7b7">Lakehouse 应用开发</text>
   <line x1="348" y1="425" x2="552" y2="425" stroke="#065f46" stroke-width="0.8" stroke-dasharray="4,3"/>
 
   <g font-size="9" fill="#6ee7b7">
-    <text x="348" y="441">▸ Python SDK · BulkLoad 批量写入</text>
-    <text x="348" y="457">▸ Java SDK · Kafka 实时写入</text>
-    <text x="348" y="473">▸ Spark / Flink Connector</text>
-    <text x="348" y="489">▸ Dynamic Table 数据管道</text>
+    <text x="348" y="441">▸ SQL 任务开发 · 存储过程 · 调度脚本</text>
+    <text x="348" y="457">▸ Streamlit 看板 · dbt 模型 · Jupyter</text>
+    <text x="348" y="473">▸ Python SDK · BulkLoad 批量写入</text>
+    <text x="348" y="489">▸ Java SDK · Kafka 实时写入</text>
+    <text x="348" y="505">▸ Spark / Flink Connector</text>
+    <text x="348" y="521">▸ Dynamic Table 数据管道</text>
   </g>
 
-  <rect x="348" y="500" width="204" height="30" rx="4" fill="#064e3b" stroke="#059669" stroke-width="0.8"/>
-  <text x="450" y="513" text-anchor="middle" font-size="9" fill="#34d399">Code / Plan 角色</text>
-  <text x="450" y="526" text-anchor="middle" font-size="9" fill="#059669">+ Lakehouse Skills 自动注入</text>
+  <rect x="348" y="532" width="204" height="30" rx="4" fill="#064e3b" stroke="#059669" stroke-width="0.8"/>
+  <text x="450" y="545" text-anchor="middle" font-size="9" fill="#34d399">Code / Plan 角色</text>
+  <text x="450" y="558" text-anchor="middle" font-size="9" fill="#059669">+ Lakehouse Skills 自动注入</text>
 
   <!-- ══════════════════════════════════════════════════════ -->
   <!-- RIGHT: Scenario 3 — General Dev -->
