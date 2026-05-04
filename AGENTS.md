@@ -38,7 +38,39 @@ All products are clients of the **CLI** (`packages/opencode/`), which contains t
 | Product | Package | Description |
 |---|---|---|
 | czcode CLI | `packages/opencode/` | Core engine. TUI, `czcode run`, `czcode serve`. Fork of kilocode. |
-| czcode Lakehouse Plugin | `packages/czcode-lakehouse/` | ClickZetta Lakehouse tools: execute_sql, describe_table, list_objects, explain_query. |
+| czcode Lakehouse Plugin | `packages/czcode-lakehouse/` | ClickZetta Lakehouse tools: read_query, write_query, list_objects, describe_object, explain_query, get_context, switch_context. |
+| czcode TUI Plugins | `packages/opencode/src/kilocode/plugins/czcode-*.tsx` | 10 TUI plugins: connection status, schema browser, VCluster dashboard, role switch, SQL history, sample, count, profile, SingClaw, dotenv loader. |
+| SingClaw Integration | `packages/opencode/src/kilocode/singclaw/` | Full-screen SingClaw chat via WebSocket RPC. |
+
+## Data Agent Roles
+
+czcode has 5 data-specific agent roles (switch via Tab or `/cz_role`):
+
+| Role | Agent ID | Permissions |
+|------|----------|-------------|
+| 数据分析师 (default) | `lh-analyst` | SELECT only (read_query, no write_query/bash) |
+| 数据工程师 | `lh-engineer` | DDL + DML + SELECT (write_query with confirmation) |
+| 数据科学家 | `lh-data-scientist` | DDL + DML + SELECT + bash (with confirmation) |
+| 数据运维 | `lh-dba` | VCluster ops + DDL (with confirmation) |
+| 数据治理 | `lh-governance` | GRANT/REVOKE/POLICY (with confirmation) |
+
+Agent prompts: `packages/opencode/src/agent/prompt/lh-*.txt`
+Shared base: `packages/opencode/src/agent/prompt/lh-base.txt`
+Agent definitions: `packages/opencode/src/kilocode/agent/index.ts`
+
+## czcode Commands
+
+| Command | Alias | Description |
+|---------|-------|-------------|
+| `/cz_role` | `/cz_r` | Switch data agent role |
+| `/cz_sample` | `/cz_s` | Quick table sampling |
+| `/cz_count` | `/cz_c` | Table row count |
+| `/cz_profile` | `/cz_p` | Data quality profiling |
+| `/cz_vcluster` | `/cz_vc` | VCluster status |
+| `/cz_sql_history` | `/cz_sh` | Browse/copy past SQL |
+| `/cz_singclaw` | `/singclaw` | Open SingClaw chat |
+| `/cz_skill-update` | — | Update skills |
+| `/cz_skill-fix` | — | Fix skill locally |
 
 ## Monorepo Structure
 
@@ -149,4 +181,27 @@ const bar = 2
 
 ## Commit Conventions
 
-[Conventional Commits](https://www.conventionalcommits.org/) with scopes matching packages: `cli`, `lakehouse`, `sdk`, `upstream`. Omit scope when spanning multiple packages.
+[Conventional Commits](https://www.conventionalcommits.org/) with scopes matching packages: `cli`, `lakehouse`, `sdk`, `upstream`, `tui`, `agents`, `config`, `singclaw`. Omit scope when spanning multiple packages.
+
+## Release Process
+
+```bash
+git push origin main
+gh workflow run "Release" --ref main -f bump=patch  # or minor/major
+```
+
+Use the **"Release"** workflow, NOT "publish" (that's kilocode's upstream workflow).
+
+## Post-Merge Smoke Test Checklist
+
+After merging upstream kilocode changes, test these before releasing:
+
+- [ ] `bun dev` starts without errors
+- [ ] `bun test:local` builds and runs the compiled binary
+- [ ] Default agent is `lh-analyst`, default model is `qwen3.5-plus`
+- [ ] Basic conversation works (ask a question, get SQL response)
+- [ ] `/cz_role` opens role picker, Tab cycles agents
+- [ ] `/cz_sample` prompts for table name
+- [ ] Copy to clipboard toast auto-dismisses (2 seconds)
+- [ ] Sidebar shows Lakehouse connection info
+- [ ] `czcode_change` annotation check passes
