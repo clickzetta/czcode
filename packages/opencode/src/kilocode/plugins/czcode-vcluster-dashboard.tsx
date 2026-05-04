@@ -3,6 +3,7 @@
  * czcode VCluster Dashboard plugin.
  */
 import "@/kilocode/plugins/czcode-dotenv"
+import { t } from "@/kilocode/plugins/czcode-i18n"
 import type { TuiPlugin, TuiPluginApi, TuiPluginModule } from "@kilocode/plugin/tui"
 import type { Message, ToolPart } from "@kilocode/sdk/v2"
 import { createMemo, For, Show } from "solid-js"
@@ -95,7 +96,7 @@ function View(props: { api: TuiPluginApi; session_id: string }) {
           <b>VClusters</b>
         </text>
         <Show when={empty()}>
-          <text fg={theme().textMuted}>输入 /cz_vcluster 查看状态</text>
+          <text fg={theme().textMuted}>{t("vclusters.empty")}</text>
         </Show>
         <For each={vclusters()}>
           {(vc) => (
@@ -120,7 +121,7 @@ function View(props: { api: TuiPluginApi; session_id: string }) {
   )
 }
 
-const VCLUSTER_PROMPT = "请用 read_query 执行 SHOW VCLUSTERS，展示所有 VCluster 的名称、状态和规格。"
+const VCLUSTER_PROMPT = t("vcluster.prompt")
 
 const tui: TuiPlugin = async (api) => {
   // Sidebar: VCluster status from session history
@@ -136,15 +137,15 @@ const tui: TuiPlugin = async (api) => {
   // Command: /cz_vcluster triggers agent to query VCluster status
   api.command.register(() => [
     {
-      title: "VCluster 状态",
+      title: t("cmd.vcluster.title"),
       value: "czcode-vcluster",
-      description: "查看 Lakehouse VCluster 运行状态",
+      description: t("cmd.vcluster.desc"),
       category: "czcode",
       slash: { name: "cz_vcluster", aliases: ["cz_vc"] },
       onSelect() {
         const route = api.route.current
         if (route.name !== "session") {
-          api.ui.toast({ message: "请先进入一个会话", variant: "warning", duration: 2000 })
+          api.ui.toast({ message: t("common.enterSession"), variant: "warning", duration: 2000 })
           return
         }
         const sessionID = (route.params as { sessionID: string }).sessionID
@@ -153,7 +154,7 @@ const tui: TuiPlugin = async (api) => {
           sessionID,
           parts: [{ type: "text", text: VCLUSTER_PROMPT }],
         }).catch(() => {
-          api.ui.toast({ message: "发送失败", variant: "error", duration: 2000 })
+          api.ui.toast({ message: t("common.sendFailed"), variant: "error", duration: 2000 })
         })
       },
     },

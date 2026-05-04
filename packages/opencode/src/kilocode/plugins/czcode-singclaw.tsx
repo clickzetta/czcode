@@ -9,6 +9,7 @@
  * - Running       → open full-screen SingClaw chat view
  */
 
+import { t } from "@/kilocode/plugins/czcode-i18n"
 import type { TuiPlugin, TuiPluginModule } from "@kilocode/plugin/tui"
 import { useDialog } from "@tui/ui/dialog"
 import { useTheme } from "@tui/context/theme"
@@ -36,7 +37,7 @@ function DialogSingClawNotInstalled() {
     <box paddingLeft={2} paddingRight={2} gap={1}>
       <box flexDirection="row" justifyContent="space-between">
         <text attributes={1} fg={theme.text}>
-          未检测到 SingClaw
+          {t("singclaw.notInstalled")}
         </text>
         <text fg={theme.textMuted} onMouseUp={() => dialog.clear()}>
           esc
@@ -44,17 +45,17 @@ function DialogSingClawNotInstalled() {
       </box>
       <box paddingBottom={1}>
         <text fg={theme.textMuted} wrapMode="word">
-          SingClaw 是云器的本地 AI 助手，基于 OpenClaw 运行。请先安装后再使用。
+          {t("singclaw.notInstalledDesc")}
         </text>
       </box>
       <box flexDirection="row" gap={2} paddingBottom={1}>
-        <text fg={theme.textMuted}>下载地址：</text>
+        <text fg={theme.textMuted}>{t("singclaw.downloadLabel")}</text>
         <Link href="https://www.singclaw.ai/" fg={theme.primary}>
           https://www.singclaw.ai/
         </Link>
       </box>
       <box paddingBottom={1}>
-        <text fg={theme.textMuted}>安装完成后重新运行 /cz_singclaw</text>
+        <text fg={theme.textMuted}>{t("singclaw.afterInstall")}</text>
       </box>
     </box>
   )
@@ -82,7 +83,7 @@ function DialogSingClawNotRunning(props: { onLaunch: () => void }) {
     <box paddingLeft={2} paddingRight={2} gap={1}>
       <box flexDirection="row" justifyContent="space-between">
         <text attributes={1} fg={theme.text}>
-          SingClaw 未运行
+          {t("singclaw.notRunning")}
         </text>
         <text fg={theme.textMuted} onMouseUp={() => dialog.clear()}>
           esc
@@ -90,7 +91,7 @@ function DialogSingClawNotRunning(props: { onLaunch: () => void }) {
       </box>
       <box paddingBottom={1}>
         <text fg={theme.textMuted} wrapMode="word">
-          检测到 SingClaw 已安装但尚未启动。是否现在启动？
+          {t("singclaw.notRunningDesc")}
         </text>
       </box>
       <box flexDirection="row" gap={4} paddingBottom={1}>
@@ -98,13 +99,13 @@ function DialogSingClawNotRunning(props: { onLaunch: () => void }) {
           fg={theme.selectedListItemText}
           onMouseUp={() => { dialog.clear(); props.onLaunch() }}
         >
-          [ 启动 (Enter) ]
+          [ {t("singclaw.launch")} ]
         </text>
         <text
           fg={theme.textMuted}
           onMouseUp={() => dialog.clear()}
         >
-          取消 (Esc)
+          {t("singclaw.cancel")}
         </text>
       </box>
     </box>
@@ -145,14 +146,14 @@ function DialogSingClawLaunching(props: { onReady: () => void }) {
     <box paddingLeft={2} paddingRight={2} gap={1}>
       <box flexDirection="row" justifyContent="space-between">
         <text attributes={1} fg={theme.text}>
-          正在启动 SingClaw...
+          {t("singclaw.launching")}
         </text>
         <text fg={theme.textMuted} onMouseUp={() => dialog.clear()}>
           esc
         </text>
       </box>
       <box paddingBottom={1}>
-        <text fg={theme.textMuted}>请稍候，正在等待 SingClaw 网关就绪</text>
+        <text fg={theme.textMuted}>{t("singclaw.launchingWait")}</text>
       </box>
     </box>
   )
@@ -165,7 +166,7 @@ const tui: TuiPlugin = async (api) => {
     {
       title: "SingClaw",
       value: "czcode-singclaw",
-      description: "打开 SingClaw AI 助手",
+      description: t("singclaw.desc"),
       category: "czcode",
       slash: { name: "cz_singclaw", aliases: ["singclaw"] },
       async onSelect() {
@@ -213,7 +214,7 @@ const tui: TuiPlugin = async (api) => {
             if (userMsg.role === "user") {
               const userParts = api.state.part(userMsg.id)
               const text = userParts.filter((p: any) => p.type === "text").map((p: any) => p.text ?? "").join("")
-              if (text) parts.push(`用户问题：${text}`)
+              if (text) parts.push(`${t("context.userQuestion")}${text}`)
             }
             // Collect all read_query SQL + results
             for (let i = lastUserIdx; i < messages.length; i++) {
@@ -223,8 +224,8 @@ const tui: TuiPlugin = async (api) => {
                 const p = part as any
                 if (p.type === "tool" && p.tool === "read_query" && p.state?.status === "completed" && p.state.output) {
                   const sql = (p.state.input as any)?.sql
-                  if (sql) parts.push(`SQL：${sql}`)
-                  parts.push(`结果：\n${p.state.output}`)
+                  if (sql) parts.push(`${t("context.sql")}${sql}`)
+                  parts.push(`${t("context.result")}${p.state.output}`)
                 }
               }
             }

@@ -1,5 +1,6 @@
 // czcode_change - new file
 
+import { t } from "@/kilocode/plugins/czcode-i18n"
 import { useTheme } from "@tui/context/theme"
 import { Link } from "@tui/ui/link"
 
@@ -23,47 +24,47 @@ export function SingClawSidebar(props: { connected?: boolean }) {
               SingClaw
             </text>
             <text fg={props.connected ? theme.success : theme.error}>
-              {props.connected ? "● 已连接" : "○ 未连接"}
+              {props.connected ? t("singclaw.connected") : t("singclaw.disconnected")}
             </text>
           </box>
           <text fg={theme.textMuted} wrapMode="word">
-            AI Desktop Agent with Memory
+            {t("singclaw.subtitle")}
           </text>
           <box height={1} />
           <text attributes={1} fg={theme.text}>
-            核心能力
+            {t("singclaw.features")}
           </text>
           <text fg={theme.textMuted} wrapMode="word">
-            <span style={{ fg: theme.success }}>•</span> 多模型对话：内置主流大模型
+            <span style={{ fg: theme.success }}>•</span> {t("singclaw.feat.multiModel")}
           </text>
           <text fg={theme.textMuted} wrapMode="word">
-            <span style={{ fg: theme.success }}>•</span> 全链路数据洞察与智能分析
+            <span style={{ fg: theme.success }}>•</span> {t("singclaw.feat.dataInsight")}
           </text>
           <text fg={theme.textMuted} wrapMode="word">
-            <span style={{ fg: theme.success }}>•</span> 飞书/Telegram/WhatsApp 集成
+            <span style={{ fg: theme.success }}>•</span> {t("singclaw.feat.integration")}
           </text>
           <text fg={theme.textMuted} wrapMode="word">
-            <span style={{ fg: theme.success }}>•</span> OpenClaw 内核，本地安全运行
+            <span style={{ fg: theme.success }}>•</span> {t("singclaw.feat.openclaw")}
           </text>
           <text fg={theme.textMuted} wrapMode="word">
-            <span style={{ fg: theme.success }}>•</span> 业务记忆，持续学习演进
+            <span style={{ fg: theme.success }}>•</span> {t("singclaw.feat.memory")}
           </text>
           <box height={1} />
           <text attributes={1} fg={theme.text}>
-            使用提示
+            {t("singclaw.tips")}
           </text>
           <text fg={theme.textMuted} wrapMode="word">
-            · 直接输入问题开始对话
+            {t("singclaw.tip.start")}
           </text>
           <text fg={theme.textMuted} wrapMode="word">
-            · 可拖入文件或连接数据源
+            {t("singclaw.tip.file")}
           </text>
           <text fg={theme.textMuted} wrapMode="word">
-            · 按 Esc 返回 czcode
+            {t("singclaw.tip.esc")}
           </text>
           <box height={1} />
           <box flexDirection="row" gap={1}>
-            <text fg={theme.textMuted}>官网</text>
+            <text fg={theme.textMuted}>{t("singclaw.website")}</text>
             <Link href="https://www.singclaw.ai/" fg={theme.primary}>
               singclaw.ai
             </Link>

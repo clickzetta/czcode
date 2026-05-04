@@ -3,6 +3,7 @@
  * czcode Schema Browser sidebar plugin.
  */
 import "@/kilocode/plugins/czcode-dotenv"
+import { t } from "@/kilocode/plugins/czcode-i18n"
 import type { TuiPlugin, TuiPluginApi, TuiPluginModule } from "@kilocode/plugin/tui"
 import type { Message, ToolPart } from "@kilocode/sdk/v2"
 import { createMemo, For, Show } from "solid-js"
@@ -45,10 +46,10 @@ function View(props: { api: TuiPluginApi; session_id: string }) {
     <Show when={connected()}>
       <box>
         <text fg={theme().text}>
-          <b>Schemas</b>
+          <b>{t("schemas.title")}</b>
         </text>
         <Show when={empty()}>
-          <text fg={theme().textMuted}>对话中使用 list_objects 后自动填充</text>
+          <text fg={theme().textMuted}>{t("schemas.empty")}</text>
         </Show>
         <For each={schemas()}>
           {(schema) => (

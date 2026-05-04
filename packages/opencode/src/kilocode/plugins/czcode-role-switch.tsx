@@ -4,6 +4,7 @@
  *
  * /cz_role — opens a role picker to switch between data agents.
  */
+import { t } from "@/kilocode/plugins/czcode-i18n"
 import type { TuiPlugin, TuiPluginModule, TuiToast } from "@kilocode/plugin/tui"
 import { DialogSelect } from "@tui/ui/dialog-select"
 import { useLocal } from "@/cli/cmd/tui/context/local"
@@ -12,11 +13,11 @@ import { useDialog } from "@tui/ui/dialog"
 const id = "internal:czcode-role-switch"
 
 const ROLES = [
-  { id: "lh-analyst", label: "📊 数据分析师", desc: "仅 SELECT" },
-  { id: "lh-engineer", label: "🔧 数据工程师", desc: "DDL + DML + SELECT" },
-  { id: "lh-data-scientist", label: "🔬 数据科学家", desc: "Python + Jupyter + ML" },
-  { id: "lh-dba", label: "⚙️ 数据运维", desc: "VCluster + DDL + 费用分析" },
-  { id: "lh-governance", label: "🔐 数据治理", desc: "GRANT/REVOKE/POLICY" },
+  { id: "lh-analyst", label: t("role.analyst"), desc: t("role.analyst.desc") },
+  { id: "lh-engineer", label: t("role.engineer"), desc: t("role.engineer.desc") },
+  { id: "lh-data-scientist", label: t("role.scientist"), desc: t("role.scientist.desc") },
+  { id: "lh-dba", label: t("role.dba"), desc: t("role.dba.desc") },
+  { id: "lh-governance", label: t("role.governance"), desc: t("role.governance.desc") },
 ]
 
 function RoleSwitchDialog(props: { toast: (input: TuiToast) => void }) {
@@ -30,7 +31,7 @@ function RoleSwitchDialog(props: { toast: (input: TuiToast) => void }) {
 
   return (
     <DialogSelect
-      title="切换角色"
+      title={t("role.switchTitle")}
       current={local.agent.current()?.name ?? ""}
       options={options}
       onSelect={(option: any) => {
@@ -39,7 +40,7 @@ function RoleSwitchDialog(props: { toast: (input: TuiToast) => void }) {
         dialog.clear()
         const role = ROLES.find((r) => r.id === value)
         if (role) {
-          props.toast({ message: `已切换到 ${role.label}`, variant: "success", duration: 2000 })
+          props.toast({ message: t("role.switched", { role: role.label }), variant: "success", duration: 2000 })
         }
       }}
     />
@@ -49,9 +50,9 @@ function RoleSwitchDialog(props: { toast: (input: TuiToast) => void }) {
 const tui: TuiPlugin = async (api) => {
   api.command.register(() => [
     {
-      title: "切换角色",
+      title: t("role.switchTitle"),
       value: "czcode-role",
-      description: "切换 Lakehouse 数据角色",
+      description: t("role.switchDesc"),
       category: "czcode",
       slash: { name: "cz_role", aliases: ["cz_r"] },
       onSelect() {

@@ -1,5 +1,6 @@
 // czcode_change - new file
 
+import { t } from "@/kilocode/plugins/czcode-i18n"
 import { createEffect, createMemo, For, Show } from "solid-js"
 import { type KeyBinding, type MouseEvent, type TextareaRenderable } from "@opentui/core"
 import { useTheme } from "@tui/context/theme"
@@ -32,7 +33,7 @@ function AssistantMessageRow(props: { msg: SingClawMessage; index: number }) {
   return (
     <box marginTop={props.index === 0 ? 0 : 1} flexShrink={0}>
       <box paddingLeft={3}>
-        <Show when={!empty()} fallback={<text fg={theme.textMuted}>思考中...</text>}>
+        <Show when={!empty()} fallback={<text fg={theme.textMuted}>{t("singclaw.thinking")}</text>}>
           <code
             filetype="markdown"
             drawUnstyledText={false}
@@ -63,9 +64,9 @@ export function SingClawChat(props: {
 
   const placeholder = createMemo(() => {
     if (props.error) return props.error
-    if (props.loading) return "连接中..."
-    if (!props.connected) return "未连接"
-    return "输入消息... (Enter 发送)"
+    if (props.loading) return t("singclaw.connecting")
+    if (!props.connected) return t("singclaw.notConnected")
+    return t("singclaw.inputPlaceholder")
   })
 
   const submit = async () => {
@@ -87,13 +88,13 @@ export function SingClawChat(props: {
         <text fg={theme.textMuted}>SingClaw</text>
         <box flexGrow={1} />
         <Show when={props.connected}>
-          <text fg={theme.success}>● 已连接</text>
+          <text fg={theme.success}>{t("singclaw.connected")}</text>
         </Show>
         <Show when={props.loading}>
-          <text fg={theme.warning}>● 连接中</text>
+          <text fg={theme.warning}>{t("singclaw.headerConnecting")}</text>
         </Show>
         <Show when={!!props.error && !props.loading}>
-          <text fg={theme.error}>● 错误</text>
+          <text fg={theme.error}>{t("singclaw.headerError")}</text>
         </Show>
       </box>
 
@@ -116,7 +117,7 @@ export function SingClawChat(props: {
           fallback={
             <box flexGrow={1} justifyContent="center" alignItems="center">
               <text fg={theme.textMuted}>
-                {props.loading ? "正在连接 SingClaw..." : props.error ? props.error : "开始和 SingClaw 对话吧"}
+                {props.loading ? t("singclaw.connectingFull") : props.error ? props.error : t("singclaw.startChat")}
               </text>
             </box>
           }
@@ -156,7 +157,7 @@ export function SingClawChat(props: {
             <Show when={active()} fallback={<text fg={theme.textMuted}>{placeholder()}</text>}>
               <textarea
                 ref={(r: TextareaRenderable) => { input = r; setTimeout(() => r?.focus(), 100) }}
-                placeholder="输入消息... (Enter 发送，Shift+Enter 换行)"
+                placeholder={t("singclaw.inputPlaceholderFull")}
                 textColor={theme.text}
                 focusedTextColor={theme.text}
                 minHeight={2}

@@ -3,6 +3,7 @@
  * czcode Lakehouse connection status sidebar plugin.
  */
 import "@/kilocode/plugins/czcode-dotenv"
+import { t } from "@/kilocode/plugins/czcode-i18n"
 import type { TuiPlugin, TuiPluginApi, TuiPluginModule } from "@kilocode/plugin/tui"
 import type { Message, ToolPart } from "@kilocode/sdk/v2"
 import { createMemo, Show } from "solid-js"
@@ -98,7 +99,7 @@ function View(props: { api: TuiPluginApi; session_id: string }) {
         </text>
         <Show
           when={envConnected()}
-          fallback={<text fg={theme().warning}>未配置 — 请设置 .env 环境变量</text>}
+          fallback={<text fg={theme().warning}>{t("lakehouse.notConfigured")}</text>}
         >
           {items().map((item) => (
             <box flexDirection="row" justifyContent="space-between">

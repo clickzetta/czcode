@@ -1,5 +1,6 @@
 // czcode_change - new file
 
+import { t } from "@/kilocode/plugins/czcode-i18n"
 import { createSignal, onMount, onCleanup } from "solid-js"
 import type { SingClawMessage, SingClawSession } from "./types"
 import { SingClawClient } from "./client"
@@ -69,7 +70,7 @@ export function createSingClawChat(initialContext?: string) {
     } catch (err: any) {
       log.error("send failed", { error: err?.message })
       updateMessages((prev) => prev.filter((m) => m.id !== placeholderId))
-      setError("发送失败: " + (err?.message ?? "未知错误"))
+      setError("发送失败: " + (err?.message ?? t("singclaw.unknownError")))
       return false
     } finally {
       setWaiting(false)
@@ -102,12 +103,12 @@ export function createSingClawChat(initialContext?: string) {
       }
       // Auto-send context from czcode session if provided
       if (initialContext && !resumed) {
-        const prompt = `以下是从 ClickZetta Lakehouse 查询的数据，请帮我分析：\n\n${initialContext}`
+        const prompt = `${t("singclaw.contextPrompt")}\n\n${initialContext}`
         send(prompt)
       }
     } catch (err: any) {
       log.error("singclaw init failed", { error: err?.message })
-      setError(err?.message ?? "连接 SingClaw 失败")
+      setError(err?.message ?? t("singclaw.connectFailed"))
       setLoading(false)
     }
   })

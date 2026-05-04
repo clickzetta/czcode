@@ -3,6 +3,7 @@
  * /cz_sample — quick table sampling command.
  * Usage: /cz_sample then enter table_name [limit]
  */
+import { t } from "@/kilocode/plugins/czcode-i18n"
 import type { TuiPlugin, TuiPluginModule } from "@kilocode/plugin/tui"
 
 const id = "internal:czcode-sample"
@@ -10,15 +11,15 @@ const id = "internal:czcode-sample"
 const tui: TuiPlugin = async (api) => {
   api.command.register(() => [
     {
-      title: "采样查询",
+      title: t("cmd.sample.title"),
       value: "czcode-sample",
-      description: "快速查看表数据：/cz_sample",
+      description: t("cmd.sample.desc"),
       category: "czcode",
       slash: { name: "cz_sample", aliases: ["cz_s"] },
       onSelect() {
         const route = api.route.current
         if (route.name !== "session") {
-          api.ui.toast({ message: "请先进入一个会话", variant: "warning", duration: 2000 })
+          api.ui.toast({ message: t("common.enterSession"), variant: "warning", duration: 2000 })
           return
         }
         const sessionID = (route.params as { sessionID: string }).sessionID
@@ -26,8 +27,8 @@ const tui: TuiPlugin = async (api) => {
           const DialogPrompt = api.ui.DialogPrompt
           return (
             <DialogPrompt
-              title="采样查询"
-              placeholder="表名 [行数]，如：dw.orders 10"
+              title={t("cmd.sample.title")}
+              placeholder={t("cmd.sample.placeholder")}
               onConfirm={(input: string) => {
                 api.ui.dialog.clear()
                 const parts = input.trim().split(/\s+/)
@@ -38,7 +39,7 @@ const tui: TuiPlugin = async (api) => {
                   sessionID,
                   parts: [{ type: "text", text: `请用 read_query 执行：SELECT * FROM ${table} LIMIT ${limit}` }],
                 }).catch(() => {
-                  api.ui.toast({ message: "发送失败", variant: "error", duration: 2000 })
+                  api.ui.toast({ message: t("common.sendFailed"), variant: "error", duration: 2000 })
                 })
               }}
               onCancel={() => api.ui.dialog.clear()}

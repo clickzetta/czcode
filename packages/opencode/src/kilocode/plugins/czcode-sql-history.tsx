@@ -4,6 +4,7 @@
  *
  * /cz_sql_history — shows past SQL queries, copies selected to clipboard.
  */
+import { t } from "@/kilocode/plugins/czcode-i18n"
 import type { TuiPlugin, TuiPluginModule } from "@kilocode/plugin/tui"
 import type { Message, ToolPart } from "@kilocode/sdk/v2"
 import { DialogSelect } from "@tui/ui/dialog-select"
@@ -36,15 +37,15 @@ function extractSql(messages: readonly Message[], parts: (id: string) => readonl
 const tui: TuiPlugin = async (api) => {
   api.command.register(() => [
     {
-      title: "SQL 历史",
+      title: t("cmd.history.title"),
       value: "czcode-sql-history",
-      description: "查看当前会话的 SQL 执行历史",
+      description: t("cmd.history.desc"),
       category: "czcode",
       slash: { name: "cz_sql_history", aliases: ["cz_sh"] },
       onSelect() {
         const route = api.route.current
         if (route.name !== "session") {
-          api.ui.toast({ message: "请先进入一个会话", variant: "warning", duration: 2000 })
+          api.ui.toast({ message: t("common.enterSession"), variant: "warning", duration: 2000 })
           return
         }
         const sessionID = (route.params as { sessionID: string }).sessionID
@@ -52,7 +53,7 @@ const tui: TuiPlugin = async (api) => {
         const entries = extractSql(messages, (id) => api.state.part(id))
 
         if (entries.length === 0) {
-          api.ui.toast({ message: "当前会话没有 SQL 执行记录", variant: "info", duration: 2000 })
+          api.ui.toast({ message: t("cmd.history.empty"), variant: "info", duration: 2000 })
           return
         }
 
@@ -63,7 +64,7 @@ const tui: TuiPlugin = async (api) => {
 
         api.ui.dialog.replace(() => (
           <DialogSelect
-            title={`SQL 历史 (${entries.length})`}
+            title={`${t("cmd.history.title")} (${entries.length})`}
             options={options}
             onSelect={async (option: any) => {
               api.ui.dialog.clear()
@@ -71,7 +72,7 @@ const tui: TuiPlugin = async (api) => {
               const entry = entries[idx]
               if (entry) {
                 await Clipboard.copy(entry.sql)
-                api.ui.toast({ message: "已复制到剪贴板", variant: "success", duration: 2000 })
+                api.ui.toast({ message: t("cmd.history.copied"), variant: "success", duration: 2000 })
               }
             }}
           />
