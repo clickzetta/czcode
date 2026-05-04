@@ -32,7 +32,12 @@ export function isUndropSupported(sql: string): boolean {
 }
 
 export function classifySql(sql: string): SqlCategory {
+  // Strip leading comments (-- and /* */) and whitespace before matching
   const trimmed = sql.trim()
+    .replace(/^(--[^\n]*\n\s*)+/g, "")  // strip leading -- comments
+    .replace(/^(\/\*[\s\S]*?\*\/\s*)+/g, "")  // strip leading /* */ comments
+    .replace(/^\s*\(\s*/, "")  // strip leading ( for subqueries
+    .trim()
   if (ADMIN_PATTERN.test(trimmed)) return "admin"
   if (DDL_PATTERN.test(trimmed)) return "ddl"
   if (DML_PATTERN.test(trimmed)) return "dml"
@@ -42,8 +47,12 @@ export function classifySql(sql: string): SqlCategory {
 
 export function getSqlRisk(sql: string): SqlRisk {
   const trimmed = sql.trim()
+    .replace(/^(--[^\n]*\n\s*)+/g, "")
+    .replace(/^(\/\*[\s\S]*?\*\/\s*)+/g, "")
+    .replace(/^\s*\(\s*/, "")
+    .trim()
   if (DESTRUCTIVE_PATTERN.test(trimmed)) return "destructive"
-  const cat = classifySql(trimmed)
+  const cat = classifySql(sql)
   if (cat === "select") return "safe"
   return "write"
 }
