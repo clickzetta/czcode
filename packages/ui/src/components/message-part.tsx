@@ -1375,6 +1375,8 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
                   defaultOpen={props.defaultOpen}
                   subtitle={taskSubtitle()}
                   href={taskHref()}
+                  skillName={partMetadata().skillName}
+                  failedSql={partMetadata().failedSql}
                 />
               )
             }}

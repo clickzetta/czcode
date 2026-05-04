@@ -16,6 +16,8 @@ export type ToolContext = {
    */
   worktree: string
   abort: AbortSignal
+  /** czcode_change: extra context passed by the runtime (e.g. messages for skill detection) */
+  extra?: Record<string, unknown>
   metadata(input: { title?: string; metadata?: { [key: string]: any } }): void
   ask(input: AskInput): Effect.Effect<void>
 }

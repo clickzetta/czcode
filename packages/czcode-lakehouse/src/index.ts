@@ -6,6 +6,31 @@ import { classifySql, getSqlRisk, getUndropHint, isUndropSupported } from "./sql
 import { formatQueryResult, formatTableSchema } from "./format.js"
 import { Effect } from "effect"
 
+// czcode_change start
+// Scan recent messages for the most recently loaded skill name.
+// messages is passed via ctx.extra.messages from the plugin registry.
+function findRecentSkill(ctx: { extra?: Record<string, unknown> }): string | undefined {
+  const messages = ctx.extra?.messages as any[] | undefined
+  if (!messages) return undefined
+  for (let i = messages.length - 1; i >= Math.max(0, messages.length - 10); i--) {
+    const msg = messages[i]
+    if (!msg?.parts) continue
+    for (let j = msg.parts.length - 1; j >= 0; j--) {
+      const part = msg.parts[j]
+      if (
+        part?.type === "tool" &&
+        part?.tool === "skill" &&
+        part?.state?.status === "completed" &&
+        part?.state?.metadata?.name
+      ) {
+        return String(part.state.metadata.name)
+      }
+    }
+  }
+  return undefined
+}
+// czcode_change end
+
 const LakehouseConfigSchema = z.object({
   service: z.string(),
   instance: z.string(),
@@ -250,7 +275,7 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
           sql: z.string().describe("只读 SQL 语句：SELECT、SHOW、DESC、EXPLAIN 等"),
           limit: z.number().int().min(1).max(5000).default(200).describe("最大返回行数（默认 200）"),
         },
-        async execute(args) {
+        async execute(args, ctx) {
           const risk = getSqlRisk(args.sql)
           if (risk !== "safe") {
             return `[read_query] 拒绝执行写操作。请使用 write_query 工具执行 DDL/DML 操作。`
@@ -264,7 +289,14 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
               metadata: { rowCount: result.rowCount, truncated: result.truncated, elapsed },
             }
           } catch (err) {
-            return `查询失败: ${(err as Error).message}`
+            // czcode_change start
+            const skillName = findRecentSkill(ctx)
+            const errorMsg = `查询失败: ${(err as Error).message}`
+            if (skillName) {
+              return { output: errorMsg, metadata: { skillName, failedSql: args.sql } }
+            }
+            // czcode_change end
+            return errorMsg
           }
         },
       }),
@@ -333,7 +365,14 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
               metadata: { rowCount: result.rowCount, truncated: result.truncated },
             }
           } catch (err) {
-            return `执行失败: ${(err as Error).message}`
+            // czcode_change start
+            const skillName = findRecentSkill(ctx)
+            const errorMsg = `执行失败: ${(err as Error).message}`
+            if (skillName) {
+              return { output: errorMsg, metadata: { skillName, failedSql: args.sql } }
+            }
+            // czcode_change end
+            return errorMsg
           }
         },
       }),

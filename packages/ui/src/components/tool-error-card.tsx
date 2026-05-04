@@ -13,6 +13,8 @@ export interface ToolErrorCardProps extends Omit<ComponentProps<typeof Card>, "c
   defaultOpen?: boolean
   subtitle?: string
   href?: string
+  skillName?: string  // czcode_change
+  failedSql?: string  // czcode_change
 }
 
 export function ToolErrorCard(props: ToolErrorCardProps) {
@@ -23,7 +25,7 @@ export function ToolErrorCard(props: ToolErrorCardProps) {
   })
   const open = () => state.open
   const copied = () => state.copied
-  const [split, rest] = splitProps(props, ["tool", "error", "defaultOpen", "subtitle", "href"])
+  const [split, rest] = splitProps(props, ["tool", "error", "defaultOpen", "subtitle", "href", "skillName", "failedSql"]) // czcode_change
   const name = createMemo(() => {
     const map: Record<string, string> = {
       read: "ui.tool.read",
@@ -73,6 +75,36 @@ export function ToolErrorCard(props: ToolErrorCardProps) {
     setState("copied", true)
     setTimeout(() => setState("copied", false), 2000)
   }
+
+  // czcode_change start
+  const reportIssue = () => {
+    const skill = split.skillName
+    if (!skill) return
+    const errorText = cleaned()
+    const sql = split.failedSql ?? ""
+    const title = encodeURIComponent(`skill bug: ${skill} — SQL execution failed`)
+    const body = encodeURIComponent(
+      [
+        `**Skill:** \`${skill}\``,
+        ``,
+        `**Failed SQL:**`,
+        "```sql",
+        sql,
+        "```",
+        ``,
+        `**Error:**`,
+        "```",
+        errorText,
+        "```",
+        ``,
+        `**Steps to reproduce:**`,
+        `<!-- Describe what you asked czcode to do -->`,
+      ].join("\n"),
+    )
+    const url = `https://github.com/yunqiqiliang/clickzetta-skills/issues/new?title=${title}&body=${body}`
+    window.open(url, "_blank")
+  }
+  // czcode_change end
 
   return (
     <Card {...rest} data-kind="tool-error-card" data-open={open() ? "true" : "false"} variant="error">
@@ -133,6 +165,23 @@ export function ToolErrorCard(props: ToolErrorCardProps) {
                     aria-label={copied() ? i18n.t("ui.message.copied") : i18n.t("ui.toolErrorCard.copyError")}
                   />
                 </Tooltip>
+                {/* czcode_change start */}
+                <Show when={split.skillName}>
+                  <Tooltip value="Report skill issue on GitHub" placement="top" gutter={4}>
+                    <IconButton
+                      icon="square-arrow-top-right"
+                      size="normal"
+                      variant="ghost"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        reportIssue()
+                      }}
+                      aria-label="Report skill issue on GitHub"
+                    />
+                  </Tooltip>
+                </Show>
+                {/* czcode_change end */}
               </div>
             </Show>
             <Show when={body()}>{(value) => <CardDescription>{value()}</CardDescription>}</Show>

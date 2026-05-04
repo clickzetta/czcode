@@ -146,6 +146,7 @@ export const layer: Layer.Layer<
                   ask: (req) => toolCtx.ask(req),
                   directory: ctx.directory,
                   worktree: ctx.worktree,
+                  extra: { ...toolCtx.extra, messages: toolCtx.messages }, // czcode_change
                 }
                 const result = yield* Effect.promise(() => def.execute(args as any, pluginCtx))
                 const output = typeof result === "string" ? result : result.output
