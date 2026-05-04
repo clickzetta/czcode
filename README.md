@@ -374,6 +374,49 @@ czcode 有两层配置，优先级从高到低：
 }
 ```
 
+### 云器 AI Gateway
+
+云器 AI Gateway 的每个 Endpoint 有独立的访问地址，格式为：
+
+```
+https://<region>.api.clickzetta.com/<workspace>/<endpoint-name>
+```
+
+由于每个模型的 URL 不同，推荐用自定义 providerID 统一管理多个 Endpoint：
+
+```jsonc
+{
+  "model": "cz-gateway/aliyun-deepseek-v4-pro",
+  "provider": {
+    "cz-gateway": {
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "apiKey": "your-gateway-api-key"
+      },
+      "models": {
+        "aliyun-deepseek-v4-pro": {
+          "name": "DeepSeek V4 Pro (云器)",
+          "provider": {
+            "api": "https://cn-shanghai-alicloud-aimesh.api.clickzetta.com/k227206/aliyun-deepseek-v4-pro"
+          }
+        },
+        "another-endpoint": {
+          "name": "另一个模型",
+          "provider": {
+            "api": "https://cn-shanghai-alicloud-aimesh.api.clickzetta.com/k227206/another-endpoint"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+- `npm` 固定填 `@ai-sdk/openai-compatible`（云器 AI Gateway 兼容 OpenAI 接口）
+- `apiKey` 从云器平台"模型管理 → API KEY"页面生成
+- 每个模型的 `provider.api` 填对应 Endpoint 的访问地址（从 Endpoint 详情页复制）
+- 切换模型只需改 `"model"` 字段中的模型名，无需改 URL
+
 ---
 
 ## 开发者文档
