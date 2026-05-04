@@ -159,7 +159,7 @@
   <line x1="348" y1="425" x2="552" y2="425" stroke="#065f46" stroke-width="0.8" stroke-dasharray="4,3"/>
 
   <g font-size="9" fill="#6ee7b7">
-    <text x="348" y="441">▸ SQL 任务开发 · 存储过程 · 调度脚本</text>
+    <text x="348" y="441">▸ SQL 任务开发 · 复杂查询 · 调度脚本</text>
     <text x="348" y="457">▸ Streamlit 看板 · dbt 模型 · Jupyter</text>
     <text x="348" y="473">▸ Python SDK · BulkLoad 批量写入</text>
     <text x="348" y="489">▸ Java SDK · Kafka 实时写入</text>

@@ -34,7 +34,7 @@ czcode 覆盖三类场景，通过角色切换在同一个工具里完成：
 
 面向需要基于 Lakehouse 进行应用开发的工程师。czcode 内置 Lakehouse 应用开发 Skills，让 AI 在写代码时自动掌握正确的 SDK 用法和最佳实践：
 
-- **SQL 任务开发**：编写复杂 SQL、存储过程、调度脚本，理解 ClickZetta SQL 方言和函数
+- **SQL 任务开发**：编写复杂 SQL、调度脚本，理解 ClickZetta SQL 方言和函数
 - **数据应用**：Streamlit 数据看板、dbt 数据转换模型、Jupyter 分析报告
 - **Python 应用集成**：`clickzetta-connector-python` 查询、参数绑定、批量插入；`clickzetta-ingestion-python` BulkLoad 高吞吐写入；SQLAlchemy dialect
 - **Java SDK**：BulkloadStream 批量写入（列索引 API）、RealtimeStream Kafka 实时写入（列名 API），自动区分两者的 URL 参数差异
