@@ -56,7 +56,7 @@ czcode 完整继承自 [KiloCode](https://github.com/Kilo-Org/kilocode)，具备
 - **调试**：分析报错、定位 bug、修复问题
 - **项目规划**：`plan` 角色设计架构方案，`debug` 角色专注问题排查
 
-**角色切换**：输入 `/agents` 弹出完整角色列表（包含所有数据角色和 code/plan/debug/ask）；或在输入框按 **Tab 键**循环切换；或在 `czcode.jsonc` 中设置 `default_agent` 固定默认角色。
+**角色切换**：输入 `/agents` 弹出完整角色列表，或按 **Tab 键**循环切换，或在 `czcode.jsonc` 中设置 `default_agent` 固定默认角色。
 
 ---
 
@@ -164,15 +164,13 @@ czcode 有三个主要页面，不同页面能做的事差别很大。
 
 > 欢迎页没有活跃的 AI 会话，**数据查询类命令在此无法使用**。
 
----
-
 ### 对话页（AI 工作的主战场）
 
 在欢迎页输入内容后进入对话页。这里是 czcode 的核心，所有 AI 能力都在这里发挥：
 
 - **自然语言对话**：直接描述需求，AI 生成 SQL 并执行，结果以表格展示
 - **工具执行**：AI 可以查询 Lakehouse、读写文件、执行命令
-- **数据探查命令**（仅对话页可用）：
+- **数据探查命令**（仅对话页可用，在欢迎页执行会提示"请先进入对话"）：
 
 | 命令 | 说明 |
 |------|------|
@@ -182,19 +180,15 @@ czcode 有三个主要页面，不同页面能做的事差别很大。
 | `/cz_vcluster` | VCluster 状态：查看所有 VCluster 的运行状态 |
 | `/cz_sql_history` | SQL 历史：浏览本次会话的 SQL 执行记录，选中即复制 |
 
-> 这些命令需要活跃的会话上下文，**在欢迎页执行会提示"请先进入对话"**。
-
-对话页右侧边栏实时显示 Lakehouse 连接状态（Workspace / Schema / VCluster / User）、Schemas 列表和 VCluster 状态。
-
----
+右侧边栏实时显示 Lakehouse 连接状态（Workspace / Schema / VCluster / User）、Schemas 列表和 VCluster 状态。
 
 ### SingClaw 页（本地 AI 服务对话）
 
 输入 `/cz_singclaw` 从任意页面进入 SingClaw 页。SingClaw 是 ClickZetta 本地部署的 AI 服务，适合需要数据不出域的场景：
 
 - 与本地 SingClaw 服务进行流式对话
-- 如果从**对话页**进入，会自动携带当前会话的上下文（最近的 SQL 和数据结果）
-- 如果从**欢迎页**进入，则是纯对话模式，无会话上下文
+- 从**对话页**进入时，自动携带当前会话的上下文（最近的 SQL 和数据结果）
+- 从**欢迎页**进入时，为纯对话模式，无会话上下文
 - 对话结束后按 **Esc** 返回原来的页面
 
 > 使用前需要在本地启动 SingClaw 服务（openclaw-gateway），默认连接 `localhost:9999`。
@@ -231,12 +225,12 @@ czcode 内置 5 个数据角色 + ask 角色，共 6 个，在输入框按 **Tab
 |------|------|------|
 | `/agents` | — | 角色切换：弹出完整列表，切换所有角色（数据角色 + code/plan/debug/ask） |
 | `/cz_role` | `/cz_r` | 角色切换：仅显示数据角色列表 |
-| `/cz_sample` | `/cz_s` | 快速采样：输入表名，自动执行 `SELECT * FROM table LIMIT 5` |
-| `/cz_count` | `/cz_c` | 行数统计：一键查看表的总行数 |
-| `/cz_profile` | `/cz_p` | 数据画像：自动分析每列的 NULL 比例、唯一值、最大最小值 |
-| `/cz_vcluster` | `/cz_vc` | VCluster 状态：查看所有 VCluster 的运行状态和规格 |
-| `/cz_sql_history` | `/cz_sh` | SQL 历史：浏览当前会话的 SQL 执行记录，选中即复制到剪贴板 |
-| `/cz_singclaw` | — | SingClaw：连接本地 SingClaw 服务进行对话 |
+| `/cz_sample` | `/cz_s` | 快速采样：输入表名，自动执行 `SELECT * FROM table LIMIT 5`（仅对话页） |
+| `/cz_count` | `/cz_c` | 行数统计：一键查看表的总行数（仅对话页） |
+| `/cz_profile` | `/cz_p` | 数据画像：自动分析每列的 NULL 比例、唯一值、最大最小值（仅对话页） |
+| `/cz_vcluster` | `/cz_vc` | VCluster 状态：查看所有 VCluster 的运行状态和规格（仅对话页） |
+| `/cz_sql_history` | `/cz_sh` | SQL 历史：浏览当前会话的 SQL 执行记录，选中即复制到剪贴板（仅对话页） |
+| `/cz_singclaw` | `/singclaw` | SingClaw：连接本地 SingClaw 服务进行对话 |
 | `/cz_skill-update` | — | 更新 ClickZetta 领域知识（Skills） |
 | `/cz_skill-fix` | — | 修正 Skill 内容错误 |
 
