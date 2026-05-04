@@ -22,6 +22,7 @@ import PROMPT_LH_DBA from "../../agent/prompt/lh-dba.txt"
 import PROMPT_LH_GOVERNANCE from "../../agent/prompt/lh-governance.txt"
 import PROMPT_LH_DATA_SCIENTIST from "../../agent/prompt/lh-data-scientist.txt"
 // czcode_change end
+import { t } from "@/kilocode/plugins/czcode-i18n" // czcode_change
 
 export const bash: Record<string, "allow" | "ask" | "deny"> = {
   "*": "ask",
@@ -445,8 +446,8 @@ export function patchAgents(
 
   agents["lh-engineer"] = {
     name: "lh-engineer",
-    displayName: "数据工程师",
-    description: "云器 Lakehouse 数据工程师 — 数据接入/建表/ETL/数仓建模/调度/指标管理",
+    displayName: t("agent.engineer.name"),
+    description: t("agent.engineer.desc"),
     prompt: PROMPT_LH_ENGINEER + "\n\n" + PROMPT_LH_BASE,
     options: {},
     color: "#0066CC",
@@ -462,8 +463,8 @@ export function patchAgents(
 
   agents["lh-analyst"] = {
     name: "lh-analyst",
-    displayName: "数据分析师",
-    description: "云器 Lakehouse 数据分析师 — 查询/报表/数据质量探查/BI连接（只读）",
+    displayName: t("agent.analyst.name"),
+    description: t("agent.analyst.desc"),
     prompt: PROMPT_LH_ANALYST + "\n\n" + PROMPT_LH_BASE,
     options: {},
     color: "#00AA44",
@@ -478,8 +479,8 @@ export function patchAgents(
 
   agents["lh-dba"] = {
     name: "lh-dba",
-    displayName: "数据运维",
-    description: "云器 Lakehouse 数据运维 — VCluster管理/查询调优/作业监控/费用分析",
+    displayName: t("agent.dba.name"),
+    description: t("agent.dba.desc"),
     prompt: PROMPT_LH_DBA + "\n\n" + PROMPT_LH_BASE,
     options: {},
     color: "#CC6600",
@@ -495,8 +496,8 @@ export function patchAgents(
 
   agents["lh-governance"] = {
     name: "lh-governance",
-    displayName: "数据治理",
-    description: "云器 Lakehouse 数据治理 — 权限/安全/生命周期/合规/共享",
+    displayName: t("agent.governance.name"),
+    description: t("agent.governance.desc"),
     prompt: PROMPT_LH_GOVERNANCE + "\n\n" + PROMPT_LH_BASE,
     options: {},
     color: "#7B2D8B",
@@ -516,8 +517,8 @@ export function patchAgents(
 
   agents["lh-data-scientist"] = {
     name: "lh-data-scientist",
-    displayName: "数据科学家",
-    description: "云器 Lakehouse 数据科学家 — 数据科学项目/Jupyter/EDA/特征工程/模型推理",
+    displayName: t("agent.scientist.name"),
+    description: t("agent.scientist.desc"),
     prompt: PROMPT_LH_DATA_SCIENTIST + "\n\n" + PROMPT_LH_BASE,
     options: {},
     color: "#E67E00",

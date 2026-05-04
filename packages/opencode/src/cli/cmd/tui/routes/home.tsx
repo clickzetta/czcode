@@ -9,47 +9,38 @@ import { useRouteData } from "@tui/context/route"
 import { usePromptRef } from "../context/prompt"
 import { useLocal } from "../context/local"
 import { TuiPluginRuntime } from "../plugin"
+import { t } from "@/kilocode/plugins/czcode-i18n" // czcode_change
 
 let once = false
 // czcode_change start - per-agent placeholder prompts
 const placeholdersByAgent: Record<string, string[]> = {
   "lh-analyst": [
-    "我有哪些数据？",
-    "统计过去 7 天每天的订单量和销售额",
-    "分析 orders 表的数据质量，检查空值和异常值",
-    "查看 orders 表的结构和数据样例",
-    "帮我做一个销售趋势分析",
-    "哪些客户的消费金额最高？",
+    t("placeholder.analyst.1"),
+    t("placeholder.analyst.2"),
+    t("placeholder.analyst.3"),
+    t("placeholder.analyst.4"),
   ],
   "lh-engineer": [
-    "帮我设计数仓分层方案",
-    "创建一个 ODS 层的用户行为事件表",
-    "帮我写一个从 MySQL 导入数据到 Lakehouse 的 Pipeline",
-    "设计一个 DWS 层的用户订单汇总表",
-    "帮我建一个语义视图统一指标口径",
-    "给 orders 表加一个 bloomfilter 索引",
+    t("placeholder.engineer.1"),
+    t("placeholder.engineer.2"),
+    t("placeholder.engineer.3"),
+    t("placeholder.engineer.4"),
+    t("placeholder.engineer.5"),
   ],
   "lh-dba": [
-    "查看当前 VCluster 的资源使用情况",
-    "优化这条慢查询的执行计划",
-    "查看最近失败的作业",
-    "暂停 default VCluster",
-    "本月的计算和存储费用是多少？",
+    t("placeholder.dba.1"),
+    t("placeholder.dba.2"),
+    t("placeholder.dba.3"),
   ],
   "lh-governance": [
-    "查看当前用户的权限",
-    "哪些表没有设置数据生命周期？",
-    "给用户 alice 授予 mcp_demo schema 的查询权限",
-    "查看 orders 表的变更历史",
-    "创建一个动态脱敏策略",
+    t("placeholder.governance.1"),
+    t("placeholder.governance.2"),
+    t("placeholder.governance.3"),
   ],
   "lh-data-scientist": [
-    "帮我对 orders 表做 EDA 探索性分析",
-    "生成一个 Jupyter notebook，分析用户购买行为",
-    "用 ZettaPark 读取 Lakehouse 数据并做特征工程",
-    "帮我构建一个用户流失预测的特征表",
-    "把模型预测结果写回 Lakehouse",
-    "从 Kaggle 接入外部数据集并与 Lakehouse 数据融合",
+    t("placeholder.scientist.1"),
+    t("placeholder.scientist.2"),
+    t("placeholder.scientist.3"),
   ],
 }
 

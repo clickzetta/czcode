@@ -103,6 +103,42 @@ const zh: Record<string, string> = {
   "context.userQuestion": "用户问题：",
   "context.sql": "SQL：",
   "context.result": "结果：",
+
+  // Agent display names
+  "agent.engineer.name": "数据工程师",
+  "agent.engineer.desc": "云器 Lakehouse 数据工程师 — 数据接入/建表/ETL/数仓建模/调度/指标管理",
+  "agent.analyst.name": "数据分析师",
+  "agent.analyst.desc": "云器 Lakehouse 数据分析师 — 查询/报表/数据质量探查/BI连接（只读）",
+  "agent.dba.name": "数据运维",
+  "agent.dba.desc": "云器 Lakehouse 数据运维 — VCluster管理/查询调优/作业监控/费用分析",
+  "agent.governance.name": "数据治理",
+  "agent.governance.desc": "云器 Lakehouse 数据治理 — 权限/安全/生命周期/合规/共享",
+  "agent.scientist.name": "数据科学家",
+  "agent.scientist.desc": "云器 Lakehouse 数据科学家 — 数据科学项目/Jupyter/EDA/特征工程/模型推理",
+
+  // Home placeholders - analyst
+  "placeholder.analyst.1": "我有哪些数据？",
+  "placeholder.analyst.2": "统计过去 7 天每天的订单量和销售额",
+  "placeholder.analyst.3": "分析 orders 表的数据质量",
+  "placeholder.analyst.4": "帮我做一个销售趋势分析",
+  // Home placeholders - engineer
+  "placeholder.engineer.1": "帮我设计数仓分层方案",
+  "placeholder.engineer.2": "创建一个用户维度表",
+  "placeholder.engineer.3": "帮我写一个从 MySQL 导入数据的 Pipeline",
+  "placeholder.engineer.4": "查看当前有哪些 Dynamic Table",
+  "placeholder.engineer.5": "帮我建一个语义视图统一指标口径",
+  // Home placeholders - dba
+  "placeholder.dba.1": "查看 VCluster 资源使用情况",
+  "placeholder.dba.2": "优化这条慢查询的执行计划",
+  "placeholder.dba.3": "本月的计算和存储费用是多少？",
+  // Home placeholders - governance
+  "placeholder.governance.1": "查看当前用户的权限",
+  "placeholder.governance.2": "哪些表没有设置数据生命周期？",
+  "placeholder.governance.3": "创建一个动态脱敏策略",
+  // Home placeholders - scientist
+  "placeholder.scientist.1": "帮我对 orders 表做 EDA 探索性分析",
+  "placeholder.scientist.2": "分析各产品类目的销售分布",
+  "placeholder.scientist.3": "帮我构建一个用户流失预测的特征表",
 }
 
 const en: Record<string, string> = {
@@ -193,6 +229,42 @@ const en: Record<string, string> = {
   "context.userQuestion": "User question: ",
   "context.sql": "SQL: ",
   "context.result": "Result:\n",
+
+  // Agent display names
+  "agent.engineer.name": "Data Engineer",
+  "agent.engineer.desc": "ClickZetta Lakehouse Data Engineer — Ingest/DDL/ETL/Modeling/Scheduling",
+  "agent.analyst.name": "Data Analyst",
+  "agent.analyst.desc": "ClickZetta Lakehouse Data Analyst — Query/Report/Data Quality/BI (read-only)",
+  "agent.dba.name": "DBA / Ops",
+  "agent.dba.desc": "ClickZetta Lakehouse DBA — VCluster/Query Tuning/Monitoring/Cost Analysis",
+  "agent.governance.name": "Data Governance",
+  "agent.governance.desc": "ClickZetta Lakehouse Governance — Access/Security/Lifecycle/Compliance/Sharing",
+  "agent.scientist.name": "Data Scientist",
+  "agent.scientist.desc": "ClickZetta Lakehouse Data Scientist — Jupyter/EDA/Feature Engineering/ML",
+
+  // Home placeholders - analyst
+  "placeholder.analyst.1": "What data do I have?",
+  "placeholder.analyst.2": "Daily order count and revenue for the past 7 days",
+  "placeholder.analyst.3": "Check data quality of the orders table",
+  "placeholder.analyst.4": "Help me analyze sales trends",
+  // Home placeholders - engineer
+  "placeholder.engineer.1": "Help me design a data warehouse layering plan",
+  "placeholder.engineer.2": "Create a user dimension table",
+  "placeholder.engineer.3": "Write a pipeline to import data from MySQL",
+  "placeholder.engineer.4": "Show current Dynamic Tables",
+  "placeholder.engineer.5": "Create a semantic view for unified metrics",
+  // Home placeholders - dba
+  "placeholder.dba.1": "Check VCluster resource usage",
+  "placeholder.dba.2": "Optimize this slow query execution plan",
+  "placeholder.dba.3": "What are this month's compute and storage costs?",
+  // Home placeholders - governance
+  "placeholder.governance.1": "Check current user permissions",
+  "placeholder.governance.2": "Which tables have no data lifecycle policy?",
+  "placeholder.governance.3": "Create a dynamic masking policy",
+  // Home placeholders - scientist
+  "placeholder.scientist.1": "Run EDA on the orders table",
+  "placeholder.scientist.2": "Analyze sales distribution by product category",
+  "placeholder.scientist.3": "Build a feature table for churn prediction",
 }
 
 function detectLocale(): "zh" | "en" {
