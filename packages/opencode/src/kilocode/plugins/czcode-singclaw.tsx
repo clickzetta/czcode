@@ -195,27 +195,38 @@ const tui: TuiPlugin = async (api) => {
           return
         }
 
-        // 3. Navigate to chat view, optionally with last query result as context
+        // 3. Navigate to chat view, with all query results from the last user turn as context
         const route = api.route.current
         let context: string | undefined
         if (route.name === "session") {
           const sessionID = (route.params as { sessionID: string }).sessionID
           const messages = api.state.session.messages(sessionID)
-          // Find the last read_query tool result
+          // Find the last user message, then collect all read_query results after it
+          let lastUserIdx = -1
           for (let i = messages.length - 1; i >= 0; i--) {
-            const msg = messages[i]
-            if (msg.role !== "assistant") continue
-            for (const part of api.state.part(msg.id)) {
-              const p = part as any
-              if (p.type === "tool" && p.tool === "read_query" && p.state?.status === "completed") {
-                context = p.state.output
-                break
+            if (messages[i].role === "user") { lastUserIdx = i; break }
+          }
+          if (lastUserIdx >= 0) {
+            const results: string[] = []
+            for (let i = lastUserIdx; i < messages.length; i++) {
+              const msg = messages[i]
+              if (msg.role !== "assistant") continue
+              for (const part of api.state.part(msg.id)) {
+                const p = part as any
+                if (p.type === "tool" && p.tool === "read_query" && p.state?.status === "completed" && p.state.output) {
+                  results.push(p.state.output)
+                }
               }
             }
-            if (context) break
+            if (results.length > 0) {
+              context = results.join("\n\n---\n\n")
+            }
           }
         }
-        api.route.navigate("singclaw", { context })
+        api.route.navigate("singclaw", {
+          context,
+          returnTo: route.name === "session" ? { type: "session", sessionID: (route.params as any).sessionID } : undefined,
+        })
       },
     },
   ])

@@ -29,6 +29,7 @@ export type PluginRoute = {
 export type SingClawRoute = {
   type: "singclaw"
   context?: string // czcode_change — last query result from czcode session
+  returnTo?: { type: "session"; sessionID: string } // czcode_change — where to go on Esc
 }
 // czcode_change end
 

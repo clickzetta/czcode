@@ -2,35 +2,26 @@
 
 import { useKeyboard } from "@opentui/solid"
 import { useRoute } from "@tui/context/route"
-import { useCommandDialog } from "@tui/component/dialog-command"
 import { Toast } from "@tui/ui/toast"
 import { SingClawChat } from "./chat"
 import { SingClawSidebar } from "./sidebar"
 import { createSingClawChat } from "./hooks"
 
-export function SingClawView(props: { context?: string }) {
+export function SingClawView(props: { context?: string; returnTo?: { type: string; sessionID?: string } }) {
   const route = useRoute()
-  const command = useCommandDialog()
   const chat = createSingClawChat(props.context)
 
   useKeyboard((evt) => {
     if (evt.name === "escape") {
-      route.back()
+      if (props.returnTo?.type === "session" && props.returnTo.sessionID) {
+        route.navigate({ type: "session", sessionID: props.returnTo.sessionID })
+      } else {
+        route.navigate({ type: "home" })
+      }
       evt.preventDefault()
       evt.stopPropagation()
     }
   })
-
-  command.register(() => [
-    {
-      value: "singclaw.back",
-      title: "返回",
-      category: "SingClaw",
-      hidden: true,
-      keybind: "escape" as any,
-      onSelect: () => route.back(),
-    },
-  ])
 
   return (
     <box flexDirection="row" flexGrow={1} paddingLeft={2} gap={1}>

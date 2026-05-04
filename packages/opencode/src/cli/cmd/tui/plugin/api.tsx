@@ -83,7 +83,11 @@ function routeNavigate(route: ReturnType<typeof useRoute>, name: string, params?
 
   // czcode_change start
   if (name === "singclaw") {
-    route.navigate({ type: "singclaw", context: params?.context as string | undefined })
+    route.navigate({
+      type: "singclaw",
+      context: params?.context as string | undefined,
+      returnTo: params?.returnTo as any,
+    })
     return
   }
   // czcode_change end
