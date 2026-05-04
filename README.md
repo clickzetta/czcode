@@ -22,7 +22,7 @@ czcode 覆盖三类场景，通过角色切换在同一个工具里完成：
 - **运维管理**：VCluster 启停扩缩容、作业监控、慢查询分析、权限管理
 - **安全确认**：DDL/DML 操作弹窗确认，DROP/TRUNCATE 显示表大小和行数，防止误操作
 
-切换方式：**Tab 键**循环切换，或 `/cz_role` 选择角色。
+**角色切换**：在输入框按 **Tab 键**循环切换角色；或输入 `/cz_role` 弹出选择列表；或在 `czcode.jsonc` 中设置 `default_agent` 固定默认角色。
 
 ---
 
@@ -52,7 +52,7 @@ czcode 完整继承自 [KiloCode](https://github.com/Kilo-Org/kilocode)，具备
 - **调试**：分析报错、定位 bug、修复问题
 - **项目规划**：`plan` 角色设计架构方案，`debug` 角色专注问题排查
 
-切换方式：在对话框输入 `/` 选择角色，或在启动时通过 `czcode.jsonc` 设置 `default_agent`。
+**角色切换**：在输入框按 **Tab 键**循环切换（数据角色 → code → plan → debug → ask → 循环）；或输入 `/cz_role` 弹出选择列表；或在 `czcode.jsonc` 中设置 `default_agent` 固定默认角色。
 
 ---
 
@@ -146,7 +146,7 @@ czcode 会自动读取当前目录下的 `.env` 文件加载 Lakehouse 连接配
 
 ## 数据角色
 
-czcode 内置 5 个数据角色，通过 **Tab 键**循环切换，或输入 `/cz_role` 命令选择：
+czcode 内置 5 个数据角色 + ask 角色，共 6 个，在输入框按 **Tab 键**循环切换，或输入 `/cz_role` 弹出选择列表：
 
 | 角色 | 说明 | 权限 |
 |---|---|---|
@@ -155,6 +155,7 @@ czcode 内置 5 个数据角色，通过 **Tab 键**循环切换，或输入 `/c
 | 数据科学家 | Python/Jupyter/EDA/特征工程/模型推理 | 写操作需确认 |
 | 数据运维 | VCluster 管理/查询调优/作业监控/费用分析 | DDL + VCluster ops，写操作需确认 |
 | 数据治理 | 权限/安全/生命周期/合规/共享 | GRANT/REVOKE/POLICY，写操作需确认 |
+| ask | 快速问答，不执行工具，仅对话 | 只读，不调用任何工具 |
 
 > 切换到 Code/Plan/Debug 等通用开发角色后，可进行与 Lakehouse 无关的软件开发任务，详见上方"场景三"。
 
@@ -183,7 +184,7 @@ czcode 内置 5 个数据角色，通过 **Tab 键**循环切换，或输入 `/c
 
 ### 侧边栏信息
 
-session 页面右侧边栏实时显示：
+对话界面右侧边栏实时显示：
 - **Lakehouse 连接状态**：Workspace / Schema / VCluster / User（跟随 `switch_context` 自动更新）
 - **Schemas**：对话中使用 `list_objects` 后自动填充
 - **VClusters**：对话中查询 VCluster 后自动填充
@@ -205,7 +206,7 @@ session 页面右侧边栏实时显示：
 
 ### Skills（领域知识）
 
-czcode 内置 27 个 ClickZetta Lakehouse 领域 Skill，覆盖 SQL 语法、数据导入、索引管理、VCluster 运维等场景。Skills 随安装包一起分发，无需网络即可使用。
+czcode 内置 31 个 ClickZetta Lakehouse 领域 Skill，覆盖 SQL 语法、数据导入、索引管理、VCluster 运维等场景。Skills 随安装包一起分发，无需网络即可使用。
 
 更新 Skills：
 ```
