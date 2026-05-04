@@ -1,0 +1,265 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" width="900" height="560" font-family="'PingFang SC','Helvetica Neue',Arial,sans-serif">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f1117;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#1a1d2e;stop-opacity:1"/>
+    </linearGradient>
+    <linearGradient id="lhGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a5f;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#0d2137;stop-opacity:1"/>
+    </linearGradient>
+    <linearGradient id="codeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a2f;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#0d2118;stop-opacity:1"/>
+    </linearGradient>
+    <linearGradient id="devGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3a1e3a;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#210d21;stop-opacity:1"/>
+    </linearGradient>
+    <linearGradient id="coreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2a1f0a;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#1a1200;stop-opacity:1"/>
+    </linearGradient>
+    <linearGradient id="titleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#4fc3f7"/>
+      <stop offset="50%" style="stop-color:#a78bfa"/>
+      <stop offset="100%" style="stop-color:#34d399"/>
+    </linearGradient>
+
+    <!-- Glow filters -->
+    <filter id="glowBlue" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowGreen" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowPurple" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softShadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+
+    <!-- Animated dash for arrows -->
+    <marker id="arrowBlue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#4fc3f7" opacity="0.8"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#34d399" opacity="0.8"/>
+    </marker>
+    <marker id="arrowPurple" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#a78bfa" opacity="0.8"/>
+    </marker>
+    <marker id="arrowGold" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#fbbf24" opacity="0.8"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="560" fill="url(#bgGrad)" rx="12"/>
+
+  <!-- Subtle grid -->
+  <g opacity="0.04" stroke="#ffffff" stroke-width="0.5">
+    <line x1="0" y1="56" x2="900" y2="56"/>
+    <line x1="0" y1="112" x2="900" y2="112"/>
+    <line x1="0" y1="168" x2="900" y2="168"/>
+    <line x1="0" y1="224" x2="900" y2="224"/>
+    <line x1="0" y1="280" x2="900" y2="280"/>
+    <line x1="0" y1="336" x2="900" y2="336"/>
+    <line x1="0" y1="392" x2="900" y2="392"/>
+    <line x1="0" y1="448" x2="900" y2="448"/>
+    <line x1="0" y1="504" x2="900" y2="504"/>
+    <line x1="90" y1="0" x2="90" y2="560"/>
+    <line x1="180" y1="0" x2="180" y2="560"/>
+    <line x1="270" y1="0" x2="270" y2="560"/>
+    <line x1="360" y1="0" x2="360" y2="560"/>
+    <line x1="450" y1="0" x2="450" y2="560"/>
+    <line x1="540" y1="0" x2="540" y2="560"/>
+    <line x1="630" y1="0" x2="630" y2="560"/>
+    <line x1="720" y1="0" x2="720" y2="560"/>
+    <line x1="810" y1="0" x2="810" y2="560"/>
+  </g>
+
+  <!-- Title -->
+  <text x="450" y="42" text-anchor="middle" font-size="22" font-weight="700" fill="url(#titleGrad)" letter-spacing="1">
+    czcode — 终端 AI Agent
+  </text>
+  <text x="450" y="62" text-anchor="middle" font-size="11" fill="#6b7280" letter-spacing="2">
+    THREE SCENARIOS · ONE TOOL
+  </text>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- CENTER: czcode core box -->
+  <!-- ═══════════════════════════════════════════ -->
+  <rect x="330" y="220" width="240" height="120" rx="10" fill="url(#coreGrad)" stroke="#fbbf24" stroke-width="1.5" filter="url(#softShadow)"/>
+  <!-- Animated border pulse -->
+  <rect x="330" y="220" width="240" height="120" rx="10" fill="none" stroke="#fbbf24" stroke-width="2" opacity="0">
+    <animate attributeName="opacity" values="0;0.6;0" dur="2.5s" repeatCount="indefinite"/>
+    <animate attributeName="stroke-width" values="2;5;2" dur="2.5s" repeatCount="indefinite"/>
+  </rect>
+
+  <text x="450" y="252" text-anchor="middle" font-size="13" font-weight="700" fill="#fbbf24">⚡ czcode</text>
+  <text x="450" y="270" text-anchor="middle" font-size="10" fill="#9ca3af">TUI Terminal Agent</text>
+
+  <!-- Model badges -->
+  <rect x="345" y="280" width="60" height="18" rx="4" fill="#292524" stroke="#78716c" stroke-width="0.8"/>
+  <text x="375" y="293" text-anchor="middle" font-size="9" fill="#a8a29e">Qwen</text>
+  <rect x="415" y="280" width="60" height="18" rx="4" fill="#292524" stroke="#78716c" stroke-width="0.8"/>
+  <text x="445" y="293" text-anchor="middle" font-size="9" fill="#a8a29e">Claude</text>
+  <rect x="485" y="280" width="60" height="18" rx="4" fill="#292524" stroke="#78716c" stroke-width="0.8"/>
+  <text x="515" y="293" text-anchor="middle" font-size="9" fill="#a8a29e">OpenAI</text>
+
+  <text x="450" y="322" text-anchor="middle" font-size="9.5" fill="#6b7280">Skills · Roles · Tools</text>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- LEFT: Scenario 1 — Lakehouse Data Work -->
+  <!-- ═══════════════════════════════════════════ -->
+  <rect x="30" y="130" width="230" height="300" rx="10" fill="url(#lhGrad)" stroke="#4fc3f7" stroke-width="1.2" filter="url(#softShadow)"/>
+
+  <text x="145" y="158" text-anchor="middle" font-size="12" font-weight="700" fill="#4fc3f7" filter="url(#glowBlue)">场景一</text>
+  <text x="145" y="174" text-anchor="middle" font-size="10.5" fill="#93c5fd">Lakehouse 数据工作</text>
+
+  <!-- Role pills -->
+  <g font-size="9.5" fill="#bfdbfe">
+    <rect x="46" y="188" width="88" height="20" rx="4" fill="#1e3a5f" stroke="#3b82f6" stroke-width="0.8"/>
+    <text x="90" y="202" text-anchor="middle">数据分析师</text>
+
+    <rect x="142" y="188" width="88" height="20" rx="4" fill="#1e3a5f" stroke="#3b82f6" stroke-width="0.8"/>
+    <text x="186" y="202" text-anchor="middle">数据工程师</text>
+
+    <rect x="46" y="214" width="88" height="20" rx="4" fill="#1e3a5f" stroke="#3b82f6" stroke-width="0.8"/>
+    <text x="90" y="228" text-anchor="middle">数据科学家</text>
+
+    <rect x="142" y="214" width="88" height="20" rx="4" fill="#1e3a5f" stroke="#3b82f6" stroke-width="0.8"/>
+    <text x="186" y="228" text-anchor="middle">数据运维</text>
+  </g>
+
+  <!-- Divider -->
+  <line x1="50" y1="244" x2="240" y2="244" stroke="#1e40af" stroke-width="0.8" stroke-dasharray="4,3"/>
+
+  <!-- Features -->
+  <g font-size="9.5" fill="#93c5fd">
+    <text x="50" y="262">▸ 自然语言 → SQL 执行</text>
+    <text x="50" y="280">▸ 数仓建模 / DDL 生成</text>
+    <text x="50" y="298">▸ /cz_sample  /cz_profile</text>
+    <text x="50" y="316">▸ VCluster 运维管理</text>
+    <text x="50" y="334">▸ 危险操作安全确认</text>
+  </g>
+
+  <!-- Lakehouse icon area -->
+  <rect x="46" y="350" width="188" height="62" rx="6" fill="#0d2137" stroke="#1d4ed8" stroke-width="0.8"/>
+  <text x="140" y="368" text-anchor="middle" font-size="9" fill="#60a5fa">ClickZetta Lakehouse</text>
+  <g font-size="8.5" fill="#475569" text-anchor="middle">
+    <text x="80" y="386">SQL</text>
+    <text x="140" y="386">DDL/DML</text>
+    <text x="200" y="386">VCluster</text>
+    <text x="80" y="402">27 Skills</text>
+    <text x="140" y="402">MCP Tools</text>
+    <text x="200" y="402">RBAC</text>
+  </g>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- MIDDLE-RIGHT: Scenario 2 — App Dev -->
+  <!-- ═══════════════════════════════════════════ -->
+  <rect x="330" y="370" width="240" height="160" rx="10" fill="url(#codeGrad)" stroke="#34d399" stroke-width="1.2" filter="url(#softShadow)"/>
+
+  <text x="450" y="396" text-anchor="middle" font-size="12" font-weight="700" fill="#34d399" filter="url(#glowGreen)">场景二</text>
+  <text x="450" y="412" text-anchor="middle" font-size="10.5" fill="#6ee7b7">Lakehouse 应用开发</text>
+
+  <line x1="348" y1="420" x2="552" y2="420" stroke="#065f46" stroke-width="0.8" stroke-dasharray="4,3"/>
+
+  <g font-size="9" fill="#6ee7b7">
+    <text x="348" y="436">▸ Python SDK  BulkLoad</text>
+    <text x="348" y="452">▸ Java SDK  Kafka 实时写入</text>
+    <text x="348" y="468">▸ Spark / Flink Connector</text>
+    <text x="348" y="484">▸ Dynamic Table 数据管道</text>
+  </g>
+
+  <rect x="348" y="494" width="204" height="22" rx="4" fill="#064e3b" stroke="#059669" stroke-width="0.8"/>
+  <text x="450" y="509" text-anchor="middle" font-size="9" fill="#34d399">Code / Plan 角色 + Lakehouse Skills</text>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- RIGHT: Scenario 3 — General Dev -->
+  <!-- ═══════════════════════════════════════════ -->
+  <rect x="640" y="130" width="230" height="300" rx="10" fill="url(#devGrad)" stroke="#a78bfa" stroke-width="1.2" filter="url(#softShadow)"/>
+
+  <text x="755" y="158" text-anchor="middle" font-size="12" font-weight="700" fill="#a78bfa" filter="url(#glowPurple)">场景三</text>
+  <text x="755" y="174" text-anchor="middle" font-size="10.5" fill="#c4b5fd">通用软件开发</text>
+
+  <!-- Role pills -->
+  <g font-size="9.5" fill="#ddd6fe">
+    <rect x="656" y="188" width="60" height="20" rx="4" fill="#3b1f6e" stroke="#7c3aed" stroke-width="0.8"/>
+    <text x="686" y="202" text-anchor="middle">code</text>
+
+    <rect x="724" y="188" width="60" height="20" rx="4" fill="#3b1f6e" stroke="#7c3aed" stroke-width="0.8"/>
+    <text x="754" y="202" text-anchor="middle">plan</text>
+
+    <rect x="792" y="188" width="60" height="20" rx="4" fill="#3b1f6e" stroke="#7c3aed" stroke-width="0.8"/>
+    <text x="822" y="202" text-anchor="middle">debug</text>
+  </g>
+
+  <line x1="660" y1="218" x2="850" y2="218" stroke="#4c1d95" stroke-width="0.8" stroke-dasharray="4,3"/>
+
+  <g font-size="9.5" fill="#c4b5fd">
+    <text x="660" y="236">▸ Python / Java / Go / Rust</text>
+    <text x="660" y="254">▸ TypeScript / React</text>
+    <text x="660" y="272">▸ 代码生成与重构</text>
+    <text x="660" y="290">▸ Bug 分析与修复</text>
+    <text x="660" y="308">▸ 架构设计规划</text>
+    <text x="660" y="326">▸ 文件读写 / 命令执行</text>
+  </g>
+
+  <rect x="656" y="344" width="198" height="22" rx="4" fill="#2e1065" stroke="#6d28d9" stroke-width="0.8"/>
+  <text x="755" y="359" text-anchor="middle" font-size="9" fill="#a78bfa">继承自 KiloCode / OpenCode</text>
+
+  <rect x="656" y="372" width="198" height="40" rx="6" fill="#1e1b4b" stroke="#4338ca" stroke-width="0.8"/>
+  <text x="755" y="389" text-anchor="middle" font-size="9" fill="#818cf8">任意项目目录下运行</text>
+  <text x="755" y="405" text-anchor="middle" font-size="9" fill="#6366f1">无需 Lakehouse 连接</text>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- ANIMATED ARROWS: Left → Center -->
+  <!-- ═══════════════════════════════════════════ -->
+  <line x1="260" y1="280" x2="326" y2="280" stroke="#4fc3f7" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrowBlue)" opacity="0.7">
+    <animate attributeName="stroke-dashoffset" values="18;0" dur="1.2s" repeatCount="indefinite"/>
+  </line>
+
+  <!-- Center → Bottom (Scenario 2) -->
+  <line x1="450" y1="340" x2="450" y2="366" stroke="#34d399" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrowGreen)" opacity="0.7">
+    <animate attributeName="stroke-dashoffset" values="18;0" dur="1.2s" repeatCount="indefinite"/>
+  </line>
+
+  <!-- Right → Center -->
+  <line x1="640" y1="280" x2="574" y2="280" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrowPurple)" opacity="0.7">
+    <animate attributeName="stroke-dashoffset" values="18;0" dur="1.2s" repeatCount="indefinite"/>
+  </line>
+
+  <!-- Center → Top label (Tab switch) -->
+  <text x="450" y="210" text-anchor="middle" font-size="9" fill="#fbbf24" opacity="0.8">Tab 切换角色 · /cz_role</text>
+  <line x1="380" y1="213" x2="330" y2="220" stroke="#fbbf24" stroke-width="1" stroke-dasharray="3,2" opacity="0.5"/>
+  <line x1="520" y1="213" x2="570" y2="220" stroke="#fbbf24" stroke-width="1" stroke-dasharray="3,2" opacity="0.5"/>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- BOTTOM: Footer -->
+  <!-- ═══════════════════════════════════════════ -->
+  <text x="450" y="540" text-anchor="middle" font-size="9" fill="#374151">
+    github.com/yunqiqiliang/czcode · MIT License · fork of KiloCode → OpenCode
+  </text>
+
+  <!-- Decorative corner dots -->
+  <circle cx="20" cy="20" r="3" fill="#4fc3f7" opacity="0.4">
+    <animate attributeName="opacity" values="0.4;0.9;0.4" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="880" cy="20" r="3" fill="#a78bfa" opacity="0.4">
+    <animate attributeName="opacity" values="0.4;0.9;0.4" dur="3s" begin="1s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="20" cy="540" r="3" fill="#34d399" opacity="0.4">
+    <animate attributeName="opacity" values="0.4;0.9;0.4" dur="3s" begin="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="880" cy="540" r="3" fill="#fbbf24" opacity="0.4">
+    <animate attributeName="opacity" values="0.4;0.9;0.4" dur="3s" begin="0.5s" repeatCount="indefinite"/>
+  </circle>
+</svg>
