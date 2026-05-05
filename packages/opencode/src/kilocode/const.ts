@@ -1,4 +1,4 @@
-import { InstallationVersion } from "@/installation/version"
+import { InstallationVersion } from "@opencode-ai/core/installation/version"
 
 // czcode_change start - ClickZetta branding
 export const DEFAULT_HEADERS = {
