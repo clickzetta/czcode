@@ -157,6 +157,7 @@ function askGuard(mcp: Record<string, "allow" | "ask" | "deny"> = {}) {
     codesearch: "allow",
     codebase_search: "allow",
     semantic_search: "allow",
+    skill: "allow",
     external_directory: {
       [Truncate.GLOB]: "allow",
     },
