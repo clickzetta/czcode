@@ -4,7 +4,7 @@ import { t } from "@/kilocode/plugins/czcode-i18n"
 import { createSignal, onMount, onCleanup } from "solid-js"
 import type { SingClawMessage, SingClawSession } from "./types"
 import { SingClawClient } from "./client"
-import { Log } from "@/util"
+import * as Log from "@opencode-ai/core/util/log"
 
 const log = Log.create({ service: "singclaw" })
 
