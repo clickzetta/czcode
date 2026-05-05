@@ -29,6 +29,16 @@ function findRecentSkill(ctx: { extra?: Record<string, unknown> }): string | und
   }
   return undefined
 }
+
+function isSkillCausedError(errorMsg: string): boolean {
+  const msg = errorMsg.toLowerCase()
+  if (msg.includes("syntax error")) return true
+  if (msg.includes("function not found")) return true
+  if (msg.includes("czlh-42000")) return true
+  if (msg.includes("parseexception")) return true
+  if (msg.includes("analysisexception")) return true
+  return false
+}
 // czcode_change end
 
 const LakehouseConfigSchema = z.object({
@@ -292,8 +302,8 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
             // czcode_change start
             const skillName = findRecentSkill(ctx)
             const errorMsg = `查询失败: ${(err as Error).message}`
-            if (skillName) {
-              return { output: errorMsg, metadata: { skillName, failedSql: args.sql } }
+            if (skillName && isSkillCausedError((err as Error).message)) {
+              return { output: errorMsg, metadata: { skillName, failedSql: args.sql, failedError: (err as Error).message } }
             }
             // czcode_change end
             return errorMsg
@@ -368,8 +378,8 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
             // czcode_change start
             const skillName = findRecentSkill(ctx)
             const errorMsg = `执行失败: ${(err as Error).message}`
-            if (skillName) {
-              return { output: errorMsg, metadata: { skillName, failedSql: args.sql } }
+            if (skillName && isSkillCausedError((err as Error).message)) {
+              return { output: errorMsg, metadata: { skillName, failedSql: args.sql, failedError: (err as Error).message } }
             }
             // czcode_change end
             return errorMsg

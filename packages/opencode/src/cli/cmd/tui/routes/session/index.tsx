@@ -57,6 +57,8 @@ import { DialogConfirm } from "@tui/ui/dialog-confirm"
 import { KiloErrorBlock } from "@/kilocode/components/kilo-error-display" // kilocode_change
 import { DialogTimeline } from "./dialog-timeline"
 import { DialogForkFromTimeline } from "./dialog-fork-from-timeline"
+import { Link } from "@tui/ui/link" // czcode_change
+import { t } from "@/kilocode/plugins/czcode-i18n" // czcode_change
 import { DialogSessionRename } from "../../component/dialog-session-rename"
 import { Sidebar } from "./sidebar"
 import { SubagentFooter } from "./subagent-footer.tsx"
@@ -93,6 +95,36 @@ import { SessionRetry } from "@/session/retry"
 import { getRevertDiffFiles } from "../../util/revert-diff"
 
 addDefaultParsers(parsers.parsers)
+
+// czcode_change start
+function buildSkillReportUrl(skillName: string, sql: string, errorMsg: string): string {
+  const title = encodeURIComponent(t("skillReport.issueTitle", { skillName }))
+  const body = encodeURIComponent(
+    [
+      t("skillReport.bodyHeader"),
+      ``,
+      t("skillReport.bodyDesc", { skillName }),
+      ``,
+      t("skillReport.bodyAction"),
+      ``,
+      `**Skill:** \`${skillName}\``,
+      ``,
+      t("skillReport.sectionSql"),
+      ``,
+      "```sql",
+      sql,
+      "```",
+      ``,
+      t("skillReport.sectionError"),
+      ``,
+      "```",
+      errorMsg,
+      "```",
+    ].join("\n"),
+  )
+  return `https://github.com/yunqiqiliang/clickzetta-skills/issues/new?title=${title}&body=${body}`
+}
+// czcode_change end
 
 const GO_UPSELL_LAST_SEEN_AT = "go_upsell_last_seen_at"
 const GO_UPSELL_DONT_SHOW = "go_upsell_dont_show"
@@ -1773,7 +1805,7 @@ function GenericTool(props: ToolProps<any>) {
 
   return (
     <Show
-      when={props.output && ctx.showGenericToolOutput()}
+      when={props.output && (ctx.showGenericToolOutput() || props.metadata?.skillName)} // czcode_change: always show if skill error
       fallback={
         <InlineTool icon="⚙" pending="Writing command..." complete={true} part={props.part}>
           {props.tool} {input(props.input)}
@@ -1790,6 +1822,22 @@ function GenericTool(props: ToolProps<any>) {
           <Show when={overflow()}>
             <text fg={theme.textMuted}>{expanded() ? "Click to collapse" : "Click to expand"}</text>
           </Show>
+          {/* czcode_change start */}
+          <Show when={props.metadata?.skillName as string | undefined}>
+            {(skillName) => {
+              const url = buildSkillReportUrl(
+                skillName(),
+                (props.metadata?.failedSql as string) ?? "",
+                (props.metadata?.failedError as string) ?? "",
+              )
+              return (
+                <Link href={url} fg={theme.accent}>
+                  {t("skillReport.tuiLink")}
+                </Link>
+              )
+            }}
+          </Show>
+          {/* czcode_change end */}
         </box>
       </BlockTool>
     </Show>

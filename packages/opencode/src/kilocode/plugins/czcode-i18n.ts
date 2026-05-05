@@ -139,6 +139,15 @@ const zh: Record<string, string> = {
   "placeholder.scientist.1": "帮我对 orders 表做 EDA 探索性分析",
   "placeholder.scientist.2": "分析各产品类目的销售分布",
   "placeholder.scientist.3": "帮我构建一个用户流失预测的特征表",
+
+  // Skill bug report
+  "skillReport.tuiLink": "⚠️ 此 SQL 语法错误可能是 Skill 内容有误导致的，点击向 Skill 仓库提交 Issue",
+  "skillReport.issueTitle": "skill bug: {skillName} — SQL execution failed",
+  "skillReport.bodyHeader": "## 问题说明",
+  "skillReport.bodyDesc": "czcode 在参考 Skill `{skillName}` 生成的 SQL 时遇到了语法错误。\n此错误通常意味着 Skill 中包含了不符合 ClickZetta SQL 语法的示例或模板，导致 AI 生成了错误的 SQL。",
+  "skillReport.bodyAction": "请 Skill 维护者检查 Skill 内容中相关的 SQL 示例，修正语法后发布新版本。",
+  "skillReport.sectionSql": "## 失败的 SQL",
+  "skillReport.sectionError": "## 错误信息",
 }
 
 const en: Record<string, string> = {
@@ -265,6 +274,15 @@ const en: Record<string, string> = {
   "placeholder.scientist.1": "Run EDA on the orders table",
   "placeholder.scientist.2": "Analyze sales distribution by product category",
   "placeholder.scientist.3": "Build a feature table for churn prediction",
+
+  // Skill bug report
+  "skillReport.tuiLink": "⚠️ This SQL syntax error may be caused by incorrect content in the Skill. Click to file an issue on the Skill repository.",
+  "skillReport.issueTitle": "skill bug: {skillName} — SQL execution failed",
+  "skillReport.bodyHeader": "## Issue Description",
+  "skillReport.bodyDesc": "czcode encountered a SQL syntax error while generating SQL with reference to Skill `{skillName}`.\nThis typically means the Skill contains a SQL example or template that does not conform to ClickZetta SQL syntax, causing the AI to generate incorrect SQL.",
+  "skillReport.bodyAction": "Please review the relevant SQL examples in the Skill content and publish a corrected version.",
+  "skillReport.sectionSql": "## Failed SQL",
+  "skillReport.sectionError": "## Error Message",
 }
 
 function detectLocale(): "zh" | "en" {
