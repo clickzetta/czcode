@@ -543,6 +543,17 @@ export function patchAgents(
     mode: "primary",
     native: true,
   }
+
+  // Patch plan agent to allow skill reading for data-aware planning
+  if (agents.plan) {
+    agents.plan = {
+      ...agents.plan,
+      permission: Permission.merge(
+        agents.plan.permission ?? [],
+        Permission.fromConfig({ skill: "allow" }),
+      ),
+    }
+  }
   // czcode_change end
 }
 
