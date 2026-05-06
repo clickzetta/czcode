@@ -268,6 +268,7 @@ const CZ_LAKEHOUSE_SKILL_HINT = `## ClickZetta Lakehouse 开发规范
 
 | 场景 | Skill |
 |---|---|
+| ClickZetta 产品概念 | \`clickzetta-concepts\` |
 | 任何 ClickZetta SQL / DDL / DML | \`clickzetta-sql-syntax-guide\` |
 | Python SDK / ZettaPark / SQLAlchemy / JDBC | \`clickzetta-lakehouse-connect\` |
 | Kafka 数据接入 | \`clickzetta-kafka-ingest-pipeline\` |
