@@ -16,7 +16,7 @@ Fork chain: **opencode → kilocode → czcode**
 - **Typecheck**: `~/.bun/bin/bun turbo typecheck` (uses `tsgo`, not `tsc`)
 - **Test**: `~/.bun/bin/bun test` from `packages/opencode/` (NOT from root — root blocks tests)
 - **Single test**: `~/.bun/bin/bun test ./test/tool/tool-define.test.ts` from `packages/opencode/`
-- **czcode_change check**: `~/.bun/bin/bun run script/check-opencode-annotations.ts` from repo root. CI runs this on PRs touching `packages/opencode/` — every czcode-specific change in shared opencode files must be annotated with `czcode_change` markers. Exempt paths (no markers needed): `packages/opencode/src/kilocode/`, `packages/czcode-lakehouse/`, `script/upstream/`, and any path containing `kilocode` or `czcode` in the name.
+- **czcode_change check**: `~/.bun/bin/bun run script/check-opencode-annotations.ts` from repo root. CI runs this on PRs touching `packages/opencode/` — every czcode-specific change in shared files must be annotated with `czcode_change` markers. Note: this check may fail on upstream merge PRs (expected — upstream changes don't need czcode markers). Exempt paths (no markers needed): `packages/czcode-lakehouse/`, and czcode-only files (files with `czcode` in the name that don't exist in kilocode upstream).
 - **Upstream sync**: `~/.bun/bin/bun run script/upstream/list-versions.ts` to see available kilocode versions; `~/.bun/bin/bun run script/upstream/merge.ts v7.x.y` to merge.
 
 ## Quality Checks
@@ -141,7 +141,16 @@ We regularly merge upstream changes from kilocode. To minimize merge conflicts:
 
 ### czcode_change Markers
 
-Mark czcode-specific changes in shared code with `czcode_change` comments.
+czcode uses **two layers** of change markers corresponding to the fork chain:
+
+| Marker | Purpose | Used when |
+|---|---|---|
+| `kilocode_change` | Marks kilocode changes relative to opencode | Merging opencode → kilocode (upstream of us) |
+| `czcode_change` | Marks czcode changes relative to kilocode | Merging kilocode → czcode (our direct upstream) |
+
+**Rule: any code czcode modifies or adds that kilocode might also change needs a `czcode_change` marker.** This includes files inside `packages/opencode/src/kilocode/` — that directory is shared with kilocode upstream and will be overwritten during merges.
+
+Mark czcode-specific changes with `czcode_change` comments.
 
 **Single line:**
 
@@ -174,10 +183,20 @@ const bar = 2
 
 #### When markers are NOT needed
 
-- `packages/opencode/src/kilocode/` — kilocode-specific source
-- `packages/czcode-lakehouse/` — czcode Lakehouse plugin
-- `script/upstream/` — upstream sync tooling
-- Any path containing `kilocode` or `czcode` in filename or directory name
+Files in these paths are **entirely czcode additions** that do not exist in kilocode upstream, so they will never conflict during merges:
+
+- `packages/czcode-lakehouse/` — czcode Lakehouse plugin (czcode-only package)
+- `packages/opencode/src/kilocode/plugins/czcode-*.tsx` — czcode TUI plugins (czcode-only files)
+- `packages/opencode/src/kilocode/singclaw/` — SingClaw integration (czcode-only directory)
+- `packages/opencode/src/agent/prompt/lh-*.txt` — Lakehouse agent prompts (czcode-only files)
+- Any file with `czcode` in its filename
+
+#### When markers ARE needed (even in kilocode directories)
+
+- `packages/opencode/src/kilocode/agent/index.ts` — shared with kilocode, czcode adds lh-* agents
+- `packages/opencode/src/kilocode/config/config.ts` — shared with kilocode, czcode adds .czcode paths
+- Any other file in `packages/opencode/src/kilocode/` that **already exists in kilocode upstream**
+- `script/upstream/` files that czcode modifies (e.g. `transform-package-json.ts`)
 
 ## Commit Conventions
 
