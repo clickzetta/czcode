@@ -259,6 +259,28 @@ export function telemetryOptions(_cfg: Config.Info) {
 // - Patch explore with codebase_search and conditional prompt
 // - Patch appropriate agents with semantic_search
 // - Add debug, orchestrator, ask agents
+// czcode_change start
+// Injected into code/plan agents so they load the correct ClickZetta skill
+// before writing any SQL or ClickZetta-specific code.
+const CZ_LAKEHOUSE_SKILL_HINT = `## ClickZetta Lakehouse 开发规范
+
+在编写任何涉及 ClickZetta Lakehouse 的代码或 SQL 之前，必须先加载对应的 Skill：
+
+| 场景 | Skill |
+|---|---|
+| 任何 ClickZetta SQL / DDL / DML | \`clickzetta-sql-syntax-guide\` |
+| Python SDK / ZettaPark / SQLAlchemy / JDBC | \`clickzetta-lakehouse-connect\` |
+| Kafka 数据接入 | \`clickzetta-kafka-ingest-pipeline\` |
+| OSS/S3/COS 数据导入 | \`clickzetta-oss-ingest-pipeline\` |
+| CDC / 实时同步 | \`clickzetta-cdc-sync-pipeline\` |
+| 批量同步 | \`clickzetta-batch-sync-pipeline\` |
+| Dynamic Table / Stream | \`clickzetta-sql-pipeline-manager\` |
+| 索引管理 | \`clickzetta-index-manager\` |
+| 数仓建模 | \`clickzetta-dw-modeling\` |
+
+**不要假设 ClickZetta 与 Snowflake / Spark SQL 语法相同**，两者存在重要差异（隐式类型转换、DDL 语法、函数名等）。先加载 Skill，再写代码。`
+// czcode_change end
+
 export function patchAgents(
   agents: Record<
     string,
@@ -297,6 +319,9 @@ export function patchAgents(
         user,
         Permission.fromConfig({ semantic_search: "allow" }),
       ),
+      // czcode_change start - add Lakehouse skill guidance for code agent
+      prompt: (agents.build.prompt ? agents.build.prompt + "\n\n" : "") + CZ_LAKEHOUSE_SKILL_HINT,
+      // czcode_change end
     }
     delete agents.build
   }
@@ -312,6 +337,9 @@ export function patchAgents(
         planGuard(kilo.mcpRules),
         user.filter((r: Permission.Rule) => r.action === "deny"),
       ),
+      // czcode_change start - add Lakehouse skill guidance for plan agent
+      prompt: (agents.plan.prompt ? agents.plan.prompt + "\n\n" : "") + CZ_LAKEHOUSE_SKILL_HINT,
+      // czcode_change end
     }
   }
 
