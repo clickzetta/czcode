@@ -150,124 +150,6 @@ czcode 会自动读取当前目录下的 `.env` 文件加载 Lakehouse 连接配
 
 ---
 
-## 三个页面
-
-czcode 有三个主要页面，不同页面能做的事差别很大。
-
-### 欢迎页（启动后的默认页面）
-
-启动 czcode 后首先看到的是欢迎页。在这里你可以：
-
-- **开始新对话**：在输入框输入任何内容，按 Enter 进入对话页
-- **恢复历史对话**：输入 `/sessions` 浏览并恢复之前的对话
-- **切换角色**：按 **Tab 键**循环切换，或输入 `/agents`（所有角色）/ `/cz_role`（数据角色）
-- **切换模型**：输入 `/models`
-- **切换主题**：输入 `/themes`
-
-> 欢迎页没有活跃的 AI 会话，**数据查询类命令在此无法使用**。
-
-### 对话页（AI 工作的主战场）
-
-在欢迎页输入内容后进入对话页。这里是 czcode 的核心，所有 AI 能力都在这里发挥：
-
-- **自然语言对话**：直接描述需求，AI 生成 SQL 并执行，结果以表格展示
-- **工具执行**：AI 可以查询 Lakehouse、读写文件、执行命令
-- **数据探查命令**（仅对话页可用，在欢迎页执行会提示"请先进入对话"）：
-
-| 命令 | 说明 |
-|------|------|
-| `/cz_sample` | 快速采样：输入表名，执行 `SELECT * LIMIT 5` |
-| `/cz_count` | 行数统计：查看表的总行数 |
-| `/cz_profile` | 数据画像：分析每列的 NULL 比例、唯一值、最大最小值 |
-| `/cz_vcluster` | VCluster 状态：查看所有 VCluster 的运行状态 |
-| `/cz_sql_history` | SQL 历史：浏览本次会话的 SQL 执行记录，选中即复制 |
-
-右侧边栏实时显示 Lakehouse 连接状态（Workspace / Schema / VCluster / User）、Schemas 列表和 VCluster 状态。
-
-### SingClaw 页（本地 AI 服务对话）
-
-输入 `/cz_singclaw` 从任意页面进入 SingClaw 页。[SingClaw](https://www.singclaw.ai/documents/introduction) 是一款本地运行的 AI 数据分析 Agent（Mac/Windows 桌面应用），数据不出本地，适合对数据隐私有要求的场景：
-
-- 与本地 SingClaw 服务进行流式对话
-- 从**对话页**进入时，自动携带当前会话的上下文（最近的 SQL 和数据结果）
-- 从**欢迎页**进入时，为纯对话模式，无会话上下文
-- 对话结束后按 **Esc** 返回原来的页面
-
-> 使用前需要在本地启动 SingClaw（openclaw-gateway），默认连接 `localhost:9999`。详见 [SingClaw 文档](https://www.singclaw.ai/documents/introduction)。
-
----
-
-## 数据角色
-
-czcode 内置 5 个数据角色 + ask 角色，共 6 个，在输入框按 **Tab 键**循环切换，或输入 `/cz_role` 弹出选择列表：
-
-| 角色 | 说明 | 权限 |
-|---|---|---|
-| 数据分析师（默认） | 查询/报表/数据质量探查/BI 连接 | 仅 SELECT，工具层强制只读 |
-| 数据工程师 | 建表/建模/ETL/Pipeline/调度/指标管理 | DDL + DML + SELECT，写操作需确认 |
-| 数据科学家 | Python/Jupyter/EDA/特征工程/模型推理 | 写操作需确认 |
-| 数据运维 | VCluster 管理/查询调优/作业监控/费用分析 | DDL + VCluster ops，写操作需确认 |
-| 数据治理 | 权限/安全/生命周期/合规/共享 | GRANT/REVOKE/POLICY，写操作需确认 |
-| ask | 快速问答，不执行工具，仅对话 | 只读，不调用任何工具 |
-
-> 切换到 Code/Plan/Debug 等通用开发角色后，可进行与 Lakehouse 无关的软件开发任务，详见上方"场景三"。
-
----
-
-## 主要功能
-
-### 自然语言查询
-直接用中文描述需求，czcode 生成 SQL 并执行：
-- SELECT 查询直接执行，结果以表格展示，附带执行耗时（⏱ 1.2s）
-- DDL/DML 操作弹窗确认，危险操作（DROP/TRUNCATE）显示目标表大小、行数、最后修改时间
-
-### 快捷命令
-
-| 命令 | 别名 | 功能 |
-|------|------|------|
-| `/agents` | — | 角色切换：弹出完整列表，切换所有角色（数据角色 + code/plan/debug/ask） |
-| `/cz_role` | `/cz_r` | 角色切换：仅显示数据角色列表 |
-| `/cz_sample` | `/cz_s` | 快速采样：输入表名，自动执行 `SELECT * FROM table LIMIT 5`（仅对话页） |
-| `/cz_count` | `/cz_c` | 行数统计：一键查看表的总行数（仅对话页） |
-| `/cz_profile` | `/cz_p` | 数据画像：自动分析每列的 NULL 比例、唯一值、最大最小值（仅对话页） |
-| `/cz_vcluster` | `/cz_vc` | VCluster 状态：查看所有 VCluster 的运行状态和规格（仅对话页） |
-| `/cz_sql_history` | `/cz_sh` | SQL 历史：浏览当前会话的 SQL 执行记录，选中即复制到剪贴板（仅对话页） |
-| `/cz_singclaw` | `/singclaw` | SingClaw：连接本地 SingClaw 服务进行对话 |
-| `/cz_skill-update` | — | 更新 ClickZetta 领域知识（Skills） |
-| `/cz_skill-fix` | — | 修正 Skill 内容错误 |
-
-### 数仓建模向导
-
-切换到数据工程师角色后，输入"帮我设计数仓分层"，czcode 会：
-1. 自动探索你的数据（SHOW SCHEMAS/TABLES，查表大小）
-2. 给出具体的分层方案选项（传统分层 / Medallion / 混合）
-3. 生成 DDL 模板和数据管道配置
-
-### DDL 确认增强
-
-执行危险操作（DROP/TRUNCATE/ALTER/DELETE）时，确认弹窗会额外显示：
-- 目标表大小（MB）
-- 行数
-- 最后修改时间
-- 支持 UNDROP 的对象会提示恢复命令
-
-### Skills（领域知识）
-
-czcode 内置 31 个 ClickZetta Lakehouse 领域 Skill，覆盖 SQL 语法、数据导入、索引管理、VCluster 运维等场景。Skills 随安装包一起分发，无需网络即可使用。
-
-更新 Skills：
-```
-/cz_skill-update
-```
-
-> **国内用户注意**：Skills 更新需要访问 GitHub。如无法访问，请配置代理（如 `export https_proxy=http://127.0.0.1:7890`）后再运行。
-
-报告 Skill 问题：
-- 在对话中运行 `/cz_skill-fix` 写入本地修正
-- 或到 GitHub 提交 Issue：[报告问题](https://github.com/yunqiqiliang/clickzetta-skills/issues/new?template=skill-bug.yml) | [提改进建议](https://github.com/yunqiqiliang/clickzetta-skills/issues/new?template=skill-enhancement.yml)
-
----
-
 ## 配置说明
 
 czcode 有两层配置，优先级从高到低：
@@ -420,6 +302,124 @@ https://<region>.api.clickzetta.com/<workspace>/<endpoint-name>
 - 切换模型只需改 `"model"` 字段中的模型名，无需改 URL
 
 > 详见 [云器 AI Gateway 文档](https://yunqi.tech/documents/AI_Gateway)
+
+---
+
+## 三个页面
+
+czcode 有三个主要页面，不同页面能做的事差别很大。
+
+### 欢迎页（启动后的默认页面）
+
+启动 czcode 后首先看到的是欢迎页。在这里你可以：
+
+- **开始新对话**：在输入框输入任何内容，按 Enter 进入对话页
+- **恢复历史对话**：输入 `/sessions` 浏览并恢复之前的对话
+- **切换角色**：按 **Tab 键**循环切换，或输入 `/agents`（所有角色）/ `/cz_role`（数据角色）
+- **切换模型**：输入 `/models`
+- **切换主题**：输入 `/themes`
+
+> 欢迎页没有活跃的 AI 会话，**数据查询类命令在此无法使用**。
+
+### 对话页（AI 工作的主战场）
+
+在欢迎页输入内容后进入对话页。这里是 czcode 的核心，所有 AI 能力都在这里发挥：
+
+- **自然语言对话**：直接描述需求，AI 生成 SQL 并执行，结果以表格展示
+- **工具执行**：AI 可以查询 Lakehouse、读写文件、执行命令
+- **数据探查命令**（仅对话页可用，在欢迎页执行会提示"请先进入对话"）：
+
+| 命令 | 说明 |
+|------|------|
+| `/cz_sample` | 快速采样：输入表名，执行 `SELECT * LIMIT 5` |
+| `/cz_count` | 行数统计：查看表的总行数 |
+| `/cz_profile` | 数据画像：分析每列的 NULL 比例、唯一值、最大最小值 |
+| `/cz_vcluster` | VCluster 状态：查看所有 VCluster 的运行状态 |
+| `/cz_sql_history` | SQL 历史：浏览本次会话的 SQL 执行记录，选中即复制 |
+
+右侧边栏实时显示 Lakehouse 连接状态（Workspace / Schema / VCluster / User）、Schemas 列表和 VCluster 状态。
+
+### SingClaw 页（本地 AI 服务对话）
+
+输入 `/cz_singclaw` 从任意页面进入 SingClaw 页。[SingClaw](https://www.singclaw.ai/documents/introduction) 是一款本地运行的 AI 数据分析 Agent（Mac/Windows 桌面应用），数据不出本地，适合对数据隐私有要求的场景：
+
+- 与本地 SingClaw 服务进行流式对话
+- 从**对话页**进入时，自动携带当前会话的上下文（最近的 SQL 和数据结果）
+- 从**欢迎页**进入时，为纯对话模式，无会话上下文
+- 对话结束后按 **Esc** 返回原来的页面
+
+> 使用前需要在本地启动 SingClaw（openclaw-gateway），默认连接 `localhost:9999`。详见 [SingClaw 文档](https://www.singclaw.ai/documents/introduction)。
+
+---
+
+## 数据角色
+
+czcode 内置 5 个数据角色 + ask 角色，共 6 个，在输入框按 **Tab 键**循环切换，或输入 `/cz_role` 弹出选择列表：
+
+| 角色 | 说明 | 权限 |
+|---|---|---|
+| 数据分析师（默认） | 查询/报表/数据质量探查/BI 连接 | 仅 SELECT，工具层强制只读 |
+| 数据工程师 | 建表/建模/ETL/Pipeline/调度/指标管理 | DDL + DML + SELECT，写操作需确认 |
+| 数据科学家 | Python/Jupyter/EDA/特征工程/模型推理 | 写操作需确认 |
+| 数据运维 | VCluster 管理/查询调优/作业监控/费用分析 | DDL + VCluster ops，写操作需确认 |
+| 数据治理 | 权限/安全/生命周期/合规/共享 | GRANT/REVOKE/POLICY，写操作需确认 |
+| ask | 快速问答，不执行工具，仅对话 | 只读，不调用任何工具 |
+
+> 切换到 Code/Plan/Debug 等通用开发角色后，可进行与 Lakehouse 无关的软件开发任务，详见上方"场景三"。
+
+---
+
+## 主要功能
+
+### 自然语言查询
+直接用中文描述需求，czcode 生成 SQL 并执行：
+- SELECT 查询直接执行，结果以表格展示，附带执行耗时（⏱ 1.2s）
+- DDL/DML 操作弹窗确认，危险操作（DROP/TRUNCATE）显示目标表大小、行数、最后修改时间
+
+### 快捷命令
+
+| 命令 | 别名 | 功能 |
+|------|------|------|
+| `/agents` | — | 角色切换：弹出完整列表，切换所有角色（数据角色 + code/plan/debug/ask） |
+| `/cz_role` | `/cz_r` | 角色切换：仅显示数据角色列表 |
+| `/cz_sample` | `/cz_s` | 快速采样：输入表名，自动执行 `SELECT * FROM table LIMIT 5`（仅对话页） |
+| `/cz_count` | `/cz_c` | 行数统计：一键查看表的总行数（仅对话页） |
+| `/cz_profile` | `/cz_p` | 数据画像：自动分析每列的 NULL 比例、唯一值、最大最小值（仅对话页） |
+| `/cz_vcluster` | `/cz_vc` | VCluster 状态：查看所有 VCluster 的运行状态和规格（仅对话页） |
+| `/cz_sql_history` | `/cz_sh` | SQL 历史：浏览当前会话的 SQL 执行记录，选中即复制到剪贴板（仅对话页） |
+| `/cz_singclaw` | `/singclaw` | SingClaw：连接本地 SingClaw 服务进行对话 |
+| `/cz_skill-update` | — | 更新 ClickZetta 领域知识（Skills） |
+| `/cz_skill-fix` | — | 修正 Skill 内容错误 |
+
+### 数仓建模向导
+
+切换到数据工程师角色后，输入"帮我设计数仓分层"，czcode 会：
+1. 自动探索你的数据（SHOW SCHEMAS/TABLES，查表大小）
+2. 给出具体的分层方案选项（传统分层 / Medallion / 混合）
+3. 生成 DDL 模板和数据管道配置
+
+### DDL 确认增强
+
+执行危险操作（DROP/TRUNCATE/ALTER/DELETE）时，确认弹窗会额外显示：
+- 目标表大小（MB）
+- 行数
+- 最后修改时间
+- 支持 UNDROP 的对象会提示恢复命令
+
+### Skills（领域知识）
+
+czcode 内置 31 个 ClickZetta Lakehouse 领域 Skill，覆盖 SQL 语法、数据导入、索引管理、VCluster 运维等场景。Skills 随安装包一起分发，无需网络即可使用。
+
+更新 Skills：
+```
+/cz_skill-update
+```
+
+> **国内用户注意**：Skills 更新需要访问 GitHub。如无法访问，请配置代理（如 `export https_proxy=http://127.0.0.1:7890`）后再运行。
+
+报告 Skill 问题：
+- 在对话中运行 `/cz_skill-fix` 写入本地修正
+- 或到 GitHub 提交 Issue：[报告问题](https://github.com/yunqiqiliang/clickzetta-skills/issues/new?template=skill-bug.yml) | [提改进建议](https://github.com/yunqiqiliang/clickzetta-skills/issues/new?template=skill-enhancement.yml)
 
 ---
 
