@@ -468,9 +468,10 @@ export function patchAgents(
   })
 
   // Full Lakehouse tool set (read + write, no file system write)
+  // write_query is "ask" so dangerous DDL/DML requires user confirmation
   const lakehouseTools = Permission.fromConfig({
     read_query: "allow",
-    write_query: "allow",
+    write_query: "ask",
     list_objects: "allow",
     describe_object: "allow",
     explain_query: "allow",
