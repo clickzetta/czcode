@@ -49,7 +49,7 @@ ClickZetta 的 SHOW/DESC 命令**不是标准 SQL**，不支持以下通用 SQL 
 |---|---|
 | `SHOW ... ORDER BY ...` | SHOW 命令不支持 ORDER BY |
 | `SHOW ... LIMIT n` (部分命令) | `SHOW CREATE TABLE` 不支持 LIMIT；`SHOW TABLES` 支持 |
-| `SELECT FROM (SHOW ...)` | SHOW 命令不能作为子查询 |
+| `SELECT FROM (SHOW ...)` | 大多数 SHOW 命令支持子查询；仅 `SHOW CREATE TABLE` 不支持 |
 | `SHOW TBLPROPERTIES table` | 不存在此命令，用 `SHOW CREATE TABLE` 查看属性 |
 | `SHOW DYNAMIC TABLES` | 不存在此命令，用 `SHOW TABLES WHERE is_dynamic` |
 | `ALTER DYNAMIC TABLE ... SET REFRESH INTERVAL` | 不支持，必须用 `CREATE OR REPLACE` 重建 |
