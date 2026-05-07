@@ -52,6 +52,11 @@ ClickZetta 的 SHOW/DESC 命令**不是标准 SQL**，不支持以下通用 SQL 
 **SHOW DYNAMIC TABLE REFRESH HISTORY**：
 - 用 `WHERE name = 'dt_name'` 过滤（不是 `FOR dt_name`）
 - 支持 `LIMIT`，不支持 `ORDER BY`
+
+**information_schema.columns 列名**：
+- 可用列：`column_name`, `data_type`, `is_nullable`, `is_primary_key`, `is_clustering_column`, `comment`
+- ❌ 不存在：`ordinal_position`, `column_default`, `character_maximum_length`
+- 排序用 `ORDER BY column_name`（不是 `ORDER BY ordinal_position`）
    - Schema 错误（表找不到）→ 先用 `list_objects` 重新确认表名，再修复重试
 
 2. **修复原则**：保持原始查询意图不变，只修正语法或对象名错误
