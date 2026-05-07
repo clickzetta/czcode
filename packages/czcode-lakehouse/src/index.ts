@@ -287,16 +287,17 @@ function buildShowSql(
     return { sql: withLimit(filtered), countSql: filtered }
   }
 
-  // GRANT — show grants for user or role
+  // GRANT — show grants, no LIKE/WHERE support
+  // parent syntax: "ON TABLE schema.table" / "ON SCHEMA schema" / "TO USER name" / "TO ROLE name"
   if (t === "GRANT") {
-    const base = parent ? `SHOW GRANTS TO ${parent}` : "SHOW GRANTS"
+    const base = parent ? `SHOW GRANTS ${parent}` : "SHOW GRANTS"
     return { sql: withLimit(base), countSql: base }
   }
 
-  // TABLE_HISTORY — show deleted tables history (for UNDROP)
+  // TABLE_HISTORY — WHERE ✅ (table_name), LIKE ❌ — for UNDROP recovery
   if (t === "TABLE_HISTORY") {
     const base = parent ? `SHOW TABLES HISTORY IN ${parent}` : "SHOW TABLES HISTORY"
-    const filtered = filter ? `${base} LIKE '%${filter}%'` : base
+    const filtered = filter ? `${base} WHERE table_name LIKE '%${filter}%'` : base
     return { sql: withLimit(filtered), countSql: filtered }
   }
 
@@ -550,7 +551,8 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
             "user/role/share/connection/catalog/synonym/index/partition/column/job/grant/table_history"
           ),
           parent: z.string().optional().describe(
-            "父对象名称：schema 名（用于 table/view 等）、表名（用于 index/partition/column）、vcluster 名（用于 job）"
+            "父对象名称：schema 名（用于 table/view 等）、表名（用于 index/partition/column）、vcluster 名（用于 job）；" +
+            "grant 类型时 parent 格式为 'ON TABLE schema.t' / 'ON SCHEMA s' / 'TO USER u' / 'TO ROLE r'"
           ),
           filter: z.string().optional().describe("按名称过滤（LIKE 模式，如 'order' 匹配含 order 的对象）"),
           limit: z.number().int().min(1).max(200).default(50).describe("最大返回数量（默认 50）"),
