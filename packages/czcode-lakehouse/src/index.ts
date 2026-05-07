@@ -287,11 +287,11 @@ function buildShowSql(
     return { sql: withLimit(filtered), countSql: filtered }
   }
 
-  // GRANT — show grants, no LIKE/WHERE support
+  // GRANT — show grants, no LIKE/WHERE support, NO LIMIT (syntax error)
   // parent syntax: "ON TABLE schema.table" / "ON SCHEMA schema" / "TO USER name" / "TO ROLE name"
   if (t === "GRANT") {
     const base = parent ? `SHOW GRANTS ${parent}` : "SHOW GRANTS"
-    return { sql: withLimit(base), countSql: base }
+    return { sql: base, countSql: base }  // NO LIMIT — SHOW GRANTS doesn't support it
   }
 
   // TABLE_HISTORY — WHERE ✅ (table_name), LIKE ❌ — for UNDROP recovery
@@ -306,11 +306,10 @@ function buildShowSql(
     return { sql: withLimit("SHOW USERS"), countSql: "SHOW USERS" }
   }
 
-  // FUNCTION (built-in) — LIKE ✅, WHERE ❌
+  // FUNCTION (built-in) — LIKE ❌ (SHOW FUNCTIONS has no LIKE support), WHERE ❌
+  // Use external_function type for user-defined functions (supports LIKE)
   if (t === "FUNCTION") {
-    const base = "SHOW FUNCTIONS"
-    const filtered = filter ? `${base} LIKE '%${filter}%'` : base
-    return { sql: withLimit(filtered), countSql: filtered }
+    return { sql: withLimit("SHOW FUNCTIONS"), countSql: "SHOW FUNCTIONS" }
   }
 
   // TABLE and table-like types (VIEW/DT/MV/EXTERNAL) — use SHOW TABLES WHERE
@@ -616,9 +615,16 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
         async execute(args) {
           try {
             const { sql, countSql } = buildShowSql(args.type, args.parent, args.limit, args.filter)
-            const result = await connector.execute(sql, args.limit)
+            let result
+            try {
+              result = await connector.execute(sql, args.limit)
+            } catch (err) {
+              const msg = (err as Error).message
+              // Friendly message for common expected errors
+              if (msg.includes("not a partitioned table")) return `表 ${args.parent} 没有分区。`
+              throw err
+            }
             if (result.rowCount === 0) return `没有找到 ${args.type} 对象。`
-
             // Get total count without LIMIT (run countSql without limit)
             let total = result.rowCount
             if (result.truncated) {
@@ -631,8 +637,9 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
             }
 
             // Extract name column from result
-            const nameKeys = ["name", "table_name", "schema_name", "vcluster_name", "function_name",
-              "share_name", "synonym_name", "pipe_name", "column_name", "partition_name"]
+            const nameKeys = ["job_id", "column_name", "name", "table_name", "schema_name",
+              "vcluster_name", "function_name", "share_name", "synonym_name", "pipe_name",
+              "partition_name", "grantee_name"]
             const names = result.rows.map((row) => {
               for (const k of nameKeys) {
                 if (row[k]) return String(row[k])
