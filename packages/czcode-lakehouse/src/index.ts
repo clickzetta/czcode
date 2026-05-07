@@ -145,23 +145,112 @@ function extractTargetObject(sql: string): { name: string; schema?: string } | n
   return null
 }
 
-// Build SHOW SQL for list_objects, handling ClickZetta-specific quirks:
-// - VIEWS/DYNAMIC TABLES/MATERIALIZED VIEWS use SHOW TABLES WHERE is_xxx=true
-// - VOLUMES does not support IN SCHEMA, use WHERE workspace_name instead
-// - SEMANTIC VIEWS use SHOW SEMANTIC VIEWS
+// Build SHOW SQL for list_objects, handling ClickZetta-specific quirks.
+// Returns { sql, countSql } where countSql is used to get total count without LIMIT.
+// Based on official docs: https://yunqi.tech/documents/show
 function buildShowSql(
   type: string,
   parent?: string,
   limit = 100,
-): string {
+  filter?: string,
+): { sql: string; countSql: string } {
   const t = type.toUpperCase()
 
-  if (t === "SEMANTIC_VIEW") {
-    const base = parent ? `SHOW SEMANTIC VIEWS IN ${parent}` : "SHOW SEMANTIC VIEWS"
-    return `${base} LIMIT ${limit}`
+  // Helper: append LIKE or WHERE filter to a base SQL
+  const withFilter = (base: string, existingWhere?: string): string => {
+    if (!filter) return base
+    // Types that support WHERE on name field
+    const whereNameField: Record<string, string> = {
+      TABLE: "table_name", VIEW: "table_name", DYNAMIC_TABLE: "table_name",
+      MATERIALIZED_VIEW: "table_name", EXTERNAL_TABLE: "table_name",
+      STREAM: "name", TABLE_STREAM: "name",
+      VCLUSTER: "name", CONNECTION: "name", SHARE: "share_name",
+      SYNONYM: "synonym_name", PIPE: "pipe_name", SCHEMA: "schema_name",
+      VOLUME: "name",
+    }
+    const nameField = whereNameField[t]
+    if (nameField && existingWhere) {
+      return `${base} AND ${nameField} LIKE '%${filter}%'`
+    }
+    if (nameField) {
+      return `${base} WHERE ${nameField} LIKE '%${filter}%'`
+    }
+    // Fallback: LIKE on name (for ROLE, USER, FUNCTION, etc.)
+    return `${base} LIKE '%${filter}%'`
   }
 
-  // These types don't have their own SHOW command — use SHOW TABLES WHERE
+  const withLimit = (s: string) => `${s} LIMIT ${limit}`
+
+  // SEMANTIC_VIEW
+  if (t === "SEMANTIC_VIEW") {
+    const base = parent ? `SHOW SEMANTIC VIEWS IN ${parent}` : "SHOW SEMANTIC VIEWS"
+    const filtered = withFilter(base)
+    return { sql: withLimit(filtered), countSql: filtered }
+  }
+
+  // INDEX — requires parent (table name)
+  if (t === "INDEX") {
+    const base = parent ? `SHOW INDEXES FROM ${parent}` : "SHOW INDEXES"
+    return { sql: withLimit(base), countSql: base }
+  }
+
+  // PARTITION — requires parent (table name), no IN keyword
+  if (t === "PARTITION") {
+    const base = parent ? `SHOW PARTITIONS ${parent}` : "SHOW PARTITIONS"
+    return { sql: withLimit(base), countSql: base }
+  }
+
+  // COLUMN — requires parent (table name)
+  if (t === "COLUMN") {
+    const base = parent ? `SHOW COLUMNS IN ${parent}` : "SHOW COLUMNS"
+    return { sql: withLimit(base), countSql: base }
+  }
+
+  // JOB — parent is vcluster name
+  if (t === "JOB") {
+    const base = parent ? `SHOW JOBS IN VCLUSTER ${parent}` : "SHOW JOBS"
+    const filtered = withFilter(base)
+    return { sql: withLimit(filtered), countSql: filtered }
+  }
+
+  // EXTERNAL_FUNCTION
+  if (t === "EXTERNAL_FUNCTION") {
+    const base = "SHOW EXTERNAL FUNCTIONS"
+    const filtered = filter ? `${base} LIKE '%${filter}%'` : base
+    return { sql: withLimit(filtered), countSql: filtered }
+  }
+
+  // SYNONYM
+  if (t === "SYNONYM") {
+    const base = parent ? `SHOW SYNONYMS IN ${parent}` : "SHOW SYNONYMS"
+    const filtered = withFilter(base)
+    return { sql: withLimit(filtered), countSql: filtered }
+  }
+
+  // PIPE
+  if (t === "PIPE") {
+    const base = parent ? `SHOW PIPES IN ${parent}` : "SHOW PIPES"
+    const filtered = withFilter(base)
+    return { sql: withLimit(filtered), countSql: filtered }
+  }
+
+  // TABLE STREAM
+  if (t === "STREAM" || t === "TABLE_STREAM") {
+    const base = parent ? `SHOW TABLE STREAMS IN ${parent}` : "SHOW TABLE STREAMS"
+    const filtered = withFilter(base)
+    return { sql: withLimit(filtered), countSql: filtered }
+  }
+
+  // VOLUME: WHERE syntax for filter, workspace_name for parent
+  if (t === "VOLUME") {
+    const parts: string[] = []
+    if (parent) parts.push(`workspace_name='${parent}'`)
+    if (filter) parts.push(`name LIKE '%${filter}%'`)
+    const base = parts.length > 0 ? `SHOW VOLUMES WHERE ${parts.join(" AND ")}` : "SHOW VOLUMES"
+    return { sql: withLimit(base), countSql: base }
+  }
+
+  // TABLE and table-like types (VIEW/DT/MV/EXTERNAL) — use SHOW TABLES WHERE
   const tableWhereMap: Record<string, string> = {
     VIEW: "is_view=true",
     DYNAMIC_TABLE: "is_dynamic=true",
@@ -169,32 +258,28 @@ function buildShowSql(
     EXTERNAL_TABLE: "is_external=true",
   }
   if (tableWhereMap[t]) {
-    const where = tableWhereMap[t]
-    if (parent) {
-      return `SHOW TABLES IN ${parent} WHERE ${where} LIMIT ${limit}`
-    }
-    return `SHOW TABLES WHERE ${where} LIMIT ${limit}`
+    const typeWhere = tableWhereMap[t]
+    const filterClause = filter ? ` AND table_name LIKE '%${filter}%'` : ""
+    const base = parent
+      ? `SHOW TABLES IN ${parent} WHERE ${typeWhere}${filterClause}`
+      : `SHOW TABLES WHERE ${typeWhere}${filterClause}`
+    return { sql: withLimit(base), countSql: base }
   }
 
-  // TABLE: exclude all special types
   if (t === "TABLE") {
-    const where = "is_view=false AND is_dynamic=false AND is_materialized_view=false AND is_external=false"
-    if (parent) {
-      return `SHOW TABLES IN ${parent} WHERE ${where} LIMIT ${limit}`
-    }
-    return `SHOW TABLES WHERE ${where} LIMIT ${limit}`
+    const typeWhere = "is_view=false AND is_dynamic=false AND is_materialized_view=false AND is_external=false"
+    const filterClause = filter ? ` AND table_name LIKE '%${filter}%'` : ""
+    const base = parent
+      ? `SHOW TABLES IN ${parent} WHERE ${typeWhere}${filterClause}`
+      : `SHOW TABLES WHERE ${typeWhere}${filterClause}`
+    return { sql: withLimit(base), countSql: base }
   }
 
-  // VOLUME: does not support IN SCHEMA syntax
-  if (t === "VOLUME") {
-    const base = parent ? `SHOW VOLUMES WHERE workspace_name='${parent}'` : "SHOW VOLUMES"
-    return `${base} LIMIT ${limit}`
-  }
-
-  // Standard: SHOW <TYPE>S [IN <parent>] LIMIT n
+  // Standard: SHOW <TYPE>S [IN <parent>] [LIKE '%filter%'] LIMIT n
   const plural = t.endsWith("S") ? t : `${t}S`
   const base = parent ? `SHOW ${plural} IN ${parent}` : `SHOW ${plural}`
-  return `${base} LIMIT ${limit}`
+  const filtered = filter ? `${base} LIKE '%${filter}%'` : base
+  return { sql: withLimit(filtered), countSql: filtered }
 }
 
 // Build DESC SQL for describe_object, handling ClickZetta-specific quirks:
@@ -391,31 +476,54 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
         description:
           "列出 ClickZetta Lakehouse 中的对象。" +
           "支持类型：schema/table/view/dynamic_table/materialized_view/external_table/" +
-          "pipe/stream/semantic_view/volume/vcluster/function/user/role/share/connection/catalog。" +
-          "注意：view/dynamic_table/materialized_view 内部使用 SHOW TABLES WHERE 过滤，" +
+          "pipe/stream/semantic_view/volume/vcluster/function/external_function/" +
+          "user/role/share/connection/catalog/synonym/index/partition/column/job。" +
+          "注意：view/dynamic_table/materialized_view/external_table 内部使用 SHOW TABLES WHERE 过滤；" +
+          "index/partition/column/job 需要 parent 参数（表名或 vcluster 名）；" +
           "volume 不支持 IN SCHEMA 语法。",
         args: {
           type: z.string().describe(
             "对象类型（小写）：schema/table/view/dynamic_table/materialized_view/" +
-            "external_table/pipe/stream/semantic_view/volume/vcluster/function/user/role/share/connection/catalog"
+            "external_table/pipe/stream/semantic_view/volume/vcluster/function/external_function/" +
+            "user/role/share/connection/catalog/synonym/index/partition/column/job"
           ),
-          parent: z.string().optional().describe("父对象名称，如 schema 名"),
+          parent: z.string().optional().describe(
+            "父对象名称：schema 名（用于 table/view 等）、表名（用于 index/partition/column）、vcluster 名（用于 job）"
+          ),
+          filter: z.string().optional().describe("按名称过滤（LIKE 模式，如 'order' 匹配含 order 的对象）"),
           limit: z.number().int().min(1).max(200).default(50).describe("最大返回数量（默认 50）"),
         },
         async execute(args) {
           try {
-            const sql = buildShowSql(args.type, args.parent, args.limit)
+            const { sql, countSql } = buildShowSql(args.type, args.parent, args.limit, args.filter)
             const result = await connector.execute(sql, args.limit)
             if (result.rowCount === 0) return `没有找到 ${args.type} 对象。`
+
+            // Get total count without LIMIT (run countSql without limit)
+            let total = result.rowCount
+            if (result.truncated) {
+              try {
+                const countResult = await connector.execute(countSql, 10000)
+                total = countResult.rowCount
+              } catch {
+                // ignore count errors
+              }
+            }
+
             // Extract name column from result
-            const nameKeys = ["name", "table_name", "schema_name", "vcluster_name", "function_name"]
+            const nameKeys = ["name", "table_name", "schema_name", "vcluster_name", "function_name",
+              "share_name", "synonym_name", "pipe_name", "column_name", "partition_name"]
             const names = result.rows.map((row) => {
               for (const k of nameKeys) {
                 if (row[k]) return String(row[k])
               }
               return Object.values(row)[0] ? String(Object.values(row)[0]) : ""
             }).filter(Boolean)
-            return `找到 ${names.length} 个 ${args.type}:\n${names.join("\n")}`
+
+            const suffix = total > names.length
+              ? `\n(showing ${names.length} of ${total} total — use filter parameter to narrow results)`
+              : `\n(${names.length} total)`
+            return `找到 ${names.length} 个 ${args.type}:\n${names.join("\n")}${suffix}`
           } catch (err) {
             return `列出对象失败: ${(err as Error).message}`
           }
