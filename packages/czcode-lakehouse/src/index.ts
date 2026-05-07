@@ -164,8 +164,8 @@ function extractTargetObject(sql: string): { name: string; schema?: string } | n
 //   ROLES:            LIKE ✅  WHERE ❌
 //   FUNCTIONS:        LIKE ✅  WHERE ❌
 //   EXTERNAL FUNCTIONS: LIKE ✅  WHERE ✅ (schema)
-//   USERS:            LIKE ❌  WHERE ❌ — no filter support at all
 //   SEMANTIC VIEWS:   LIKE ✅  WHERE ✅ (table_name, schema_name) — name stored in table_name field
+//   USERS:            LIKE ❌  WHERE ❌ — no filter support at all
 function buildShowSql(
   type: string,
   parent?: string,
@@ -283,6 +283,19 @@ function buildShowSql(
   // ROLE — LIKE ✅, WHERE ❌
   if (t === "ROLE") {
     const base = "SHOW ROLES"
+    const filtered = filter ? `${base} LIKE '%${filter}%'` : base
+    return { sql: withLimit(filtered), countSql: filtered }
+  }
+
+  // GRANT — show grants for user or role
+  if (t === "GRANT") {
+    const base = parent ? `SHOW GRANTS TO ${parent}` : "SHOW GRANTS"
+    return { sql: withLimit(base), countSql: base }
+  }
+
+  // TABLE_HISTORY — show deleted tables history (for UNDROP)
+  if (t === "TABLE_HISTORY") {
+    const base = parent ? `SHOW TABLES HISTORY IN ${parent}` : "SHOW TABLES HISTORY"
     const filtered = filter ? `${base} LIKE '%${filter}%'` : base
     return { sql: withLimit(filtered), countSql: filtered }
   }
@@ -526,7 +539,7 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
           "列出 ClickZetta Lakehouse 中的对象。" +
           "支持类型：schema/table/view/dynamic_table/materialized_view/external_table/" +
           "pipe/stream/semantic_view/volume/vcluster/function/external_function/" +
-          "user/role/share/connection/catalog/synonym/index/partition/column/job。" +
+          "user/role/share/connection/catalog/synonym/index/partition/column/job/grant/table_history。" +
           "注意：view/dynamic_table/materialized_view/external_table 内部使用 SHOW TABLES WHERE 过滤；" +
           "index/partition/column/job 需要 parent 参数（表名或 vcluster 名）；" +
           "volume 不支持 IN SCHEMA 语法。",
@@ -534,7 +547,7 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
           type: z.string().describe(
             "对象类型（小写）：schema/table/view/dynamic_table/materialized_view/" +
             "external_table/pipe/stream/semantic_view/volume/vcluster/function/external_function/" +
-            "user/role/share/connection/catalog/synonym/index/partition/column/job"
+            "user/role/share/connection/catalog/synonym/index/partition/column/job/grant/table_history"
           ),
           parent: z.string().optional().describe(
             "父对象名称：schema 名（用于 table/view 等）、表名（用于 index/partition/column）、vcluster 名（用于 job）"
