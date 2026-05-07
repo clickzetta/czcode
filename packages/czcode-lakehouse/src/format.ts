@@ -9,11 +9,14 @@ export function formatQueryResult(result: QueryResult): string {
 
   if (cols.length === 0) return "Query executed successfully."
 
+  // For single-row results with long content (e.g. SHOW CREATE TABLE), use full width
+  const maxWidth = result.rows.length <= 3 && cols.length <= 2 ? 2000 : 60
+
   const widths = cols.map((c) => c.length)
   for (const row of result.rows) {
     cols.forEach((col, i) => {
       const val = String(row[col] ?? "NULL")
-      widths[i] = Math.max(widths[i], Math.min(val.length, 60))
+      widths[i] = Math.max(widths[i], Math.min(val.length, maxWidth))
     })
   }
 
@@ -22,7 +25,7 @@ export function formatQueryResult(result: QueryResult): string {
 
   const lines = [sep, header, sep]
   for (const row of result.rows) {
-    const line = "|" + cols.map((c, i) => ` ${String(row[c] ?? "NULL").slice(0, 60).padEnd(widths[i])} `).join("|") + "|"
+    const line = "|" + cols.map((c, i) => ` ${String(row[c] ?? "NULL").slice(0, maxWidth).padEnd(widths[i])} `).join("|") + "|"
     lines.push(line)
   }
   lines.push(sep)
