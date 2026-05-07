@@ -21,7 +21,7 @@ on:
 jobs:
   check-annotations:
     name: Check kilocode_change / czcode_change annotations
-    if: github.repository == 'yunqiqiliang/czcode' # czcode_change
+    if: github.repository == 'clickzetta/czcode' # czcode_change
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -66,7 +66,7 @@ czcode 完整继承自 [KiloCode](https://github.com/Kilo-Org/kilocode)，具备
 
 ### 第一步：下载安装包
 
-前往 [Releases 页面](https://github.com/yunqiqiliang/czcode/releases/latest) 下载对应平台的安装包：
+前往 [Releases 页面](https://github.com/clickzetta/czcode/releases/latest) 下载对应平台的安装包：
 
 | 平台 | 文件名 |
 |---|---|

@@ -101,7 +101,7 @@ export function ToolErrorCard(props: ToolErrorCardProps) {
         `<!-- Describe what you asked czcode to do -->`,
       ].join("\n"),
     )
-    const url = `https://github.com/yunqiqiliang/clickzetta-skills/issues/new?title=${title}&body=${body}`
+    const url = `https://github.com/clickzetta/clickzetta-skills/issues/new?title=${title}&body=${body}`
     window.open(url, "_blank")
   }
   // czcode_change end

@@ -4,7 +4,7 @@ czcode uses a semi-automated release process. Releases are tagged from `main` an
 
 ## How to Trigger a Release
 
-1. Go to the [`publish` workflow](https://github.com/yunqiqiliang/czcode/actions/workflows/publish.yml) in GitHub Actions.
+1. Go to the [`publish` workflow](https://github.com/clickzetta/czcode/actions/workflows/publish.yml) in GitHub Actions.
 2. Click **"Run workflow"**.
 3. Select the branch (typically `main`).
 4. Fill in the inputs:
@@ -52,5 +52,5 @@ If there are unmerged versions, consider merging them first:
 
 ## Prerequisites
 
-- Write access to `yunqiqiliang/czcode`.
+- Write access to `clickzetta/czcode`.
 - Required secrets configured in the repository (see `.github/workflows/publish.yml`).
