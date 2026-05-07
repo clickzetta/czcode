@@ -312,7 +312,7 @@ if (Script.release) {
   console.log("Downloading clickzetta-skills for bundling...")
   const skillsTmp = path.resolve("dist", "_skills_tmp")
   await $`rm -rf ${skillsTmp}`
-  await $`git clone --depth 1 https://github.com/yunqiqiliang/clickzetta-skills.git ${skillsTmp}`.quiet().nothrow()
+  await $`git clone --depth 1 https://github.com/clickzetta/clickzetta-skills.git ${skillsTmp}`.quiet().nothrow()
   // Remove .git to save space
   await $`rm -rf ${skillsTmp}/.git`
 

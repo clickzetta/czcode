@@ -28,7 +28,7 @@ echo "Skills cache cleared."
 缓存清除后，下次启动 czcode 时会自动从以下地址重新拉取最新 skills：
 
 ```
-https://yunqiqiliang.github.io/clickzetta-skills/.well-known/skills/
+https://clickzetta.github.io/clickzetta-skills/.well-known/skills/
 ```
 
 告知用户：
@@ -41,7 +41,7 @@ https://yunqiqiliang.github.io/clickzetta-skills/.well-known/skills/
 引导用户到 GitHub Issues 提交反馈：
 
 ```
-https://github.com/yunqiqiliang/clickzetta-skills/issues/new/choose
+https://github.com/clickzetta/clickzetta-skills/issues/new/choose
 ```
 
 提供两种模板：

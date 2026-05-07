@@ -487,7 +487,7 @@ export const layer = Layer.effect(
       let result: Info = pipe(
         {
           skills: {
-            urls: ["https://yunqiqiliang.github.io/clickzetta-skills/.well-known/skills/"],
+            urls: ["https://clickzetta.github.io/clickzetta-skills/.well-known/skills/"],
             paths: skillsPaths,
           },
           command: builtinCommandMap,

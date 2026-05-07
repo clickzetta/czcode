@@ -419,7 +419,7 @@ czcode 内置 31 个 ClickZetta Lakehouse 领域 Skill，覆盖 SQL 语法、数
 
 报告 Skill 问题：
 - 在对话中运行 `/cz_skill-fix` 写入本地修正
-- 或到 GitHub 提交 Issue：[报告问题](https://github.com/yunqiqiliang/clickzetta-skills/issues/new?template=skill-bug.yml) | [提改进建议](https://github.com/yunqiqiliang/clickzetta-skills/issues/new?template=skill-enhancement.yml)
+- 或到 GitHub 提交 Issue：[报告问题](https://github.com/clickzetta/clickzetta-skills/issues/new?template=skill-bug.yml) | [提改进建议](https://github.com/clickzetta/clickzetta-skills/issues/new?template=skill-enhancement.yml)
 
 ---
 

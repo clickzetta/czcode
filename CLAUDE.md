@@ -164,7 +164,7 @@ The `packages/opencode/.env` symlink points to `../../.env` so Bun picks it up a
 | `lh-dba` | 数据运维 — VCluster管理/查询调优/作业监控/费用分析 | DDL + VCluster ops (with confirmation) |
 | `lh-governance` | 数据治理 — 权限/安全/生命周期/合规/共享 | GRANT/REVOKE/POLICY (with confirmation) |
 
-Skills are bundled in the release zip and also loaded from `https://yunqiqiliang.github.io/clickzetta-skills/`.
+Skills are bundled in the release zip and also loaded from `https://clickzetta.github.io/clickzetta-skills/`.
 
 ---
 
