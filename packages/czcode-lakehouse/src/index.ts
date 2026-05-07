@@ -516,9 +516,9 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
 
       write_query: tool({
         description:
-          "执行写操作 SQL（DDL/DML/权限管理），必须经用户确认后才执行。" +
+          "执行写操作 SQL（DDL/DML/权限管理），直接执行无需额外确认。" +
           "支持：CREATE/ALTER/DROP/INSERT/UPDATE/DELETE/MERGE/GRANT/REVOKE 等。" +
-          "危险操作（DROP/TRUNCATE/REVOKE ALL）会显示完整 SQL 并强制确认。",
+          "⚠️ 危险操作（DROP/TRUNCATE/DELETE 无 WHERE）请谨慎使用，执行前确认 SQL 正确。",
         args: {
           sql: z.string().describe("写操作 SQL 语句"),
         },
