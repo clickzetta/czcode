@@ -182,9 +182,9 @@ function buildShowSql(
     return { sql: withLimit(filtered), countSql: filtered }
   }
 
-  // INDEX — requires parent (table name)
+  // INDEX — requires parent (table name), syntax: SHOW INDEX FROM schema.table
   if (t === "INDEX") {
-    const base = parent ? `SHOW INDEXES FROM ${parent}` : "SHOW INDEXES"
+    const base = parent ? `SHOW INDEX FROM ${parent}` : "SHOW INDEX"
     return { sql: withLimit(base), countSql: base }
   }
 
@@ -208,9 +208,9 @@ function buildShowSql(
     return { sql: withLimit(filtered), countSql: filtered }
   }
 
-  // EXTERNAL_FUNCTION — WHERE supported (schema field)
+  // EXTERNAL_FUNCTION — WHERE supported (schema, name, connection), LIKE supported
   if (t === "EXTERNAL_FUNCTION") {
-    const base = "SHOW EXTERNAL FUNCTIONS"
+    const base = parent ? `SHOW EXTERNAL FUNCTIONS IN ${parent}` : "SHOW EXTERNAL FUNCTIONS"
     const filtered = filter ? `${base} LIKE '%${filter}%'` : base
     return { sql: withLimit(filtered), countSql: filtered }
   }
