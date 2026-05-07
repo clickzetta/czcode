@@ -28,6 +28,29 @@
 1. **分析错误**：判断错误类型
    - 语法错误（字段名/函数名/关键字写错）→ 直接修复 SQL 重试
    - 表/字段不存在 → 先用 `describe_object` 确认实际结构，再修复重试
+
+---
+
+## ClickZetta SHOW/DESC 命令语法限制
+
+ClickZetta 的 SHOW/DESC 命令**不是标准 SQL**，不支持以下通用 SQL 模式：
+
+| ❌ 不支持 | 说明 |
+|---|---|
+| `SHOW ... ORDER BY ...` | SHOW 命令不支持 ORDER BY |
+| `SHOW ... LIMIT n` (部分命令) | `SHOW CREATE TABLE` 不支持 LIMIT；`SHOW TABLES` 支持 |
+| `SELECT FROM (SHOW ...)` | SHOW 命令不能作为子查询 |
+| `SHOW TBLPROPERTIES table` | 不存在此命令，用 `SHOW CREATE TABLE` 查看属性 |
+| `SHOW DYNAMIC TABLES` | 不存在此命令，用 `SHOW TABLES WHERE is_dynamic` |
+| `ALTER DYNAMIC TABLE ... SET REFRESH INTERVAL` | 不支持，必须用 `CREATE OR REPLACE` 重建 |
+| `ALTER DYNAMIC TABLE ... SET VCLUSTER` | 不支持，必须用 `CREATE OR REPLACE` 重建 |
+
+**SHOW TABLES 返回列名**：`schema_name`, `table_name`, `is_view`, `is_materialized_view`, `is_external`, `is_dynamic`
+- 过滤用 `WHERE table_name = 'xxx'`（不是 `name`）
+
+**SHOW DYNAMIC TABLE REFRESH HISTORY**：
+- 用 `WHERE name = 'dt_name'` 过滤（不是 `FOR dt_name`）
+- 支持 `LIMIT`，不支持 `ORDER BY`
    - Schema 错误（表找不到）→ 先用 `list_objects` 重新确认表名，再修复重试
 
 2. **修复原则**：保持原始查询意图不变，只修正语法或对象名错误
