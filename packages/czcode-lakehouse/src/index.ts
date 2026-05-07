@@ -345,24 +345,80 @@ function buildShowSql(
   return { sql: withLimit(filtered), countSql: filtered }
 }
 
-// Build DESC SQL for describe_object, handling ClickZetta-specific quirks:
-// - TABLE/VIEW/DYNAMIC TABLE/MATERIALIZED VIEW/EXTERNAL TABLE all use DESC TABLE syntax
-// - SEMANTIC VIEW uses DESC EXTENDED
-// - Other types use DESC <TYPE> <name>
+// Build DESC SQL for describe_object, handling ClickZetta-specific quirks.
+// Based on official docs: https://yunqi.tech/documents/describe
+//
+// DESC command support:
+//   TABLE/VIEW/DYNAMIC TABLE/MATERIALIZED VIEW/EXTERNAL TABLE: DESC TABLE [EXTENDED] name
+//   SEMANTIC VIEW: DESC EXTENDED name
+//   SCHEMA: DESC SCHEMA [EXTENDED] name
+//   VCLUSTER: DESC VCLUSTER name
+//   CONNECTION: DESC CONNECTION [EXTENDED] name
+//   CATALOG: DESC CATALOG name
+//   TABLE STREAM: DESC TABLE STREAM name
+//   JOB: DESC JOB job_id
+//   SHARE: DESC SHARE name
+//   INDEX: DESC INDEX name [EXTENDED]
+//   FUNCTION/EXTERNAL FUNCTION: DESC FUNCTION [EXTENDED] name
+//   VOLUME: DESC VOLUME name
+//   USER: DESC USER name (if supported)
+//   ROLE: DESC ROLE name (if supported)
 function buildDescSql(objectType: string, objectName: string, extended = false): string {
   const t = objectType.toUpperCase().replace(/_/g, " ")
+  const ext = extended ? " EXTENDED" : ""
 
   if (t === "SEMANTIC VIEW" || t === "SEMANTIC_VIEW") {
     return `DESC EXTENDED ${objectName}`
   }
 
+  // TABLE and table-like types all use DESC TABLE syntax
   const tableTypes = ["TABLE", "VIEW", "DYNAMIC TABLE", "MATERIALIZED VIEW", "EXTERNAL TABLE"]
   if (tableTypes.includes(t)) {
     return extended ? `DESC TABLE EXTENDED ${objectName}` : `DESC TABLE ${objectName}`
   }
 
-  // Other types: SCHEMA, CONNECTION, VCLUSTER, PIPE, FUNCTION, USER, ROLE, INDEX, etc.
-  return `DESC ${t} ${objectName}`
+  // TABLE STREAM
+  if (t === "TABLE STREAM" || t === "STREAM") {
+    return `DESC TABLE STREAM ${objectName}`
+  }
+
+  // JOB — object_name should be the job_id
+  if (t === "JOB") {
+    return `DESC JOB ${objectName}`
+  }
+
+  // CATALOG
+  if (t === "CATALOG") {
+    return `DESC CATALOG ${objectName}`
+  }
+
+  // SHARE
+  if (t === "SHARE") {
+    return `DESC SHARE ${objectName}`
+  }
+
+  // SCHEMA — supports EXTENDED
+  if (t === "SCHEMA") {
+    return `DESC SCHEMA${ext} ${objectName}`
+  }
+
+  // CONNECTION — supports EXTENDED
+  if (t === "CONNECTION") {
+    return `DESC CONNECTION${ext} ${objectName}`
+  }
+
+  // INDEX — supports EXTENDED
+  if (t === "INDEX") {
+    return `DESC INDEX${ext} ${objectName}`
+  }
+
+  // FUNCTION / EXTERNAL FUNCTION — supports EXTENDED
+  if (t === "FUNCTION" || t === "EXTERNAL FUNCTION") {
+    return `DESC FUNCTION${ext} ${objectName}`
+  }
+
+  // Other types: VCLUSTER, VOLUME, USER, ROLE, PIPE, etc.
+  return `DESC ${t}${ext} ${objectName}`
 }
 
 export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
@@ -598,13 +654,16 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
         description:
           "查看 ClickZetta Lakehouse 对象的详细结构。" +
           "支持类型：table/view/dynamic_table/materialized_view/external_table/semantic_view/" +
-          "schema/vcluster/volume/connection/pipe/function/user/role/index。" +
+          "schema/vcluster/volume/connection/pipe/function/external_function/" +
+          "user/role/index/catalog/stream/job/share。" +
           "注意：view/dynamic_table/materialized_view 统一使用 DESC TABLE 语法（ClickZetta 规范）。" +
-          "semantic_view 使用 DESC EXTENDED 返回维度/指标/逻辑表定义，可用于理解业务语义。",
+          "semantic_view 使用 DESC EXTENDED 返回维度/指标/逻辑表定义，可用于理解业务语义。" +
+          "job 类型时 object_name 为 job_id。",
         args: {
           object_type: z.string().describe(
             "对象类型（小写）：table/view/dynamic_table/materialized_view/external_table/" +
-            "semantic_view/schema/vcluster/volume/connection/pipe/function/user/role/index"
+            "semantic_view/schema/vcluster/volume/connection/pipe/function/external_function/" +
+            "user/role/index/catalog/stream/job/share"
           ),
           object_name: z.string().describe("对象名称，可含 schema 前缀，如 mcp_demo.orders"),
           extended: z.boolean().default(false).describe("是否使用 EXTENDED 模式获取更多详情（表/视图类型支持）"),
