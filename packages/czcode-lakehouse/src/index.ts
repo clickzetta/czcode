@@ -165,7 +165,7 @@ function extractTargetObject(sql: string): { name: string; schema?: string } | n
 //   FUNCTIONS:        LIKE ✅  WHERE ❌
 //   EXTERNAL FUNCTIONS: LIKE ✅  WHERE ✅ (schema)
 //   USERS:            LIKE ❌  WHERE ❌ — no filter support at all
-//   SEMANTIC VIEWS:   unknown
+//   SEMANTIC VIEWS:   LIKE ✅  WHERE ✅ (table_name, schema_name) — name stored in table_name field
 function buildShowSql(
   type: string,
   parent?: string,
@@ -175,10 +175,11 @@ function buildShowSql(
   const t = type.toUpperCase()
   const withLimit = (s: string) => `${s} LIMIT ${limit}`
 
-  // SEMANTIC_VIEW
+  // SEMANTIC_VIEW — LIKE ✅, WHERE ✅ (table_name, schema_name)
+  // Note: name field is table_name (NOT semantic_view_name)
   if (t === "SEMANTIC_VIEW") {
     const base = parent ? `SHOW SEMANTIC VIEWS IN ${parent}` : "SHOW SEMANTIC VIEWS"
-    const filtered = filter ? `${base} LIKE '%${filter}%'` : base
+    const filtered = filter ? `${base} WHERE table_name LIKE '%${filter}%'` : base
     return { sql: withLimit(filtered), countSql: filtered }
   }
 
