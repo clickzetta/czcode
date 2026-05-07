@@ -122,7 +122,7 @@ function buildSkillReportUrl(skillName: string, sql: string, errorMsg: string): 
       "```",
     ].join("\n"),
   )
-  return `https://github.com/yunqiqiliang/clickzetta-skills/issues/new?title=${title}&body=${body}`
+  return `https://github.com/clickzetta/clickzetta-skills/issues/new?title=${title}&body=${body}`
 }
 // czcode_change end
 
