@@ -44,6 +44,7 @@ ClickZetta 的 SHOW/DESC 命令**不是标准 SQL**，不支持以下通用 SQL 
 | `SHOW DYNAMIC TABLES` | 不存在此命令，用 `SHOW TABLES WHERE is_dynamic` |
 | `ALTER DYNAMIC TABLE ... SET REFRESH INTERVAL` | 不支持，必须用 `CREATE OR REPLACE` 重建 |
 | `ALTER DYNAMIC TABLE ... SET VCLUSTER` | 不支持，必须用 `CREATE OR REPLACE` 重建 |
+| `CREATE VCLUSTER ... COMMENT = '...'` | VCLUSTER 的 COMMENT 不带等号：`COMMENT '...'` |
 
 **SHOW TABLES 返回列名**：`schema_name`, `table_name`, `is_view`, `is_materialized_view`, `is_external`, `is_dynamic`
 - 过滤用 `WHERE table_name = 'xxx'`（不是 `name`）
