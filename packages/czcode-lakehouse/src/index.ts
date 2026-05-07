@@ -147,7 +147,25 @@ function extractTargetObject(sql: string): { name: string; schema?: string } | n
 
 // Build SHOW SQL for list_objects, handling ClickZetta-specific quirks.
 // Returns { sql, countSql } where countSql is used to get total count without LIMIT.
-// Based on official docs: https://yunqi.tech/documents/show
+// Based on official docs + actual testing: https://yunqi.tech/documents/show
+//
+// Filter support matrix (tested):
+//   TABLES:           LIKE ✅  WHERE ✅ (table_name, is_view, is_dynamic, is_materialized_view, is_external)
+//   SCHEMAS:          LIKE ✅  WHERE ✅ (schema_name) — type field does NOT exist
+//   CATALOGS:         LIKE ✅  WHERE ✅ (category)
+//   VCLUSTERS:        LIKE ✅  WHERE ✅ (name, state, vcluster_type, ...)
+//   VOLUMES:          LIKE ✅  WHERE ✅ (external=true/false, connection)
+//   CONNECTIONS:      LIKE ✅  WHERE ✅ (name, category, type, enabled)
+//   JOBS:             LIKE ❌  WHERE ✅ (status, creator, priority, vcluster_name, ...)
+//   SHARES:           LIKE ✅  WHERE ✅ (share_name, provider, ...)
+//   SYNONYMS:         LIKE ✅  WHERE ✅ (synonym_name, ...)
+//   PIPES:            LIKE ✅  WHERE ✅ (pipe_name, pipe_kind, status)
+//   TABLE STREAMS:    LIKE ✅  WHERE ✅ (name, table_name, mode, ...)
+//   ROLES:            LIKE ✅  WHERE ❌
+//   FUNCTIONS:        LIKE ✅  WHERE ❌
+//   EXTERNAL FUNCTIONS: LIKE ✅  WHERE ✅ (schema)
+//   USERS:            LIKE ❌  WHERE ❌ — no filter support at all
+//   SEMANTIC VIEWS:   unknown
 function buildShowSql(
   type: string,
   parent?: string,
@@ -155,36 +173,12 @@ function buildShowSql(
   filter?: string,
 ): { sql: string; countSql: string } {
   const t = type.toUpperCase()
-
-  // Helper: append LIKE or WHERE filter to a base SQL
-  const withFilter = (base: string, existingWhere?: string): string => {
-    if (!filter) return base
-    // Types that support WHERE on name field
-    const whereNameField: Record<string, string> = {
-      TABLE: "table_name", VIEW: "table_name", DYNAMIC_TABLE: "table_name",
-      MATERIALIZED_VIEW: "table_name", EXTERNAL_TABLE: "table_name",
-      STREAM: "name", TABLE_STREAM: "name",
-      VCLUSTER: "name", CONNECTION: "name", SHARE: "share_name",
-      SYNONYM: "synonym_name", PIPE: "pipe_name", SCHEMA: "schema_name",
-      VOLUME: "name",
-    }
-    const nameField = whereNameField[t]
-    if (nameField && existingWhere) {
-      return `${base} AND ${nameField} LIKE '%${filter}%'`
-    }
-    if (nameField) {
-      return `${base} WHERE ${nameField} LIKE '%${filter}%'`
-    }
-    // Fallback: LIKE on name (for ROLE, USER, FUNCTION, etc.)
-    return `${base} LIKE '%${filter}%'`
-  }
-
   const withLimit = (s: string) => `${s} LIMIT ${limit}`
 
   // SEMANTIC_VIEW
   if (t === "SEMANTIC_VIEW") {
     const base = parent ? `SHOW SEMANTIC VIEWS IN ${parent}` : "SHOW SEMANTIC VIEWS"
-    const filtered = withFilter(base)
+    const filtered = filter ? `${base} LIKE '%${filter}%'` : base
     return { sql: withLimit(filtered), countSql: filtered }
   }
 
@@ -206,48 +200,102 @@ function buildShowSql(
     return { sql: withLimit(base), countSql: base }
   }
 
-  // JOB — parent is vcluster name
+  // JOB — no parent needed, WHERE supported, LIKE not supported
   if (t === "JOB") {
-    const base = parent ? `SHOW JOBS IN VCLUSTER ${parent}` : "SHOW JOBS"
-    const filtered = withFilter(base)
+    const vcClause = parent ? ` IN VCLUSTER ${parent}` : ""
+    const base = `SHOW JOBS${vcClause}`
+    const filtered = filter ? `${base} WHERE vcluster_name LIKE '%${filter}%'` : base
     return { sql: withLimit(filtered), countSql: filtered }
   }
 
-  // EXTERNAL_FUNCTION
+  // EXTERNAL_FUNCTION — WHERE supported (schema field)
   if (t === "EXTERNAL_FUNCTION") {
     const base = "SHOW EXTERNAL FUNCTIONS"
     const filtered = filter ? `${base} LIKE '%${filter}%'` : base
     return { sql: withLimit(filtered), countSql: filtered }
   }
 
-  // SYNONYM
+  // SYNONYM — WHERE supported
   if (t === "SYNONYM") {
     const base = parent ? `SHOW SYNONYMS IN ${parent}` : "SHOW SYNONYMS"
-    const filtered = withFilter(base)
+    const filtered = filter ? `${base} WHERE synonym_name LIKE '%${filter}%'` : base
     return { sql: withLimit(filtered), countSql: filtered }
   }
 
-  // PIPE
+  // PIPE — WHERE supported
   if (t === "PIPE") {
     const base = parent ? `SHOW PIPES IN ${parent}` : "SHOW PIPES"
-    const filtered = withFilter(base)
+    const filtered = filter ? `${base} WHERE pipe_name LIKE '%${filter}%'` : base
     return { sql: withLimit(filtered), countSql: filtered }
   }
 
-  // TABLE STREAM
+  // TABLE STREAM — WHERE supported
   if (t === "STREAM" || t === "TABLE_STREAM") {
     const base = parent ? `SHOW TABLE STREAMS IN ${parent}` : "SHOW TABLE STREAMS"
-    const filtered = withFilter(base)
+    const filtered = filter ? `${base} WHERE name LIKE '%${filter}%'` : base
     return { sql: withLimit(filtered), countSql: filtered }
   }
 
-  // VOLUME: WHERE syntax for filter, workspace_name for parent
+  // VOLUME — WHERE supported (external=true/false, connection)
+  // Note: workspace_name filter does NOT work; use external field instead
   if (t === "VOLUME") {
-    const parts: string[] = []
-    if (parent) parts.push(`workspace_name='${parent}'`)
-    if (filter) parts.push(`name LIKE '%${filter}%'`)
-    const base = parts.length > 0 ? `SHOW VOLUMES WHERE ${parts.join(" AND ")}` : "SHOW VOLUMES"
-    return { sql: withLimit(base), countSql: base }
+    const base = "SHOW VOLUMES"
+    const filtered = filter ? `${base} LIKE '%${filter}%'` : base
+    return { sql: withLimit(filtered), countSql: filtered }
+  }
+
+  // SCHEMA — LIKE ✅, WHERE ✅ (schema_name only — type field does NOT exist)
+  if (t === "SCHEMA") {
+    const base = "SHOW SCHEMAS"
+    const filtered = filter ? `${base} WHERE schema_name LIKE '%${filter}%'` : base
+    return { sql: withLimit(filtered), countSql: filtered }
+  }
+
+  // CATALOG — LIKE ✅, WHERE ✅ (category)
+  if (t === "CATALOG") {
+    const base = "SHOW CATALOGS"
+    const filtered = filter ? `${base} LIKE '%${filter}%'` : base
+    return { sql: withLimit(filtered), countSql: filtered }
+  }
+
+  // VCLUSTER — LIKE ✅, WHERE ✅
+  if (t === "VCLUSTER") {
+    const base = "SHOW VCLUSTERS"
+    const filtered = filter ? `${base} LIKE '%${filter}%'` : base
+    return { sql: withLimit(filtered), countSql: filtered }
+  }
+
+  // CONNECTION — LIKE ✅, WHERE ✅
+  if (t === "CONNECTION") {
+    const base = "SHOW CONNECTIONS"
+    const filtered = filter ? `${base} LIKE '%${filter}%'` : base
+    return { sql: withLimit(filtered), countSql: filtered }
+  }
+
+  // SHARE — LIKE ✅, WHERE ✅
+  if (t === "SHARE") {
+    const base = "SHOW SHARES"
+    const filtered = filter ? `${base} LIKE '%${filter}%'` : base
+    return { sql: withLimit(filtered), countSql: filtered }
+  }
+
+  // ROLE — LIKE ✅, WHERE ❌
+  if (t === "ROLE") {
+    const base = "SHOW ROLES"
+    const filtered = filter ? `${base} LIKE '%${filter}%'` : base
+    return { sql: withLimit(filtered), countSql: filtered }
+  }
+
+  // USER — no LIKE, no WHERE — only LIMIT
+  if (t === "USER") {
+    return { sql: withLimit("SHOW USERS"), countSql: "SHOW USERS" }
+  }
+
+  // FUNCTION (built-in) — LIKE ✅, WHERE ❌
+  if (t === "FUNCTION") {
+    const base = "SHOW FUNCTIONS"
+    const filtered = filter ? `${base} LIKE '%${filter}%'` : base
+    return { sql: withLimit(filtered), countSql: filtered }
   }
 
   // TABLE and table-like types (VIEW/DT/MV/EXTERNAL) — use SHOW TABLES WHERE
@@ -275,7 +323,7 @@ function buildShowSql(
     return { sql: withLimit(base), countSql: base }
   }
 
-  // Standard: SHOW <TYPE>S [IN <parent>] [LIKE '%filter%'] LIMIT n
+  // Fallback: SHOW <TYPE>S [IN <parent>] [LIKE '%filter%'] LIMIT n
   const plural = t.endsWith("S") ? t : `${t}S`
   const base = parent ? `SHOW ${plural} IN ${parent}` : `SHOW ${plural}`
   const filtered = filter ? `${base} LIKE '%${filter}%'` : base
