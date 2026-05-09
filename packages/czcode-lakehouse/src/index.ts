@@ -679,15 +679,16 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
           "查看 ClickZetta Lakehouse 对象的详细结构。" +
           "支持类型：table/view/dynamic_table/materialized_view/external_table/semantic_view/" +
           "schema/vcluster/volume/connection/pipe/function/external_function/" +
-          "user/role/index/catalog/stream/job/share。" +
+          "index/catalog/stream/job/share/synonym。" +
           "注意：view/dynamic_table/materialized_view 统一使用 DESC TABLE 语法（ClickZetta 规范）。" +
           "semantic_view 使用 DESC EXTENDED 返回维度/指标/逻辑表定义，可用于理解业务语义。" +
-          "job 类型时 object_name 为 job_id。",
+          "job 类型时 object_name 为 job_id。" +
+          "⚠️ 不支持：user/role（ClickZetta 无 DESC USER/ROLE 命令）。",
         args: {
           object_type: z.string().describe(
             "对象类型（小写）：table/view/dynamic_table/materialized_view/external_table/" +
             "semantic_view/schema/vcluster/volume/connection/pipe/function/external_function/" +
-            "user/role/index/catalog/stream/job/share"
+            "index/catalog/stream/job/share/synonym"
           ),
           object_name: z.string().describe("对象名称，可含 schema 前缀，如 mcp_demo.orders"),
           extended: z.boolean().default(false).describe("是否使用 EXTENDED 模式获取更多详情（表/视图类型支持）"),
