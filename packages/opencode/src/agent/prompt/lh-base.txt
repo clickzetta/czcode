@@ -56,7 +56,7 @@ ClickZetta 的 SHOW/DESC 命令**不是标准 SQL**，不支持以下通用 SQL 
 | `ALTER DYNAMIC TABLE ... SET VCLUSTER` | 不支持，必须用 `CREATE OR REPLACE` 重建 |
 | `DROP TABLE dt_name`（动态表） | 必须用 `DROP DYNAMIC TABLE dt_name` |
 | `UNDROP DYNAMIC TABLE dt_name` | 必须用 `UNDROP TABLE dt_name` |
-| `DESC DYNAMIC TABLE ... EXTENDED` | 不支持 EXTENDED，用 `DESC TABLE dt_name` |
+| `DESC DYNAMIC TABLE ... EXTENDED` | EXTENDED 不支持，用 `DESC DYNAMIC TABLE dt_name`（不加 EXTENDED） |
 | `CREATE VCLUSTER ... COMMENT = '...'` | VCLUSTER 的 COMMENT 不带等号：`COMMENT '...'` |
 | `COPY INTO USER VOLUME ... USING CSV` | 不支持 USING 子句，用 `FILE_FORMAT = (TYPE = CSV)` |
 
