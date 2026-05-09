@@ -524,7 +524,7 @@ export function patchAgents(
     permission: Permission.merge(
       defaults,
       lakehouseTools,
-      Permission.fromConfig({ read: "allow" }),
+      Permission.fromConfig({ read: "allow", write: "deny", bash: "deny" }),
       user,
     ),
     mode: "primary",
@@ -543,6 +543,8 @@ export function patchAgents(
       lakehouseTools,
       Permission.fromConfig({
         read: "allow",
+        write: "deny",
+        bash: "deny",
         webfetch: "allow", // czcode_change — compliance regulations and security standards
         websearch: "allow", // czcode_change — compliance regulations and security standards
       }),
