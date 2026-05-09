@@ -454,6 +454,7 @@ export function patchAgents(
   // Read-only tool set — no write_query, no file write, no bash
   const analystTools = Permission.fromConfig({
     read_query: "allow",
+    write_query: "deny",
     list_objects: "allow",
     describe_object: "allow",
     explain_query: "allow",
