@@ -777,10 +777,12 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
             } catch (err) {
               return `获取 VCluster 列表失败: ${(err as Error).message}`
             }
-            if (vcNames.length > 0 && !vcNames.includes(args.vcluster)) {
+            if (vcNames.length > 0 && !vcNames.some((n) => n.toUpperCase() === args.vcluster!.toUpperCase())) {
               return `VCluster "${args.vcluster}" 不存在。可用的 VCluster：${vcNames.join(", ")}`
             }
-            results.push(`✓ 已切换到 VCluster: ${args.vcluster}`)
+            // Use the actual casing from the server
+            const matched = vcNames.find((n) => n.toUpperCase() === args.vcluster!.toUpperCase()) ?? args.vcluster
+            results.push(`✓ 已切换到 VCluster: ${matched}`)
           }
 
           // Reconnect with updated context — USE SCHEMA/VCLUSTER SQL does not
