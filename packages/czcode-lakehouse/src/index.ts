@@ -306,6 +306,11 @@ function buildShowSql(
     return { sql: withLimit("SHOW USERS"), countSql: "SHOW USERS" }
   }
 
+  // WORKSPACE — instance-level, no LIKE/WHERE
+  if (t === "WORKSPACE") {
+    return { sql: withLimit("SHOW WORKSPACES"), countSql: "SHOW WORKSPACES" }
+  }
+
   // FUNCTION (built-in) — LIKE ❌ (SHOW FUNCTIONS has no LIKE support), WHERE ❌
   // Use external_function type for user-defined functions (supports LIKE)
   if (t === "FUNCTION") {
@@ -595,7 +600,7 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
           "列出 ClickZetta Lakehouse 中的对象。" +
           "支持类型：schema/table/view/dynamic_table/materialized_view/external_table/" +
           "pipe/stream/semantic_view/volume/vcluster/function/external_function/" +
-          "user/role/share/connection/catalog/synonym/index/partition/column/job/grant/table_history。" +
+          "user/role/share/connection/catalog/synonym/index/partition/column/job/grant/table_history/workspace。" +
           "注意：view/dynamic_table/materialized_view/external_table 内部使用 SHOW TABLES WHERE 过滤；" +
           "index/partition/column/job 需要 parent 参数（表名或 vcluster 名）；" +
           "volume 不支持 IN SCHEMA 语法。",
@@ -603,7 +608,7 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
           type: z.string().describe(
             "对象类型（小写）：schema/table/view/dynamic_table/materialized_view/" +
             "external_table/pipe/stream/semantic_view/volume/vcluster/function/external_function/" +
-            "user/role/share/connection/catalog/synonym/index/partition/column/job/grant/table_history"
+            "user/role/share/connection/catalog/synonym/index/partition/column/job/grant/table_history/workspace"
           ),
           parent: z.string().optional().describe(
             "父对象名称：schema 名（用于 table/view 等）、表名（用于 index/partition/column）、vcluster 名（用于 job）；" +
