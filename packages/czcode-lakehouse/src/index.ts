@@ -209,9 +209,10 @@ function buildShowSql(
     return { sql: withLimit(filtered), countSql: filtered }
   }
 
-  // EXTERNAL_FUNCTION — WHERE supported (schema, name, connection), LIKE supported
+  // EXTERNAL_FUNCTION — LIKE supported, WHERE supported (schema)
+  // Note: IN schema syntax NOT supported (syntax error)
   if (t === "EXTERNAL_FUNCTION") {
-    const base = parent ? `SHOW EXTERNAL FUNCTIONS IN ${parent}` : "SHOW EXTERNAL FUNCTIONS"
+    const base = "SHOW EXTERNAL FUNCTIONS"
     const filtered = filter ? `${base} LIKE '%${filter}%'` : base
     return { sql: withLimit(filtered), countSql: filtered }
   }
@@ -288,9 +289,20 @@ function buildShowSql(
   }
 
   // GRANT — show grants, no LIKE/WHERE support, NO LIMIT (syntax error)
-  // parent syntax: "ON TABLE schema.table" / "ON SCHEMA schema" / "TO USER name" / "TO ROLE name"
+  // parent formats: "TO USER name" / "TO ROLE name" / "ON TABLE schema.t" / "ON SCHEMA s" / "ON VCLUSTER vc"
+  // If parent doesn't start with TO/ON, try prepending based on content
   if (t === "GRANT") {
-    const base = parent ? `SHOW GRANTS ${parent}` : "SHOW GRANTS"
+    let clause = ""
+    if (parent) {
+      const upper = parent.trim().toUpperCase()
+      if (upper.startsWith("TO ") || upper.startsWith("ON ")) {
+        clause = ` ${parent}`
+      } else {
+        // Assume it's a user/role name — default to TO USER
+        clause = ` TO USER ${parent}`
+      }
+    }
+    const base = `SHOW GRANTS${clause}`
     return { sql: base, countSql: base }  // NO LIMIT — SHOW GRANTS doesn't support it
   }
 
