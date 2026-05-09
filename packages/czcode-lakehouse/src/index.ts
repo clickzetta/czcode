@@ -400,7 +400,7 @@ function buildDescSql(objectType: string, objectName: string, extended = false):
 
   // JOB — object_name should be the job_id
   if (t === "JOB") {
-    return `DESC JOB ${objectName}`
+    return `DESC JOB '${objectName}'`
   }
 
   // CATALOG
