@@ -4,6 +4,7 @@ import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
 import { withTransientReadRetry } from "@/util/effect-http-client"
 import { ChildProcess, ChildProcessSpawner } from "effect/unstable/process"
 import path from "path"
+import os from "os" // czcode_change
 import z from "zod"
 import { BusEvent } from "@/bus/bus-event"
 import { Flag } from "@opencode-ai/core/flag/flag"
@@ -145,12 +146,17 @@ export const layer: Layer.Layer<Service, never, HttpClient.HttpClient | ChildPro
 
       const upgradeCurl = Effect.fnUntraced(
         function* (target: string) {
-          const response = yield* httpOk.execute(HttpClientRequest.get("https://kilo.ai/install")) // kilocode_change
-          const body = yield* response.text
-          const bodyBytes = new TextEncoder().encode(body)
-          const proc = ChildProcess.make("bash", [], {
+          // czcode_change start - download from clickzetta/czcode GitHub releases
+          const platform = process.platform === "darwin" ? "darwin" : "linux"
+          const arch = process.arch === "arm64" ? "arm64" : "x64"
+          const url = `https://github.com/clickzetta/czcode/releases/download/v${target}/czcode-${platform}-${arch}.tar.gz`
+          const response = yield* httpOk.execute(HttpClientRequest.get(url))
+          const body = yield* response.arrayBuffer
+          const bodyBytes = new Uint8Array(body)
+          const installDir = path.join(os.homedir(), ".czcode", "bin")
+          const proc = ChildProcess.make("bash", ["-c", `mkdir -p ${installDir} && tar -xzf - -C ${installDir}`], {
             stdin: Stream.make(bodyBytes),
-            env: { VERSION: target },
+            env: {},
             extendEnv: true,
           })
           const handle = yield* spawner.spawn(proc)
@@ -160,6 +166,7 @@ export const layer: Layer.Layer<Service, never, HttpClient.HttpClient | ChildPro
           )
           const code = yield* handle.exitCode
           return { code, stdout, stderr }
+          // czcode_change end
         },
         Effect.scoped,
         Effect.orDie,
@@ -173,6 +180,9 @@ export const layer: Layer.Layer<Service, never, HttpClient.HttpClient | ChildPro
           }
         }),
         method: Effect.fn("Installation.method")(function* () {
+          // czcode_change start - czcode uses .czcode/bin
+          if (process.execPath.includes(path.join(".czcode", "bin"))) return "curl" as Method
+          // czcode_change end
           if (process.execPath.includes(path.join(".kilo", "bin"))) return "curl" as Method // kilocode_change
           if (process.execPath.includes(path.join(".local", "bin"))) return "curl" as Method
           const exec = process.execPath.toLowerCase()
@@ -258,12 +268,13 @@ export const layer: Layer.Layer<Service, never, HttpClient.HttpClient | ChildPro
             return data.version
           }
 
+          // czcode_change start - check clickzetta/czcode releases instead of kilocode
           const response = yield* httpOk.execute(
-            HttpClientRequest.get("https://api.github.com/repos/Kilo-Org/kilocode/releases/latest").pipe(
-              // kilocode_change
+            HttpClientRequest.get("https://api.github.com/repos/clickzetta/czcode/releases/latest").pipe(
               HttpClientRequest.acceptJson,
             ),
           )
+          // czcode_change end
           const data = yield* HttpClientResponse.schemaBodyJson(GitHubRelease)(response)
           return data.tag_name.replace(/^v/, "")
         }, Effect.orDie),

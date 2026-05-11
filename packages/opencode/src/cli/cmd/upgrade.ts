@@ -6,7 +6,7 @@ import { InstallationVersion } from "@opencode-ai/core/installation/version"
 
 export const UpgradeCommand = {
   command: "upgrade [target]",
-  describe: "upgrade kilo to the latest or a specific version", // kilocode_change
+  describe: "upgrade czcode to the latest or a specific version", // czcode_change
   builder: (yargs: Argv) => {
     return yargs
       .positional("target", {
@@ -28,7 +28,7 @@ export const UpgradeCommand = {
     const detectedMethod = await Installation.method()
     const method = (args.method as Installation.Method) ?? detectedMethod
     if (method === "unknown") {
-      prompts.log.error(`kilo is installed to ${process.execPath} and may be managed by a package manager`) // kilocode_change
+      prompts.log.error(`czcode is installed to ${process.execPath} and may be managed by a package manager`) // czcode_change
       const install = await prompts.select({
         message: "Install anyways?",
         options: [
@@ -46,7 +46,7 @@ export const UpgradeCommand = {
     const target = args.target ? args.target.replace(/^v/, "") : await Installation.latest()
 
     if (InstallationVersion === target) {
-      prompts.log.warn(`kilo upgrade skipped: ${target} is already installed`) // kilocode_change
+      prompts.log.warn(`czcode upgrade skipped: ${target} is already installed`) // czcode_change
       prompts.outro("Done")
       return
     }
