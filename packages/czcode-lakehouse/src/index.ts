@@ -60,6 +60,7 @@ function loadDotEnv() {
   const envPath = join(process.cwd(), ".env")
   if (!existsSync(envPath)) {
     console.warn(`[czcode-lakehouse] .env not found at ${envPath}`)
+    console.warn(`[czcode-lakehouse] 提示: 请在运行 czcode 的目录下创建 .env 文件，或 cd 到包含 .env 的目录后再启动 czcode`)
     return
   }
   try {
@@ -491,7 +492,12 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
   try {
     await connector.connect()
   } catch (err) {
-    console.warn("[czcode-lakehouse] Failed to connect to Lakehouse:", (err as Error).message)
+    const msg = (err as Error).message
+    console.warn("[czcode-lakehouse] Failed to connect to Lakehouse:", msg)
+    console.warn(`[czcode-lakehouse] 请检查 .env 文件配置（czcode 从当前工作目录加载 .env）：`)
+    console.warn(`[czcode-lakehouse]   当前工作目录: ${process.cwd()}`)
+    console.warn(`[czcode-lakehouse]   .env 路径: ${join(process.cwd(), ".env")}`)
+    console.warn(`[czcode-lakehouse]   提示: 请确保在运行 czcode 的目录下有正确的 .env 文件`)
     return {}
   }
 
