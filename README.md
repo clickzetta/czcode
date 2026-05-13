@@ -169,7 +169,12 @@ czcode 有两层配置，优先级从高到低：
 ```jsonc
 {
   "model": "alibaba-cn/qwen3.5-plus",
-  "default_agent": "lh-analyst"
+  "default_agent": "lh-analyst",
+  "provider": {
+    "alibaba-cn": {
+      "options": { "apiKey": "sk-..." }  // 也可用环境变量 DASHSCOPE_API_KEY 替代
+    }
+  }
 }
 ```
 
@@ -177,13 +182,16 @@ czcode 有两层配置，优先级从高到低：
 
 全局配置在 `~/.config/czcode/config.json`，影响所有项目：
 
-```json
+```jsonc
 {
   "model": "alibaba-cn/qwen3.5-plus",
   "default_agent": "lh-analyst",
-  "skills": {
-    "paths": ["/path/to/local/clickzetta-skills"]
+  "provider": {
+    "alibaba-cn": {
+      "options": { "apiKey": "sk-..." }
+    }
   }
+}
 }
 ```
 
