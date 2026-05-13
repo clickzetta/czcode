@@ -2,7 +2,6 @@
 /**
  * czcode Schema Browser sidebar plugin.
  */
-import "@/kilocode/plugins/czcode-dotenv"
 import { t } from "@/kilocode/plugins/czcode-i18n"
 import type { TuiPlugin, TuiPluginApi, TuiPluginModule } from "@kilocode/plugin/tui"
 import type { Message, ToolPart } from "@kilocode/sdk/v2"

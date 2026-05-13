@@ -132,66 +132,35 @@ function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
 
-// Load .env from cwd (fallback when profiles.toml not available)
-function loadDotEnv() {
-  const envPath = join(process.cwd(), ".env")
-  if (!existsSync(envPath)) {
-    return false
-  }
-  try {
-    const content = readFileSync(envPath, "utf-8")
-    for (const line of content.split("\n")) {
-      const trimmed = line.trim()
-      if (!trimmed || trimmed.startsWith("#")) continue
-      const eq = trimmed.indexOf("=")
-      if (eq === -1) continue
-      let key = trimmed.slice(0, eq).trim()
-      // Strip optional "export " prefix
-      if (key.startsWith("export ")) key = key.slice(7).trim()
-      let val = trimmed.slice(eq + 1).trim()
-      // Strip surrounding quotes
-      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
-        val = val.slice(1, -1)
-      }
-      if (!process.env[key]) process.env[key] = val
-    }
-    return true
-  } catch {
-    return false
-  }
-}
 
 function readConfigFromEnv(): LakehouseConfig | null {
   // Priority 1: ~/.clickzetta/profiles.toml (shared with cz-cli)
   const profileConfig = readConfigFromProfiles()
   if (profileConfig) return profileConfig
 
-  // Priority 2: .env file in current working directory
-  const hasEnv = loadDotEnv()
+  // Priority 2: environment variables (set by user or czcode.jsonc provider)
   const service = process.env.CLICKZETTA_SERVICE
   const instance = process.env.CLICKZETTA_INSTANCE
   const workspace = process.env.CLICKZETTA_WORKSPACE
   const username = process.env.CLICKZETTA_USERNAME
   const password = process.env.CLICKZETTA_PASSWORD
-  if (!service || !instance || !workspace || !username || !password) {
-    if (!hasEnv) {
-      console.warn(`[czcode-lakehouse] 未找到连接配置。支持以下方式：`)
-      console.warn(`[czcode-lakehouse]   1. ~/.clickzetta/profiles.toml（推荐，与 cz-cli 共享，运行 cz-cli setup 配置）`)
-      console.warn(`[czcode-lakehouse]   2. 当前目录 .env 文件（${join(process.cwd(), ".env")}）`)
-      console.warn(`[czcode-lakehouse]   3. 环境变量 CLICKZETTA_PROFILE 指定 profile 名称`)
+  if (service && instance && workspace && username && password) {
+    return {
+      service,
+      instance,
+      workspace,
+      username,
+      password,
+      schema: process.env.CLICKZETTA_SCHEMA ?? "public",
+      vcluster: process.env.CLICKZETTA_VCLUSTER ?? "default",
+      protocol: (process.env.CLICKZETTA_PROTOCOL as "https" | "http") ?? "https",
     }
-    return null
   }
-  return {
-    service,
-    instance,
-    workspace,
-    username,
-    password,
-    schema: process.env.CLICKZETTA_SCHEMA ?? "public",
-    vcluster: process.env.CLICKZETTA_VCLUSTER ?? "default",
-    protocol: (process.env.CLICKZETTA_PROTOCOL as "https" | "http") ?? "https",
-  }
+
+  console.warn(`[czcode-lakehouse] 未找到 Lakehouse 连接配置。`)
+  console.warn(`[czcode-lakehouse]   请运行 cz-cli setup 配置连接（推荐）`)
+  console.warn(`[czcode-lakehouse]   或设置环境变量 CLICKZETTA_SERVICE/INSTANCE/WORKSPACE/USERNAME/PASSWORD`)
+  return null
 }
 
 const RISK_LABELS: Record<string, string> = {

@@ -103,7 +103,6 @@ function Version(props: { api: TuiPluginApi }) {
 }
 
 // czcode_change start — Lakehouse connection status in footer
-import "@/kilocode/plugins/czcode-dotenv"
 import { readFileSync, existsSync } from "node:fs"
 import { join } from "node:path"
 import { homedir } from "node:os"

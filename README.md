@@ -107,77 +107,26 @@ chmod +x czcode
 
 ### 第三步：配置 Lakehouse 连接
 
-czcode 支持两种连接配置方式（优先级从高到低）：
-
-#### 方式一：共享 cz-cli 配置（推荐）
-
-如果已安装 [cz-cli](https://github.com/clickzetta/cz-cli)，czcode 会自动读取 `~/.clickzetta/profiles.toml` 获取 Lakehouse 连接信息，无需重复配置：
-
 ```bash
-# 安装 cz-cli
+# 安装 cz-cli（如果还没有）
 npm install -g @clickzetta/cz-cli
 
-# 配置 Lakehouse 连接（交互式向导）
+# 交互式配置向导
 cz-cli setup
-
-# 验证连接
-cz-cli status
 ```
 
-配置完成后，czcode 启动时自动使用 `default_profile`。也可通过环境变量切换 profile：
+完成后 czcode 启动时自动连接 Lakehouse。
 
-```bash
-CLICKZETTA_PROFILE=uat ./czcode
-```
-
-> **注意**：profiles.toml 只管 Lakehouse 连接。AI 模型 API Key 和界面语言仍需在 `.env` 中配置：
-
-```env
-# AI 模型 API Key（必填，profiles.toml 不包含此项）
-DASHSCOPE_API_KEY=sk-...
-
-# 界面语言（可选）
-# CZCODE_LANG=en
-```
-
-#### 方式二：.env 文件
-
-在 czcode 运行目录创建 `.env` 文件：
-
-```env
-# AI 模型（默认使用阿里云 DashScope/Qwen）
-DASHSCOPE_API_KEY=sk-...
-
-# ClickZetta Lakehouse 连接信息（必填）
-CLICKZETTA_SERVICE=<your-service-endpoint>
-CLICKZETTA_INSTANCE=<your-instance>
-CLICKZETTA_WORKSPACE=<your-workspace>
-CLICKZETTA_USERNAME=<your-username>
-CLICKZETTA_PASSWORD=<your-password>
-
-# ClickZetta Lakehouse 连接信息（可选，有默认值）
-CLICKZETTA_SCHEMA=<your-schema>      # 默认 public
-CLICKZETTA_VCLUSTER=<your-vcluster>  # 默认 default
-
-# 界面语言（可选，默认中文）
-# CZCODE_LANG=en                     # 英文界面
-# CZCODE_LANG=zh                     # 中文界面（默认）
-```
-
-> 也支持 OpenAI、Anthropic 等其他 AI 模型，详见下方"配置说明"。
+> **没有 npm？** 手动创建 `~/.clickzetta/profiles.toml`，格式参考 [cz-cli 文档](https://github.com/clickzetta/cz-cli)。
+> **多环境切换**：`CLICKZETTA_PROFILE=uat ./czcode`
 
 ### 第四步：启动
 
 ```bash
-# 在解压后的目录里启动（macOS Apple Silicon 示例）
-cd ~/Downloads/czcode-darwin-arm64
 ./czcode
 ```
 
-czcode 启动时按以下优先级加载连接配置：
-1. `~/.clickzetta/profiles.toml`（与 cz-cli 共享）
-2. 当前目录下的 `.env` 文件
-3. 系统环境变量 `CLICKZETTA_*`
+首次启动时，czcode 会引导你配置 AI 模型（或在 `czcode.jsonc` 中预先配置）。
 
 ---
 
@@ -219,7 +168,7 @@ czcode 有两层配置，优先级从高到低：
 
 | 配置项 | 默认值 | 说明 |
 |--------|--------|------|
-| `model` | `alibaba-cn/qwen3.5-plus` | 需要 `.env` 中的 `DASHSCOPE_API_KEY` |
+| `model` | `alibaba-cn/qwen3.5-plus` | 需要环境变量 `DASHSCOPE_API_KEY` 或在 `czcode.jsonc` 中配置 apiKey |
 | `default_agent` | `lh-analyst` | 数据分析师（只读） |
 
 ### 更多模型选择
