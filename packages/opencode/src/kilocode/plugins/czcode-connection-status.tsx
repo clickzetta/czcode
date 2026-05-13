@@ -52,7 +52,9 @@ function resolveConnectionSource(): { workspace: string; schema: string; vcluste
           }
         }
       }
-    } catch {}
+    } catch (e) {
+      console.warn("[czcode-connection-status] profiles.toml parse error:", (e as Error).message)
+    }
   }
 
   // Priority 2: env vars
