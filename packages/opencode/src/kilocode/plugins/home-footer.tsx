@@ -104,28 +104,66 @@ function Version(props: { api: TuiPluginApi }) {
 
 // czcode_change start — Lakehouse connection status in footer
 import "@/kilocode/plugins/czcode-dotenv"
+import { readFileSync, existsSync } from "node:fs"
+import { join } from "node:path"
+import { homedir } from "node:os"
 
-function LakehouseStatus(props: { api: TuiPluginApi }) {
-  const theme = () => props.api.theme.current
-  const connected = () =>
-    !!(
-      process.env.CLICKZETTA_SERVICE &&
-      process.env.CLICKZETTA_INSTANCE &&
-      process.env.CLICKZETTA_WORKSPACE &&
-      process.env.CLICKZETTA_USERNAME &&
-      process.env.CLICKZETTA_PASSWORD
-    )
-  const label = createMemo(() => {
-    if (!connected()) return null
+function resolveLakehouseLabel(): string | null {
+  // Priority 1: profiles.toml
+  const profileName = process.env.CLICKZETTA_PROFILE
+  const profilesPath = join(homedir(), ".clickzetta", "profiles.toml")
+  if (existsSync(profilesPath)) {
+    try {
+      const content = readFileSync(profilesPath, "utf-8")
+      const defaultMatch = content.match(/^default_profile\s*=\s*"([^"]+)"/m)
+      const target = profileName || (defaultMatch ? defaultMatch[1] : undefined)
+      if (target) {
+        const regex = new RegExp(`\\[profiles\\.${target.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\]`)
+        const match = content.match(regex)
+        if (match && match.index !== undefined) {
+          const after = content.slice(match.index + match[0].length)
+          const next = after.search(/^\[/m)
+          const block = next === -1 ? after : after.slice(0, next)
+          const vals: Record<string, string> = {}
+          for (const line of block.split("\n")) {
+            const trimmed = line.trim()
+            if (!trimmed || trimmed.startsWith("#") || trimmed.startsWith("[")) continue
+            const eq = trimmed.indexOf("=")
+            if (eq === -1) continue
+            const key = trimmed.slice(0, eq).trim()
+            let val = trimmed.slice(eq + 1).trim()
+            if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) val = val.slice(1, -1)
+            vals[key] = val
+          }
+          if (vals.workspace) {
+            const parts = [`ws:${vals.workspace}`]
+            if (vals.schema) parts.push(`schema:${vals.schema}`)
+            if (vals.vcluster) parts.push(`vc:${vals.vcluster}`)
+            return parts.join(" / ")
+          }
+        }
+      }
+    } catch {}
+  }
+
+  // Priority 2: env vars
+  if (process.env.CLICKZETTA_WORKSPACE && process.env.CLICKZETTA_USERNAME) {
     const parts = []
     if (process.env.CLICKZETTA_WORKSPACE) parts.push(`ws:${process.env.CLICKZETTA_WORKSPACE}`)
     if (process.env.CLICKZETTA_SCHEMA) parts.push(`schema:${process.env.CLICKZETTA_SCHEMA}`)
     if (process.env.CLICKZETTA_VCLUSTER) parts.push(`vc:${process.env.CLICKZETTA_VCLUSTER}`)
     return parts.join(" / ")
-  })
+  }
+
+  return null
+}
+
+function LakehouseStatus(props: { api: TuiPluginApi }) {
+  const theme = () => props.api.theme.current
+  const label = createMemo(() => resolveLakehouseLabel())
 
   return (
-    <Show when={connected()}>
+    <Show when={label()}>
       <box flexDirection="row" gap={1} flexShrink={0}>
         <text fg={theme().success}>◆</text>
         <text fg={theme().text}>ClickZetta</text>
