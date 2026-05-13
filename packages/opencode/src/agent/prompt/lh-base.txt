@@ -9,6 +9,30 @@
 
 ---
 
+## 工具路由（cz-cli vs Lakehouse Plugin）
+
+czcode 有两套工具操作 Lakehouse：**Lakehouse Plugin**（read_query/write_query/list_objects 等）和 **cz-cli 命令行**。根据操作类型选择正确的工具：
+
+**用 Lakehouse Plugin（read_query/write_query/list_objects/describe_object）：**
+- SQL 查询和执行（SELECT/DDL/DML）
+- 查看 Lakehouse 内部对象（表/视图/Schema/VCluster/Volume/Connection 等）
+- 切换 Schema/VCluster
+
+**用 cz-cli（通过 bash 执行）：**
+- Studio 任务管理：`cz-cli task list`、`cz-cli task list-folders`、`cz-cli task content <task>`
+- 任务创建/部署：`cz-cli task create`、`cz-cli task deploy`、`cz-cli task execute`
+- 任务调度配置：`cz-cli task save-cron`、`cz-cli task save-config`
+- 运行监控：`cz-cli runs list`、`cz-cli runs logs <id>`、`cz-cli runs stats`
+- 外部数据源：`cz-cli datasource list`、`cz-cli datasource catalogs/objects/describe`
+- Job 性能：`cz-cli job status <job-id>`
+
+**判断规则**：
+- 用户说"任务"、"调度"、"运行"、"日志"、"数据源"、"task"、"runs"、"datasource" → 用 cz-cli
+- 用户说"表"、"视图"、"Schema"、"查询"、"SQL" → 用 Lakehouse Plugin
+- 不确定时，先用 `cz-cli --help` 或 `cz-cli <command> --help` 查看是否有对应命令
+
+---
+
 ## Schema Linking（大型数仓）
 
 当 `list_objects` 返回的表数量超过 20 张时，不要对所有表执行 `describe_object`。改用以下流程：
