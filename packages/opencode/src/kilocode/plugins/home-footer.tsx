@@ -108,6 +108,12 @@ import { readFileSync, existsSync } from "node:fs"
 import { join } from "node:path"
 import { homedir } from "node:os"
 
+// Global connection state set by czcode-lakehouse plugin
+declare global {
+  var __czcode_lakehouse_connected: boolean | undefined
+  var __czcode_lakehouse_profile: string | undefined
+}
+
 function resolveLakehouseLabel(): string | null {
   // Priority 1: profiles.toml
   const profileName = process.env.CLICKZETTA_PROFILE
@@ -161,12 +167,37 @@ function resolveLakehouseLabel(): string | null {
 function LakehouseStatus(props: { api: TuiPluginApi }) {
   const theme = () => props.api.theme.current
   const label = createMemo(() => resolveLakehouseLabel())
+  const [connected, setConnected] = createSignal(globalThis.__czcode_lakehouse_connected)
+  const [profile, setProfile] = createSignal(globalThis.__czcode_lakehouse_profile)
+
+  // Poll global state until connection resolves (plugin loads async)
+  onMount(() => {
+    const timer = setInterval(() => {
+      const state = globalThis.__czcode_lakehouse_connected
+      if (state !== undefined) {
+        setConnected(state)
+        setProfile(globalThis.__czcode_lakehouse_profile)
+        clearInterval(timer)
+      }
+    }, 200)
+    onCleanup(() => clearInterval(timer))
+  })
+
+  const color = createMemo(() => {
+    const state = connected()
+    if (state === true) return theme().success
+    if (state === false) return theme().error
+    return theme().warning
+  })
 
   return (
     <Show when={label()}>
       <box flexDirection="row" gap={1} flexShrink={0}>
-        <text fg={theme().success}>◆</text>
+        <text fg={color()}>◆</text>
         <text fg={theme().text}>ClickZetta</text>
+        <Show when={profile()}>
+          <text fg={theme().textMuted}>[{profile()}]</text>
+        </Show>
         <text fg={theme().textMuted}>{label()}</text>
       </box>
     </Show>

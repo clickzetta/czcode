@@ -6,7 +6,7 @@ import "@/kilocode/plugins/czcode-dotenv"
 import { t } from "@/kilocode/plugins/czcode-i18n"
 import type { TuiPlugin, TuiPluginApi, TuiPluginModule } from "@kilocode/plugin/tui"
 import type { Message, ToolPart } from "@kilocode/sdk/v2"
-import { createMemo, Show } from "solid-js"
+import { createMemo, createSignal, onCleanup, onMount, Show } from "solid-js"
 import { readFileSync, existsSync } from "node:fs"
 import { join } from "node:path"
 import { homedir } from "node:os"
@@ -137,6 +137,26 @@ function View(props: { api: TuiPluginApi; session_id: string }) {
   const theme = () => props.api.theme.current
   const messages = createMemo(() => props.api.state.session.messages(props.session_id))
   const ctx = createMemo(() => resolveContext(messages(), (id) => props.api.state.part(id)))
+  const [connected, setConnected] = createSignal(globalThis.__czcode_lakehouse_connected)
+  const [profile, setProfile] = createSignal(globalThis.__czcode_lakehouse_profile)
+
+  onMount(() => {
+    const timer = setInterval(() => {
+      const state = globalThis.__czcode_lakehouse_connected
+      if (state !== undefined) {
+        setConnected(state)
+        setProfile(globalThis.__czcode_lakehouse_profile)
+        clearInterval(timer)
+      }
+    }, 200)
+    onCleanup(() => clearInterval(timer))
+  })
+
+  const statusColor = createMemo(() => {
+    if (connected() === true) return theme().success
+    if (connected() === false) return theme().error
+    return theme().warning
+  })
 
   const items = createMemo(() =>
     [
@@ -150,20 +170,21 @@ function View(props: { api: TuiPluginApi; session_id: string }) {
   return (
     <Show when={envConnected()}>
       <box>
-        <text fg={theme().text}>
-          <b>Lakehouse</b>
-        </text>
-        <Show
-          when={envConnected()}
-          fallback={<text fg={theme().warning}>{t("lakehouse.notConfigured")}</text>}
-        >
-          {items().map((item) => (
-            <box flexDirection="row" justifyContent="space-between">
-              <text fg={theme().textMuted}>{item.label}</text>
-              <text fg={theme().textMuted}>{item.value}</text>
-            </box>
-          ))}
-        </Show>
+        <box flexDirection="row" gap={1}>
+          <text fg={statusColor()}>◆</text>
+          <text fg={theme().text}>
+            <b>Lakehouse</b>
+          </text>
+          <Show when={profile()}>
+            <text fg={theme().textMuted}>[{profile()}]</text>
+          </Show>
+        </box>
+        {items().map((item) => (
+          <box flexDirection="row" justifyContent="space-between">
+            <text fg={theme().textMuted}>{item.label}</text>
+            <text fg={theme().textMuted}>{item.value}</text>
+          </box>
+        ))}
       </box>
     </Show>
   )
