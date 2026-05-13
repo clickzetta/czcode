@@ -114,7 +114,7 @@ declare global {
   var __czcode_lakehouse_profile: string | undefined
 }
 
-function resolveLakehouseLabel(): string | null {
+function resolveLakehouseLabel(): { label: string; profile?: string } | null {
   // Priority 1: profiles.toml
   const profileName = process.env.CLICKZETTA_PROFILE
   const profilesPath = join(homedir(), ".clickzetta", "profiles.toml")
@@ -145,7 +145,7 @@ function resolveLakehouseLabel(): string | null {
             const parts = [`ws:${vals.workspace}`]
             if (vals.schema) parts.push(`schema:${vals.schema}`)
             if (vals.vcluster) parts.push(`vc:${vals.vcluster}`)
-            return parts.join(" / ")
+            return { label: parts.join(" / "), profile: target }
           }
         }
       }
@@ -158,7 +158,7 @@ function resolveLakehouseLabel(): string | null {
     if (process.env.CLICKZETTA_WORKSPACE) parts.push(`ws:${process.env.CLICKZETTA_WORKSPACE}`)
     if (process.env.CLICKZETTA_SCHEMA) parts.push(`schema:${process.env.CLICKZETTA_SCHEMA}`)
     if (process.env.CLICKZETTA_VCLUSTER) parts.push(`vc:${process.env.CLICKZETTA_VCLUSTER}`)
-    return parts.join(" / ")
+    return { label: parts.join(" / ") }
   }
 
   return null
@@ -166,41 +166,17 @@ function resolveLakehouseLabel(): string | null {
 
 function LakehouseStatus(props: { api: TuiPluginApi }) {
   const theme = () => props.api.theme.current
-  const label = createMemo(() => resolveLakehouseLabel())
-  const [connected, setConnected] = createSignal<boolean | undefined>(
-    process.env.__CZCODE_LH_CONNECTED === "1" ? true : process.env.__CZCODE_LH_CONNECTED === "0" ? false : undefined
-  )
-  const [profile, setProfile] = createSignal<string | undefined>(process.env.__CZCODE_LH_PROFILE)
-
-  // Poll process.env state until connection resolves (plugin loads async)
-  onMount(() => {
-    const timer = setInterval(() => {
-      const state = process.env.__CZCODE_LH_CONNECTED
-      if (state !== undefined) {
-        setConnected(state === "1")
-        setProfile(process.env.__CZCODE_LH_PROFILE)
-        clearInterval(timer)
-      }
-    }, 200)
-    onCleanup(() => clearInterval(timer))
-  })
-
-  const color = createMemo(() => {
-    const state = connected()
-    if (state === true) return theme().success
-    if (state === false) return theme().error
-    return theme().warning
-  })
+  const info = createMemo(() => resolveLakehouseLabel())
 
   return (
-    <Show when={label()}>
+    <Show when={info()}>
       <box flexDirection="row" gap={1} flexShrink={0}>
-        <text fg={color()}>◆</text>
+        <text fg={theme().success}>◆</text>
         <text fg={theme().text}>ClickZetta</text>
-        <Show when={profile()}>
-          <text fg={theme().textMuted}>[{profile()}]</text>
+        <Show when={info()?.profile}>
+          <text fg={theme().textMuted}>[{info()!.profile}]</text>
         </Show>
-        <text fg={theme().textMuted}>{label()}</text>
+        <text fg={theme().textMuted}>{info()!.label}</text>
       </box>
     </Show>
   )

@@ -6,7 +6,7 @@ import "@/kilocode/plugins/czcode-dotenv"
 import { t } from "@/kilocode/plugins/czcode-i18n"
 import type { TuiPlugin, TuiPluginApi, TuiPluginModule } from "@kilocode/plugin/tui"
 import type { Message, ToolPart } from "@kilocode/sdk/v2"
-import { createMemo, createSignal, onCleanup, onMount, Show } from "solid-js"
+import { createMemo, Show } from "solid-js"
 import { readFileSync, existsSync } from "node:fs"
 import { join } from "node:path"
 import { homedir } from "node:os"
@@ -137,27 +137,10 @@ function View(props: { api: TuiPluginApi; session_id: string }) {
   const theme = () => props.api.theme.current
   const messages = createMemo(() => props.api.state.session.messages(props.session_id))
   const ctx = createMemo(() => resolveContext(messages(), (id) => props.api.state.part(id)))
-  const [connected, setConnected] = createSignal<boolean | undefined>(
-    process.env.__CZCODE_LH_CONNECTED === "1" ? true : process.env.__CZCODE_LH_CONNECTED === "0" ? false : undefined
-  )
-  const [profile, setProfile] = createSignal<string | undefined>(process.env.__CZCODE_LH_PROFILE)
-
-  onMount(() => {
-    const timer = setInterval(() => {
-      const state = process.env.__CZCODE_LH_CONNECTED
-      if (state !== undefined) {
-        setConnected(state === "1")
-        setProfile(process.env.__CZCODE_LH_PROFILE)
-        clearInterval(timer)
-      }
-    }, 200)
-    onCleanup(() => clearInterval(timer))
-  })
-
-  const statusColor = createMemo(() => {
-    if (connected() === true) return theme().success
-    if (connected() === false) return theme().error
-    return theme().warning
+  const source = createMemo(() => resolveConnectionSource())
+  const profile = createMemo(() => {
+    const s = source()?.source
+    return s?.startsWith("profile:") ? s.slice(8) : undefined
   })
 
   const items = createMemo(() =>
@@ -173,7 +156,7 @@ function View(props: { api: TuiPluginApi; session_id: string }) {
     <Show when={envConnected()}>
       <box>
         <box flexDirection="row" gap={1}>
-          <text fg={statusColor()}>◆</text>
+          <text fg={theme().success}>◆</text>
           <text fg={theme().text}>
             <b>Lakehouse</b>
           </text>
