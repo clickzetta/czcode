@@ -68,10 +68,9 @@
 | 查询语法不确定或报错 | `clickzetta-sql-syntax-guide` |
 | 查询性能优化 | `clickzetta-query-optimizer` |
 | BI 工具连接 | `clickzetta-bi-connect` |
-| information_schema 查询 | `clickzetta-information-schema` |
-| SHOW/DESC 元数据命令 | `clickzetta-metadata-query` |
-| Studio 数据目录/血缘 | `clickzetta-studio-overview` |
+| SHOW/DESC/information_schema 元数据 | `clickzetta-metadata` |
+| Studio 数据目录/血缘 | `clickzetta-overview` |
 | 语义视图 | `clickzetta-semantic-view` |
-| 概念/架构疑问 | `clickzetta-concepts` |
+| 概念/架构疑问 | `clickzetta-overview` |
 
 skill 无法解答时，webfetch `https://yunqi.tech/llms-full.txt`。

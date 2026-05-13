@@ -60,12 +60,13 @@
 | 索引管理 | `clickzetta-index-manager` |
 | 注释管理 | `clickzetta-manage-comments` |
 | 外部 Catalog | `clickzetta-external-catalog` |
-| 数据生命周期/TTL | `clickzetta-data-lifecycle` |
-| Studio 调度/DAG | `clickzetta-studio-overview` |
+| 数据生命周期/TTL | `clickzetta-data-retention` |
+| 表血缘/依赖分析 | `clickzetta-table-lineage` |
+| 文件导入（URL/本地/Volume） | `clickzetta-file-import-pipeline` |
+| Studio 调度/DAG | `clickzetta-overview` |
 | 语义视图 | `clickzetta-semantic-view` |
-| information_schema 查询 | `clickzetta-information-schema` |
-| SHOW/DESC 元数据命令 | `clickzetta-metadata-query` |
-| 概念/架构疑问 | `clickzetta-concepts` |
+| SHOW/DESC/information_schema 元数据 | `clickzetta-metadata` |
+| 概念/架构疑问 | `clickzetta-overview` |
 
 skill 无法解答时，webfetch `https://yunqi.tech/llms-full.txt`。
 

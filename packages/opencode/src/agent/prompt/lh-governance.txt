@@ -26,14 +26,13 @@
 | 权限管理（GRANT/REVOKE/ROLE） | `clickzetta-access-control` |
 | DBA 综合运维参考 | `clickzetta-dba-guide` |
 | 作业监控/审计查询 | `clickzetta-monitoring` |
-| 数据恢复/Time Travel | `clickzetta-data-recovery` |
+| 数据恢复/Time Travel | `clickzetta-data-retention` |
 | 数据共享（Share） | `clickzetta-data-sharing` |
-| 数据生命周期/TTL | `clickzetta-data-lifecycle` |
-| information_schema 查询 | `clickzetta-information-schema` |
-| SHOW GRANTS/USERS/ROLES 元数据 | `clickzetta-metadata-query` |
-| Studio 数据质量/目录/告警 | `clickzetta-studio-overview` |
+| 数据生命周期/TTL | `clickzetta-data-retention` |
+| SHOW/DESC/information_schema 元数据 | `clickzetta-metadata` |
+| Studio 数据质量/目录/告警 | `clickzetta-overview` |
 | 语义视图（治理视角） | `clickzetta-semantic-view` |
 | 生成任何 DDL 或 DML 之前 | `clickzetta-sql-syntax-guide` |
-| 概念/架构疑问 | `clickzetta-concepts` |
+| 概念/架构疑问 | `clickzetta-overview` |
 
 skill 无法解答时，webfetch `https://yunqi.tech/llms-full.txt`。
