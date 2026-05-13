@@ -64,6 +64,9 @@ export const bash: Record<string, "allow" | "ask" | "deny"> = {
   "unzip *": "allow",
   "gzip *": "allow",
   "gunzip *": "allow",
+  // czcode_change start - allow cz-cli commands without confirmation
+  "cz-cli *": "allow",
+  // czcode_change end
 }
 
 export const readOnlyBash: Record<string, "allow" | "ask" | "deny"> = {
@@ -96,6 +99,35 @@ export const readOnlyBash: Record<string, "allow" | "ask" | "deny"> = {
   "cut *": "allow",
   "tr *": "allow",
   "jq *": "allow",
+  // czcode_change start - allow cz-cli read-only commands for plan/explore
+  "cz-cli --help": "allow",
+  "cz-cli * --help": "allow",
+  "cz-cli status *": "allow",
+  "cz-cli profile list *": "allow",
+  "cz-cli task list *": "allow",
+  "cz-cli task list-folders *": "allow",
+  "cz-cli task content *": "allow",
+  "cz-cli task deps *": "allow",
+  "cz-cli runs list *": "allow",
+  "cz-cli runs detail *": "allow",
+  "cz-cli runs stats *": "allow",
+  "cz-cli runs deps *": "allow",
+  "cz-cli datasource list *": "allow",
+  "cz-cli datasource catalogs *": "allow",
+  "cz-cli datasource objects *": "allow",
+  "cz-cli datasource describe *": "allow",
+  "cz-cli schema list *": "allow",
+  "cz-cli schema describe *": "allow",
+  "cz-cli table list *": "allow",
+  "cz-cli table describe *": "allow",
+  "cz-cli table preview *": "allow",
+  "cz-cli table stats *": "allow",
+  "cz-cli table history *": "allow",
+  "cz-cli workspace *": "allow",
+  "cz-cli sql *": "allow",
+  "cz-cli job *": "allow",
+  "cz-cli ai-guide *": "allow",
+  // czcode_change end
   "git *": "deny",
   "git log *": "allow",
   "git show *": "allow",
@@ -279,7 +311,27 @@ const CZ_LAKEHOUSE_SKILL_HINT = `## ClickZetta Lakehouse 开发规范
 | 索引管理 | \`clickzetta-index-manager\` |
 | 数仓建模 | \`clickzetta-dw-modeling\` |
 
-**不要假设 ClickZetta 与 Snowflake / Spark SQL 语法相同**，两者存在重要差异（隐式类型转换、DDL 语法、函数名等）。先加载 Skill，再写代码。`
+**不要假设 ClickZetta 与 Snowflake / Spark SQL 语法相同**，两者存在重要差异（隐式类型转换、DDL 语法、函数名等）。先加载 Skill，再写代码。
+
+## cz-cli 命令行工具
+
+当需要操作 Studio 任务、查看运行日志、管理外部数据源等 Lakehouse Plugin 不支持的功能时，使用 \`cz-cli\` 命令：
+
+| 场景 | 命令 |
+|---|---|
+| 查看 Studio 任务列表 | \`cz-cli task list\` |
+| 查看任务内容和配置 | \`cz-cli task content <task>\` |
+| 部署/下线任务 | \`cz-cli task deploy <task>\` / \`cz-cli task undeploy <task>\` |
+| 查看运行实例 | \`cz-cli runs list --task <name>\` |
+| 查看运行日志 | \`cz-cli runs logs <id>\` |
+| 重跑失败实例 | \`cz-cli runs rerun <id>\` |
+| 查看外部数据源 | \`cz-cli datasource list\` |
+| 探查外部数据源结构 | \`cz-cli datasource catalogs/objects/describe\` |
+| 执行 SQL（异步） | \`cz-cli sql "<sql>"\` |
+| 执行 SQL（同步等结果） | \`cz-cli sql "<sql>" --sync\` |
+| 写操作 SQL | \`cz-cli sql "<sql>" --write --sync\` |
+
+运行 \`cz-cli --help\` 或 \`cz-cli <command> --help\` 查看完整命令参考。`
 // czcode_change end
 
 export function patchAgents(
@@ -481,6 +533,19 @@ export function patchAgents(
     skill: "allow",
   })
 
+  // czcode_change start - lh-engineer bash for cz-cli task management
+  const engineerBash: Record<string, "allow" | "ask" | "deny"> = {
+    "*": "deny",
+    "cz-cli *": "allow",
+    "cat *": "allow",
+    "head *": "allow",
+    "tail *": "allow",
+    "ls *": "allow",
+    "grep *": "allow",
+    "which *": "allow",
+  }
+  // czcode_change end
+
   agents["lh-engineer"] = {
     name: "lh-engineer",
     displayName: t("agent.engineer.name"),
@@ -491,7 +556,7 @@ export function patchAgents(
     permission: Permission.merge(
       defaults,
       lakehouseTools,
-      Permission.fromConfig({ read: "allow", write: "allow" }),
+      Permission.fromConfig({ read: "allow", write: "allow", bash: engineerBash }), // czcode_change - add cz-cli bash
       user,
     ),
     mode: "primary",
