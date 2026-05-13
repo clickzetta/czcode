@@ -26,11 +26,17 @@ export class Auth {
 
   async login(): Promise<string> {
     const url = `${this.baseUrl}/clickzetta-portal/user/loginSingle`;
-    const body = JSON.stringify({
-      username: this.options.username,
-      password: this.options.password,
-      instanceName: this.options.instance,
-    });
+    // PAT auth uses accessToken field; password auth uses username/password
+    const body = this.options.pat
+      ? JSON.stringify({
+          accessToken: this.options.pat,
+          instanceName: this.options.instance,
+        })
+      : JSON.stringify({
+          username: this.options.username,
+          password: this.options.password,
+          instanceName: this.options.instance,
+        });
 
     let lastError: Error | null = null;
     for (let attempt = 0; attempt <= 3; attempt++) {

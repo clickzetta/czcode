@@ -6,6 +6,7 @@ export interface LakehouseConfig {
   workspace: string
   username: string
   password: string
+  pat?: string
   schema?: string
   vcluster?: string
   protocol?: "https" | "http"
@@ -45,6 +46,7 @@ export class LakehouseConnector {
       workspace: this.config.workspace,
       username: this.config.username,
       password: this.config.password,
+      pat: this.config.pat,
       schema: this.config.schema ?? "public",
       vcluster: this.config.vcluster ?? "default",
       protocol: this.config.protocol ?? "https",

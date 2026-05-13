@@ -99,12 +99,12 @@ function readConfigFromProfiles(): LakehouseConfig | null {
 
     const instance = vals.instance
     const workspace = vals.workspace
-    const username = vals.username
+    const username = vals.username || ""
     const password = vals.password || ""
     const pat = vals.pat || ""
 
-    if (!instance || !workspace || (!username && !pat)) return null
-    // PAT auth: password not required
+    if (!instance || !workspace) return null
+    // Need either password or PAT
     if (!password && !pat) return null
 
     console.log(`[czcode-lakehouse] Using profile "${target}" from ${profilesPath}`)
@@ -112,8 +112,9 @@ function readConfigFromProfiles(): LakehouseConfig | null {
       service: service || "cn-shanghai-alicloud.api.clickzetta.com",
       instance,
       workspace,
-      username: username || "",
-      password: password || pat, // clickzetta-js accepts PAT as password
+      username,
+      password,
+      pat: pat || undefined,
       schema: vals.schema || "public",
       vcluster: vals.vcluster || "default",
       protocol: (vals.protocol?.replace("://", "") as "https" | "http") || "https",

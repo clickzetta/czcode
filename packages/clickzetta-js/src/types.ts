@@ -7,6 +7,7 @@ export interface ConnectionOptions {
   vcluster: string;
   schema: string;
   protocol?: 'http' | 'https';
+  pat?: string; // Personal Access Token (alternative to username/password)
   hints?: Record<string, string | number>;
 }
 
