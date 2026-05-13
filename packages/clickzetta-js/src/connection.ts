@@ -29,12 +29,16 @@ export class Connection {
   /** @internal */
   static async create(options: ConnectionOptions): Promise<Connection> {
     const required: (keyof ConnectionOptions)[] = [
-      'username', 'password', 'service', 'instance', 'workspace', 'vcluster', 'schema',
+      'service', 'instance', 'workspace', 'vcluster', 'schema',
     ];
     for (const key of required) {
       if (!options[key]) {
         throw new ClickZettaError(`Missing required option: ${key}`);
       }
+    }
+    // PAT auth requires pat; password auth requires username + password
+    if (!options.pat && (!options.username || !options.password)) {
+      throw new ClickZettaError('Missing required option: either pat or username+password must be provided');
     }
     const auth = new Auth(options);
     await auth.login();
