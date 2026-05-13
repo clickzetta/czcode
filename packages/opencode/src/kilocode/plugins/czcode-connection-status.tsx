@@ -137,15 +137,17 @@ function View(props: { api: TuiPluginApi; session_id: string }) {
   const theme = () => props.api.theme.current
   const messages = createMemo(() => props.api.state.session.messages(props.session_id))
   const ctx = createMemo(() => resolveContext(messages(), (id) => props.api.state.part(id)))
-  const [connected, setConnected] = createSignal(globalThis.__czcode_lakehouse_connected)
-  const [profile, setProfile] = createSignal(globalThis.__czcode_lakehouse_profile)
+  const [connected, setConnected] = createSignal<boolean | undefined>(
+    process.env.__CZCODE_LH_CONNECTED === "1" ? true : process.env.__CZCODE_LH_CONNECTED === "0" ? false : undefined
+  )
+  const [profile, setProfile] = createSignal<string | undefined>(process.env.__CZCODE_LH_PROFILE)
 
   onMount(() => {
     const timer = setInterval(() => {
-      const state = globalThis.__czcode_lakehouse_connected
+      const state = process.env.__CZCODE_LH_CONNECTED
       if (state !== undefined) {
-        setConnected(state)
-        setProfile(globalThis.__czcode_lakehouse_profile)
+        setConnected(state === "1")
+        setProfile(process.env.__CZCODE_LH_PROFILE)
         clearInterval(timer)
       }
     }, 200)

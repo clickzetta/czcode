@@ -167,16 +167,18 @@ function resolveLakehouseLabel(): string | null {
 function LakehouseStatus(props: { api: TuiPluginApi }) {
   const theme = () => props.api.theme.current
   const label = createMemo(() => resolveLakehouseLabel())
-  const [connected, setConnected] = createSignal(globalThis.__czcode_lakehouse_connected)
-  const [profile, setProfile] = createSignal(globalThis.__czcode_lakehouse_profile)
+  const [connected, setConnected] = createSignal<boolean | undefined>(
+    process.env.__CZCODE_LH_CONNECTED === "1" ? true : process.env.__CZCODE_LH_CONNECTED === "0" ? false : undefined
+  )
+  const [profile, setProfile] = createSignal<string | undefined>(process.env.__CZCODE_LH_PROFILE)
 
-  // Poll global state until connection resolves (plugin loads async)
+  // Poll process.env state until connection resolves (plugin loads async)
   onMount(() => {
     const timer = setInterval(() => {
-      const state = globalThis.__czcode_lakehouse_connected
+      const state = process.env.__CZCODE_LH_CONNECTED
       if (state !== undefined) {
-        setConnected(state)
-        setProfile(globalThis.__czcode_lakehouse_profile)
+        setConnected(state === "1")
+        setProfile(process.env.__CZCODE_LH_PROFILE)
         clearInterval(timer)
       }
     }, 200)

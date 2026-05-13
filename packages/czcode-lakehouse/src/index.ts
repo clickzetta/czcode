@@ -109,6 +109,7 @@ function readConfigFromProfiles(): LakehouseConfig | null {
     if (!password && !pat) return null
 
     console.log(`[czcode-lakehouse] Using profile "${target}" from ${profilesPath}`)
+    process.env.__CZCODE_LH_PROFILE = target
     globalThis.__czcode_lakehouse_profile = target
     return {
       service: service || "cn-shanghai-alicloud.api.clickzetta.com",
@@ -581,9 +582,9 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
   const connector = new LakehouseConnector(config)
   try {
     await connector.connect()
-    globalThis.__czcode_lakehouse_connected = true
+    process.env.__CZCODE_LH_CONNECTED = "1"
   } catch (err) {
-    globalThis.__czcode_lakehouse_connected = false
+    process.env.__CZCODE_LH_CONNECTED = "0"
     const msg = (err as Error).message
     console.warn("[czcode-lakehouse] Failed to connect to Lakehouse:", msg)
     console.warn(`[czcode-lakehouse] 请检查连接配置：`)
