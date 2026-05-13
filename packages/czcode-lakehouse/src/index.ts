@@ -54,14 +54,85 @@ const LakehouseConfigSchema = z.object({
 
 import { readFileSync, existsSync } from "node:fs"
 import { join } from "node:path"
+import { homedir } from "node:os"
 
-// Load .env from cwd (compiled binary doesn't auto-load like bun dev)
+// Read config from ~/.clickzetta/profiles.toml (shared with cz-cli)
+function readConfigFromProfiles(): LakehouseConfig | null {
+  const profileName = process.env.CLICKZETTA_PROFILE
+  const profilesPath = join(homedir(), ".clickzetta", "profiles.toml")
+  if (!existsSync(profilesPath)) return null
+
+  try {
+    const content = readFileSync(profilesPath, "utf-8")
+    // Parse default_profile from top-level
+    const defaultMatch = content.match(/^default_profile\s*=\s*"([^"]+)"/m)
+    const target = profileName || (defaultMatch ? defaultMatch[1] : undefined)
+    if (!target) return null
+
+    // Find the [profiles.<name>] section
+    const sectionRegex = new RegExp(`\\[profiles\\.${escapeRegex(target)}\\]`)
+    const sectionMatch = content.match(sectionRegex)
+    if (!sectionMatch || sectionMatch.index === undefined) return null
+
+    // Extract key-value pairs until next section or EOF
+    const afterSection = content.slice(sectionMatch.index + sectionMatch[0].length)
+    const nextSection = afterSection.search(/^\[/m)
+    const block = nextSection === -1 ? afterSection : afterSection.slice(0, nextSection)
+
+    const vals: Record<string, string> = {}
+    for (const line of block.split("\n")) {
+      const trimmed = line.trim()
+      if (!trimmed || trimmed.startsWith("#") || trimmed.startsWith("[")) continue
+      const eq = trimmed.indexOf("=")
+      if (eq === -1) continue
+      const key = trimmed.slice(0, eq).trim()
+      let val = trimmed.slice(eq + 1).trim()
+      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+        val = val.slice(1, -1)
+      }
+      vals[key] = val
+    }
+
+    // Extract service — strip protocol prefix if present (profiles.toml may include https://)
+    let service = vals.service || ""
+    service = service.replace(/^https?:\/\//, "")
+
+    const instance = vals.instance
+    const workspace = vals.workspace
+    const username = vals.username
+    const password = vals.password || ""
+    const pat = vals.pat || ""
+
+    if (!instance || !workspace || (!username && !pat)) return null
+    // PAT auth: password not required
+    if (!password && !pat) return null
+
+    console.log(`[czcode-lakehouse] Using profile "${target}" from ${profilesPath}`)
+    return {
+      service: service || "cn-shanghai-alicloud.api.clickzetta.com",
+      instance,
+      workspace,
+      username: username || "",
+      password: password || pat, // clickzetta-js accepts PAT as password
+      schema: vals.schema || "public",
+      vcluster: vals.vcluster || "default",
+      protocol: (vals.protocol?.replace("://", "") as "https" | "http") || "https",
+    }
+  } catch (err) {
+    console.warn(`[czcode-lakehouse] Failed to read profiles.toml:`, (err as Error).message)
+    return null
+  }
+}
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
+// Load .env from cwd (fallback when profiles.toml not available)
 function loadDotEnv() {
   const envPath = join(process.cwd(), ".env")
   if (!existsSync(envPath)) {
-    console.warn(`[czcode-lakehouse] .env not found at ${envPath}`)
-    console.warn(`[czcode-lakehouse] 提示: 请在运行 czcode 的目录下创建 .env 文件，或 cd 到包含 .env 的目录后再启动 czcode`)
-    return
+    return false
   }
   try {
     const content = readFileSync(envPath, "utf-8")
@@ -80,17 +151,33 @@ function loadDotEnv() {
       }
       if (!process.env[key]) process.env[key] = val
     }
-  } catch {}
+    return true
+  } catch {
+    return false
+  }
 }
 
 function readConfigFromEnv(): LakehouseConfig | null {
-  loadDotEnv()
+  // Priority 1: ~/.clickzetta/profiles.toml (shared with cz-cli)
+  const profileConfig = readConfigFromProfiles()
+  if (profileConfig) return profileConfig
+
+  // Priority 2: .env file in current working directory
+  const hasEnv = loadDotEnv()
   const service = process.env.CLICKZETTA_SERVICE
   const instance = process.env.CLICKZETTA_INSTANCE
   const workspace = process.env.CLICKZETTA_WORKSPACE
   const username = process.env.CLICKZETTA_USERNAME
   const password = process.env.CLICKZETTA_PASSWORD
-  if (!service || !instance || !workspace || !username || !password) return null
+  if (!service || !instance || !workspace || !username || !password) {
+    if (!hasEnv) {
+      console.warn(`[czcode-lakehouse] 未找到连接配置。支持以下方式：`)
+      console.warn(`[czcode-lakehouse]   1. ~/.clickzetta/profiles.toml（推荐，与 cz-cli 共享，运行 cz-cli setup 配置）`)
+      console.warn(`[czcode-lakehouse]   2. 当前目录 .env 文件（${join(process.cwd(), ".env")}）`)
+      console.warn(`[czcode-lakehouse]   3. 环境变量 CLICKZETTA_PROFILE 指定 profile 名称`)
+    }
+    return null
+  }
   return {
     service,
     instance,
@@ -494,10 +581,10 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
   } catch (err) {
     const msg = (err as Error).message
     console.warn("[czcode-lakehouse] Failed to connect to Lakehouse:", msg)
-    console.warn(`[czcode-lakehouse] 请检查 .env 文件配置（czcode 从当前工作目录加载 .env）：`)
-    console.warn(`[czcode-lakehouse]   当前工作目录: ${process.cwd()}`)
-    console.warn(`[czcode-lakehouse]   .env 路径: ${join(process.cwd(), ".env")}`)
-    console.warn(`[czcode-lakehouse]   提示: 请确保在运行 czcode 的目录下有正确的 .env 文件`)
+    console.warn(`[czcode-lakehouse] 请检查连接配置：`)
+    console.warn(`[czcode-lakehouse]   profiles.toml: ${join(homedir(), ".clickzetta", "profiles.toml")}`)
+    console.warn(`[czcode-lakehouse]   .env 文件: ${join(process.cwd(), ".env")}`)
+    console.warn(`[czcode-lakehouse]   提示: 运行 cz-cli setup 可快速配置连接`)
     return {}
   }
 
