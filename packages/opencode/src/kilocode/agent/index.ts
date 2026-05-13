@@ -589,7 +589,7 @@ export function patchAgents(
     permission: Permission.merge(
       defaults,
       lakehouseTools,
-      Permission.fromConfig({ read: "allow", write: "deny", bash: "deny" }),
+      Permission.fromConfig({ read: "allow", write: "deny", bash: engineerBash }), // czcode_change - add cz-cli for Studio task ops
       user,
     ),
     mode: "primary",
