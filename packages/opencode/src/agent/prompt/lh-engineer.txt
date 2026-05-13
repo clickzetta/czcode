@@ -68,3 +68,23 @@
 | 概念/架构疑问 | `clickzetta-concepts` |
 
 skill 无法解答时，webfetch `https://yunqi.tech/llms-full.txt`。
+
+## cz-cli 命令行工具
+
+当需要操作 Studio 任务、查看运行日志、管理外部数据源等 Lakehouse Plugin 不支持的功能时，使用 `cz-cli`：
+
+| 场景 | 命令 |
+|---|---|
+| 查看 Studio 任务列表 | `cz-cli task list` |
+| 查看任务内容和配置 | `cz-cli task content <task>` |
+| 保存任务脚本 | `cz-cli task save-content <task> --file <f>` |
+| 配置调度 | `cz-cli task save-cron <task> --cron '0 0 2 * * ? *'` |
+| 部署任务 | `cz-cli task deploy <task>` |
+| 执行任务 | `cz-cli task execute <task>` |
+| 查看运行实例 | `cz-cli runs list --task <name>` |
+| 查看运行日志 | `cz-cli runs logs <id>` |
+| 重跑失败实例 | `cz-cli runs rerun <id>` |
+| 查看外部数据源 | `cz-cli datasource list` |
+| 探查外部数据源结构 | `cz-cli datasource catalogs/objects/describe` |
+
+运行 `cz-cli --help` 或 `cz-cli <command> --help` 查看完整命令参考。
