@@ -120,13 +120,41 @@ cz-cli setup
 > **没有 npm？** 手动创建 `~/.clickzetta/profiles.toml`，格式参考 [cz-cli 文档](https://github.com/clickzetta/cz-cli)。
 > **多环境切换**：`CLICKZETTA_PROFILE=uat ./czcode`
 
-### 第四步：启动
+### 第四步：配置 AI 模型
+
+czcode 默认使用阿里云 DashScope Qwen 模型。配置 API Key（二选一）：
+
+**方式 A：环境变量（推荐）**
+
+```bash
+# 添加到 ~/.zshrc 或 ~/.bashrc
+export DASHSCOPE_API_KEY=sk-...
+```
+
+> API Key 从 [DashScope 控制台](https://dashscope.console.aliyun.com) 获取。
+
+**方式 B：写入 czcode.jsonc**
+
+在 czcode 运行目录创建 `czcode.jsonc`：
+
+```jsonc
+{
+  "model": "alibaba-cn/qwen3.5-plus",
+  "provider": {
+    "alibaba-cn": {
+      "options": { "apiKey": "sk-..." }
+    }
+  }
+}
+```
+
+> 使用其他模型（Claude/GPT-4o）或自定义 Base URL，详见下方"配置说明"。
+
+### 第五步：启动
 
 ```bash
 ./czcode
 ```
-
-首次启动时，czcode 会引导你配置 AI 模型（或在 `czcode.jsonc` 中预先配置）。
 
 ---
 
