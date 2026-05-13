@@ -111,13 +111,13 @@ czcode 支持两种连接配置方式（优先级从高到低）：
 
 #### 方式一：共享 cz-cli 配置（推荐）
 
-如果已安装 [cz-cli](https://github.com/clickzetta/cz-cli)，czcode 会自动读取 `~/.clickzetta/profiles.toml`，无需额外配置：
+如果已安装 [cz-cli](https://github.com/clickzetta/cz-cli)，czcode 会自动读取 `~/.clickzetta/profiles.toml` 获取 Lakehouse 连接信息，无需重复配置：
 
 ```bash
 # 安装 cz-cli
 npm install -g @clickzetta/cz-cli
 
-# 配置连接（交互式向导）
+# 配置 Lakehouse 连接（交互式向导）
 cz-cli setup
 
 # 验证连接
@@ -128,6 +128,16 @@ cz-cli status
 
 ```bash
 CLICKZETTA_PROFILE=uat ./czcode
+```
+
+> **注意**：profiles.toml 只管 Lakehouse 连接。AI 模型 API Key 和界面语言仍需在 `.env` 中配置：
+
+```env
+# AI 模型 API Key（必填，profiles.toml 不包含此项）
+DASHSCOPE_API_KEY=sk-...
+
+# 界面语言（可选）
+# CZCODE_LANG=en
 ```
 
 #### 方式二：.env 文件
