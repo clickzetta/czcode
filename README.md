@@ -107,14 +107,32 @@ chmod +x czcode
 
 ### 第三步：配置 Lakehouse 连接
 
-在解压后的目录里创建 `.env` 文件，填入你的 Lakehouse 连接信息：
+czcode 支持两种连接配置方式（优先级从高到低）：
+
+#### 方式一：共享 cz-cli 配置（推荐）
+
+如果已安装 [cz-cli](https://github.com/clickzetta/cz-cli)，czcode 会自动读取 `~/.clickzetta/profiles.toml`，无需额外配置：
 
 ```bash
-# 进入解压后的目录（macOS Apple Silicon 示例）
-cd ~/Downloads/czcode-darwin-arm64
+# 安装 cz-cli
+npm install -g @clickzetta/cz-cli
+
+# 配置连接（交互式向导）
+cz-cli setup
+
+# 验证连接
+cz-cli status
 ```
 
-用文本编辑器创建 `.env` 文件，内容如下：
+配置完成后，czcode 启动时自动使用 `default_profile`。也可通过环境变量切换 profile：
+
+```bash
+CLICKZETTA_PROFILE=uat ./czcode
+```
+
+#### 方式二：.env 文件
+
+在 czcode 运行目录创建 `.env` 文件：
 
 ```env
 # AI 模型（默认使用阿里云 DashScope/Qwen）
@@ -146,7 +164,10 @@ cd ~/Downloads/czcode-darwin-arm64
 ./czcode
 ```
 
-czcode 会自动读取当前目录下的 `.env` 文件加载 Lakehouse 连接配置。
+czcode 启动时按以下优先级加载连接配置：
+1. `~/.clickzetta/profiles.toml`（与 cz-cli 共享）
+2. 当前目录下的 `.env` 文件
+3. 系统环境变量 `CLICKZETTA_*`
 
 ---
 
@@ -408,7 +429,7 @@ czcode 内置 5 个数据角色 + ask 角色，共 6 个，在输入框按 **Tab
 
 ### Skills（领域知识）
 
-czcode 内置 31 个 ClickZetta Lakehouse 领域 Skill，覆盖 SQL 语法、数据导入、索引管理、VCluster 运维等场景。Skills 随安装包一起分发，无需网络即可使用。
+czcode 内置 ClickZetta Lakehouse 领域 Skills，覆盖 SQL 语法、数据导入、索引管理、VCluster 运维等场景。Skills 随安装包一起分发，无需网络即可使用。
 
 更新 Skills：
 ```
@@ -420,6 +441,21 @@ czcode 内置 31 个 ClickZetta Lakehouse 领域 Skill，覆盖 SQL 语法、数
 报告 Skill 问题：
 - 在对话中运行 `/cz_skill-fix` 写入本地修正
 - 或到 GitHub 提交 Issue：[报告问题](https://github.com/clickzetta/clickzetta-skills/issues/new?template=skill-bug.yml) | [提改进建议](https://github.com/clickzetta/clickzetta-skills/issues/new?template=skill-enhancement.yml)
+
+### cz-cli 集成
+
+czcode 与 [cz-cli](https://github.com/clickzetta/cz-cli) 共享连接配置，并可在数据工程师/数据运维角色中直接调用 cz-cli 命令，实现 Studio 任务管理、运行监控等 czcode 原生不支持的功能：
+
+| 功能 | czcode 原生 | cz-cli 补充 |
+|---|---|---|
+| SQL 查询 | ✅ read_query / write_query | cz-cli sql |
+| 对象浏览 | ✅ list_objects / describe_object | cz-cli table list/describe |
+| Studio 任务管理 | — | ✅ cz-cli task list/deploy/execute |
+| 运行监控/日志 | — | ✅ cz-cli runs list/logs/rerun |
+| 外部数据源探查 | — | ✅ cz-cli datasource list/describe |
+| 多环境切换 | CLICKZETTA_PROFILE | cz-cli --profile |
+
+> 安装 cz-cli：`npm install -g @clickzetta/cz-cli`
 
 ---
 
