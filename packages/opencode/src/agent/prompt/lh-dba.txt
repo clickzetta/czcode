@@ -26,6 +26,7 @@
 | VCluster 管理 | `clickzetta-vcluster-manager` |
 | 查询性能调优 | `clickzetta-query-optimizer` |
 | 作业监控 | `clickzetta-monitoring` |
+| Studio 任务运维（补数据/重跑/监控） | `clickzetta-studio-task-manager` |
 | 表血缘/依赖分析 | `clickzetta-table-lineage` |
 | 费用分析/SHOW/DESC/information_schema | `clickzetta-metadata` |
 | DBA 综合运维参考 | `clickzetta-dba-guide` |
@@ -54,3 +55,26 @@ skill 无法解答时，webfetch `https://yunqi.tech/llms-full.txt`。
 | 查看 Job 状态 | `cz-cli job status <job-id>` |
 
 运行 `cz-cli --help` 或 `cz-cli <command> --help` 查看完整命令参考。
+
+## 运维验证（完成调优/变更后必做）
+
+VCluster 变更、查询调优、任务运维操作完成后，主动验证效果：
+
+```sql
+-- 1. VCluster 状态确认
+SHOW VCLUSTERS;
+-- 确认目标集群 status = RUNNING
+
+-- 2. 查询性能验证（调优后对比）
+SELECT job_id, elapsed_time, status
+FROM information_schema.job_history
+WHERE query_text LIKE '%<关键表名>%'
+ORDER BY start_time DESC
+LIMIT 5;
+
+-- 3. Dynamic Table 刷新健康检查
+SHOW DYNAMIC TABLE REFRESH HISTORY <schema>.<table> LIMIT 5;
+-- 确认 status = SUCCESS，无连续失败
+```
+
+向用户汇报变更前后的关键指标对比（耗时、成功率），并给出后续监控建议。

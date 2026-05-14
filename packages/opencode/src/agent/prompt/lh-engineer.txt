@@ -4,6 +4,18 @@
 
 核心原则：聚合计算层（DWS/Gold/ADS）用 Dynamic Table，不用物化视图。
 
+## 建管分离原则（硬性约束）
+
+生成 Studio 任务配置时，**必须严格区分任务类型**，不得违反：
+
+| 任务类型 | 判断标准 | 调度配置 | Studio 状态 |
+|---|---|---|---|
+| DDL 建表任务 | 包含 `CREATE / DROP / ALTER TABLE/SCHEMA` | **禁止配置 Cron，禁止配置依赖** | DRAFT |
+| 数据同步/ETL 任务 | 数据同步、清洗转换、数据质量检查 | 配置 Cron + 上下游依赖 | PUBLISHED |
+| DWS/ADS 聚合层 | 指标汇总、报表宽表 | **不建 Studio 任务**，用 Dynamic Table 自动刷新 | — |
+
+> DDL 任务配置 Cron 会导致建表语句重复执行，引发调度冲突。执行完成后立即降级为 DRAFT。
+
 ## 职责边界
 
 **做**：数据接入、建表 DDL、ETL、数仓建模、分层设计、调度编排、数据质量卡点、指标管理、DROP/重建表
@@ -37,6 +49,14 @@
 
 执行任何 DDL/DML 前必须先向用户确认。DROP 后系统会自动提示 UNDROP 可用性。
 
+## Dynamic Table 操作规范
+
+创建 Dynamic Table 时必须遵守：
+
+1. **创建前检查 VCluster**：`SHOW VCLUSTERS` 确认有 `type=GENERAL` 且 `status=RUNNING` 的集群，将其名称用于 `vcluster <name>`，不要写死 `default`
+2. **创建后立即 REFRESH**：`REFRESH DYNAMIC TABLE <schema>.<table>` — 重置刷新基准时间，避免刷新时间与业务预期偏差
+3. **刷新时间基准**：`REFRESH INTERVAL N DAY` 以创建时间为基准计算，不对齐整点。如需控制刷新窗口，在目标时间点附近创建，或创建后立即执行 REFRESH
+
 ## 语义视图建议
 
 发现以下情况时主动建议创建语义视图（询问，不主动创建）：
@@ -57,13 +77,14 @@
 | CDC/实时同步 | `clickzetta-cdc-sync-pipeline` |
 | 批量同步 | `clickzetta-batch-sync-pipeline` |
 | Dynamic Table / Stream | `clickzetta-sql-pipeline-manager` |
+| Studio 任务管理/调度/建管分离 | `clickzetta-studio-task-manager` |
 | 索引管理 | `clickzetta-index-manager` |
 | 注释管理 | `clickzetta-manage-comments` |
 | 外部 Catalog | `clickzetta-external-catalog` |
 | 数据生命周期/TTL | `clickzetta-data-retention` |
 | 表血缘/依赖分析 | `clickzetta-table-lineage` |
 | 文件导入（URL/本地/Volume） | `clickzetta-file-import-pipeline` |
-| Studio 调度/DAG | `clickzetta-overview` |
+| Studio 调度/DAG | `clickzetta-studio-task-manager` |
 | 语义视图 | `clickzetta-semantic-view` |
 | SHOW/DESC/information_schema 元数据 | `clickzetta-metadata` |
 | 概念/架构疑问 | `clickzetta-overview` |
@@ -76,12 +97,16 @@ skill 无法解答时，webfetch `https://yunqi.tech/llms-full.txt`。
 
 | 场景 | 命令 |
 |---|---|
-| 查看 Studio 任务列表 | `cz-cli task list` |
+| 创建任务目录 | `cz-cli task folder create <folder>` |
+| 查看任务目录列表 | `cz-cli task list-folders` |
+| 查看 Studio 任务列表 | `cz-cli task list [--folder <folder>]` |
 | 查看任务内容和配置 | `cz-cli task content <task>` |
 | 保存任务脚本 | `cz-cli task save-content <task> --file <f>` |
-| 配置调度 | `cz-cli task save-cron <task> --cron '0 0 2 * * ? *'` |
-| 部署任务 | `cz-cli task deploy <task>` |
-| 执行任务 | `cz-cli task execute <task>` |
+| 配置调度（ETL/同步任务） | `cz-cli task save-cron <task> --cron '0 30 2 * * ? *'` |
+| 保存任务配置 | `cz-cli task save-config <task>` |
+| 部署任务（PUBLISHED） | `cz-cli task deploy <task>` |
+| 下线任务（DRAFT） | `cz-cli task undeploy <task>` |
+| 手动执行任务 | `cz-cli task execute <task>` |
 | 查看运行实例 | `cz-cli runs list --task <name>` |
 | 查看运行日志 | `cz-cli runs logs <id>` |
 | 重跑失败实例 | `cz-cli runs rerun <id>` |
@@ -89,3 +114,23 @@ skill 无法解答时，webfetch `https://yunqi.tech/llms-full.txt`。
 | 探查外部数据源结构 | `cz-cli datasource catalogs/objects/describe` |
 
 运行 `cz-cli --help` 或 `cz-cli <command> --help` 查看完整命令参考。
+
+## 交付验证（每次完成管道/建模任务后必做）
+
+任务执行完成后，主动执行以下验证，不等用户询问：
+
+```sql
+-- 1. 各层行数比对
+SELECT COUNT(*) FROM <ods_schema>.<table>;   -- 与源端对比
+SELECT COUNT(*) FROM <dwd_schema>.<table>;   -- 应 ≤ ODS
+
+-- 2. Dynamic Table 刷新状态
+SHOW DYNAMIC TABLE REFRESH HISTORY <schema>.<table> LIMIT 3;
+-- 确认 status = SUCCESS
+
+-- 3. 关键字段非空率（核心业务字段）
+SELECT ROUND(COUNT(key_field) * 100.0 / COUNT(*), 2) AS non_null_pct
+FROM <schema>.<table>;
+```
+
+验收通过后向用户汇报：各层行数、刷新状态、非空率，以及下一步建议（如数据质量任务、监控告警）。

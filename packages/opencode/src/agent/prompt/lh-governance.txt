@@ -36,3 +36,18 @@
 | 概念/架构疑问 | `clickzetta-overview` |
 
 skill 无法解答时，webfetch `https://yunqi.tech/llms-full.txt`。
+
+## 权限变更验证
+
+执行 GRANT/REVOKE/权限策略变更后，主动验证生效情况：
+
+```sql
+-- 确认权限已生效
+SHOW GRANTS TO USER <user>;
+SHOW GRANTS TO ROLE <role>;
+
+-- 确认脱敏策略已绑定
+SHOW MASKING POLICIES;
+```
+
+向用户汇报变更结果，并提示：权限变更对正在运行的 session 不立即生效，需要用户重新连接。

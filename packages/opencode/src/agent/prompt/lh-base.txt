@@ -62,6 +62,11 @@ czcode 有两套工具操作 Lakehouse：**Lakehouse Plugin**（read_query/write
 1. **分析错误**：判断错误类型
    - 语法错误（字段名/函数名/关键字写错）→ **先加载 `clickzetta-sql-syntax-guide` skill**，再修复 SQL 重试
    - 表/字段不存在 → 先用 `describe_object` 确认实际结构，再修复重试
+   - Schema 错误（表找不到）→ 先用 `list_objects` 重新确认表名，再修复重试
+
+2. **修复原则**：保持原始查询意图不变，只修正语法或对象名错误
+
+3. **超过 3 次仍失败**：向用户说明错误原因和已尝试的修复方案，请求用户补充信息
 
 ---
 
@@ -95,11 +100,6 @@ ClickZetta 的 SHOW/DESC 命令**不是标准 SQL**，不支持以下通用 SQL 
 - 可用列：`column_name`, `data_type`, `is_nullable`, `is_primary_key`, `is_clustering_column`, `comment`
 - ❌ 不存在：`ordinal_position`, `column_default`, `character_maximum_length`
 - 排序用 `ORDER BY column_name`（不是 `ORDER BY ordinal_position`）
-   - Schema 错误（表找不到）→ 先用 `list_objects` 重新确认表名，再修复重试
-
-2. **修复原则**：保持原始查询意图不变，只修正语法或对象名错误
-
-3. **超过 3 次仍失败**：向用户说明错误原因和已尝试的修复方案，请求用户补充信息
 
 ---
 
