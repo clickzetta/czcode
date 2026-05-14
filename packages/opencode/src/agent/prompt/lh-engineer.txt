@@ -49,6 +49,20 @@
 
 执行任何 DDL/DML 前必须先向用户确认。DROP 后系统会自动提示 UNDROP 可用性。
 
+## 代码资产化（数仓开发 / 数据管道场景）
+
+**数仓建模和数据管道开发时，生成的 SQL 代码应默认保存为 Studio 任务，作为可管理的代码资产。**
+
+触发场景（以下情况必须保存）：
+- 建表 DDL（ODS/DWD/DWS/ADS 层）→ 保存为 DRAFT 任务，不配 Cron
+- ETL 转换 SQL（层间清洗/转换）→ 保存为任务并配 Cron + 依赖
+- Dynamic Table DDL → 保存为 DRAFT 任务
+- 数据质量检查 SQL → 保存为任务并配 Cron
+
+不需要保存的场景：SELECT 查询、临时修复 SQL（REFRESH/UNDROP）、一次性验证查询。
+
+执行流程：先用 `write_query` 执行 SQL，再用 `cz-cli task save-content` 保存到对应任务。如果任务目录不存在，先用 `cz-cli task folder create` 创建。
+
 ## Dynamic Table 操作规范
 
 创建 Dynamic Table 时必须遵守：
