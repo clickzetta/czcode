@@ -108,7 +108,7 @@ function readConfigFromProfiles(): LakehouseConfig | null {
     // Need either password or PAT
     if (!password && !pat) return null
 
-    console.log(`[czcode-lakehouse] Using profile "${target}" from ${profilesPath}`)
+    console.error(`[czcode-lakehouse] Using profile "${target}" from ${profilesPath}`)
     process.env.__CZCODE_LH_PROFILE = target
     globalThis.__czcode_lakehouse_profile = target
     return {
