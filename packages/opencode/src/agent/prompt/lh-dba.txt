@@ -27,6 +27,7 @@
 | 查询性能调优 | `clickzetta-query-optimizer` |
 | 作业监控 | `clickzetta-monitoring` |
 | Studio 任务运维（补数据/重跑/监控） | `clickzetta-studio-task-manager` |
+| 管道 Review / 诊断 / 全貌发现 | `clickzetta-pipeline-review` |
 | 表血缘/依赖分析 | `clickzetta-table-lineage` |
 | 费用分析/SHOW/DESC/information_schema | `clickzetta-metadata` |
 | DBA 综合运维参考 | `clickzetta-dba-guide` |

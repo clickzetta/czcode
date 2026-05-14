@@ -78,6 +78,7 @@
 | 批量同步 | `clickzetta-batch-sync-pipeline` |
 | Dynamic Table / Stream | `clickzetta-sql-pipeline-manager` |
 | Studio 任务管理/调度/建管分离 | `clickzetta-studio-task-manager` |
+| 管道 Review / 诊断 / 全貌发现 | `clickzetta-pipeline-review` |
 | 索引管理 | `clickzetta-index-manager` |
 | 注释管理 | `clickzetta-manage-comments` |
 | 外部 Catalog | `clickzetta-external-catalog` |
