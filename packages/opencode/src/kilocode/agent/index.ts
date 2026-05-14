@@ -427,6 +427,148 @@ export function patchAgents(
     }
   }
 
+  // czcode_change start — Lakehouse data team agents
+
+  // Read-only tool set — no write_query, no file write, no bash
+  const analystTools = Permission.fromConfig({
+    read_query: "allow",
+    write_query: "deny",
+    list_objects: "allow",
+    describe_object: "allow",
+    explain_query: "allow",
+    get_context: "allow",
+    switch_context: "allow",
+    skill: "allow",
+    read: "allow",
+    webfetch: "allow", // czcode_change — external data fusion for business analysis
+    websearch: "allow", // czcode_change — external data fusion for business analysis
+    write: "deny",
+    bash: "deny",
+  })
+
+  // Full Lakehouse tool set (read + write, no file system write)
+  // write_query is "ask" so dangerous DDL/DML requires user confirmation
+  const lakehouseTools = Permission.fromConfig({
+    read_query: "allow",
+    write_query: "allow",
+    list_objects: "allow",
+    describe_object: "allow",
+    explain_query: "allow",
+    get_context: "allow",
+    switch_context: "allow",
+    skill: "allow",
+  })
+
+  // czcode_change start - lh-engineer bash for cz-cli task management
+  const engineerBash: Record<string, "allow" | "ask" | "deny"> = {
+    "*": "deny",
+    "cz-cli *": "allow",
+    "cat *": "allow",
+    "head *": "allow",
+    "tail *": "allow",
+    "ls *": "allow",
+    "grep *": "allow",
+    "which *": "allow",
+  }
+  // czcode_change end
+
+  agents["lh-analyst"] = {
+    name: "lh-analyst",
+    displayName: t("agent.analyst.name"),
+    description: t("agent.analyst.desc"),
+    prompt: PROMPT_LH_ANALYST + "\n\n" + PROMPT_LH_BASE,
+    options: {},
+    color: "#00AA44",
+    permission: Permission.merge(
+      defaults,
+      analystTools,
+      user,
+    ),
+    mode: "primary",
+    native: true,
+  }
+
+  agents["lh-engineer"] = {
+    name: "lh-engineer",
+    displayName: t("agent.engineer.name"),
+    description: t("agent.engineer.desc"),
+    prompt: PROMPT_LH_ENGINEER + "\n\n" + PROMPT_LH_BASE,
+    options: {},
+    color: "#0066CC",
+    permission: Permission.merge(
+      defaults,
+      lakehouseTools,
+      Permission.fromConfig({ read: "allow", write: "allow", bash: engineerBash }), // czcode_change - add cz-cli bash
+      user,
+    ),
+    mode: "primary",
+    native: true,
+  }
+
+  agents["lh-dba"] = {
+    name: "lh-dba",
+    displayName: t("agent.dba.name"),
+    description: t("agent.dba.desc"),
+    prompt: PROMPT_LH_DBA + "\n\n" + PROMPT_LH_BASE,
+    options: {},
+    color: "#CC6600",
+    permission: Permission.merge(
+      defaults,
+      lakehouseTools,
+      Permission.fromConfig({ read: "allow", write: "deny", bash: engineerBash }), // czcode_change - add cz-cli for Studio task ops
+      user,
+    ),
+    mode: "primary",
+    native: true,
+  }
+
+  agents["lh-governance"] = {
+    name: "lh-governance",
+    displayName: t("agent.governance.name"),
+    description: t("agent.governance.desc"),
+    prompt: PROMPT_LH_GOVERNANCE + "\n\n" + PROMPT_LH_BASE,
+    options: {},
+    color: "#7B2D8B",
+    permission: Permission.merge(
+      defaults,
+      lakehouseTools,
+      Permission.fromConfig({
+        read: "allow",
+        write: "deny",
+        bash: "deny",
+        webfetch: "allow", // czcode_change — compliance regulations and security standards
+        websearch: "allow", // czcode_change — compliance regulations and security standards
+      }),
+      user,
+    ),
+    mode: "primary",
+    native: true,
+  }
+
+  agents["lh-data-scientist"] = {
+    name: "lh-data-scientist",
+    displayName: t("agent.scientist.name"),
+    description: t("agent.scientist.desc"),
+    prompt: PROMPT_LH_DATA_SCIENTIST + "\n\n" + PROMPT_LH_BASE,
+    options: {},
+    color: "#E67E00",
+    permission: Permission.merge(
+      defaults,
+      lakehouseTools,
+      Permission.fromConfig({
+        read: "allow",
+        write: "allow",
+        bash: bash, // czcode_change — execute Python/jupyter commands
+        webfetch: "allow", // czcode_change — fetch external datasets (Kaggle, UCI, etc.)
+        websearch: "allow", // czcode_change — search for data science methods and datasets
+      }),
+      user,
+    ),
+    mode: "primary",
+    native: true,
+  }
+  // czcode_change end — Lakehouse data team agents
+
   // Add debug agent
   agents.debug = {
     name: "debug",
@@ -496,147 +638,6 @@ export function patchAgents(
       user, // user before ask-specific so ask's deny+allowlist wins
       askGuard(kilo.mcpRules),
       user.filter((r: Permission.Rule) => r.action === "deny"), // re-apply user denies so explicit MCP blocks win over mcpRules
-    ),
-    mode: "primary",
-    native: true,
-  }
-
-  // czcode_change start — Lakehouse data team agents
-
-  // Read-only tool set — no write_query, no file write, no bash
-  const analystTools = Permission.fromConfig({
-    read_query: "allow",
-    write_query: "deny",
-    list_objects: "allow",
-    describe_object: "allow",
-    explain_query: "allow",
-    get_context: "allow",
-    switch_context: "allow",
-    skill: "allow",
-    read: "allow",
-    webfetch: "allow", // czcode_change — external data fusion for business analysis
-    websearch: "allow", // czcode_change — external data fusion for business analysis
-    write: "deny",
-    bash: "deny",
-  })
-
-  // Full Lakehouse tool set (read + write, no file system write)
-  // write_query is "ask" so dangerous DDL/DML requires user confirmation
-  const lakehouseTools = Permission.fromConfig({
-    read_query: "allow",
-    write_query: "allow",
-    list_objects: "allow",
-    describe_object: "allow",
-    explain_query: "allow",
-    get_context: "allow",
-    switch_context: "allow",
-    skill: "allow",
-  })
-
-  // czcode_change start - lh-engineer bash for cz-cli task management
-  const engineerBash: Record<string, "allow" | "ask" | "deny"> = {
-    "*": "deny",
-    "cz-cli *": "allow",
-    "cat *": "allow",
-    "head *": "allow",
-    "tail *": "allow",
-    "ls *": "allow",
-    "grep *": "allow",
-    "which *": "allow",
-  }
-  // czcode_change end
-
-  agents["lh-engineer"] = {
-    name: "lh-engineer",
-    displayName: t("agent.engineer.name"),
-    description: t("agent.engineer.desc"),
-    prompt: PROMPT_LH_ENGINEER + "\n\n" + PROMPT_LH_BASE,
-    options: {},
-    color: "#0066CC",
-    permission: Permission.merge(
-      defaults,
-      lakehouseTools,
-      Permission.fromConfig({ read: "allow", write: "allow", bash: engineerBash }), // czcode_change - add cz-cli bash
-      user,
-    ),
-    mode: "primary",
-    native: true,
-  }
-
-  agents["lh-analyst"] = {
-    name: "lh-analyst",
-    displayName: t("agent.analyst.name"),
-    description: t("agent.analyst.desc"),
-    prompt: PROMPT_LH_ANALYST + "\n\n" + PROMPT_LH_BASE,
-    options: {},
-    color: "#00AA44",
-    permission: Permission.merge(
-      defaults,
-      analystTools,
-      user,
-    ),
-    mode: "primary",
-    native: true,
-  }
-
-  agents["lh-dba"] = {
-    name: "lh-dba",
-    displayName: t("agent.dba.name"),
-    description: t("agent.dba.desc"),
-    prompt: PROMPT_LH_DBA + "\n\n" + PROMPT_LH_BASE,
-    options: {},
-    color: "#CC6600",
-    permission: Permission.merge(
-      defaults,
-      lakehouseTools,
-      Permission.fromConfig({ read: "allow", write: "deny", bash: engineerBash }), // czcode_change - add cz-cli for Studio task ops
-      user,
-    ),
-    mode: "primary",
-    native: true,
-  }
-
-  agents["lh-governance"] = {
-    name: "lh-governance",
-    displayName: t("agent.governance.name"),
-    description: t("agent.governance.desc"),
-    prompt: PROMPT_LH_GOVERNANCE + "\n\n" + PROMPT_LH_BASE,
-    options: {},
-    color: "#7B2D8B",
-    permission: Permission.merge(
-      defaults,
-      lakehouseTools,
-      Permission.fromConfig({
-        read: "allow",
-        write: "deny",
-        bash: "deny",
-        webfetch: "allow", // czcode_change — compliance regulations and security standards
-        websearch: "allow", // czcode_change — compliance regulations and security standards
-      }),
-      user,
-    ),
-    mode: "primary",
-    native: true,
-  }
-
-  agents["lh-data-scientist"] = {
-    name: "lh-data-scientist",
-    displayName: t("agent.scientist.name"),
-    description: t("agent.scientist.desc"),
-    prompt: PROMPT_LH_DATA_SCIENTIST + "\n\n" + PROMPT_LH_BASE,
-    options: {},
-    color: "#E67E00",
-    permission: Permission.merge(
-      defaults,
-      lakehouseTools,
-      Permission.fromConfig({
-        read: "allow",
-        write: "allow",
-        bash: bash, // czcode_change — execute Python/jupyter commands
-        webfetch: "allow", // czcode_change — fetch external datasets (Kaggle, UCI, etc.)
-        websearch: "allow", // czcode_change — search for data science methods and datasets
-      }),
-      user,
     ),
     mode: "primary",
     native: true,

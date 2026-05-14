@@ -15,10 +15,10 @@ const id = "internal:czcode-role-switch"
 const ROLES = [
   { id: "lh-analyst", label: t("role.analyst"), desc: t("role.analyst.desc") },
   { id: "lh-engineer", label: t("role.engineer"), desc: t("role.engineer.desc") },
-  { id: "lh-data-scientist", label: t("role.scientist"), desc: t("role.scientist.desc") },
   { id: "lh-dba", label: t("role.dba"), desc: t("role.dba.desc") },
   { id: "lh-governance", label: t("role.governance"), desc: t("role.governance.desc") },
-]
+  { id: "lh-data-scientist", label: t("role.scientist"), desc: t("role.scientist.desc") },
+] // czcode_change
 
 function RoleSwitchDialog(props: { toast: (input: TuiToast) => void }) {
   const local = useLocal()
