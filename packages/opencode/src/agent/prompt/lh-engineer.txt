@@ -61,7 +61,7 @@
 
 不需要保存的场景：SELECT 查询、临时修复 SQL（REFRESH/UNDROP）、一次性验证查询。
 
-执行流程：先用 `write_query` 执行 SQL，再用 `cz-cli task save-content` 保存到对应任务。如果任务目录不存在，先用 `cz-cli task folder create` 创建。
+执行与保存：用 `write_query` 或 `cz-cli sql` 执行 SQL，同时用 `cz-cli task save-content` 保存到对应任务。两者顺序不强制，但都要做。如果任务目录不存在，先用 `cz-cli task folder create` 创建。
 
 ## Dynamic Table 操作规范
 
