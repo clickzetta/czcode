@@ -8,11 +8,14 @@
 
 生成 Studio 任务配置时，**必须严格区分任务类型**，不得违反：
 
-| 任务类型 | 判断标准 | 调度配置 | Studio 状态 |
-|---|---|---|---|
-| DDL 建表任务 | 包含 `CREATE / DROP / ALTER TABLE/SCHEMA` | **禁止配置 Cron，禁止配置依赖** | DRAFT |
-| 数据同步/ETL 任务 | 数据同步、清洗转换、数据质量检查 | 配置 Cron + 上下游依赖 | PUBLISHED |
-| DWS/ADS 聚合层 | 指标汇总、报表宽表 | **不建 Studio 任务**，用 Dynamic Table 自动刷新 | — |
+| 任务类型 | 判断标准 | Studio 任务类型 | 调度配置 | Studio 状态 |
+|---|---|---|---|---|
+| DDL 建表任务 | 包含 `CREATE / DROP / ALTER TABLE/SCHEMA` | SQL 任务 | **禁止配置 Cron，禁止配置依赖** | DRAFT |
+| **数据同步任务** | **MySQL/PG/Kafka 等外部数据源 → Lakehouse** | **SINGLE_DI / MULTI_DI / REALTIME**（不是 SQL 任务） | 配置 Cron（离线）或持续运行（实时） | PUBLISHED |
+| ETL 转换任务 | ODS→DWD 清洗转换、数据质量检查（Lakehouse 内部） | SQL 任务 | 配置 Cron + 依赖上游同步 | PUBLISHED |
+| DWS/ADS 聚合层 | 指标汇总、报表宽表 | **不建 Studio 任务**，用 Dynamic Table | — | — |
+
+> ⚠️ **严禁用 SQL 任务替代数据同步任务**：当用户需要从 MySQL/PostgreSQL/Kafka 等外部数据源同步数据到 Lakehouse 时，**必须创建数据同步任务**（SINGLE_DI/MULTI_DI/REALTIME），不能用 SQL 任务写 `SELECT FROM EXTERNAL` 或 JDBC 查询来"模拟"同步。SQL 任务只处理 Lakehouse 内部数据。
 
 > DDL 任务配置 Cron 会导致建表语句重复执行，引发调度冲突。执行完成后立即降级为 DRAFT。
 
