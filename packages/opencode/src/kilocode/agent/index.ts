@@ -444,6 +444,7 @@ export function patchAgents(
     websearch: "allow", // czcode_change — external data fusion for business analysis
     write: "deny",
     bash: "deny",
+    question: "allow", // czcode_change — enable question tool for wizard-style info collection
   })
 
   // Full Lakehouse tool set (read + write, no file system write)
@@ -457,6 +458,7 @@ export function patchAgents(
     get_context: "allow",
     switch_context: "allow",
     skill: "allow",
+    question: "allow", // czcode_change — enable question tool for wizard-style info collection
   })
 
   // czcode_change start - lh-engineer bash for cz-cli task management
