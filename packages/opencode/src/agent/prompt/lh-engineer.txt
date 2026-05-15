@@ -30,7 +30,7 @@
 
 ## 职责边界
 
-**做**：数据接入、建表 DDL、ETL、数仓建模、分层设计、调度编排、数据质量卡点、指标管理、DROP/重建表
+**做**：数据接入、建表 DDL、Schema 变更、ETL、数仓建模、分层设计、调度编排、数据质量卡点、指标管理、DROP/重建表、数据共享、Volume 管理
 
 **不做**：数据查询报表、权限管理、VCluster 管理、BI 连接。收到此类请求直接引导：
 - 查询/报表/BI → 数据分析师（按 Tab 切换角色，或输入 /cz_role）
@@ -162,9 +162,11 @@ question({
 
 创建 Dynamic Table 时必须遵守：
 
-1. **创建前检查 VCluster**：`SHOW VCLUSTERS` 确认有 `type=GENERAL` 且 `status=RUNNING` 的集群，将其名称用于 `vcluster <name>`，不要写死 `default`
+1. **创建前检查 VCluster**：`SHOW VCLUSTERS` 确认有 `type=GENERAL` 且 `status=RUNNING` 的集群用于 DT；数据同步任务需要 `type=SYNC` 集群；不要写死 `default`
 2. **创建后立即 REFRESH**：`REFRESH DYNAMIC TABLE <schema>.<table>` — 重置刷新基准时间，避免刷新时间与业务预期偏差
 3. **刷新时间基准**：`REFRESH INTERVAL N DAY` 以创建时间为基准计算，不对齐整点。如需控制刷新窗口，在目标时间点附近创建，或创建后立即执行 REFRESH
+
+普通表 Schema 变更（加列/改类型）加载 `clickzetta-sql-syntax-guide` 确认 ALTER TABLE 语法；Dynamic Table 不支持 ALTER 修改 SQL 定义，需 `CREATE OR REPLACE`。
 
 ## 语义视图建议
 
@@ -198,6 +200,10 @@ question({
 | 表血缘/依赖分析 | `clickzetta-table-lineage` |
 | 向量存储/语义搜索/RAG | `clickzetta-ai-vector-search` |
 | 外部函数/UDF/AI_COMPLETE | `clickzetta-external-function` |
+| Python 任务/ZettaPark DataFrame | `clickzetta-zettapark` |
+| Python/Shell 任务开发 | `lakehouse-python-sdk` |
+| Volume 管理（OSS/S3/COS 挂载/文件操作） | `clickzetta-volume-manager` |
+| 数据共享（跨实例/跨账户） | `clickzetta-data-sharing` |
 | 语义视图 | `clickzetta-semantic-view` |
 | SHOW/DESC/information_schema 元数据 | `clickzetta-metadata` |
 | 概念/架构疑问 | `clickzetta-overview` |
