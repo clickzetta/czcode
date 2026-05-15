@@ -51,86 +51,21 @@
 
 ## 数据管道工作模式
 
-用户说"帮我建数据管道"、"构建 ETL"、"数据接入"等模糊请求时，**用两步向导**收集信息，再加载对应 skill。
+用户说"帮我建数据管道"、"构建 ETL"、"数据接入"等模糊请求时，加载 `clickzetta-studio-task-manager` skill，它包含完整的两步向导和路由逻辑。
 
-### 第一步：选数据源类型
+路由摘要（向导完成后按此加载 skill）：
 
-```
-question({
-  questions: [{
-    question: "你想构建哪种类型的数据管道？",
-    options: [
-      { label: "外部数据库", description: "MySQL / PostgreSQL / SQL Server / Oracle 等关系型数据库" },
-      { label: "Kafka 消息队列", description: "Kafka Topic → Lakehouse" },
-      { label: "对象存储", description: "OSS / S3 / COS 文件导入" },
-      { label: "Lakehouse 内部 ETL 分层", description: "ODS→DWD→DWS/ADS，SQL 任务 + Dynamic Table" },
-      { label: "端到端完整管道", description: "数据接入 + 分层建模 + 聚合，多种组合" },
-      { label: "不确定，先探索数据", description: "让我先看看现有数据再给出方案建议" }
-    ]
-  }]
-})
-```
-
-### 第二步：根据第一步结果追问（仅部分选项需要）
-
-**选了"外部数据库"后**，继续问同步时效性：
-
-```
-question({
-  questions: [{
-    question: "同步时效性要求？",
-    options: [
-      { label: "实时同步（秒级延迟）", description: "CDC 持续同步，基于 Binlog/WALs，持续运行不需要调度" },
-      { label: "离线批量同步（小时/天级）", description: "周期性全量或增量同步，配置 Cron 调度" }
-    ]
-  }]
-})
-```
-
-**选了"对象存储"后**，继续问接入方式：
-
-```
-question({
-  questions: [{
-    question: "对象存储接入方式？",
-    options: [
-      { label: "SQL Pipe（持续自动导入）", description: "新文件自动触发，近实时，LIST_PURGE 或 EVENT_NOTIFICATION 模式" },
-      { label: "Studio 离线同步任务", description: "周期性批量导入，配置 Cron 调度" }
-    ]
-  }]
-})
-```
-
-**选了"Kafka"后**，继续问接入方式：
-
-```
-question({
-  questions: [{
-    question: "Kafka 接入方式？",
-    options: [
-      { label: "SQL Pipe（READ_KAFKA）", description: "纯 SQL，灵活，支持复杂转换，推荐工程师使用" },
-      { label: "Studio 实时同步任务", description: "图形化配置，支持 JSONPath 计算列" }
-    ]
-  }]
-})
-```
-
-### 路由表
-
-| 数据源 | 时效性/方式 | 加载 skill |
+| 数据源 | 时效性/方式 | skill |
 |---|---|---|
-| 外部数据库 | 实时（单表 CDC） | `clickzetta-realtime-sync-pipeline` |
-| 外部数据库 | 实时（多表/整库 CDC） | `clickzetta-cdc-sync-pipeline` |
+| 外部数据库 | 实时单表 CDC | `clickzetta-realtime-sync-pipeline` |
+| 外部数据库 | 实时多表/整库 CDC | `clickzetta-cdc-sync-pipeline` |
 | 外部数据库 | 离线批量 | `clickzetta-batch-sync-pipeline` |
 | Kafka | SQL Pipe | `clickzetta-kafka-ingest-pipeline` |
 | Kafka | Studio 实时同步 | `clickzetta-realtime-sync-pipeline` |
 | 对象存储 | SQL Pipe | `clickzetta-oss-ingest-pipeline` |
 | 对象存储 | Studio 离线同步 | `clickzetta-batch-sync-pipeline` |
 | Lakehouse 内部 ETL 分层 | — | `clickzetta-sql-pipeline-manager` |
-| 端到端完整管道 | — | `clickzetta-dw-modeling` |
-| 不确定 | — | `clickzetta-dw-modeling` |
-
-> 实时 CDC 单表 vs 多表的判断：用户明确说"整库"或"多张表"→ `cdc-sync-pipeline`；只说"一张表"→ `realtime-sync-pipeline`；不确定时追问。
+| 端到端完整管道 / 不确定 | — | `clickzetta-dw-modeling` |
 
 ## 建模工作模式
 
@@ -212,49 +147,18 @@ skill 无法解答时，webfetch `https://yunqi.tech/llms-full.txt`。
 
 ## cz-cli 命令行工具
 
-当需要操作 Studio 任务、查看运行日志、管理外部数据源等 Lakehouse Plugin 不支持的功能时，使用 `cz-cli`：
+Studio 任务操作、运行日志、数据源探查等用 `cz-cli`，详见 `clickzetta-studio-task-manager` skill。常用速查：
 
 | 场景 | 命令 |
 |---|---|
-| 创建任务目录 | `cz-cli task folder create <folder>` |
-| 查看任务目录列表 | `cz-cli task list-folders` |
-| 查看 Studio 任务列表 | `cz-cli task list [--folder <folder>]` |
-| 查看任务内容和配置 | `cz-cli task content <task>` |
-| 保存任务脚本 | `cz-cli task save-content <task> --file <f>` |
-| 配置调度（ETL/同步任务） | `cz-cli task save-cron <task> --cron '0 30 2 * * ? *'` |
-| 保存任务配置 | `cz-cli task save-config <task>` |
-| 部署任务（PUBLISHED） | `cz-cli task deploy <task>` |
-| 下线任务（DRAFT） | `cz-cli task undeploy <task>` |
-| 手动执行任务 | `cz-cli task execute <task>` |
-| 查看运行实例 | `cz-cli runs list --task <name>` |
-| 查看运行日志 | `cz-cli runs logs <id>` |
-| 重跑失败实例 | `cz-cli runs rerun <id>` |
-| 补数（历史日期重跑） | `cz-cli runs refill <task> --start <date> --end <date>` |
-| 查看外部数据源 | `cz-cli datasource list` |
-| 查看数据源下的数据库/schema | `cz-cli datasource catalogs <datasource>` |
-| 查看数据源下的表 | `cz-cli datasource objects <datasource> <catalog>` |
-| 查看表结构 | `cz-cli datasource describe <datasource> <catalog> <table>` |
-| 查看运行统计 | `cz-cli runs stats --task <name>` |
-| 查看任务依赖 | `cz-cli task deps <task>` |
+| 任务列表/内容 | `cz-cli task list` / `cz-cli task content <task>` |
+| 保存脚本/配置调度 | `cz-cli task save-content <task>` / `cz-cli task save-cron <task> --cron '...'` |
+| 部署/下线/执行 | `cz-cli task deploy <task>` / `cz-cli task undeploy <task>` / `cz-cli task execute <task>` |
+| 运行日志/重跑/补数 | `cz-cli runs logs <id>` / `cz-cli runs rerun <id>` / `cz-cli runs refill <task> --start <date> --end <date>` |
+| 数据源探查 | `cz-cli datasource list` / `cz-cli datasource describe <ds> <catalog> <table>` |
 
-运行 `cz-cli --help` 或 `cz-cli <command> --help` 查看完整命令参考。
+运行 `cz-cli <command> --help` 查看完整参数。
 
 ## 交付验证（每次完成管道/建模任务后必做）
 
-任务执行完成后，主动执行以下验证，不等用户询问：
-
-```sql
--- 1. 各层行数比对
-SELECT COUNT(*) FROM <ods_schema>.<table>;   -- 与源端对比
-SELECT COUNT(*) FROM <dwd_schema>.<table>;   -- 应 ≤ ODS
-
--- 2. Dynamic Table 刷新状态
-SHOW DYNAMIC TABLE REFRESH HISTORY <schema>.<table> LIMIT 3;
--- 确认 status = SUCCESS
-
--- 3. 关键字段非空率（核心业务字段）
-SELECT ROUND(COUNT(key_field) * 100.0 / COUNT(*), 2) AS non_null_pct
-FROM <schema>.<table>;
-```
-
-验收通过后向用户汇报：各层行数、刷新状态、非空率，以及下一步建议（如数据质量任务、监控告警）。
+主动验证，不等用户询问：各层行数与预期一致、Dynamic Table 刷新历史显示 SUCCESS、关键字段非空率正常。验收通过后汇报结果并给出下一步建议（如 DQC 任务、监控告警）。详细验证 SQL 见 `clickzetta-studio-task-manager` skill。
