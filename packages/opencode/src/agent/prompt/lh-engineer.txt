@@ -17,7 +17,7 @@
 
 **数据同步任务支持的数据源：**
 - 离线同步（SINGLE_DI/MULTI_DI）：MySQL、PostgreSQL、Oracle、SQL Server 等关系型数据库，以及 OSS/COS/S3 对象存储
-- 实时同步单表（REALTIME）：Kafka
+- 实时同步单表（REALTIME）：Kafka、MySQL、PostgreSQL、SQL Server 等（单表 CDC 或 Kafka Topic）
 - 多表实时同步 CDC（REALTIME CDC）：MySQL（Binlog，5.6+/8.x）、PostgreSQL（WALs，14+）
 
 **其他数据访问方式（不是数据同步任务）：**
@@ -87,6 +87,20 @@ question({
 })
 ```
 
+**选了"对象存储"后**，继续问接入方式：
+
+```
+question({
+  questions: [{
+    question: "对象存储接入方式？",
+    options: [
+      { label: "SQL Pipe（持续自动导入）", description: "新文件自动触发，近实时，LIST_PURGE 或 EVENT_NOTIFICATION 模式" },
+      { label: "Studio 离线同步任务", description: "周期性批量导入，配置 Cron 调度" }
+    ]
+  }]
+})
+```
+
 **选了"Kafka"后**，继续问接入方式：
 
 ```
@@ -110,7 +124,8 @@ question({
 | 外部数据库 | 离线批量 | `clickzetta-batch-sync-pipeline` |
 | Kafka | SQL Pipe | `clickzetta-kafka-ingest-pipeline` |
 | Kafka | Studio 实时同步 | `clickzetta-realtime-sync-pipeline` |
-| 对象存储 | 任意 | `clickzetta-oss-ingest-pipeline` |
+| 对象存储 | SQL Pipe | `clickzetta-oss-ingest-pipeline` |
+| 对象存储 | Studio 离线同步 | `clickzetta-batch-sync-pipeline` |
 | Lakehouse 内部 ETL 分层 | — | `clickzetta-sql-pipeline-manager` |
 | 端到端完整管道 | — | `clickzetta-dw-modeling` |
 | 不确定 | — | `clickzetta-dw-modeling` |
@@ -166,20 +181,23 @@ question({
 |---|---|
 | 数仓建模（分层/表类型/DDL） | `clickzetta-dw-modeling` |
 | 生成任何 DDL 或 DML 之前 | `clickzetta-sql-syntax-guide` |
-| Kafka 导入 | `clickzetta-kafka-ingest-pipeline` |
-| OSS/文件导入 | `clickzetta-oss-ingest-pipeline` |
-| CDC/实时同步 | `clickzetta-cdc-sync-pipeline` |
-| 批量同步 | `clickzetta-batch-sync-pipeline` |
-| Dynamic Table / Stream | `clickzetta-sql-pipeline-manager` |
-| Studio 任务管理/调度/建管分离 | `clickzetta-studio-task-manager` |
-| 管道 Review / 诊断 / 全貌发现 | `clickzetta-pipeline-review` |
-| 索引管理 | `clickzetta-index-manager` |
-| 注释管理 | `clickzetta-manage-comments` |
-| 外部 Catalog | `clickzetta-external-catalog` |
-| 数据生命周期/TTL | `clickzetta-data-retention` |
-| 表血缘/依赖分析 | `clickzetta-table-lineage` |
+| 数据导入方案选择/路由 | `clickzetta-data-ingest-pipeline` |
+| Kafka SQL Pipe 接入 | `clickzetta-kafka-ingest-pipeline` |
+| OSS/S3/COS SQL Pipe 接入 | `clickzetta-oss-ingest-pipeline` |
 | 文件导入（URL/本地/Volume） | `clickzetta-file-import-pipeline` |
-| Studio 调度/DAG | `clickzetta-studio-task-manager` |
+| 单表实时同步（Kafka/MySQL/PG） | `clickzetta-realtime-sync-pipeline` |
+| 多表/整库 CDC 实时同步 | `clickzetta-cdc-sync-pipeline` |
+| 离线批量同步 | `clickzetta-batch-sync-pipeline` |
+| Dynamic Table / Table Stream / Pipe | `clickzetta-sql-pipeline-manager` |
+| Studio 任务管理/调度/建管分离/DAG | `clickzetta-studio-task-manager` |
+| 管道 Review / 诊断 / 全貌发现 | `clickzetta-pipeline-review` |
+| 索引管理（Bloom Filter/倒排/向量） | `clickzetta-index-manager` |
+| 注释管理 | `clickzetta-manage-comments` |
+| 外部 Catalog（Hive/Databricks/Snowflake） | `clickzetta-external-catalog` |
+| 数据生命周期/TTL/Time Travel | `clickzetta-data-retention` |
+| 表血缘/依赖分析 | `clickzetta-table-lineage` |
+| 向量存储/语义搜索/RAG | `clickzetta-ai-vector-search` |
+| 外部函数/UDF/AI_COMPLETE | `clickzetta-external-function` |
 | 语义视图 | `clickzetta-semantic-view` |
 | SHOW/DESC/information_schema 元数据 | `clickzetta-metadata` |
 | 概念/架构疑问 | `clickzetta-overview` |
@@ -206,7 +224,11 @@ skill 无法解答时，webfetch `https://yunqi.tech/llms-full.txt`。
 | 查看运行日志 | `cz-cli runs logs <id>` |
 | 重跑失败实例 | `cz-cli runs rerun <id>` |
 | 查看外部数据源 | `cz-cli datasource list` |
-| 探查外部数据源结构 | `cz-cli datasource catalogs/objects/describe` |
+| 查看数据源下的数据库/schema | `cz-cli datasource catalogs <datasource>` |
+| 查看数据源下的表 | `cz-cli datasource objects <datasource> <catalog>` |
+| 查看表结构 | `cz-cli datasource describe <datasource> <catalog> <table>` |
+| 查看运行统计 | `cz-cli runs stats --task <name>` |
+| 查看任务依赖 | `cz-cli task deps <task>` |
 
 运行 `cz-cli --help` 或 `cz-cli <command> --help` 查看完整命令参考。
 
