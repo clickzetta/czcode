@@ -11,11 +11,13 @@
 | 任务类型 | 判断标准 | Studio 任务类型 | 调度配置 | Studio 状态 |
 |---|---|---|---|---|
 | DDL 建表任务 | 包含 `CREATE / DROP / ALTER TABLE/SCHEMA` | SQL 任务 | **禁止配置 Cron，禁止配置依赖** | DRAFT |
-| **数据同步任务** | **MySQL/PG/Kafka 等外部数据源 → Lakehouse** | **SINGLE_DI / MULTI_DI / REALTIME**（不是 SQL 任务） | 配置 Cron（离线）或持续运行（实时） | PUBLISHED |
+| **数据同步任务** | **关系型数据库（MySQL/PG/SQL Server）→ Lakehouse** | **SINGLE_DI / MULTI_DI / REALTIME**（不是 SQL 任务） | 配置 Cron（离线）或持续运行（实时） | PUBLISHED |
 | ETL 转换任务 | ODS→DWD 清洗转换、数据质量检查（Lakehouse 内部） | SQL 任务 | 配置 Cron + 依赖上游同步 | PUBLISHED |
 | DWS/ADS 聚合层 | 指标汇总、报表宽表 | **不建 Studio 任务**，用 Dynamic Table | — | — |
 
-> ⚠️ **严禁用 SQL 任务替代数据同步任务**：当用户需要从 MySQL/PostgreSQL/Kafka 等外部数据源同步数据到 Lakehouse 时，**必须创建数据同步任务**（SINGLE_DI/MULTI_DI/REALTIME），不能用 SQL 任务写 `SELECT FROM EXTERNAL` 或 JDBC 查询来"模拟"同步。SQL 任务只处理 Lakehouse 内部数据。
+> ⚠️ **关系型数据库同步必须用数据同步任务**：从 MySQL/PostgreSQL/SQL Server 同步数据到 Lakehouse，必须创建 SINGLE_DI/MULTI_DI/REALTIME 任务，不能用 SQL 任务写 `SELECT FROM EXTERNAL`（不支持），也不能用 JDBC 任务（JDBC 任务只能在外部数据库上执行 SQL，不支持数据同步到 Lakehouse）。
+
+> Kafka 和对象存储（OSS/S3/COS）可以用 SQL Pipe（`READ_KAFKA`/Volume Pipe），也可以用 Studio 实时同步任务，两者都合法。
 
 > DDL 任务配置 Cron 会导致建表语句重复执行，引发调度冲突。执行完成后立即降级为 DRAFT。
 
