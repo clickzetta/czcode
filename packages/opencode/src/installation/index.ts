@@ -284,15 +284,14 @@ export const layer: Layer.Layer<Service, never, HttpClient.HttpClient | ChildPro
             case "curl":
               upgradeResult = yield* upgradeCurl(target)
               break
+            // czcode_change start - npm/pnpm/bun not supported, redirect to curl
             case "npm":
-              upgradeResult = yield* run(["npm", "install", "-g", `@kilocode/cli@${target}`]) // kilocode_change
-              break
             case "pnpm":
-              upgradeResult = yield* run(["pnpm", "install", "-g", `@kilocode/cli@${target}`]) // kilocode_change
-              break
             case "bun":
-              upgradeResult = yield* run(["bun", "install", "-g", `@kilocode/cli@${target}`]) // kilocode_change
-              break
+              return yield* new UpgradeFailedError({
+                stderr: `czcode 不支持通过 ${m} 升级。\n请使用 curl 方式重新安装最新版本：\nhttps://github.com/clickzetta/czcode/releases`,
+              })
+            // czcode_change end
             case "brew": {
               const formula = yield* getBrewFormula()
               const env = { HOMEBREW_NO_AUTO_UPDATE: "1" }

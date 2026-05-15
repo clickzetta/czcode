@@ -6,6 +6,7 @@ import { InstallationVersion } from "@opencode-ai/core/installation/version"
 
 export const UpgradeCommand = {
   command: "upgrade [target]",
+  aliases: ["update"], // czcode_change - alias 'update' to 'upgrade'
   describe: "upgrade czcode to the latest or a specific version", // czcode_change
   builder: (yargs: Argv) => {
     return yargs
