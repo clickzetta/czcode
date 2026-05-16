@@ -6,6 +6,7 @@ import { Ripgrep } from "../file/ripgrep"
 import { Skill } from "../skill"
 import * as Tool from "./tool"
 import DESCRIPTION from "./skill.txt"
+import { Telemetry } from "@kilocode/kilo-telemetry" // czcode_change
 
 export const Parameters = Schema.Struct({
   name: Schema.String.annotate({ description: "The name of the skill from available_skills" }),
@@ -35,6 +36,7 @@ export const SkillTool = Tool.define(
             always: [params.name],
             metadata: {},
           })
+          Telemetry.trackSkillUsed(params.name, ctx.sessionID) // czcode_change — track which skills are used
 
           // kilocode_change start - built-in skills have no filesystem directory
           if (info.location === Skill.BUILTIN_LOCATION) {

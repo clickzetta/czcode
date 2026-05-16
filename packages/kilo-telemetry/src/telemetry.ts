@@ -184,6 +184,30 @@ export namespace Telemetry {
     track(TelemetryEvent.PLAN_FOLLOWUP, { sessionId, choice })
   }
 
+  // czcode_change start — passive ALHF feedback signals
+  export function trackSessionReverted(sessionId: string, agentName?: string) {
+    track(TelemetryEvent.SESSION_REVERTED, { sessionId, agentName })
+  }
+
+  export function trackMessageAborted(sessionId: string, agentName?: string) {
+    track(TelemetryEvent.MESSAGE_ABORTED, { sessionId, agentName })
+  }
+
+  export function trackSkillUsed(skillName: string, sessionId?: string, agentName?: string) {
+    track(TelemetryEvent.SKILL_USED, { skillName, sessionId, agentName })
+  }
+
+  export function trackSkillFeedback(properties: {
+    skillName: string
+    feedbackType: string
+    component: string
+    verified: boolean
+    sessionId?: string
+  }) {
+    track(TelemetryEvent.SKILL_FEEDBACK, properties)
+  }
+  // czcode_change end
+
   export function trackIndexingStarted(properties: IndexingTelemetryProperties) {
     track(TelemetryEvent.INDEXING_STARTED, properties)
   }
