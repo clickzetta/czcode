@@ -53,7 +53,7 @@ export namespace Telemetry {
   let initialized = false
   let startTime = 0
   let props: TelemetryProperties = {
-    appName: "kilo-cli",
+    appName: "czcode", // czcode_change
     appVersion: "unknown",
     platform: process.platform,
   }

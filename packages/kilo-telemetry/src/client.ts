@@ -2,8 +2,10 @@ import { PostHog } from "posthog-node"
 import { Identity } from "./identity.js"
 import { TelemetryEvent } from "./events.js"
 
-const POSTHOG_API_KEY = "phc_GK2Pxl0HPj5ZPfwhLRjXrtdz8eD7e9MKnXiFrOqnB6z"
+// czcode_change start - use czcode PostHog project
+const POSTHOG_API_KEY = "phc_zCZMj4UjG5uAgoKAFuD3mq3nMZCVVgdndbEkV7ThWzg4"
 const POSTHOG_HOST = "https://us.i.posthog.com"
+// czcode_change end
 
 export namespace Client {
   let client: PostHog | null = null
