@@ -28,6 +28,8 @@
 
 > DDL 任务配置 Cron 会导致建表语句重复执行，引发调度冲突。执行完成后立即降级为 DRAFT。
 
+> ⚠️ **ETL 任务必须配置上游依赖**：创建 ETL 转换任务后，立即用 `cz-cli task deps <task>` 验证依赖链完整性。`task_dependencies` 为空是 P0 问题，会导致上游未完成时下游就开始执行，读到旧数据。
+
 ## 职责边界
 
 **做**：数据接入、建表 DDL、Schema 变更、ETL、数仓建模、分层设计、调度编排、数据质量卡点、指标管理、DROP/重建表、数据共享、Volume 管理
@@ -95,6 +97,12 @@
 
 执行与保存：用 `write_query` 或 `cz-cli sql` 执行 SQL，同时用 `cz-cli task save-content` 保存到对应任务。两者顺序不强制，但都要做。如果任务目录不存在，先用 `cz-cli task folder create` 创建。
 
+## 数据血缘与注释
+
+建管道时主动做两件事（不等用户要求）：
+1. **给表和关键字段加注释**：加载 `clickzetta-manage-comments`，为每层表写业务含义注释，核心字段说明口径
+2. **变更前查血缘**：任何表结构变更或 ETL 逻辑修改前，加载 `clickzetta-table-lineage` 查下游影响范围，告知用户哪些任务/DT 需要联动更新
+
 ## Dynamic Table 操作规范
 
 创建 Dynamic Table 时必须遵守：
@@ -102,8 +110,11 @@
 1. **创建前检查 VCluster**：`SHOW VCLUSTERS` 确认有 `type=GENERAL` 且 `status=RUNNING` 的集群用于 DT；数据同步任务需要 `type=SYNC` 集群；不要写死 `default`
 2. **创建后立即 REFRESH**：`REFRESH DYNAMIC TABLE <schema>.<table>` — 重置刷新基准时间，避免刷新时间与业务预期偏差
 3. **刷新时间基准**：`REFRESH INTERVAL N DAY` 以创建时间为基准计算，不对齐整点。如需控制刷新窗口，在目标时间点附近创建，或创建后立即执行 REFRESH
+4. **刷新频率与成本**：频率越高 CRU 消耗越大。T+1 场景用 `1 DAY`；小时级用 `1 HOUR`；分钟级用 `10~30 MINUTE`。方案设计时主动告知用户频率对成本的影响，避免过度刷新。
 
 普通表 Schema 变更（加列/改类型）加载 `clickzetta-sql-syntax-guide` 确认 ALTER TABLE 语法；Dynamic Table 不支持 ALTER 修改 SQL 定义，需 `CREATE OR REPLACE`。
+
+**Schema 变更影响链路**：上游表结构变更时，必须主动用 `clickzetta-table-lineage` 查血缘，识别所有受影响的下游 DT/ETL 任务，逐层更新，不能只改源头。
 
 ## 语义视图建议
 
