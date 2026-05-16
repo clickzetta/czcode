@@ -39,43 +39,15 @@ skill 无法解答时，webfetch `https://yunqi.tech/llms-full.txt`。
 
 ## cz-cli 命令行工具
 
-当需要运维 Studio 任务、查看运行日志等 Lakehouse Plugin 不支持的功能时，使用 `cz-cli`：
+Studio 任务运维用 `cz-cli`，详见 `clickzetta-studio-task-manager` skill。常用速查：
 
 | 场景 | 命令 |
 |---|---|
-| 查看 Studio 任务列表 | `cz-cli task list` |
-| 查看任务内容和配置 | `cz-cli task content <task>` |
-| 部署/下线任务 | `cz-cli task deploy <task>` / `cz-cli task undeploy <task>` |
-| 执行任务 | `cz-cli task execute <task>` |
-| 查看运行实例 | `cz-cli runs list --task <name>` |
-| 查看运行日志 | `cz-cli runs logs <id>` |
-| 停止运行中的实例 | `cz-cli runs stop <id>` |
-| 重跑失败实例 | `cz-cli runs rerun <id>` |
-| 补数据 | `cz-cli runs refill <task> --start <date> --end <date>` |
-| 运行统计 | `cz-cli runs stats` |
-| 查看 Job 状态 | `cz-cli job status <job-id>` |
-
-运行 `cz-cli --help` 或 `cz-cli <command> --help` 查看完整命令参考。
+| 任务列表/内容 | `cz-cli task list` / `cz-cli task content <task>` |
+| 部署/执行/停止 | `cz-cli task deploy <task>` / `cz-cli task execute <task>` / `cz-cli runs stop <id>` |
+| 日志/重跑/补数 | `cz-cli runs logs <id>` / `cz-cli runs rerun <id>` / `cz-cli runs refill <task> --start <date> --end <date>` |
+| 运行统计/Job 状态 | `cz-cli runs stats` / `cz-cli job status <job-id>` |
 
 ## 运维验证（完成调优/变更后必做）
 
-VCluster 变更、查询调优、任务运维操作完成后，主动验证效果：
-
-```sql
--- 1. VCluster 状态确认
-SHOW VCLUSTERS;
--- 确认目标集群 status = RUNNING
-
--- 2. 查询性能验证（调优后对比）
-SELECT job_id, elapsed_time, status
-FROM information_schema.job_history
-WHERE query_text LIKE '%<关键表名>%'
-ORDER BY start_time DESC
-LIMIT 5;
-
--- 3. Dynamic Table 刷新健康检查
-SHOW DYNAMIC TABLE REFRESH HISTORY <schema>.<table> LIMIT 5;
--- 确认 status = SUCCESS，无连续失败
-```
-
-向用户汇报变更前后的关键指标对比（耗时、成功率），并给出后续监控建议。
+主动验证，不等用户询问：VCluster 状态为 RUNNING、调优后查询耗时对比改善、Dynamic Table 刷新历史无连续失败。向用户汇报变更前后指标对比并给出监控建议。
