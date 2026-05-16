@@ -1,59 +1,101 @@
 ---
-description: 修正经实际执行验证的 skill 错误，写入本地 override，实现 skill 自进化
+description: 收集用户反馈并修正 skill，支持 SQL 错误、流程问题、方案不符合预期等多种反馈类型，实现 ALHF 闭环
 subtask: true
 ---
 
-用户发现了一个经过实际执行验证的 skill 错误，需要修正。
+用户发现了 skill 或 agent 行为的问题，需要收集结构化反馈并修正。
 
-## 任务
+## 第一步：收集结构化反馈
 
-### 第一步：理解错误
+从对话上下文提取以下信息，缺失的主动向用户询问：
 
-从对话上下文中提取：
-- 哪个 skill 有问题（skill 名称）
-- 错误的内容是什么（字段名/语法/示例 SQL）
-- 经过实际执行验证的正确内容是什么
+**反馈类型**（判断属于哪类，影响后续路由）：
+- `sql_error`：SQL 语法错误或执行失败
+- `wrong_output`：输出内容不符合预期（方案错误、建议不合理）
+- `missing_step`：缺少必要步骤（如没有弹出确认菜单、没有检查 VCluster）
+- `wrong_routing`：触发了错误的 skill，或没有触发应该触发的 skill
+- `incomplete_guidance`：skill 内容不完整，缺少关键场景的指导
+- `other`：其他问题
 
-### 第二步：定位原始 skill 文件
+**必须提取的字段**：
+- `skill_name`：哪个 skill 有问题（如 `clickzetta-dynamic-table`）
+- `user_input`：用户说了什么（触发问题的原始输入）
+- `actual_output`：AI 实际输出了什么（错误的内容）
+- `expected_output`：用户期望的正确输出是什么
+- `component`：问题出在哪个组件（见下方路由规则）
 
-在 `skills.paths` 配置的目录（如 `/Users/liangmo/Documents/GitHub/clickzetta-skills/`）中找到对应的 skill 目录，读取需要修正的文件。
+**组件路由规则**（判断需要改哪里）：
 
-### 第三步：写入本地 override
+| 问题现象 | 组件 | 需要改的文件 |
+|---|---|---|
+| SQL 语法错误、示例代码错误 | `skill_content` | `<skill>/SKILL.md` 或 `references/*.md` |
+| AI 没有遵守某条规则（如 DDL 配了 Cron） | `agent_prompt` | `lh-engineer.txt` 等 prompt 文件 |
+| 触发了错误的 skill | `routing` | `eval_cases.jsonl` 或 skill description |
+| 向导没有弹出菜单 | `agent_prompt` | `lh-engineer.txt` 或 skill 向导部分 |
+| 缺少某个场景的指导 | `skill_content` | `<skill>/SKILL.md` |
+| 多个组件都有问题 | `multiple` | 分别记录 |
 
-**如果错误在 SKILL.md 主文件中**：
-将修正后的 SKILL.md 写入 `.opencode/skills/<skill-name>/SKILL.md`。
-skill 加载时，项目本地的同名 skill 会覆盖 `skills.paths` 中的版本（后加载覆盖先加载）。
+## 第二步：写入结构化反馈日志
 
-**如果错误在 references/*.md 引用文件中**：
-引用文件由 agent 通过 read 工具直接读取，不走 skill 覆盖机制。
-需要直接修改原始文件（需要仓库权限），或者在 SKILL.md 的 override 版本中内联正确内容，替代对引用文件的链接。
+在 `.opencode/skills/FEEDBACK.jsonl` 中追加一条记录（文件不存在则创建）：
 
-### 第四步：追加修正日志
-
-在 `.opencode/skills/FIXLOG.md` 中追加一条记录（文件不存在则创建）：
-
-```markdown
-## YYYY-MM-DD：<skill-name> — <一句话描述>
-
-- **错误**：`<原始错误内容>`
-- **正确**：`<验证后的正确内容>`
-- **验证**：实际执行报错 `<error message>`，修正后成功
-- **文件**：`<skill-name>/references/<file>.md` 或 `SKILL.md`
+```json
+{
+  "timestamp": "YYYY-MM-DDTHH:mm:ss",
+  "type": "<反馈类型>",
+  "skill_name": "<skill名称>",
+  "component": "<skill_content|agent_prompt|routing|multiple>",
+  "user_input": "<触发问题的用户输入>",
+  "actual_output": "<AI实际输出的错误内容>",
+  "expected_output": "<用户期望的正确输出>",
+  "verified": <true|false>,
+  "fix_applied": false,
+  "notes": "<补充说明>"
+}
 ```
 
-这个日志可以提交给 skill 维护者，作为官方修正的依据。
+> `verified: true` 表示有实际执行结果作为依据（如 SQL 报错截图、执行失败日志）；`false` 表示基于用户判断。两种都有价值，都要记录。
 
-### 第五步：告知用户
+## 第三步：定位并修正
+
+根据 `component` 字段路由到对应文件：
+
+**`skill_content`** → 在 `skills.paths` 目录找到对应 skill，读取并修正：
+- 写入本地 override：`.opencode/skills/<skill-name>/SKILL.md`
+- 如有 clickzetta-skills 仓库写权限，同步修正原始文件
+
+**`agent_prompt`** → 修正对应的 prompt 文件：
+- `lh-engineer.txt`、`lh-analyst.txt`、`lh-dba.txt` 等
+- 需要仓库写权限，提示用户在 czcode 仓库提交修改
+
+**`routing`** → 修正触发词或 eval_cases：
+- 更新 skill 的 `description` 中的触发词
+- 在 `eval_cases.jsonl` 中添加新的测试案例
+
+## 第四步：更新反馈日志
+
+修正完成后，将 `FEEDBACK.jsonl` 中对应记录的 `fix_applied` 更新为 `true`，并补充：
+
+```json
+{
+  "fix_applied": true,
+  "fix_description": "<一句话描述做了什么修改>",
+  "fix_file": "<修改的文件路径>"
+}
+```
+
+## 第五步：告知用户
 
 说明：
-1. override 已写入 `.opencode/skills/<skill-name>/SKILL.md`
-2. 需要重启 czcode 会话才能加载修正后的 skill
-3. 如果有 clickzetta-skills 仓库写权限，建议同步修正原始文件（路径：`/Users/liangmo/Documents/GitHub/clickzetta-skills/<skill-name>/...`）
+1. 反馈已记录到 `.opencode/skills/FEEDBACK.jsonl`（可提交给 skill 维护者）
+2. 如果做了本地 override，需要重启 czcode 会话才能加载
+3. 如果是 `agent_prompt` 问题，需要在 czcode 仓库提交 PR 才能生效
 
 ## 约束
 
-- 只写入项目 `.opencode/skills/` 目录，不修改其他位置的文件（除非用户明确授权）
-- 必须有实际执行验证作为依据，不能基于推测修改
+- `skill_content` 类型：只写入 `.opencode/skills/` 目录，不修改其他位置（除非用户明确授权）
+- `agent_prompt` 类型：提示用户需要仓库写权限，不自动修改
+- `verified: false` 的反馈同样记录，但修正时需要更谨慎，建议先验证
 
 ## 当前对话上下文
 
