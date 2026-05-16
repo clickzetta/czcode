@@ -831,6 +831,21 @@ export function Prompt(props: PromptProps) {
           })),
       })
     } else {
+      // czcode_change start — passive ALHF: detect dissatisfaction signals in user text
+      const lowerText = inputText.toLowerCase()
+      const dissatisfactionPatterns = [
+        // Chinese
+        "不对", "错了", "不是这样", "重新", "不行", "不好", "有问题", "不正确",
+        "不符合", "不满意", "再来", "重来", "不对劲",
+        // English
+        "wrong", "incorrect", "not right", "redo", "try again", "that's not",
+        "that is not", "no that", "not what i",
+      ]
+      if (dissatisfactionPatterns.some((p) => lowerText.includes(p))) {
+        const { Telemetry } = await import("@kilocode/kilo-telemetry")
+        Telemetry.trackUserDissatisfied(sessionID, local.agent.current()?.name)
+      }
+      // czcode_change end
       sdk.client.session
         .prompt({
           sessionID,

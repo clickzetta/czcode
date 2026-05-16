@@ -46,9 +46,10 @@ export enum TelemetryEvent {
   ERROR = "Error",
 
   // czcode_change start — passive feedback signals (ALHF)
-  SESSION_REVERTED = "Session Reverted",  // user clicked revert — strongest dissatisfaction signal
-  MESSAGE_ABORTED = "Message Aborted",    // user interrupted generation mid-stream
-  SKILL_USED = "Skill Used",              // which skill was loaded, for usage analysis
-  SKILL_FEEDBACK = "Skill Feedback",      // explicit feedback via /cz_skill-fix
+  SESSION_REVERTED = "Session Reverted",      // user clicked revert — strongest dissatisfaction signal
+  MESSAGE_ABORTED = "Message Aborted",        // user interrupted generation mid-stream
+  USER_DISSATISFIED = "User Dissatisfied",    // user text contains dissatisfaction keywords
+  SKILL_USED = "Skill Used",                  // which skill was loaded, for usage analysis
+  SKILL_FEEDBACK = "Skill Feedback",          // explicit feedback via /cz_skill-fix
   // czcode_change end
 }

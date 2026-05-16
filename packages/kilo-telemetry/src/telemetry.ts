@@ -193,6 +193,10 @@ export namespace Telemetry {
     track(TelemetryEvent.MESSAGE_ABORTED, { sessionId, agentName })
   }
 
+  export function trackUserDissatisfied(sessionId: string, agentName?: string) {
+    track(TelemetryEvent.USER_DISSATISFIED, { sessionId, agentName })
+  }
+
   export function trackSkillUsed(skillName: string, sessionId?: string, agentName?: string) {
     track(TelemetryEvent.SKILL_USED, { skillName, sessionId, agentName })
   }
