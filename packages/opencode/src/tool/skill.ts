@@ -36,7 +36,7 @@ export const SkillTool = Tool.define(
             always: [params.name],
             metadata: {},
           })
-          Telemetry.trackSkillUsed(params.name, ctx.sessionID) // czcode_change — track which skills are used
+          Telemetry.trackSkillUsed(params.name, ctx.sessionID, ctx.agent) // czcode_change — track which skills are used
 
           // kilocode_change start - built-in skills have no filesystem directory
           if (info.location === Skill.BUILTIN_LOCATION) {
