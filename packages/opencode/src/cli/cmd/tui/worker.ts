@@ -12,6 +12,7 @@ import { writeHeapSnapshot } from "node:v8"
 import { Heap } from "@/cli/heap"
 import { AppRuntime } from "@/effect/app-runtime"
 import { ensureProcessMetadata } from "@opencode-ai/core/util/opencode-process"
+import { Telemetry } from "@kilocode/kilo-telemetry" // czcode_change
 
 ensureProcessMetadata("worker")
 
@@ -91,6 +92,7 @@ export const rpc = {
 
     await Instance.disposeAll()
     if (server) await server.stop(true)
+    await Telemetry.shutdown() // czcode_change — flush pending telemetry events before worker exits
     // kilocode_change start - Clear the Rpc message channel so the worker's event loop can drain and
     // exit naturally. Without this, the active onmessage handle keeps the
     // worker alive even after all async work is done.
