@@ -15,6 +15,8 @@ export namespace Client {
     client = new PostHog(POSTHOG_API_KEY, {
       host: POSTHOG_HOST,
       disableGeoip: false,
+      flushAt: 1, // czcode_change — send each event immediately, don't wait for batch
+      flushInterval: 0, // czcode_change — disable timer-based flushing
     })
   }
 
