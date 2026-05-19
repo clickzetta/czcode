@@ -192,7 +192,6 @@
     "yargs": "18.0.0",
     "zod": "catalog:",
     "zod-to-json-schema": "3.24.5",
-    "@czcode/lakehouse": "workspace:*",
     "jschardet": "3.1.4",
     "stream-chat": "9.38.0"
   },

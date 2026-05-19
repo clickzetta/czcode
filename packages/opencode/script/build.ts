@@ -18,7 +18,20 @@ await import("./generate.ts")
 
 import { Script } from "@opencode-ai/script"
 import pkg from "../package.json"
+import rootPkg from "../../../package.json" // czcode_change - resolve catalog: versions
 import { LanceDBRuntime } from "../src/kilocode/lancedb" // kilocode_change
+
+// czcode_change start - resolve catalog: version references
+function resolveVersion(name: string, version: string): string {
+  if (!version.startsWith("catalog:")) return version
+  const catalog = (rootPkg as any).workspaces?.catalog ?? {}
+  return catalog[name] ?? version
+}
+function resolveDep(name: string): string {
+  const raw = (pkg.dependencies as Record<string, string>)[name] ?? (pkg.devDependencies as Record<string, string>)[name] ?? ""
+  return resolveVersion(name, raw)
+}
+// czcode_change end
 
 // Load migrations from migration directories
 const migrationDirs = (
@@ -165,8 +178,8 @@ await $`rm -rf dist`
 
 const binaries: Record<string, string> = {}
 if (!skipInstall) {
-  await $`bun install --os="*" --cpu="*" @opentui/core@${pkg.dependencies["@opentui/core"]}`
-  await $`bun install --os="*" --cpu="*" @parcel/watcher@${pkg.dependencies["@parcel/watcher"]}`
+  await $`bun install --os="*" --cpu="*" @opentui/core@${resolveDep("@opentui/core")}` // czcode_change
+  await $`bun install --os="*" --cpu="*" @parcel/watcher@${resolveDep("@parcel/watcher")}` // czcode_change
 }
 for (const item of targets) {
   const name = [

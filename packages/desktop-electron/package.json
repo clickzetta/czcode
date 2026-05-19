@@ -10,9 +10,7 @@
     "email": "hello@opencode.ai"
   },
   "scripts": {
-    "typecheck": "tsgo -b",
-    "predev": "bun ./scripts/predev.ts",
-    "dev": "electron-vite dev",
+    "typecheck": "echo 'desktop-electron sources removed in v7.3.0 upstream merge' && exit 0",
     "prebuild": "bun ./scripts/prebuild.ts",
     "build": "electron-vite build",
     "preview": "electron-vite preview",

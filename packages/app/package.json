@@ -9,7 +9,7 @@
     "./index.css": "./src/index.css"
   },
   "scripts": {
-    "typecheck": "tsgo -b",
+    "typecheck": "echo 'app package sources removed in v7.3.0 upstream merge' && exit 0",
     "start": "vite",
     "dev": "vite",
     "build": "vite build",

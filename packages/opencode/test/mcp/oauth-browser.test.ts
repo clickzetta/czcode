@@ -20,7 +20,7 @@ void mock.module("open", () => ({
       // lost and BrowserOpenFailed was never published.
       const err = new Error("spawn xdg-open ENOENT")
       const originalOn = subprocess.on.bind(subprocess)
-      subprocess.on = function (event, listener) {
+      subprocess.on = function (event: string, listener: (...args: unknown[]) => void) {
         const ret = originalOn(event, listener)
         if (event === "error") queueMicrotask(() => (listener as (e: Error) => void).call(subprocess, err))
         return ret
