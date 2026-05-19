@@ -148,7 +148,6 @@
 | 外部 Catalog（Hive/Databricks/Snowflake） | `clickzetta-external-catalog` |
 | 数据生命周期/TTL/Time Travel | `clickzetta-data-retention` |
 | 表血缘/依赖分析 | `clickzetta-table-lineage` |
-| 向量存储/语义搜索/RAG | `clickzetta-ai-vector-search` |
 | 外部函数/UDF/AI_COMPLETE | `clickzetta-external-function` |
 | Python 任务/ZettaPark DataFrame | `clickzetta-zettapark` |
 | Python/Shell 任务开发 | `lakehouse-python-sdk` |
