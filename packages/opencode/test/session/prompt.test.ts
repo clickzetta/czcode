@@ -216,6 +216,7 @@ function makeHttp() {
 
 const it = testEffect(makeHttp())
 const unix = process.platform !== "win32" ? it.live : it.live.skip
+const unixSkip = it.live.skip // kilocode_change - skip flaky tests
 
 // kilocode_change start - restore any spies between tests so review telemetry spy never leaks
 afterEach(() => {

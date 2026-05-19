@@ -271,6 +271,18 @@ export const { use: useEditorContext, provider: EditorContextProvider } = create
       connect()
     }
 
+    onMount(() => {
+      connect()
+
+      onCleanup(() => {
+        closed = true
+        if (reconnect) clearTimeout(reconnect)
+        socket?.close()
+      })
+    })
+
+    return {
+      enabled() {
         return Boolean(resolveEditorConnection(directory) || resolveZedDbPath())
       },
       connected() {
@@ -280,6 +292,61 @@ export const { use: useEditorContext, provider: EditorContextProvider } = create
         return store.selection
       },
       clearSelection() {
+        lastZedSelectionKey = undefined
+        setStore("selection", undefined)
+      },
+      onMention(listener: (mention: EditorMention) => void) {
+        mentionListeners.add(listener)
+        return () => mentionListeners.delete(listener)
+      },
+      server() {
+        return store.server
+      },
+      reconnect(directory?: string) {
+        setStore("selection", undefined)
+        reconnectWithDirectory(directory)
+      },
+    }
+  },
+})
+
+function parsePort(value: string | undefined) {
+  if (!value) return
+
+  const parsed = Number.parseInt(value, 10)
+  if (!Number.isInteger(parsed) || parsed <= 0 || parsed > 65535) return
+  return parsed
+}
+
+function resolveEditorConnection(directory: string): EditorConnection | undefined {
+  const port = parsePort(process.env.CLAUDE_CODE_SSE_PORT || process.env.KILO_EDITOR_SSE_PORT)
+  if (port) {
+    return {
+      url: `ws://127.0.0.1:${port}`,
+      source: `env:${port}`,
+    }
+  }
+
+  const lock = resolveEditorLockFile(directory)
+  if (lock) {
+    return {
+      url: `ws://127.0.0.1:${lock.port}`,
+      authToken: lock.authToken,
+      source: `lock:${lock.port}`,
+    }
+  }
+}
+
+function resolveEditorLockFile(activeDirectory: string) {
+  const directory = path.join(os.homedir(), ".claude", "ide")
+  let entries: string[]
+
+  try {
+    entries = readdirSync(directory)
+  } catch {
+    return
+  }
+
   // longest workspace folder that contains the active session directory; 0 if none match
   const bestMatchLength = (lock: EditorLockFile) =>
     Math.max(0, ...lock.workspaceFolders.map((folder) => pathContainsLength(folder, activeDirectory)))

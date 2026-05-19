@@ -2,7 +2,6 @@ import { RequestError, type McpServer } from "@agentclientprotocol/sdk"
 import type { ACPSessionState } from "./types"
 import * as Log from "@opencode-ai/core/util/log"
 import type { KiloClient } from "@kilocode/sdk/v2"
-import * as Log from "@opencode-ai/core/util/log"
 
 const log = Log.create({ service: "acp-session-manager" })
 
