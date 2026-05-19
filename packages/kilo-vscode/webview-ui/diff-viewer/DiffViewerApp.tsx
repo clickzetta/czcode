@@ -16,11 +16,6 @@ import { mergeWorktreeDiffs } from "../agent-manager/diff-state"
 import { LanguageProvider, useLanguage } from "../src/context/language"
 import { ServerProvider, useServer } from "../src/context/server"
 import { getVSCodeAPI, VSCodeProvider, useVSCode } from "../src/context/vscode"
-<<<<<<< HEAD
-import type { ReviewComment, WebviewMessage, WorktreeFileDiff } from "../src/types/messages"
-||||||| 12f7967ca4
-import type { ReviewComment, WorktreeFileDiff } from "../src/types/messages"
-=======
 import type { BranchInfo, ReviewComment, WebviewMessage, WorktreeFileDiff } from "../src/types/messages"
 import type { DiffSourceCapabilities, DiffSourceDescriptor } from "../../src/diff/sources/types"
 import type { DiffViewerNotice } from "../src/types/messages/extension-messages"
@@ -30,7 +25,6 @@ import { BaseBranchPicker } from "./BaseBranchPicker"
 const NOTICE_KEYS: Record<DiffViewerNotice, string> = {
   "snapshots-disabled": "diffViewer.notice.snapshotsDisabled",
 }
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 type DiffStyle = "unified" | "split"
 
@@ -138,9 +132,6 @@ const DiffViewerContent: Component = () => {
       setMarkdown(msg.render)
       return
     }
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
     if (msg.type === "setAvailableSources") {
       setAvailableSources(msg.descriptors)
       setCurrentSourceId(msg.currentId)
@@ -167,7 +158,6 @@ const DiffViewerContent: Component = () => {
       setBranchesLoading(false)
       return
     }
->>>>>>> yunqiqiliang/opencode-v7.3.0
   })
 
   const selectSource = (id: string) => {
@@ -220,62 +210,6 @@ const DiffViewerContent: Component = () => {
   })
 
   return (
-<<<<<<< HEAD
-    <FullScreenDiffView
-      diffs={diffs()}
-      loading={loading()}
-      sessionKey="local"
-      comments={comments()}
-      onCommentsChange={setComments}
-      onSendAll={() => {}}
-      diffStyle={diffStyle()}
-      onDiffStyleChange={(style) => {
-        setDiffStyle(style)
-        post({ type: "diffViewer.setDiffStyle", style })
-      }}
-      markdownRender={markdown()}
-      onMarkdownRenderChange={(render) => {
-        setMarkdown(render)
-        post({ type: "diffViewer.setMarkdownRender", render })
-      }}
-      onOpenFile={(relativePath) => {
-        post({ type: "openFile", filePath: relativePath })
-      }}
-      onRevertFile={(file) => {
-        markReverting(file, true)
-        post({ type: "diffViewer.revertFile", file })
-      }}
-      revertingFiles={reverting()}
-      onClose={() => {
-        post({ type: "diffViewer.close" })
-      }}
-    />
-||||||| 12f7967ca4
-    <FullScreenDiffView
-      diffs={diffs()}
-      loading={loading()}
-      sessionKey="local"
-      comments={comments()}
-      onCommentsChange={setComments}
-      onSendAll={() => {}}
-      diffStyle={diffStyle()}
-      onDiffStyleChange={(style) => {
-        setDiffStyle(style)
-        post({ type: "diffViewer.setDiffStyle", style })
-      }}
-      onOpenFile={(relativePath) => {
-        post({ type: "openFile", filePath: relativePath })
-      }}
-      onRevertFile={(file) => {
-        markReverting(file, true)
-        post({ type: "diffViewer.revertFile", file })
-      }}
-      revertingFiles={reverting()}
-      onClose={() => {
-        post({ type: "diffViewer.close" })
-      }}
-    />
-=======
     <>
       <Show when={availableSources().length > 0}>
         <DiffPickerHeader
@@ -340,7 +274,6 @@ const DiffViewerContent: Component = () => {
         }}
       />
     </>
->>>>>>> yunqiqiliang/opencode-v7.3.0
   )
 }
 

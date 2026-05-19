@@ -140,12 +140,8 @@ export function tui(input: {
     process.on("exit", resetTerminalState) // kilocode_change
 
     const renderer = await createCliRenderer(rendererConfig(input.config))
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
     // Prewarm palette before ThemeProvider mounts so `system` theme avoids a first-paint fallback flash.
     void renderer.getPalette({ size: 16 }).catch(() => undefined)
->>>>>>> yunqiqiliang/opencode-v7.3.0
     const mode = (await renderer.waitForThemeMode(1000)) ?? "dark"
 
     await render(() => {
@@ -773,9 +769,6 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
       },
     },
     {
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
       title: pasteSummaryEnabled() ? "Disable paste summary" : "Enable paste summary",
       value: "app.toggle.paste_summary",
       category: "System",
@@ -801,7 +794,6 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
       },
     },
     {
->>>>>>> yunqiqiliang/opencode-v7.3.0
       title: kv.get("diff_wrap_mode", "word") === "word" ? "Disable diff wrapping" : "Enable diff wrapping",
       value: "app.toggle.diffwrap",
       category: "System",

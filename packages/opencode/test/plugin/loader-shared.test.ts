@@ -3,14 +3,7 @@ import { Effect } from "effect"
 import fs from "fs/promises"
 import path from "path"
 import { pathToFileURL } from "url"
-<<<<<<< HEAD
-import { tmpdir } from "../fixture/fixture"
-||||||| 12f7967ca4
-import { tmpdir } from "../fixture/fixture"
-import { Filesystem } from "../../src/util"
-=======
 import { disposeAllInstances, tmpdir } from "../fixture/fixture"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Filesystem } from "@/util/filesystem"
 
 const disableDefault = process.env.KILO_DISABLE_DEFAULT_PLUGINS

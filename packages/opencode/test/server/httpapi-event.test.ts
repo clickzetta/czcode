@@ -5,48 +5,6 @@ import { Server } from "../../src/server/server"
 import { EventPaths } from "../../src/server/routes/instance/httpapi/event"
 import * as Log from "@opencode-ai/core/util/log"
 import { resetDatabase } from "../fixture/db"
-<<<<<<< HEAD
-import { tmpdir } from "../fixture/fixture"
-
-void Log.init({ print: false })
-
-const original = Flag.KILO_EXPERIMENTAL_HTTPAPI
-
-function app() {
-  Flag.KILO_EXPERIMENTAL_HTTPAPI = true
-  return Server.Default().app
-}
-
-async function readFirstChunk(response: Response) {
-  if (!response.body) throw new Error("missing response body")
-  const reader = response.body.getReader()
-  const result = await Promise.race([
-    reader.read(),
-    new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timed out waiting for event")), 5_000)),
-  ])
-  await reader.cancel()
-  return new TextDecoder().decode(result.value)
-}
-
-afterEach(async () => {
-  Flag.KILO_EXPERIMENTAL_HTTPAPI = original
-  await Instance.disposeAll()
-  await resetDatabase()
-})
-
-describe("event HttpApi bridge", () => {
-  test("serves event stream through experimental Effect route", async () => {
-    await using tmp = await tmpdir({ git: true, config: { formatter: false, lsp: false } })
-    const response = await app().request(EventPaths.event, { headers: { "x-kilo-directory": tmp.path } })
-
-    expect(response.status).toBe(200)
-    expect(response.headers.get("content-type")).toContain("text/event-stream")
-    expect(response.headers.get("cache-control")).toBe("no-cache, no-transform")
-    expect(response.headers.get("x-accel-buffering")).toBe("no")
-    expect(response.headers.get("x-content-type-options")).toBe("nosniff")
-    expect(await readFirstChunk(response)).toContain('data: {"type":"server.connected","properties":{}}\n\n')
-||||||| 12f7967ca4
-=======
 import { disposeAllInstances, tmpdir } from "../fixture/fixture"
 
 void Log.init({ print: false })
@@ -95,6 +53,5 @@ describe("event HttpApi bridge", () => {
     const effect = await app(true).request(EventPaths.event, { headers })
 
     expect(await readFirstChunk(effect)).toBe(await readFirstChunk(legacy))
->>>>>>> yunqiqiliang/opencode-v7.3.0
   })
 })

@@ -12,12 +12,6 @@
  * we only ever stream events for the conversation the user is looking at.
  */
 
-<<<<<<< HEAD
-import type { ChatCredentials, ChatMessage } from "./types"
-||||||| 12f7967ca4
-import type { ChatCredentials, ChatMessage } from "./types"
-import { Log } from "@/util"
-=======
 import type {
   BotStatusEvent,
   ChatMessage,
@@ -36,7 +30,6 @@ import type {
 } from "./types"
 import { KiloChatClient } from "./kilo-chat-client"
 import { EventServiceClient } from "./event-service-client"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import * as Log from "@opencode-ai/core/util/log"
 
 const log = Log.create({ service: "claw-chat" })

@@ -2219,16 +2219,6 @@ ToolRegistry.register({
     const canOpenFile = () => !!data.openFile && !!path()
 
     const openDiff = () => {
-<<<<<<< HEAD
-      if (!canOpenDiff()) return
-      data.openDiff!({
-        file: path(),
-        before: before(),
-        after: after(),
-        additions: props.metadata?.filediff?.additions ?? 0,
-        deletions: props.metadata?.filediff?.deletions ?? 0,
-||||||| 12f7967ca4
-=======
       const v = view()
       if (!canOpenDiff() || !v) return
       data.openDiff!({
@@ -2236,7 +2226,6 @@ ToolRegistry.register({
         patch: v.patch,
         additions: v.additions,
         deletions: v.deletions,
->>>>>>> yunqiqiliang/opencode-v7.3.0
       })
     }
 
@@ -2285,12 +2274,7 @@ ToolRegistry.register({
                 </div>
               </div>
               <Show when={canOpenDiff()}>
-<<<<<<< HEAD
-                <span data-slot="edit-trigger-actions">
-||||||| 12f7967ca4
-=======
                 <span data-slot="tool-trigger-actions">
->>>>>>> yunqiqiliang/opencode-v7.3.0
                   <Tooltip value={i18n.t("ui.messagePart.openInDiffViewer")} placement="top" gutter={4}>
                     <IconButton
                       icon="square-arrow-top-right"

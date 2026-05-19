@@ -93,31 +93,6 @@ export const VscodeSessionTurn: Component<VscodeSessionTurnProps> = (props) => {
 
   const openChanges = () => vscode.postMessage({ type: "openChanges", turnId: message().id })
 
-<<<<<<< HEAD
-  createEffect(
-    on(
-      open,
-      (value, prev) => {
-        if (!value && prev) setExpanded([])
-      },
-      { defer: true },
-    ),
-  )
-
-||||||| 12f7967ca4
-  createEffect(
-    on(
-      open,
-      (value, prev) => {
-        if (!value && prev) setExpanded([])
-      },
-      { defer: true },
-    ),
-  )
-
-  // Copy part ID — the last text part from the last assistant message
-=======
->>>>>>> yunqiqiliang/opencode-v7.3.0
   // Copy part ID — the last text part from the last assistant message.
   // Synthetic parts (e.g. "Initializing snapshot…" from the slow-repo guard)
   // are transient status lines, not assistant output: they must never win

@@ -31,11 +31,7 @@ import {
 import { DiffEndMarker } from "./DiffEndMarker"
 import { treeOrder } from "./file-tree-utils"
 import { isMarkdownFile, MarkdownDiffView } from "./MarkdownDiffView"
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
 import { diffToken } from "./diff-state"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 // --- Data model ---
 
@@ -595,23 +591,6 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
                               />
                             }
                           >
-<<<<<<< HEAD
-                            <MarkdownDiffView diff={diff} />
-||||||| 12f7967ca4
-                          <Diff<AnnotationMeta>
-                            before={{ name: diff.file, contents: diff.before }}
-                            after={{ name: diff.file, contents: diff.after }}
-                            diffStyle={props.diffStyle ?? "unified"}
-                            annotations={annotationsForFile(diff.file)}
-                            renderAnnotation={buildAnnotation}
-                            enableGutterUtility={true}
-                            onGutterUtilityClick={(result) => handleGutterClick(diff.file, result)}
-                            onLineNumberClick={(event) => {
-                              if (event.annotationSide === "deletions") return
-                              props.onOpenFile?.(diff.file, event.lineNumber)
-                            }}
-                          />
-=======
                             <MarkdownDiffView
                               diff={diff}
                               annotations={annotationsForFile(diff.file)}
@@ -623,7 +602,6 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
                                 props.onOpenFile?.(diff.file, event.lineNumber)
                               }}
                             />
->>>>>>> yunqiqiliang/opencode-v7.3.0
                           </Show>
                         </Show>
                       </Show>

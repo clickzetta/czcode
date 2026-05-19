@@ -3,14 +3,7 @@ import { UI } from "../ui"
 import { cmd } from "./cmd"
 import { withNetworkOptions, resolveNetworkOptions } from "../network"
 import { Flag } from "@opencode-ai/core/flag/flag"
-<<<<<<< HEAD
-import { Instance } from "../../project/instance" // kilocode_change
-||||||| 12f7967ca4
-import { Flag } from "../../flag/flag"
-import { Instance } from "../../project/instance" // kilocode_change
-=======
 import { InstanceStore } from "../../project/instance-store" // kilocode_change
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import open from "open"
 import { networkInterfaces } from "os"
 

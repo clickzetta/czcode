@@ -1070,10 +1070,6 @@ export const dict = {
   "settings.indexing.status.title": "Durum",
   "settings.indexing.enable.title": "İndekslemeyi etkinleştir",
   "settings.indexing.enable.description": "Anlamsal kod tabanı indekslemeyi açın veya kapatın.",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-  "settings.indexing.enable.description": "Bu çalışma alanı için anlamsal kod tabanı indekslemeyi açın veya kapatın.",
-=======
   "settings.indexing.globalEnable.title": "Genel olarak etkinleştir",
   "settings.indexing.globalEnable.description": "Her çalışma alanı için dizine eklemeyi etkinleştir.",
   "settings.indexing.projectEnable.title": "Bu proje için etkinleştir",
@@ -1081,7 +1077,6 @@ export const dict = {
     "Genel dizine ekleme kapalı olduğunda bu çalışma alanı için dizine eklemeyi etkinleştir.",
   "settings.indexing.projectEnable.disabledTooltip":
     "Küresel indeksleme etkinleştirildi, bu nedenle bu proje zaten kapsanıyor.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.indexing.provider.title": "Yerleştirme sağlayıcısı",
   "settings.indexing.provider.description":
     "Anlamsal arama için yerleştirmeleri oluşturmak amacıyla kullanılacak sağlayıcıyı seçin.",
@@ -1252,9 +1247,6 @@ export const dict = {
   "settings.experimental.agentManagerTool.title": "Agent Manager Aracı",
   "settings.experimental.agentManagerTool.description":
     "Ajanların bir araç çağrısından Agent Manager yerel oturumları ve worktree oturumları başlatmasına izin ver",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.experimental.speechToText.title": "Sesten metne",
   "settings.experimental.speechToText.description":
     "Kilo Gateway üzerinden Kilo hesabınızı kullanarak komut alanlarında sesli girişi etkinleştirin.",
@@ -1262,7 +1254,6 @@ export const dict = {
     "Komut alanlarında sesli girişi kullanmak için Kilo provider'ı etkinleştirin ve giriş yapın.",
   "settings.experimental.speechToTextModel.title": "Sesten metne modeli",
   "settings.experimental.speechToTextModel.description": "Sesli giriş için Kilo Gateway transkripsiyon modelini seçin.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.experimental.continueOnDeny.title": "Reddetme Durumunda Devam Et",
   "settings.experimental.continueOnDeny.description": "Bir izin reddedildiğinde ajan döngüsüne devam et",
   "settings.experimental.mcpTimeout.title": "MCP Zaman Aşımı (ms)",
@@ -1429,12 +1420,8 @@ export const dict = {
   "settings.display.layout.description": "Sohbet arayüzü için düzen modu",
   "settings.display.layout.auto": "Otomatik",
   "settings.display.layout.stretch": "Genişlet",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.display.fontSize.title": "Yazı Tipi Boyutu",
   "settings.display.fontSize.description": "Kilo webview UI yazı tipi boyutunu VS Code'dan bağımsız olarak ayarlayın.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.display.reasoningAutoCollapse.title": "Akıl yürütmeyi otomatik daralt",
   "settings.display.reasoningAutoCollapse.description":
     "Ajan yazmayı bitirdikten sonra akıl yürütme bloklarını daraltır. Manuel olarak daraltmadığınız sürece akıl yürütmenin geniş kalması için kapalı bırakın.",

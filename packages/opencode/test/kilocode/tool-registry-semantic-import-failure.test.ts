@@ -2,32 +2,6 @@ import { afterEach, describe, expect, mock, spyOn } from "bun:test"
 import { Effect, Layer } from "effect"
 import * as Log from "@opencode-ai/core/util/log"
 import { Instance } from "../../src/project/instance"
-<<<<<<< HEAD
-import { provideTmpdirInstance } from "../fixture/fixture"
-import * as CrossSpawnSpawner from "@opencode-ai/core/cross-spawn-spawner"
-import { testEffect } from "../lib/effect"
-
-const err = new Error("semantic tool import failed")
-
-mock.module("@/kilocode/indexing", () => ({
-  KiloIndexing: {
-    ready: () => true,
-  },
-}))
-
-mock.module("@/kilocode/tool/semantic-search", () => {
-  throw err
-})
-
-const { ToolRegistry } = await import("../../src/tool/registry")
-
-const node = CrossSpawnSpawner.defaultLayer
-const it = testEffect(Layer.mergeAll(ToolRegistry.defaultLayer, node))
-
-afterEach(async () => {
-  await Instance.disposeAll()
-||||||| 12f7967ca4
-=======
 import { disposeAllInstances, provideTmpdirInstance } from "../fixture/fixture"
 import * as CrossSpawnSpawner from "@opencode-ai/core/cross-spawn-spawner"
 import { testEffect } from "../lib/effect"
@@ -51,7 +25,6 @@ const it = testEffect(Layer.mergeAll(ToolRegistry.defaultLayer, node))
 
 afterEach(async () => {
   await disposeAllInstances()
->>>>>>> yunqiqiliang/opencode-v7.3.0
 })
 
 describe("kilocode tool registry semantic tool import failure", () => {

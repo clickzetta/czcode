@@ -53,14 +53,7 @@ import { AppFileSystem } from "@opencode-ai/core/filesystem"
 import { Truncate } from "@/tool/truncate"
 import { decodeDataUrl } from "@/util/data-url"
 import { Process } from "@/util/process"
-<<<<<<< HEAD
-import { Cause, Effect, Exit, Latch, Layer, Option, Scope, Context, Schema } from "effect"
-||||||| 12f7967ca4
-import { Process } from "@/util"
-import { Cause, Effect, Exit, Layer, Option, Scope, Context, Schema } from "effect"
-=======
 import { Cause, Effect, Exit, Latch, Layer, Option, Scope, Context, Schema, Types } from "effect"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { zod } from "@/util/effect-zod"
 import { withStatics } from "@/util/schema"
 import * as EffectLogger from "@opencode-ai/core/effect/logger"
@@ -68,12 +61,7 @@ import { InstanceState } from "@/effect/instance-state"
 import { TaskTool, type TaskPromptOps } from "@/tool/task"
 import { SessionRunState } from "./run-state"
 import { EffectBridge } from "@/effect/bridge"
-<<<<<<< HEAD
 import { Telemetry } from "@kilocode/kilo-telemetry" // czcode_change
-||||||| 12f7967ca4
-import { EffectBridge } from "@/effect"
-=======
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 // @ts-ignore
 globalThis.AI_SDK_LOG_WARNINGS = false

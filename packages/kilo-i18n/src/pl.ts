@@ -91,10 +91,6 @@ export const dict = {
   "snapshot.slowRepo.answer.disable.description":
     "Wyłącz snapshoty Kilo dla tego projektu. Stracisz cofanie/przywracanie zmian Kilo, ale git nadal śledzi wszystko.",
 
-<<<<<<< HEAD
-  "ui.messagePart.openInDiffViewer": "Otwórz w podglądzie różnic",
-||||||| 12f7967ca4
-=======
   // Edit-tool header and shell-tool section labels
   "ui.messagePart.openInDiffViewer": "Otwórz w podglądzie różnic",
   "ui.messagePart.shell.command": "Polecenie",
@@ -105,5 +101,4 @@ export const dict = {
   "ui.message.feedback.helpful": "To było pomocne",
   "ui.message.feedback.notHelpful": "To nie było pomocne",
   "ui.message.feedback.clearRating": "Wyczyść ocenę",
->>>>>>> yunqiqiliang/opencode-v7.3.0
 }

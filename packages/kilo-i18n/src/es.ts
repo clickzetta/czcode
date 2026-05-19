@@ -91,10 +91,6 @@ export const dict = {
   "snapshot.slowRepo.answer.disable.description":
     "Apaga las instantáneas de Kilo para este proyecto. Perderás deshacer/rehacer de los cambios de Kilo, pero git seguirá rastreando todo.",
 
-<<<<<<< HEAD
-  "ui.messagePart.openInDiffViewer": "Abrir en el visor de diferencias",
-||||||| 12f7967ca4
-=======
   // Edit-tool header and shell-tool section labels
   "ui.messagePart.openInDiffViewer": "Abrir en el visor de diferencias",
   "ui.messagePart.shell.command": "Comando",
@@ -105,5 +101,4 @@ export const dict = {
   "ui.message.feedback.helpful": "Esto fue útil",
   "ui.message.feedback.notHelpful": "Esto no fue útil",
   "ui.message.feedback.clearRating": "Borrar valoración",
->>>>>>> yunqiqiliang/opencode-v7.3.0
 }

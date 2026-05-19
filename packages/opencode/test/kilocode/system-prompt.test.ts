@@ -124,9 +124,6 @@ describe("SystemPrompt.provider", () => {
       const result = SystemPrompt.provider(model)
       expect(result).toEqual([PROMPT_CODEX])
     })
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   })
 })
 
@@ -141,6 +138,5 @@ describe("environmentDetails", () => {
     expect(result).toContain("Working directory: /repo/.kilo/worktrees/feature")
     expect(result).toContain("Workspace root folder: /repo/.kilo/worktrees/feature")
     expect(result).toContain("Active file: src/app.ts")
->>>>>>> yunqiqiliang/opencode-v7.3.0
   })
 })

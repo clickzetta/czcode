@@ -76,11 +76,7 @@ import { ServerProvider } from "../src/context/server"
 import { ProviderProvider } from "../src/context/provider"
 import { ConfigProvider } from "../src/context/config"
 import { DisplayProvider } from "../src/context/display"
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
 import { KiloEmbeddingModelsProvider } from "../src/context/kilo-embedding-models"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { NotificationsProvider } from "../src/context/notifications"
 import { FeedbackProvider } from "../src/context/feedback"
 import { SessionProvider, useSession } from "../src/context/session"
@@ -91,11 +87,6 @@ import { NewWorktreeDialog } from "./NewWorktreeDialog"
 import { LanguageBridge, DataBridge, MermaidDownloadBridge } from "../src/App"
 import { useLanguage } from "../src/context/language"
 import { formatRelativeDate } from "../src/utils/date"
-<<<<<<< HEAD
-import { nextSelectionAfterDelete, adjacentHint, restoreLocalSessions, reconcileLocalSessions, LOCAL } from "./navigate"
-||||||| 12f7967ca4
-import { validateLocalSession, nextSelectionAfterDelete, adjacentHint, restoreLocalSessions, LOCAL } from "./navigate"
-=======
 import {
   nextSelectionAfterDelete,
   adjacentHint,
@@ -104,7 +95,6 @@ import {
   filterUnassignedSessions,
   LOCAL,
 } from "./navigate"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { reorderTabs, applyTabOrder, firstOrderedTitle } from "./tab-order"
 import { createTabOrderSync } from "./tab-order-sync"
 import { ConstrainDragYAxis } from "./sortable-tab"
@@ -135,16 +125,11 @@ import {
 import { sectionAwareDetector } from "./section-dnd"
 import { ConstrainDragXAxis } from "./constrain-drag-x"
 import { mergeWorktreeDiffs } from "./diff-state"
-<<<<<<< HEAD
-import { createMarkdownRender } from "./review-preferences"
-||||||| 12f7967ca4
-=======
 import { initialMessage, seedInitialVariant } from "./initial-message"
 import { createMarkdownRender } from "./review-preferences"
 import { createSidebarCollapse } from "./sidebar-collapse"
 import { SidebarToggleButton } from "./SidebarToggleButton"
 import { setTabWidths } from "./tab-widths"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import "./agent-manager.css"
 import "./agent-manager-review.css"
 const REVIEW_TAB_ID = "review"
@@ -3192,31 +3177,6 @@ export const AgentManagerApp: Component = () => {
                       <ProviderProvider>
                         <ConfigProvider>
                           <DisplayProvider>
-<<<<<<< HEAD
-                            <NotificationsProvider>
-                              <SessionProvider>
-                                <IndexingProvider>
-                                  <WorktreeModeProvider>
-                                    <DataBridge>
-                                      <AgentManagerContent />
-                                    </DataBridge>
-                                  </WorktreeModeProvider>
-                                </IndexingProvider>
-                              </SessionProvider>
-                            </NotificationsProvider>
-||||||| 12f7967ca4
-                          <NotificationsProvider>
-                            <SessionProvider>
-                              <IndexingProvider>
-                                <WorktreeModeProvider>
-                                  <DataBridge>
-                                    <AgentManagerContent />
-                                  </DataBridge>
-                                </WorktreeModeProvider>
-                              </IndexingProvider>
-                            </SessionProvider>
-                          </NotificationsProvider>
-=======
                             <IndexingProvider>
                               <KiloEmbeddingModelsProvider>
                                 <NotificationsProvider>
@@ -3232,7 +3192,6 @@ export const AgentManagerApp: Component = () => {
                                 </NotificationsProvider>
                               </KiloEmbeddingModelsProvider>
                             </IndexingProvider>
->>>>>>> yunqiqiliang/opencode-v7.3.0
                           </DisplayProvider>
                         </ConfigProvider>
                       </ProviderProvider>

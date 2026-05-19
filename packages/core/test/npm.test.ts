@@ -1,34 +1,6 @@
 import fs from "fs/promises"
 import path from "path"
 import { describe, expect, test } from "bun:test"
-<<<<<<< HEAD
-import { Npm } from "@opencode-ai/core/npm"
-import { tmpdir } from "./fixture/tmpdir"
-
-const win = process.platform === "win32"
-
-const writePackage = (dir: string, pkg: Record<string, unknown>) =>
-  Bun.write(
-    path.join(dir, "package.json"),
-    JSON.stringify({
-      version: "1.0.0",
-      ...pkg,
-    }),
-  )
-
-describe("Npm.sanitize", () => {
-  test("keeps normal scoped package specs unchanged", () => {
-    expect(Npm.sanitize("@opencode/acme")).toBe("@opencode/acme")
-    expect(Npm.sanitize("@opencode/acme@1.0.0")).toBe("@opencode/acme@1.0.0")
-    expect(Npm.sanitize("prettier")).toBe("prettier")
-  })
-
-  test("handles git https specs", () => {
-    const spec = "acme@git+https://github.com/opencode/acme.git"
-    const expected = win ? "acme@git+https_//github.com/opencode/acme.git" : spec
-    expect(Npm.sanitize(spec)).toBe(expected)
-||||||| 12f7967ca4
-=======
 import { NodeFileSystem } from "@effect/platform-node"
 import { Effect, Layer, Option } from "effect"
 import { AppFileSystem } from "@opencode-ai/core/filesystem"
@@ -89,7 +61,6 @@ describe("Npm.add", () => {
     }).pipe(Effect.scoped, Effect.provide(npmLayer(path.join(tmp.path, "cache"))), Effect.runPromise)
 
     expect(Option.isSome(entry.entrypoint)).toBe(true)
->>>>>>> yunqiqiliang/opencode-v7.3.0
   })
 })
 

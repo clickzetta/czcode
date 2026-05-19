@@ -1214,9 +1214,6 @@ export const dict = {
   "settings.experimental.agentManagerTool.title": "Agent Manager-verktøy",
   "settings.experimental.agentManagerTool.description":
     "Tillat agenter å starte lokale Agent Manager-økter og worktree-økter fra et verktøykall",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.experimental.speechToText.title": "Tale til tekst",
   "settings.experimental.speechToText.description":
     "Aktiver taleinndata i prompt-felt ved å bruke din Kilo-konto gjennom Kilo Gateway.",
@@ -1224,7 +1221,6 @@ export const dict = {
     "Aktiver Kilo provider og logg på for å bruke taleinndata i prompt-felt.",
   "settings.experimental.speechToTextModel.title": "Tale-til-tekst-modell",
   "settings.experimental.speechToTextModel.description": "Velg Kilo Gateway-transkripsjonsmodellen for taleinndata.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.experimental.continueOnDeny.title": "Fortsett ved avvisning",
   "settings.experimental.continueOnDeny.description": "Fortsett agentløkken når en tillatelse avvises",
   "settings.experimental.mcpTimeout.title": "MCP-tidsavbrudd (ms)",
@@ -1241,10 +1237,6 @@ export const dict = {
   "settings.indexing.title": "Indeksering",
   "settings.indexing.enable.title": "Aktiver indeksering",
   "settings.indexing.enable.description": "Slå semantisk kodebaseindeksering på eller av.",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-  "settings.indexing.enable.description": "Slå semantisk kodebaseindeksering på eller av for dette arbeidsområdet.",
-=======
   "settings.indexing.globalEnable.title": "Aktiver globalt",
   "settings.indexing.globalEnable.description": "Aktiver indeksering for hvert arbeidsområde.",
   "settings.indexing.projectEnable.title": "Aktiver for dette prosjektet",
@@ -1252,7 +1244,6 @@ export const dict = {
     "Aktiver indeksering for dette arbeidsområdet når global indeksering er slått av.",
   "settings.indexing.projectEnable.disabledTooltip":
     "Global indeksering er aktivert, så dette prosjektet er allerede dekket.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.indexing.provider.title": "Embedding-leverandør",
   "settings.indexing.provider.description": "Velg leverandøren som brukes til å generere embeddings for semantisk søk.",
   "settings.indexing.kiloModel.title": "Kilo-modellforhåndsvalg",
@@ -1459,12 +1450,8 @@ export const dict = {
   "settings.display.layout.description": "Layoutmodus for chatgrensesnittet",
   "settings.display.layout.auto": "Automatisk",
   "settings.display.layout.stretch": "Strekk",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.display.fontSize.title": "Skriftstørrelse",
   "settings.display.fontSize.description": "Juster skriftstørrelsen for Kilo webview UI uavhengig av VS Code.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.display.reasoningAutoCollapse.title": "Skjul resonnement automatisk",
   "settings.display.reasoningAutoCollapse.description":
     "Skjuler resonnementblokker etter at agenten er ferdig med å skrive dem. La være av for å holde resonnement utvidet med mindre du skjuler det manuelt.",

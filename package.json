@@ -6,23 +6,8 @@
   "type": "module",
   "packageManager": "bun@1.3.13",
   "scripts": {
-<<<<<<< HEAD
-    "dev": "~/.bun/bin/bun run --cwd packages/opencode --conditions=browser src/index.ts",
-    "dev-setup": "~/.bun/bin/bun run --cwd packages/opencode --conditions=browser src/index.ts dev-setup",
-    "test:local": "~/.bun/bin/bun run --cwd packages/opencode script/build.ts --single --skip-install && mkdir -p /tmp/czcode-test && sh -c 'cd /tmp/czcode-test && [ -f .env ] && set -a && . ./.env && set +a; exec $(find $OLDPWD/packages/opencode/dist -name czcode -type f | head -1)'",
-    "dev:desktop": "bun --cwd packages/desktop-electron dev",
-    "dev:web": "bun --cwd packages/app dev",
-    "dev:console": "ulimit -n 10240 2>/dev/null; bun run --cwd packages/console/app dev",
-||||||| 12f7967ca4
     "dev": "bun run --cwd packages/opencode --conditions=browser src/index.ts",
     "dev-setup": "bun run --cwd packages/opencode --conditions=browser src/index.ts dev-setup",
-    "dev:desktop": "bun --cwd packages/desktop-electron dev",
-    "dev:web": "bun --cwd packages/app dev",
-    "dev:console": "ulimit -n 10240 2>/dev/null; bun run --cwd packages/console/app dev",
-=======
-    "dev": "bun run --cwd packages/opencode --conditions=browser src/index.ts",
-    "dev-setup": "bun run --cwd packages/opencode --conditions=browser src/index.ts dev-setup",
->>>>>>> yunqiqiliang/opencode-v7.3.0
     "dev:storybook": "bun --cwd packages/storybook storybook",
     "lint": "oxlint",
     "typecheck": "bun turbo typecheck",
@@ -46,16 +31,8 @@
       "@types/cross-spawn": "6.0.6",
       "@octokit/rest": "22.0.0",
       "@hono/zod-validator": "0.4.2",
-<<<<<<< HEAD
-      "@opentui/core": "0.1.105",
-      "@opentui/solid": "0.1.105",
-||||||| 12f7967ca4
-      "@opentui/core": "0.1.99",
-      "@opentui/solid": "0.1.99",
-=======
       "@opentui/core": "0.2.2",
       "@opentui/solid": "0.2.2",
->>>>>>> yunqiqiliang/opencode-v7.3.0
       "ulid": "3.0.1",
       "@kobalte/core": "0.13.11",
       "@types/luxon": "3.7.1",
@@ -161,12 +138,6 @@
     "solid-js@1.9.10": "patches/solid-js@1.9.10.patch",
     "stream-chat@9.38.0": "patches/stream-chat@9.38.0.patch"
   },
-<<<<<<< HEAD
-  "version": "7.2.34",
-||||||| 12f7967ca4
-  "version": "7.2.31",
-=======
   "version": "7.2.49",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "peerDependencies": {}
 }

@@ -203,9 +203,6 @@ const ExperimentalTab: Component = () => {
         </SettingsRow>
 
         <SettingsRow
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
           title={language.t("settings.experimental.speechToText.title")}
           description={
             kiloReady()
@@ -242,7 +239,6 @@ const ExperimentalTab: Component = () => {
         </SettingsRow>
 
         <SettingsRow
->>>>>>> yunqiqiliang/opencode-v7.3.0
           title={language.t("settings.experimental.continueOnDeny.title")}
           description={language.t("settings.experimental.continueOnDeny.description")}
         >

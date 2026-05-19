@@ -1,28 +1,6 @@
-<<<<<<< HEAD
-import { GlobalBus } from "@/bus/global"
-import { disposeInstance } from "@/effect/instance-registry"
-import { makeRuntime } from "@/effect/run-service"
-import { AppFileSystem } from "@opencode-ai/core/filesystem"
-import { iife } from "@/util/iife"
-import * as Log from "@opencode-ai/core/util/log"
-import { LocalContext } from "@/util/local-context"
-import * as Project from "./project"
-import { WorkspaceContext } from "@/control-plane/workspace-context"
-||||||| 12f7967ca4
-import { GlobalBus } from "@/bus/global"
-import { disposeInstance } from "@/effect/instance-registry"
-import { makeRuntime } from "@/effect/run-service"
-import { AppFileSystem } from "@opencode-ai/shared/filesystem"
-import { iife } from "@/util/iife"
-import { Log } from "@/util"
-import { LocalContext } from "../util"
-import * as Project from "./project"
-import { WorkspaceContext } from "@/control-plane/workspace-context"
-=======
 import { Effect } from "effect"
 import { context, type InstanceContext } from "./instance-context"
 import { InstanceStore } from "./instance-store"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 export type { InstanceContext } from "./instance-context"
 export type { LoadInput } from "./instance-store"

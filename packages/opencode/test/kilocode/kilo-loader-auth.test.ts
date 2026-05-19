@@ -41,12 +41,6 @@ import { Provider } from "../../src/provider/provider"
 import { ProviderID } from "../../src/provider/schema"
 import { Filesystem } from "../../src/util/filesystem"
 import { ModelCache } from "../../src/provider/model-cache"
-<<<<<<< HEAD
-import { ModelsDev } from "../../src/provider/models"
-||||||| 12f7967ca4
-import { ModelsDev } from "../../src/provider"
-=======
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Auth } from "../../src/auth"
 
 function paid(providers: Awaited<ReturnType<typeof Provider.list>>) {

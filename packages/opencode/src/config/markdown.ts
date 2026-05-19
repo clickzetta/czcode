@@ -2,12 +2,7 @@ import { NamedError } from "@opencode-ai/core/util/error"
 import matter from "gray-matter"
 import { z } from "zod"
 import { Filesystem } from "@/util/filesystem"
-<<<<<<< HEAD
-||||||| 12f7967ca4
-import { Filesystem } from "../util"
-=======
 import { KilocodeMarkdown } from "../kilocode/config/markdown" // kilocode_change
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 export const FILE_REGEX = /(?<![\w`])@(\.?[^\s`,.]*(?:\.[^\s`,.]+)*)/g
 export const SHELL_REGEX = /!`([^`]+)`/g
@@ -107,11 +102,6 @@ export const FrontmatterError = NamedError.create(
     message: z.string(),
   }),
 )
-<<<<<<< HEAD
-
-export * as ConfigMarkdown from "./markdown"
-||||||| 12f7967ca4
-=======
 // kilocode_change end
 
 // kilocode_change start - export helpers as namespace object
@@ -125,4 +115,3 @@ export const ConfigMarkdown = {
   FrontmatterError,
 }
 // kilocode_change end
->>>>>>> yunqiqiliang/opencode-v7.3.0

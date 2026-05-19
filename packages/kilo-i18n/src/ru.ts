@@ -91,10 +91,6 @@ export const dict = {
   "snapshot.slowRepo.answer.disable.description":
     "Выключите снимки Kilo для этого проекта. Вы потеряете отмену/повтор изменений Kilo, но git по-прежнему отслеживает всё.",
 
-<<<<<<< HEAD
-  "ui.messagePart.openInDiffViewer": "Открыть в просмотрщике различий",
-||||||| 12f7967ca4
-=======
   // Edit-tool header and shell-tool section labels
   "ui.messagePart.openInDiffViewer": "Открыть в просмотре различий",
   "ui.messagePart.shell.command": "Команда",
@@ -105,5 +101,4 @@ export const dict = {
   "ui.message.feedback.helpful": "Это было полезно",
   "ui.message.feedback.notHelpful": "Это было бесполезно",
   "ui.message.feedback.clearRating": "Очистить оценку",
->>>>>>> yunqiqiliang/opencode-v7.3.0
 }

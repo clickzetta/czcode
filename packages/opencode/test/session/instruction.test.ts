@@ -12,15 +12,8 @@ import { Instruction } from "../../src/session/instruction"
 import type { MessageV2 } from "../../src/session/message-v2"
 import { MessageID, PartID, SessionID } from "../../src/session/schema"
 import { Global } from "@opencode-ai/core/global"
-<<<<<<< HEAD
-import { tmpdir } from "../fixture/fixture"
-||||||| 12f7967ca4
-import { Global } from "../../src/global"
-import { tmpdir } from "../fixture/fixture"
-=======
 import { provideInstance, provideTmpdirInstance, tmpdirScoped } from "../fixture/fixture"
 import { testEffect } from "../lib/effect"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 const it = testEffect(Layer.mergeAll(CrossSpawnSpawner.defaultLayer, NodeFileSystem.layer))
 

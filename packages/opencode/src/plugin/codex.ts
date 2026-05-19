@@ -1,13 +1,5 @@
 import type { Hooks, PluginInput } from "@kilocode/plugin"
 import * as Log from "@opencode-ai/core/util/log"
-<<<<<<< HEAD
-import { Installation } from "../installation"
-||||||| 12f7967ca4
-import { Log } from "../util"
-import { Installation } from "../installation"
-import { InstallationVersion } from "../installation/version"
-=======
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { InstallationVersion } from "@opencode-ai/core/installation/version"
 import { OAUTH_DUMMY_KEY } from "../auth"
 import os from "os"
@@ -422,78 +414,6 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
         const auth = await getAuth()
         if (auth.type !== "oauth") return {}
 
-<<<<<<< HEAD
-        // Filter models to only allowed Codex models for OAuth
-        const allowedModels = new Set([
-          "gpt-5.1-codex",
-          "gpt-5.1-codex-max",
-          "gpt-5.1-codex-mini",
-          "gpt-5.2",
-          "gpt-5.2-codex",
-          "gpt-5.3-codex",
-          "gpt-5.4",
-          "gpt-5.4-mini",
-          "gpt-5.5",
-        ])
-        for (const [modelId, model] of Object.entries(provider.models)) {
-          if (modelId.includes("codex")) continue
-          if (allowedModels.has(model.api.id)) continue
-          const match = model.api.id.match(/^gpt-(\d+\.\d+)/)
-          if (match && parseFloat(match[1]) > 5.4) continue
-          delete provider.models[modelId]
-        }
-
-        // Zero out costs for Codex (included with ChatGPT subscription)
-        for (const model of Object.values(provider.models)) {
-          model.cost = {
-            input: 0,
-            output: 0,
-            cache: { read: 0, write: 0 },
-          }
-
-          // gpt-5.5 models temporarily have restricted context window size for codex plans
-          if (model.id.includes("gpt-5.5")) {
-            model.limit = {
-              context: 400_000,
-              //@ts-expect-error incorrect type for v1 sdk but works
-              input: 272_000,
-              output: 128_000,
-            }
-          }
-        }
-
-||||||| 12f7967ca4
-        // Filter models to only allowed Codex models for OAuth
-        const allowedModels = new Set([
-          "gpt-5.1-codex",
-          "gpt-5.1-codex-max",
-          "gpt-5.1-codex-mini",
-          "gpt-5.2",
-          "gpt-5.2-codex",
-          "gpt-5.3-codex",
-          "gpt-5.4",
-          "gpt-5.4-mini",
-          "gpt-5.5",
-        ])
-        for (const [modelId, model] of Object.entries(provider.models)) {
-          if (modelId.includes("codex")) continue
-          if (allowedModels.has(model.api.id)) continue
-          const match = model.api.id.match(/^gpt-(\d+\.\d+)/)
-          if (match && parseFloat(match[1]) > 5.4) continue
-          delete provider.models[modelId]
-        }
-
-        // Zero out costs for Codex (included with ChatGPT subscription)
-        for (const model of Object.values(provider.models)) {
-          model.cost = {
-            input: 0,
-            output: 0,
-            cache: { read: 0, write: 0 },
-          }
-        }
-
-=======
->>>>>>> yunqiqiliang/opencode-v7.3.0
         return {
           apiKey: OAUTH_DUMMY_KEY,
           async fetch(requestInput: RequestInfo | URL, init?: RequestInit) {

@@ -46,13 +46,7 @@ export function createDialogProviderOptions() {
           description: failedDesc ?? baseDesc, // kilocode_change
           footer: consoleManaged ? sync.data.console_state.activeOrgName : undefined,
           category: provider.id in PROVIDER_PRIORITY ? "Popular" : "Other",
-<<<<<<< HEAD
-          gutter: connected && onboarded() ? <text fg={theme.success}>✓</text> : undefined,
-||||||| 12f7967ca4
-          gutter: connected ? <text fg={theme.success}>✓</text> : undefined,
-=======
           gutter: failedGutter ?? (connected && onboarded() ? () => <text fg={theme.success}>✓</text> : undefined), // kilocode_change
->>>>>>> yunqiqiliang/opencode-v7.3.0
           async onSelect() {
             if (consoleManaged) return
 

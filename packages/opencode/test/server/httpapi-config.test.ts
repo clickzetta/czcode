@@ -6,41 +6,6 @@ import { Instance } from "../../src/project/instance"
 import { Server } from "../../src/server/server"
 import * as Log from "@opencode-ai/core/util/log"
 import { resetDatabase } from "../fixture/db"
-<<<<<<< HEAD
-import { tmpdir } from "../fixture/fixture"
-
-void Log.init({ print: false })
-
-const original = Flag.KILO_EXPERIMENTAL_HTTPAPI
-
-function app() {
-  Flag.KILO_EXPERIMENTAL_HTTPAPI = true
-  return Server.Default().app
-}
-
-async function waitDisposed(directory: string) {
-  return await new Promise<void>((resolve, reject) => {
-    const timer = setTimeout(() => {
-      GlobalBus.off("event", onEvent)
-      reject(new Error("timed out waiting for instance disposal"))
-    }, 10_000)
-
-    function onEvent(event: { directory?: string; payload: { type?: string } }) {
-      if (event.payload.type !== "server.instance.disposed" || event.directory !== directory) return
-      clearTimeout(timer)
-      GlobalBus.off("event", onEvent)
-      resolve()
-    }
-
-    GlobalBus.on("event", onEvent)
-  })
-}
-
-afterEach(async () => {
-  Flag.KILO_EXPERIMENTAL_HTTPAPI = original
-  await Instance.disposeAll()
-||||||| 12f7967ca4
-=======
 import { disposeAllInstances, tmpdir } from "../fixture/fixture"
 
 void Log.init({ print: false })
@@ -73,7 +38,6 @@ async function waitDisposed(directory: string) {
 afterEach(async () => {
   Flag.KILO_EXPERIMENTAL_HTTPAPI = original
   await disposeAllInstances()
->>>>>>> yunqiqiliang/opencode-v7.3.0
   await resetDatabase()
 })
 

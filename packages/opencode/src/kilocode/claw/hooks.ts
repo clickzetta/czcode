@@ -13,14 +13,6 @@
  */
 
 import { createSignal, onMount, onCleanup } from "solid-js"
-<<<<<<< HEAD
-import type { ClawStatus, ChatCredentials, ChatMessage } from "./types"
-import { botId, connect, history, presence, type ClawChatClient } from "./client"
-||||||| 12f7967ca4
-import type { ClawStatus, ChatCredentials, ChatMessage } from "./types"
-import { botId, connect, history, presence, type ClawChatClient } from "./client"
-import { Log } from "@/util"
-=======
 import type {
   ChatMessage,
   ChatToken,
@@ -31,7 +23,6 @@ import type {
 } from "./types"
 import { connect, type ClawChatClient } from "./client"
 import { useSDK } from "@tui/context/sdk"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import * as Log from "@opencode-ai/core/util/log"
 
 const log = Log.create({ service: "claw-chat" })

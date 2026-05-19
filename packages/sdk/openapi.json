@@ -11309,14 +11309,10 @@
           "descriptionKey": {
             "description": "Optional i18n key for the description",
             "type": "string"
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
           },
           "mode": {
             "description": "Optional agent/mode name to pre-select in the UI when this option is picked",
             "type": "string"
->>>>>>> yunqiqiliang/opencode-v7.3.0
           }
         },
         "required": ["label", "description"]
@@ -12319,17 +12315,6 @@
                 "const": "retry"
               },
               "attempt": {
-<<<<<<< HEAD
-                "type": "number"
-              },
-              "message": {
-                "type": "string"
-              },
-              "next": {
-                "type": "number"
-||||||| 12f7967ca4
-            "required": ["name", "sessionID", "arguments", "messageID"]
-=======
                 "type": "integer",
                 "minimum": 0,
                 "maximum": 9007199254740991
@@ -12341,7 +12326,6 @@
                 "type": "integer",
                 "minimum": 0,
                 "maximum": 9007199254740991
->>>>>>> yunqiqiliang/opencode-v7.3.0
               }
             },
             "required": ["type", "attempt", "message", "next"]
@@ -14454,16 +14438,6 @@
             "type": "string"
           },
           "processedFiles": {
-<<<<<<< HEAD
-            "type": "number"
-          },
-          "totalFiles": {
-            "type": "number"
-          },
-          "percent": {
-            "type": "number"
-||||||| 12f7967ca4
-=======
             "type": "integer",
             "minimum": 0,
             "maximum": 9007199254740991
@@ -14477,7 +14451,6 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 100
->>>>>>> yunqiqiliang/opencode-v7.3.0
           }
         },
         "required": ["state", "message", "processedFiles", "totalFiles", "percent"]

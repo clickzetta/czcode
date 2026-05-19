@@ -3,83 +3,6 @@ import { Context, Effect, FileSystem, Layer, Path } from "effect"
 import { NodeFileSystem, NodePath } from "@effect/platform-node"
 import { Flag } from "@opencode-ai/core/flag/flag"
 import { ExperimentalHttpApiServer } from "../../src/server/routes/instance/httpapi/server"
-<<<<<<< HEAD
-import { McpPaths } from "../../src/server/routes/instance/httpapi/mcp"
-import { Instance } from "../../src/project/instance"
-import { Server } from "../../src/server/server"
-import * as Log from "@opencode-ai/core/util/log"
-import { resetDatabase } from "../fixture/db"
-import { provideInstance, tmpdir } from "../fixture/fixture"
-import { testEffect } from "../lib/effect"
-
-void Log.init({ print: false })
-
-const original = Flag.KILO_EXPERIMENTAL_HTTPAPI
-const context = Context.empty() as Context.Context<unknown>
-const it = testEffect(Layer.mergeAll(NodeFileSystem.layer, NodePath.layer))
-
-function app(experimental: boolean) {
-  Flag.KILO_EXPERIMENTAL_HTTPAPI = experimental
-  return Server.Default().app
-}
-type TestApp = ReturnType<typeof app>
-
-function request(route: string, directory: string, init?: RequestInit) {
-  const headers = new Headers(init?.headers)
-  headers.set("x-kilo-directory", directory)
-  return ExperimentalHttpApiServer.webHandler().handler(
-    new Request(`http://localhost${route}`, {
-      ...init,
-      headers,
-    }),
-    context,
-  )
-}
-
-function withMcpProject<A, E, R>(self: (dir: string) => Effect.Effect<A, E, R>) {
-  return Effect.gen(function* () {
-    const fs = yield* FileSystem.FileSystem
-    const path = yield* Path.Path
-    const dir = yield* fs.makeTempDirectoryScoped({ prefix: "opencode-test-" })
-
-    yield* fs.writeFileString(
-      path.join(dir, "opencode.json"),
-      JSON.stringify({
-        $schema: "https://opencode.ai/config.json",
-        formatter: false,
-        lsp: false,
-        mcp: {
-          demo: {
-            type: "local",
-            command: ["echo", "demo"],
-            enabled: false,
-          },
-        },
-      }),
-    )
-    yield* Effect.addFinalizer(() =>
-      Effect.promise(() => Instance.provide({ directory: dir, fn: () => Instance.dispose() })).pipe(Effect.ignore),
-    )
-
-    return yield* self(dir).pipe(provideInstance(dir))
-  })
-}
-
-const readResponse = Effect.fnUntraced(function* (input: { app: TestApp; path: string; headers: HeadersInit }) {
-  const response = yield* Effect.promise(() =>
-    Promise.resolve(input.app.request(input.path, { method: "POST", headers: input.headers })),
-  )
-  return {
-    status: response.status,
-    body: yield* Effect.promise(() => response.text()),
-  }
-})
-
-afterEach(async () => {
-  Flag.KILO_EXPERIMENTAL_HTTPAPI = original
-  await Instance.disposeAll()
-||||||| 12f7967ca4
-=======
 import { McpPaths } from "../../src/server/routes/instance/httpapi/groups/mcp"
 import { Instance } from "../../src/project/instance"
 import { InstanceStore } from "../../src/project/instance-store"
@@ -157,7 +80,6 @@ const readResponse = Effect.fnUntraced(function* (input: { app: TestApp; path: s
 afterEach(async () => {
   Flag.KILO_EXPERIMENTAL_HTTPAPI = original
   await disposeAllInstances()
->>>>>>> yunqiqiliang/opencode-v7.3.0
   await resetDatabase()
 })
 

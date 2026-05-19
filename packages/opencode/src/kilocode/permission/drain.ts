@@ -27,14 +27,7 @@ export function drainCovered(
       // Never auto-resolve config file edit permissions
       if (ConfigProtection.isRequest(entry.info)) continue
       const actions = entry.info.patterns.map((pattern: string) => {
-<<<<<<< HEAD
-        const rule = Permission.evaluate(entry.info.permission, pattern, entry.ruleset, approved)
-||||||| 12f7967ca4
-        const rule = Permission.evaluate(entry.info.permission, pattern, entry.ruleset, approved)
-        const hard = entry.hardRuleset ? Permission.evaluate(entry.info.permission, pattern, entry.hardRuleset) : undefined
-=======
         const rule = Permission.resolve(entry.info.permission, pattern, entry.ruleset, approved)
->>>>>>> yunqiqiliang/opencode-v7.3.0
         const hard = entry.hardRuleset
           ? Permission.evaluate(entry.info.permission, pattern, entry.hardRuleset)
           : undefined

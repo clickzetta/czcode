@@ -49,21 +49,10 @@ export namespace KilocodeConfig {
   /** Directory suffixes that czcode recognizes in addition to .opencode. */
   export const KILO_DIR_SUFFIXES = [".czcode", ".kilo", ".kilocode"] as const
 
-<<<<<<< HEAD
   // czcode_change start - include .czcode in config dir suffixes
   /** All config directory suffixes Kilo can update, including upstream .opencode. */
   export const ALL_CONFIG_DIR_SUFFIXES = [".czcode", ".kilo", ".kilocode", ".opencode"] as const
   // czcode_change end
-||||||| 12f7967ca4
-  /** Path patterns for resolving kilo agent names from file paths. */
-  export const AGENT_PATTERNS = ["/.kilo/agent/", "/.kilo/agents/", "/.kilocode/agent/", "/.kilocode/agents/"] as const
-=======
-  /** All config directory suffixes Kilo can update, including upstream .opencode. */
-  export const ALL_CONFIG_DIR_SUFFIXES = [".kilo", ".kilocode", ".opencode"] as const
-
-  /** Path patterns for resolving kilo agent names from file paths. */
-  export const AGENT_PATTERNS = ["/.kilo/agent/", "/.kilo/agents/", "/.kilocode/agent/", "/.kilocode/agents/"] as const
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
   // czcode_change start - include .czcode agent path patterns
   /** Path patterns for resolving czcode agent names from file paths. */

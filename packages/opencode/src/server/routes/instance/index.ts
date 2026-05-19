@@ -6,12 +6,7 @@ import z from "zod"
 import { Format } from "@/format"
 import { TuiRoutes } from "./tui"
 import { Instance } from "@/project/instance"
-<<<<<<< HEAD
-||||||| 12f7967ca4
-import { Vcs } from "@/project"
-=======
 import { InstanceStore } from "@/project/instance-store"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Vcs } from "@/project/vcs"
 import { Agent } from "@/agent/agent"
 import { Skill } from "@/skill"

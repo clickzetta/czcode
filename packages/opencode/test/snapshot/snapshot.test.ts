@@ -6,14 +6,7 @@ import { Effect } from "effect"
 import { Snapshot } from "../../src/snapshot"
 import { Instance } from "../../src/project/instance"
 import { Filesystem } from "@/util/filesystem"
-<<<<<<< HEAD
-import { provideInstance, tmpdir } from "../fixture/fixture"
-||||||| 12f7967ca4
-import { Filesystem } from "../../src/util"
-import { provideInstance, tmpdir } from "../fixture/fixture"
-=======
 import { disposeAllInstances, provideInstance, tmpdir } from "../fixture/fixture"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 // Git always outputs /-separated paths internally. Snapshot.patch() joins them
 // with path.join (which produces \ on Windows) then normalizes back to /.

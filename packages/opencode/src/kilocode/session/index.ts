@@ -14,15 +14,7 @@ import { ProjectID } from "@/project/schema"
 import { Filesystem } from "@/util/filesystem"
 import { SessionTable } from "@/session/session.sql"
 import * as Log from "@opencode-ai/core/util/log"
-<<<<<<< HEAD
-import type { ProviderMetadata } from "ai"
-||||||| 12f7967ca4
-import { Log } from "@/util"
-import type { ProviderMetadata } from "ai"
-import type { Provider } from "@/provider"
-=======
 import type { LanguageModelUsage, ProviderMetadata } from "ai"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import type { Provider } from "@/provider/provider"
 
 export namespace KiloSession {

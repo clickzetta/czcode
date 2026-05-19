@@ -1,33 +1,13 @@
 import { Global } from "@opencode-ai/core/global"
-<<<<<<< HEAD
-import * as Log from "@opencode-ai/core/util/log"
-||||||| 12f7967ca4
-import { Global } from "../global"
-import { Log } from "../util"
-=======
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import path from "path"
 import { Context, Duration, Effect, Layer, Option, Schedule, Schema } from "effect"
 import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/unstable/http"
 import { Installation } from "../installation"
 import { Flag } from "@opencode-ai/core/flag/flag"
-<<<<<<< HEAD
-import { lazy } from "@/util/lazy"
-import { Filesystem } from "@/util/filesystem"
-import { Flock } from "@opencode-ai/core/util/flock"
-import { Hash } from "@opencode-ai/core/util/hash"
-||||||| 12f7967ca4
-import { Flag } from "../flag/flag"
-import { lazy } from "@/util/lazy"
-import { Filesystem } from "../util"
-import { Flock } from "@opencode-ai/shared/util/flock"
-import { Hash } from "@opencode-ai/shared/util/hash"
-=======
 import { Flock } from "@opencode-ai/core/util/flock"
 import { Hash } from "@opencode-ai/core/util/hash"
 import { AppFileSystem } from "@opencode-ai/core/filesystem"
 import { withTransientReadRetry } from "@/util/effect-http-client"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 // kilocode_change start
 import { Config } from "../config/config"
 import { ModelCache } from "./model-cache"
@@ -164,27 +144,6 @@ export const layer: Layer.Layer<Service, never, AppFileSystem.Service | HttpClie
       return Date.now() - mtime < Duration.toMillis(ttl)
     })
 
-<<<<<<< HEAD
-if (!Flag.KILO_DISABLE_MODELS_FETCH && !process.argv.includes("--get-yargs-completions")) {
-  void refresh()
-  setInterval(
-    async () => {
-      await refresh()
-    },
-    60 * 1000 * 60,
-  ).unref()
-}
-||||||| 12f7967ca4
-if (!Flag.KILO_DISABLE_MODELS_FETCH && !process.argv.includes("--get-yargs-completions")) {
-  void refresh()
-  setInterval(
-    async () => {
-      await refresh()
-    },
-    60 * 1000 * 60,
-  ).unref()
-}
-=======
     const fetchApi = Effect.fn("ModelsDev.fetchApi")(function* () {
       return yield* HttpClientRequest.get(`${source}/api.json`).pipe(
         HttpClientRequest.setHeader("User-Agent", Installation.USER_AGENT),
@@ -339,6 +298,5 @@ export const defaultLayer: Layer.Layer<Service> = layer.pipe(
   Layer.provide(FetchHttpClient.layer),
   Layer.provide(AppFileSystem.defaultLayer),
 )
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 export * as ModelsDev from "./models"

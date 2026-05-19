@@ -754,15 +754,9 @@ export const layer = Layer.effect(
       return mcpConfig
     })
 
-<<<<<<< HEAD
-    const startAuth = Effect.fn("MCP.startAuth")(function* (mcpName: string, opts?: { callback?: boolean }) { // kilocode_change
-||||||| 12f7967ca4
-    const startAuth = Effect.fn("MCP.startAuth")(function* (mcpName: string) {
-=======
     // kilocode_change start - `opts?: { callback?: boolean }` parameter is Kilo-specific
     const startAuth = Effect.fn("MCP.startAuth")(function* (mcpName: string, opts?: { callback?: boolean }) {
       // kilocode_change end
->>>>>>> yunqiqiliang/opencode-v7.3.0
       const mcpConfig = yield* getMcpConfig(mcpName)
       if (!mcpConfig) throw new Error(`MCP server ${mcpName} not found or disabled`)
       if (mcpConfig.type !== "remote") throw new Error(`MCP server ${mcpName} is not a remote server`)
@@ -848,13 +842,8 @@ export const layer = Layer.effect(
       // kilocode_change start - bind only after redirect exists, and clean up if binding fails
       const mcpConfig = yield* getMcpConfig(mcpName)
       if (!mcpConfig) return { status: "failed", error: "MCP config not found after auth" } as Status
-<<<<<<< HEAD
-      if (mcpConfig.type !== "remote") return { status: "failed", error: `MCP server ${mcpName} is not a remote server` } as Status
-||||||| 12f7967ca4
-=======
       if (mcpConfig.type !== "remote")
         return { status: "failed", error: `MCP server ${mcpName} is not a remote server` } as Status
->>>>>>> yunqiqiliang/opencode-v7.3.0
       const oauthConfig = typeof mcpConfig.oauth === "object" ? mcpConfig.oauth : undefined
       const err = yield* Effect.tryPromise({
         try: () => McpOAuthCallback.ensureRunning(oauthConfig?.redirectUri),

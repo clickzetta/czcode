@@ -3,37 +3,22 @@ import { Telemetry } from "@kilocode/kilo-telemetry"
 import { SessionNetwork } from "@/session/network"
 import type { SessionID } from "@/session/schema"
 import type { SessionStatus } from "@/session/status"
-<<<<<<< HEAD
-import type { MessageV2 } from "@/session/message-v2"
-||||||| 12f7967ca4
-import type { MessageV2 } from "@/session/message-v2"
-import { Log } from "@/util"
-=======
 import { MessageV2 } from "@/session/message-v2"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import * as Log from "@opencode-ai/core/util/log"
 import { Effect } from "effect"
 import { Flag } from "@opencode-ai/core/flag/flag"
-<<<<<<< HEAD
-||||||| 12f7967ca4
-import { Flag } from "@/flag/flag"
-=======
 
 export type ReviewTelemetry = {
   mode: "review"
   feature: "code_reviews"
   command: "review" | "local-review" | "local-review-uncommitted"
 }
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 export namespace KiloSessionProcessor {
   const log = Log.create({ service: "session.processor.kilo" })
   export const OUTPUT_LENGTH_WARNING = "The model hit its output limit, so this response may be incomplete."
   export const REASONING_LENGTH_WARNING =
     "The model hit its output limit while reasoning and produced no actionable output. Try disabling reasoning or increasing the output limit."
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   export const PROVIDER_FINISH_ERROR_MESSAGE =
     "The provider ended the response with an error before returning details. Start a new message to retry; Kilo will compact the oversized conversation first if needed."
 
@@ -73,7 +58,6 @@ export namespace KiloSessionProcessor {
       if (tel) return tel
     }
   }
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
   /**
    * Track LLM completion telemetry for a finished step.
@@ -202,9 +186,6 @@ export namespace KiloSessionProcessor {
     log.warn("length stop", { messageID: input.msg.id })
     return OUTPUT_LENGTH_WARNING
   }
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
 
   export function providerFinishError(msg: MessageV2.Assistant) {
     if (msg.finish !== "error") return false
@@ -217,5 +198,4 @@ export namespace KiloSessionProcessor {
     log.warn("provider finish error", { messageID: msg.id })
     return err
   }
->>>>>>> yunqiqiliang/opencode-v7.3.0
 }

@@ -1237,9 +1237,6 @@ export const dict = {
   "settings.experimental.agentManagerTool.title": "Agent Manager 도구",
   "settings.experimental.agentManagerTool.description":
     "에이전트가 도구 호출로 Agent Manager 로컬 세션 및 워크트리 세션을 시작하도록 허용",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.experimental.speechToText.title": "음성 텍스트 변환",
   "settings.experimental.speechToText.description":
     "Kilo Gateway를 통해 Kilo 계정을 사용하여 프롬프트 필드에서 음성 입력을 활성화합니다.",
@@ -1247,7 +1244,6 @@ export const dict = {
     "프롬프트 필드에서 음성 입력을 사용하려면 Kilo provider를 활성화하고 로그인하세요.",
   "settings.experimental.speechToTextModel.title": "음성 텍스트 변환 모델",
   "settings.experimental.speechToTextModel.description": "음성 입력에 사용할 Kilo Gateway 변환 모델을 선택하세요.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.experimental.continueOnDeny.title": "거부 시 계속",
   "settings.experimental.continueOnDeny.description": "권한이 거부되면 에이전트 루프 계속",
   "settings.experimental.mcpTimeout.title": "MCP 타임아웃 (ms)",
@@ -1436,12 +1432,8 @@ export const dict = {
   "settings.display.layout.description": "채팅 인터페이스의 레이아웃 모드",
   "settings.display.layout.auto": "자동",
   "settings.display.layout.stretch": "늘리기",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.display.fontSize.title": "글꼴 크기",
   "settings.display.fontSize.description": "VS Code와 독립적으로 Kilo webview UI 글꼴 크기를 조정합니다.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.display.reasoningAutoCollapse.title": "추론 자동 접기",
   "settings.display.reasoningAutoCollapse.description":
     "에이전트가 추론 작성을 마친 뒤 추론 블록을 자동으로 접습니다. 수동으로 접기 전까지 추론을 펼친 상태로 두려면 끄세요.",

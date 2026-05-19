@@ -11,47 +11,17 @@ import fuzzysort from "fuzzysort"
 import ignore from "ignore"
 import path from "path"
 import { Global } from "@opencode-ai/core/global"
-<<<<<<< HEAD
-import { Instance } from "../project/instance"
-||||||| 12f7967ca4
-import z from "zod"
-import { Global } from "../global"
-import { Instance } from "../project/instance"
-import { Log } from "../util"
-=======
 import { containsPath } from "../project/instance-context"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import * as Log from "@opencode-ai/core/util/log"
 import { Protected } from "./protected"
 import { Ripgrep } from "./ripgrep"
 import { zod } from "@/util/effect-zod"
-<<<<<<< HEAD
-import { type DeepMutable, withStatics } from "@/util/schema"
-||||||| 12f7967ca4
-=======
 import { NonNegativeInt, type DeepMutable, withStatics } from "@/util/schema"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 export const Info = Schema.Struct({
   path: Schema.String,
-<<<<<<< HEAD
-  added: Schema.Int,
-  removed: Schema.Int,
-||||||| 12f7967ca4
-export const Info = z
-  .object({
-    path: z.string(),
-    added: z.number().int(),
-    removed: z.number().int(),
-    status: z.enum(["added", "deleted", "modified"]),
-  })
-  .meta({
-    ref: "File",
-  })
-=======
   added: NonNegativeInt,
   removed: NonNegativeInt,
->>>>>>> yunqiqiliang/opencode-v7.3.0
   status: Schema.Literals(["added", "deleted", "modified"]),
 })
   .annotate({ identifier: "File" })
@@ -70,30 +40,10 @@ export const Node = Schema.Struct({
 export type Node = DeepMutable<Schema.Schema.Type<typeof Node>>
 
 const Hunk = Schema.Struct({
-<<<<<<< HEAD
-  oldStart: Schema.Number,
-  oldLines: Schema.Number,
-  newStart: Schema.Number,
-  newLines: Schema.Number,
-||||||| 12f7967ca4
-export const Node = z
-  .object({
-    name: z.string(),
-    path: z.string(),
-    absolute: z.string(),
-    type: z.enum(["file", "directory"]),
-    ignored: z.boolean(),
-  })
-  .meta({
-    ref: "FileNode",
-  })
-export type Node = z.infer<typeof Node>
-=======
   oldStart: NonNegativeInt,
   oldLines: NonNegativeInt,
   newStart: NonNegativeInt,
   newLines: NonNegativeInt,
->>>>>>> yunqiqiliang/opencode-v7.3.0
   lines: Schema.Array(Schema.String),
 })
 

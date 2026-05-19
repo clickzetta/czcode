@@ -6,14 +6,7 @@ import * as Tool from "./tool"
 import path from "path"
 import DESCRIPTION from "./bash.txt"
 import * as Log from "@opencode-ai/core/util/log"
-<<<<<<< HEAD
-import { Instance } from "../project/instance"
-||||||| 12f7967ca4
-import { Log } from "../util"
-import { Instance } from "../project/instance"
-=======
 import { containsPath, type InstanceContext } from "../project/instance-context"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { lazy } from "@/util/lazy"
 import { Language, type Node } from "web-tree-sitter"
 
@@ -21,12 +14,7 @@ import { AppFileSystem } from "@opencode-ai/core/filesystem"
 import { fileURLToPath } from "url"
 import { Config } from "@/config/config"
 import { Flag } from "@opencode-ai/core/flag/flag"
-<<<<<<< HEAD
-||||||| 12f7967ca4
-import { Flag } from "@/flag/flag"
-=======
 import { Global } from "@opencode-ai/core/global"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Shell } from "@/shell/shell"
 
 import { BashArity } from "@/permission/arity"
@@ -634,12 +622,7 @@ export const BashTool = Tool.define(
 
         return {
           description: DESCRIPTION.replaceAll("${directory}", instance.directory)
-<<<<<<< HEAD
-||||||| 12f7967ca4
-          description: DESCRIPTION.replaceAll("${directory}", Instance.directory)
-=======
             .replaceAll("${tmp}", Global.Path.tmp)
->>>>>>> yunqiqiliang/opencode-v7.3.0
             .replaceAll("${os}", process.platform)
             .replaceAll("${shell}", name)
             .replaceAll("${chaining}", chain)
@@ -657,28 +640,6 @@ export const BashTool = Tool.define(
               }
               const timeout = params.timeout ?? DEFAULT_TIMEOUT
               const ps = Shell.ps(shell)
-<<<<<<< HEAD
-              const root = yield* parse(params.command, ps)
-              const scan = yield* collect(root, cwd, ps, shell)
-              // kilocode_change start
-              if (!Instance.containsPath(cwd)) {
-                scan.dirs.add(cwd)
-                scan.access = "unknown"
-              }
-              // kilocode_change end
-              yield* ask(ctx, scan, params.command) // kilocode_change
-||||||| 12f7967ca4
-              const ps = PS.has(name)
-              const root = yield* parse(params.command, ps)
-              const scan = yield* collect(root, cwd, ps, shell)
-              // kilocode_change start
-              if (!Instance.containsPath(cwd)) {
-                scan.dirs.add(cwd)
-                scan.access = "unknown"
-              }
-              // kilocode_change end
-              yield* ask(ctx, scan, params.command) // kilocode_change
-=======
               yield* Effect.scoped(
                 Effect.gen(function* () {
                   const tree = yield* Effect.acquireRelease(parse(params.command, ps), (tree) =>
@@ -694,7 +655,6 @@ export const BashTool = Tool.define(
                   yield* ask(ctx, scan, params.command) // kilocode_change
                 }),
               )
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
               return yield* run(
                 {

@@ -14,65 +14,17 @@ import { FileWatcher } from "@/file/watcher"
 import { Storage } from "@/storage/storage"
 import { Snapshot } from "@/snapshot"
 import { Plugin } from "@/plugin"
-<<<<<<< HEAD
-||||||| 12f7967ca4
-import { Provider } from "@/provider"
-import { ProviderAuth } from "@/provider"
-=======
-import { ModelsDev } from "@/provider/models"
->>>>>>> yunqiqiliang/opencode-v7.3.0
-import { Provider } from "@/provider/provider"
-import { ProviderAuth } from "@/provider/auth"
-import { Agent } from "@/agent/agent"
-import { Skill } from "@/skill"
-import { Discovery } from "@/skill/discovery"
-import { Question } from "@/question"
-import { Permission } from "@/permission"
-import { Todo } from "@/session/todo"
-import { Session } from "@/session/session"
-import { SessionStatus } from "@/session/status"
-import { SessionRunState } from "@/session/run-state"
-import { SessionProcessor } from "@/session/processor"
-import { SessionCompaction } from "@/session/compaction"
-import { SessionRevert } from "@/session/revert"
-import { SessionSummary } from "@/session/summary"
-import { SessionPrompt } from "@/session/prompt"
-import { Instruction } from "@/session/instruction"
-import { LLM } from "@/session/llm"
-import { LSP } from "@/lsp/lsp"
-import { MCP } from "@/mcp"
-import { McpAuth } from "@/mcp/auth"
-import { Command } from "@/command"
-import { Truncate } from "@/tool/truncate"
-import { ToolRegistry } from "@/tool/registry"
-import { Format } from "@/format"
-<<<<<<< HEAD
-import { Project } from "@/project/project"
-import { Vcs } from "@/project/vcs"
-||||||| 12f7967ca4
-import { Project } from "@/project"
-import { Vcs } from "@/project"
-=======
 import { InstanceBootstrap } from "@/project/bootstrap"
 import { InstanceStore } from "@/project/instance-store"
 import { Project } from "@/project/project"
 import { Vcs } from "@/project/vcs"
 import { Workspace } from "@/control-plane/workspace"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Worktree } from "@/worktree"
 import { Pty } from "@/pty"
 import { Installation } from "@/installation"
 import { ShareNext } from "@/share/share-next"
 import { SessionShare } from "@/share/session"
-<<<<<<< HEAD
-||||||| 12f7967ca4
-import { ShareNext } from "@/share"
-import { SessionShare } from "@/share"
-import { Npm } from "@/npm"
-import { memoMap } from "./memo-map"
-=======
 import { SyncEvent } from "@/sync"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Npm } from "@opencode-ai/core/npm"
 import { memoMap } from "@opencode-ai/core/effect/memo-map"
 

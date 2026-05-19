@@ -1,21 +1,3 @@
-<<<<<<< HEAD
-import type { Argv } from "yargs"
-import { Instance } from "../../project/instance"
-import { Provider } from "@/provider/provider"
-import { ProviderID } from "../../provider/schema"
-import { ModelsDev } from "@/provider/models"
-import { cmd } from "./cmd"
-import { UI } from "../ui"
-||||||| 12f7967ca4
-import type { Argv } from "yargs"
-import { Instance } from "../../project/instance"
-import { Provider } from "../../provider"
-import { ProviderID } from "../../provider/schema"
-import { ModelsDev } from "../../provider"
-import { cmd } from "./cmd"
-import { UI } from "../ui"
-=======
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { EOL } from "os"
 import { Effect } from "effect"
 import { Provider } from "@/provider/provider"

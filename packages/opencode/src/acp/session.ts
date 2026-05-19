@@ -1,11 +1,6 @@
 import { RequestError, type McpServer } from "@agentclientprotocol/sdk"
 import type { ACPSessionState } from "./types"
-<<<<<<< HEAD
-||||||| 12f7967ca4
-import { Log } from "@/util"
-=======
 import * as Log from "@opencode-ai/core/util/log"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import type { KiloClient } from "@kilocode/sdk/v2"
 import * as Log from "@opencode-ai/core/util/log"
 

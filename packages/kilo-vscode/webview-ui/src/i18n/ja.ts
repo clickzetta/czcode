@@ -1243,9 +1243,6 @@ export const dict = {
   "settings.experimental.agentManagerTool.title": "Agent Manager ツール",
   "settings.experimental.agentManagerTool.description":
     "エージェントがツール呼び出しから Agent Manager のローカルセッションとワークツリーセッションを開始できるようにする",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.experimental.speechToText.title": "音声認識",
   "settings.experimental.speechToText.description":
     "Kilo Gateway経由でKiloアカウントを使用して、プロンプトフィールドでの音声入力を有効にします。",
@@ -1253,7 +1250,6 @@ export const dict = {
     "プロンプトフィールドで音声入力を使用するには、Kilo providerを有効にしてサインインしてください。",
   "settings.experimental.speechToTextModel.title": "音声認識モデル",
   "settings.experimental.speechToTextModel.description": "音声入力に使用するKilo Gateway文字起こしモデルを選択します。",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.experimental.continueOnDeny.title": "拒否時に続行",
   "settings.experimental.continueOnDeny.description": "権限が拒否された場合にエージェントループを続行",
   "settings.experimental.mcpTimeout.title": "MCPタイムアウト（ミリ秒）",
@@ -1451,12 +1447,8 @@ export const dict = {
   "settings.display.layout.description": "チャットインターフェースのレイアウトモード",
   "settings.display.layout.auto": "自動",
   "settings.display.layout.stretch": "ストレッチ",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.display.fontSize.title": "フォントサイズ",
   "settings.display.fontSize.description": "VS Code とは独立して Kilo webview UI のフォントサイズを調整します。",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.display.reasoningAutoCollapse.title": "推論を自動で折りたたむ",
   "settings.display.reasoningAutoCollapse.description":
     "エージェントが推論の書き込みを終えた後に推論ブロックを自動で折りたたみます。手動で折りたたむまでは推論を展開したままにするには、オフのままにしてください。",

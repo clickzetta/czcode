@@ -1,14 +1,6 @@
 import { Context, Effect, Layer } from "effect"
 
-<<<<<<< HEAD
-import { Global } from "@opencode-ai/core/global" // kilocode_change
-import { Instance } from "../project/instance"
-||||||| 12f7967ca4
-import { Global } from "../global" // kilocode_change
-import { Instance } from "../project/instance"
-=======
 import { InstanceState } from "@/effect/instance-state"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 import PROMPT_ANTHROPIC from "./prompt/anthropic.txt"
 import PROMPT_DEFAULT from "./prompt/default.txt"

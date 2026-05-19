@@ -4,14 +4,9 @@ import { cmd } from "./cmd"
 import * as prompts from "@clack/prompts"
 import { UI } from "../ui"
 import { ModelsDev } from "@/provider/models"
-<<<<<<< HEAD
-||||||| 12f7967ca4
-import { ModelsDev } from "../../provider"
-=======
 
 const getModels = () => AppRuntime.runPromise(ModelsDev.Service.use((s) => s.get()))
 const refreshModels = () => AppRuntime.runPromise(ModelsDev.Service.use((s) => s.refresh(true)))
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { map, pipe, sortBy, values } from "remeda"
 import path from "path"
 import os from "os"

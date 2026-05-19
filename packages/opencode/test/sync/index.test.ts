@@ -6,14 +6,7 @@ import { Bus } from "../../src/bus"
 import { SyncEvent } from "../../src/sync"
 import { Database } from "@/storage/db"
 import { EventTable } from "../../src/sync/event.sql"
-<<<<<<< HEAD
-import { Identifier } from "../../src/id/id"
-||||||| 12f7967ca4
-import { Identifier } from "../../src/id/id"
-import { Flag } from "../../src/flag/flag"
-=======
 import { MessageID } from "../../src/session/schema"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Flag } from "@opencode-ai/core/flag/flag"
 import { initProjectors } from "../../src/server/projectors"
 import { testEffect } from "../lib/effect"

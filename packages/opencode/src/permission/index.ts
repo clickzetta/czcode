@@ -21,11 +21,7 @@ import { makeRuntime } from "@/effect/run-service" // kilocode_change
 import { ConfigProtection } from "@/kilocode/permission/config-paths" // kilocode_change
 import { Identifier } from "@/id/id" // kilocode_change
 import { drainCovered } from "@/kilocode/permission/drain" // kilocode_change
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
 import { ReadPermission } from "@/kilocode/permission/read" // kilocode_change
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { ExternalDirectoryPermission } from "@/kilocode/permission/external-directory" // kilocode_change
 
 const log = Log.create({ service: "permission" })
@@ -259,17 +255,7 @@ export const layer = Layer.effect(
       // kilocode_change end
 
       for (const pattern of request.patterns) {
-<<<<<<< HEAD
-        // kilocode_change start - external_directory allows must survive Ask/Plan hard rules
-        const rule = hardRuleset
-          ? ExternalDirectoryPermission.evaluate(request.permission, pattern, ruleset, approved, local)
-          : evaluate(request.permission, pattern, ruleset, approved, local) // kilocode_change — include session-scoped rules
-        // kilocode_change end
-||||||| 12f7967ca4
-        const rule = evaluate(request.permission, pattern, ruleset, approved, local) // kilocode_change — include session-scoped rules
-=======
         const rule = resolve(request.permission, pattern, ruleset, approved, local) // kilocode_change — include session-scoped rules
->>>>>>> yunqiqiliang/opencode-v7.3.0
         log.info("evaluated", { permission: request.permission, pattern, action: rule })
         // kilocode_change start — saved/session approvals cannot override hard Ask/Plan denials
         if (veto(request.permission, pattern, hardRuleset)) {

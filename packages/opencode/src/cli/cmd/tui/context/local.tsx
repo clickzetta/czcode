@@ -188,15 +188,7 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
           favorite: modelStore.favorite,
           variant: modelStore.variant,
         }
-<<<<<<< HEAD
-        state.writer = state.writer
-          .then(() => Filesystem.writeJson(filePath, data))
-          .catch(() => {})
-||||||| 12f7967ca4
-        })
-=======
         state.writer = state.writer.then(() => Filesystem.writeJson(filePath, data)).catch(() => {})
->>>>>>> yunqiqiliang/opencode-v7.3.0
         // kilocode_change end
       }
 

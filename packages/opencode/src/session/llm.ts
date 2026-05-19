@@ -7,15 +7,7 @@ import { mergeDeep } from "remeda"
 import { GitLabWorkflowLanguageModel } from "gitlab-ai-provider"
 import { ProviderTransform } from "@/provider/transform"
 import { Config } from "@/config/config"
-<<<<<<< HEAD
-import { Instance } from "@/project/instance"
-||||||| 12f7967ca4
-import { ProviderTransform } from "@/provider"
-import { Config } from "@/config"
-import { Instance } from "@/project/instance"
-=======
 import { InstanceState } from "@/effect/instance-state"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import type { Agent } from "@/agent/agent"
 import type { MessageV2 } from "./message-v2"
 import { Plugin } from "@/plugin"

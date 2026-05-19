@@ -93,14 +93,10 @@ export type QuestionOption = {
    * Optional i18n key for the description
    */
   descriptionKey?: string
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   /**
    * Optional agent/mode name to pre-select in the UI when this option is picked
    */
   mode?: string
->>>>>>> yunqiqiliang/opencode-v7.3.0
 }
 
 export type QuestionInfo = {

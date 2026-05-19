@@ -20,12 +20,7 @@ import { Instance } from "@/project/instance"
 import { Bus } from "@/bus"
 import { BusEvent } from "@/bus/bus-event"
 import { Config } from "@/config/config"
-<<<<<<< HEAD
-||||||| 12f7967ca4
-import { Config } from "@/config"
-=======
 import { Auth } from "@/auth"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { registerDisposer } from "@/effect/instance-registry"
 import { Global } from "@opencode-ai/core/global"
 import * as Log from "@opencode-ai/core/util/log"

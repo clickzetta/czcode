@@ -1,20 +1,3 @@
-<<<<<<< HEAD
-import { afterEach, describe, expect, test } from "bun:test"
-import { mkdir } from "node:fs/promises"
-import path from "node:path"
-import { Effect } from "effect"
-import { Flag } from "@opencode-ai/core/flag/flag"
-import { registerAdaptor } from "../../src/control-plane/adaptors"
-import type { WorkspaceAdaptor } from "../../src/control-plane/types"
-import { Workspace } from "../../src/control-plane/workspace"
-import { WorkspacePaths } from "../../src/server/routes/instance/httpapi/workspace"
-||||||| 12f7967ca4
-import { afterEach, describe, expect, test } from "bun:test"
-import { Context } from "effect"
-import { ExperimentalHttpApiServer } from "../../src/server/routes/instance/httpapi/server"
-import { WorkspacePaths } from "../../src/server/routes/instance/httpapi/workspace"
-import { Log } from "../../src/util"
-=======
 import { afterEach, describe, expect, mock } from "bun:test"
 import { NodeServices } from "@effect/platform-node"
 import { mkdir } from "node:fs/promises"
@@ -25,7 +8,6 @@ import { registerAdapter } from "../../src/control-plane/adapters"
 import type { WorkspaceAdapter } from "../../src/control-plane/types"
 import { Workspace } from "../../src/control-plane/workspace"
 import { WorkspacePaths } from "../../src/server/routes/instance/httpapi/groups/workspace"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Session } from "@/session/session"
 import * as Log from "@opencode-ai/core/util/log"
 import { Server } from "../../src/server/server"
@@ -41,60 +23,10 @@ void Log.init({ print: false })
 
 const originalWorkspaces = Flag.KILO_EXPERIMENTAL_WORKSPACES
 const originalHttpApi = Flag.KILO_EXPERIMENTAL_HTTPAPI
-<<<<<<< HEAD
-||||||| 12f7967ca4
-const context = Context.empty() as Context.Context<unknown>
-=======
 const it = testEffect(
   Layer.mergeAll(NodeServices.layer, Project.defaultLayer, Session.defaultLayer, Workspace.defaultLayer),
 )
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
-<<<<<<< HEAD
-function request(path: string, directory: string, init: RequestInit = {}) {
-  Flag.KILO_EXPERIMENTAL_HTTPAPI = true
-  const headers = new Headers(init.headers)
-  headers.set("x-kilo-directory", directory)
-  return Server.Default().app.request(path, { ...init, headers })
-}
-
-function runSession<A, E>(fx: Effect.Effect<A, E, Session.Service>) {
-  return Effect.runPromise(fx.pipe(Effect.provide(Session.defaultLayer)))
-}
-
-function localAdaptor(directory: string): WorkspaceAdaptor {
-  return {
-    name: "Local Test",
-    description: "Create a local test workspace",
-    configure(info) {
-      return {
-        ...info,
-        name: "local-test",
-        directory,
-      }
-    },
-    async create() {
-      await mkdir(directory, { recursive: true })
-    },
-    async remove() {},
-    target() {
-      return {
-        type: "local" as const,
-        directory,
-      }
-    },
-  }
-||||||| 12f7967ca4
-function request(path: string, directory: string) {
-  return ExperimentalHttpApiServer.webHandler().handler(
-    new Request(`http://localhost${path}`, {
-      headers: {
-        "x-kilo-directory": directory,
-      },
-    }),
-    context,
-  )
-=======
 function request(path: string, directory: string, init: RequestInit = {}, httpApi = true) {
   return Effect.promise(() => {
     Flag.KILO_EXPERIMENTAL_HTTPAPI = httpApi
@@ -190,22 +122,13 @@ function eventStreamResponse() {
       },
     },
   )
->>>>>>> yunqiqiliang/opencode-v7.3.0
 }
 
 afterEach(async () => {
-<<<<<<< HEAD
-  Flag.KILO_EXPERIMENTAL_WORKSPACES = originalWorkspaces
-  Flag.KILO_EXPERIMENTAL_HTTPAPI = originalHttpApi
-  await Instance.disposeAll()
-||||||| 12f7967ca4
-  await Instance.disposeAll()
-=======
   mock.restore()
   Flag.KILO_EXPERIMENTAL_WORKSPACES = originalWorkspaces
   Flag.KILO_EXPERIMENTAL_HTTPAPI = originalHttpApi
   await disposeAllInstances()
->>>>>>> yunqiqiliang/opencode-v7.3.0
   await resetDatabase()
 })
 
@@ -230,54 +153,6 @@ describe("workspace HttpApi", () => {
       expect(workspaces.status).toBe(200)
       expect(yield* Effect.promise(() => workspaces.json())).toEqual([])
 
-<<<<<<< HEAD
-    expect(status.status).toBe(200)
-    expect(await status.json()).toEqual([])
-  })
-
-  test("serves mutation endpoints", async () => {
-    Flag.KILO_EXPERIMENTAL_WORKSPACES = true
-    await using tmp = await tmpdir({ git: true })
-    await Instance.provide({
-      directory: tmp.path,
-      fn: async () =>
-        registerAdaptor(Instance.project.id, "local-test", localAdaptor(path.join(tmp.path, ".workspace"))),
-    })
-
-    const created = await request(WorkspacePaths.list, tmp.path, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ type: "local-test", branch: null, extra: null }),
-    })
-    expect(created.status).toBe(200)
-    const workspace = (await created.json()) as Workspace.Info
-    expect(workspace).toMatchObject({ type: "local-test", name: "local-test" })
-
-    const session = await Instance.provide({
-      directory: tmp.path,
-      fn: async () => runSession(Session.Service.use((svc) => svc.create({}))),
-    })
-    const restored = await request(WorkspacePaths.sessionRestore.replace(":id", workspace.id), tmp.path, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ sessionID: session.id }),
-    })
-    expect(restored.status).toBe(200)
-    expect((await restored.json()) as { total: number }).toMatchObject({ total: expect.any(Number) })
-
-    const removed = await request(WorkspacePaths.remove.replace(":id", workspace.id), tmp.path, { method: "DELETE" })
-    expect(removed.status).toBe(200)
-    expect(await removed.json()).toMatchObject({ id: workspace.id })
-
-    const listed = await request(WorkspacePaths.list, tmp.path)
-    expect(listed.status).toBe(200)
-    expect(await listed.json()).toEqual([])
-  })
-||||||| 12f7967ca4
-    expect(status.status).toBe(200)
-    expect(await status.json()).toEqual([])
-  })
-=======
       expect(status.status).toBe(200)
       expect(yield* Effect.promise(() => status.json())).toEqual([])
     }),
@@ -549,5 +424,4 @@ describe("workspace HttpApi", () => {
       }
     }),
   )
->>>>>>> yunqiqiliang/opencode-v7.3.0
 })

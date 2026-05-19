@@ -171,14 +171,7 @@ test("explore agent denies edit and write", async () => {
   })
 })
 
-<<<<<<< HEAD
-test("explore agent asks for external directories and allows Truncate.GLOB", async () => {
-||||||| 12f7967ca4
-test("explore agent asks for external directories and allows Truncate.GLOB", async () => {
-  const { Truncate } = await import("../../src/tool")
-=======
 test("explore agent asks for external directories and allows whitelisted external paths", async () => {
->>>>>>> yunqiqiliang/opencode-v7.3.0
   const { Truncate } = await import("../../src/tool/truncate")
   await using tmp = await tmpdir()
   await Instance.provide({

@@ -1032,16 +1032,11 @@ export const dict = {
   "settings.indexing.status.title": "Status",
   "settings.indexing.enable.title": "Enable indexing",
   "settings.indexing.enable.description": "Turn semantic codebase indexing on or off.",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-  "settings.indexing.enable.description": "Turn semantic codebase indexing on or off for this workspace.",
-=======
   "settings.indexing.globalEnable.title": "Enable globally",
   "settings.indexing.globalEnable.description": "Enable indexing for every workspace.",
   "settings.indexing.projectEnable.title": "Enable for this project",
   "settings.indexing.projectEnable.description": "Enable indexing for this workspace when global indexing is off.",
   "settings.indexing.projectEnable.disabledTooltip": "Global indexing is enabled, so this project is already covered.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.indexing.provider.title": "Embedding provider",
   "settings.indexing.provider.description": "Choose the provider used to generate embeddings for semantic search.",
   "settings.indexing.kiloModel.title": "Kilo model preset",
@@ -1243,9 +1238,6 @@ export const dict = {
   "settings.experimental.agentManagerTool.title": "Agent Manager Tool",
   "settings.experimental.agentManagerTool.description":
     "Allow agents to start Agent Manager local sessions and worktree sessions from a tool call",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.experimental.speechToText.title": "Speech to Text",
   "settings.experimental.speechToText.description":
     "Enable voice input in prompt fields using your Kilo account through Kilo Gateway.",
@@ -1253,7 +1245,6 @@ export const dict = {
     "Enable and sign in to the Kilo provider to use voice input in prompt fields.",
   "settings.experimental.speechToTextModel.title": "Speech to Text Model",
   "settings.experimental.speechToTextModel.description": "Choose the Kilo Gateway transcription model for voice input.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.experimental.continueOnDeny.title": "Continue on Deny",
   "settings.experimental.continueOnDeny.description": "Continue the agent loop when a permission is denied",
   "settings.experimental.mcpTimeout.title": "MCP Timeout (ms)",
@@ -1450,12 +1441,8 @@ export const dict = {
   "settings.display.layout.description": "Layout mode for the chat interface",
   "settings.display.layout.auto": "Auto",
   "settings.display.layout.stretch": "Stretch",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.display.fontSize.title": "Font Size",
   "settings.display.fontSize.description": "Adjust the Kilo webview UI font size independently from VS Code.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.display.reasoningAutoCollapse.title": "Auto-Collapse Reasoning",
   "settings.display.reasoningAutoCollapse.description":
     "Collapse reasoning blocks after the agent finishes writing them. Leave off to keep reasoning expanded unless you collapse it manually.",

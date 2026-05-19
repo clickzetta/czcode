@@ -381,25 +381,6 @@ const App: Component = () => {
                         <ConfigProvider>
                           <DisplayProvider>
                             <IndexingProvider>
-<<<<<<< HEAD
-                              <NotificationsProvider>
-                                <SessionProvider>
-                                  <DataBridge>
-                                    <AppContent />
-                                  </DataBridge>
-                                </SessionProvider>
-                              </NotificationsProvider>
-||||||| 12f7967ca4
-                          <IndexingProvider>
-                            <NotificationsProvider>
-                              <SessionProvider>
-                                <DataBridge>
-                                  <AppContent />
-                                </DataBridge>
-                              </SessionProvider>
-                            </NotificationsProvider>
-                          </IndexingProvider>
-=======
                               <KiloEmbeddingModelsProvider>
                                 <NotificationsProvider>
                                   <SessionProvider>
@@ -411,7 +392,6 @@ const App: Component = () => {
                                   </SessionProvider>
                                 </NotificationsProvider>
                               </KiloEmbeddingModelsProvider>
->>>>>>> yunqiqiliang/opencode-v7.3.0
                             </IndexingProvider>
                           </DisplayProvider>
                         </ConfigProvider>

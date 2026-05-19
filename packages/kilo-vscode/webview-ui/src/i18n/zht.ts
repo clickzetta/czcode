@@ -1185,15 +1185,11 @@ export const dict = {
   "settings.experimental.agentManagerTool.title": "Agent Manager 工具",
   "settings.experimental.agentManagerTool.description":
     "允許 Agent 透過工具呼叫啟動 Agent Manager 本機工作階段和工作樹工作階段",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.experimental.speechToText.title": "語音轉文字",
   "settings.experimental.speechToText.description": "透過 Kilo Gateway 使用您的 Kilo 帳戶在提示詞欄位中啟用語音輸入。",
   "settings.experimental.speechToText.disabledDescription": "啟用並登入 Kilo provider 以在提示詞欄位中使用語音輸入。",
   "settings.experimental.speechToTextModel.title": "語音轉文字模型",
   "settings.experimental.speechToTextModel.description": "選擇用於語音輸入的 Kilo Gateway 轉錄模型。",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.experimental.continueOnDeny.title": "拒絕後繼續",
   "settings.experimental.continueOnDeny.description": "權限被拒絕時繼續 Agent 迴圈",
   "settings.experimental.mcpTimeout.title": "MCP 逾時（毫秒）",
@@ -1370,12 +1366,8 @@ export const dict = {
   "settings.display.layout.description": "聊天介面的佈局模式",
   "settings.display.layout.auto": "自動",
   "settings.display.layout.stretch": "延伸",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.display.fontSize.title": "字體大小",
   "settings.display.fontSize.description": "獨立於 VS Code 調整 Kilo webview UI 的字體大小。",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.display.reasoningAutoCollapse.title": "自動收合推理",
   "settings.display.reasoningAutoCollapse.description":
     "在代理寫完推理後收合推理區塊。保持關閉可讓推理保持展開，除非你手動收合它。",

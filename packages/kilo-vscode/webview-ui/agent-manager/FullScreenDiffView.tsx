@@ -38,11 +38,7 @@ import {
 } from "./diff-open-policy"
 import { DiffEndMarker } from "./DiffEndMarker"
 import { isMarkdownFile, MarkdownDiffView } from "./MarkdownDiffView"
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
 import { diffToken } from "./diff-state"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 type DiffStyle = "unified" | "split"
 
@@ -683,32 +679,6 @@ export const FullScreenDiffView: Component<FullScreenDiffViewProps> = (props) =>
                                     diffStyle={props.diffStyle}
                                     annotations={annotationsForFile(diff.file)}
                                     renderAnnotation={buildAnnotation}
-<<<<<<< HEAD
-                                    enableGutterUtility={true}
-                                    onGutterUtilityClick={(result) => handleGutterClick(diff.file, result)}
-                                    onLineNumberClick={(event) => {
-                                      if (event.annotationSide === "deletions") return
-                                      props.onOpenFile?.(diff.file, event.lineNumber)
-                                    }}
-                                  />
-                                }
-                              >
-                                <MarkdownDiffView diff={diff} />
-||||||| 12f7967ca4
-                              <Diff<AnnotationMeta>
-                                before={{ name: diff.file, contents: diff.before }}
-                                after={{ name: diff.file, contents: diff.after }}
-                                diffStyle={props.diffStyle}
-                                annotations={annotationsForFile(diff.file)}
-                                renderAnnotation={buildAnnotation}
-                                enableGutterUtility={true}
-                                onGutterUtilityClick={(result) => handleGutterClick(diff.file, result)}
-                                onLineNumberClick={(event) => {
-                                  if (event.annotationSide === "deletions") return
-                                  props.onOpenFile?.(diff.file, event.lineNumber)
-                                }}
-                              />
-=======
                                     enableGutterUtility={props.canComment !== false}
                                     onGutterUtilityClick={(result) => handleGutterClick(diff.file, result)}
                                     onLineNumberClick={(event) => {
@@ -729,7 +699,6 @@ export const FullScreenDiffView: Component<FullScreenDiffViewProps> = (props) =>
                                     props.onOpenFile?.(diff.file, event.lineNumber)
                                   }}
                                 />
->>>>>>> yunqiqiliang/opencode-v7.3.0
                               </Show>
                             </Show>
                           </Show>

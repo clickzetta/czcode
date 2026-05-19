@@ -11,20 +11,11 @@ import { MessageID, SessionID } from "../../src/session/schema"
 import { Tool } from "@/tool/tool"
 import { Truncate } from "@/tool/truncate"
 import { LspTool } from "../../src/tool/lsp"
-<<<<<<< HEAD
-import { provideTmpdirInstance } from "../fixture/fixture"
-import { testEffect } from "../lib/effect"
-
-afterEach(async () => {
-  await Instance.disposeAll()
-||||||| 12f7967ca4
-=======
 import { disposeAllInstances, provideTmpdirInstance } from "../fixture/fixture"
 import { testEffect } from "../lib/effect"
 
 afterEach(async () => {
   await disposeAllInstances()
->>>>>>> yunqiqiliang/opencode-v7.3.0
 })
 
 const ctx = {

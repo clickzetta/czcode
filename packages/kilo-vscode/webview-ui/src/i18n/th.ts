@@ -774,17 +774,12 @@ export const dict = {
   "settings.indexing.title": "การสร้างดัชนี",
   "settings.indexing.enable.title": "เปิดใช้งานการสร้างดัชนี",
   "settings.indexing.enable.description": "เปิดหรือปิดการสร้างดัชนีโค้ดเบสเชิงความหมาย",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-  "settings.indexing.enable.description": "เปิดหรือปิดการสร้างดัชนีโค้ดเบสเชิงความหมายสำหรับพื้นที่ทำงานนี้",
-=======
   "settings.indexing.globalEnable.title": "เปิดใช้งานแบบโกลบอล",
   "settings.indexing.globalEnable.description": "เปิดใช้งานการทำดัชนีสำหรับทุกพื้นที่ทำงาน",
   "settings.indexing.projectEnable.title": "เปิดใช้งานสำหรับโปรเจกต์นี้",
   "settings.indexing.projectEnable.description":
     "เปิดใช้งานการทำดัชนีสำหรับพื้นที่ทำงานนี้เมื่อการทำดัชนีแบบโกลบอลถูกปิดใช้งาน",
   "settings.indexing.projectEnable.disabledTooltip": "เปิดใช้งานการทำดัชนีระดับโลกแล้ว โปรเจ็กต์นี้จึงถูกรวมไว้แล้ว",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.indexing.provider.title": "ผู้ให้บริการการฝัง",
   "settings.indexing.provider.description": "เลือกผู้ให้บริการที่ใช้สร้างการฝังสำหรับการค้นหาเชิงความหมาย",
   "settings.indexing.kiloModel.title": "พรีเซ็ตโมเดล Kilo",
@@ -1239,9 +1234,6 @@ export const dict = {
   "settings.experimental.agentManagerTool.title": "เครื่องมือ Agent Manager",
   "settings.experimental.agentManagerTool.description":
     "อนุญาตให้เอเจนต์เริ่มเซสชัน Agent Manager ในเครื่องและเซสชัน worktree จากการเรียกเครื่องมือ",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.experimental.speechToText.title": "แปลงเสียงเป็นข้อความ",
   "settings.experimental.speechToText.description":
     "เปิดใช้งานการป้อนข้อมูลด้วยเสียงในช่องพรอมต์โดยใช้บัญชี Kilo ของคุณผ่าน Kilo Gateway",
@@ -1250,7 +1242,6 @@ export const dict = {
   "settings.experimental.speechToTextModel.title": "โมเดลแปลงเสียงเป็นข้อความ",
   "settings.experimental.speechToTextModel.description":
     "เลือกโมเดลการถอดเสียง Kilo Gateway สำหรับการป้อนข้อมูลด้วยเสียง",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.experimental.continueOnDeny.title": "ดำเนินต่อเมื่อถูกปฏิเสธ",
   "settings.experimental.continueOnDeny.description": "ดำเนินลูปเอเจนต์ต่อเมื่อสิทธิ์ถูกปฏิเสธ",
   "settings.experimental.mcpTimeout.title": "หมดเวลา MCP (มิลลิวินาที)",
@@ -1440,12 +1431,8 @@ export const dict = {
   "settings.display.layout.description": "โหมดเค้าโครงสำหรับอินเทอร์เฟซแชท",
   "settings.display.layout.auto": "อัตโนมัติ",
   "settings.display.layout.stretch": "ยืด",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.display.fontSize.title": "ขนาดฟอนต์",
   "settings.display.fontSize.description": "ปรับขนาดฟอนต์ webview UI ของ Kilo แยกเป็นอิสระจาก VS Code.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.display.reasoningAutoCollapse.title": "ยุบเหตุผลอัตโนมัติ",
   "settings.display.reasoningAutoCollapse.description":
     "ยุบ block เหตุผลหลังจากเอเจนต์เขียนเสร็จ ปิดไว้เพื่อให้เหตุผลยังคงขยายอยู่ เว้นแต่คุณจะยุบเอง",

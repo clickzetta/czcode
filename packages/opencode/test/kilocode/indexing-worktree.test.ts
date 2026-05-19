@@ -1,14 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test"
 import { mkdir } from "node:fs/promises"
 import type { Config } from "../../src/config/config"
-<<<<<<< HEAD
-import { AppRuntime } from "../../src/effect/app-runtime"
-||||||| 12f7967ca4
-import type { Config } from "../../src/config"
-import { AppRuntime } from "../../src/effect/app-runtime"
-=======
 import { getBootstrapRunEffect } from "../../src/effect/app-runtime"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { KiloIndexing } from "../../src/kilocode/indexing"
 import { Instance } from "../../src/project/instance"
 import { disposeAllInstances, tmpdir } from "../fixture/fixture"

@@ -1,20 +1,11 @@
 import { Question } from "@/question"
 import { QuestionID } from "@/question/schema"
-<<<<<<< HEAD:packages/opencode/src/server/routes/instance/httpapi/question.ts
-import { Effect, Layer, Schema } from "effect"
-import { HttpApi, HttpApiBuilder, HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/unstable/httpapi"
-import { Authorization } from "./auth"
-||||||| 12f7967ca4:packages/opencode/src/server/routes/instance/httpapi/question.ts
-import { Effect, Layer, Schema } from "effect"
-import { HttpApi, HttpApiBuilder, HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/unstable/httpapi"
-=======
 import { Schema } from "effect"
 import { HttpApi, HttpApiEndpoint, HttpApiError, HttpApiGroup, OpenApi } from "effect/unstable/httpapi"
 import { Authorization } from "../middleware/authorization"
 import { InstanceContextMiddleware } from "../middleware/instance-context"
 import { WorkspaceRoutingMiddleware } from "../middleware/workspace-routing"
 import { described } from "./metadata"
->>>>>>> yunqiqiliang/opencode-v7.3.0:packages/opencode/src/server/routes/instance/httpapi/groups/question.ts
 
 const root = "/question"
 const ReplyPayload = Schema.Struct({
@@ -66,13 +57,8 @@ export const QuestionApi = HttpApi.make("question")
           description: "Question routes.",
         }),
       )
-<<<<<<< HEAD:packages/opencode/src/server/routes/instance/httpapi/question.ts
-||||||| 12f7967ca4:packages/opencode/src/server/routes/instance/httpapi/question.ts
-      ),
-=======
       .middleware(InstanceContextMiddleware)
       .middleware(WorkspaceRoutingMiddleware)
->>>>>>> yunqiqiliang/opencode-v7.3.0:packages/opencode/src/server/routes/instance/httpapi/groups/question.ts
       .middleware(Authorization),
   )
   .annotateMerge(

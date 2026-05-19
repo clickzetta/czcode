@@ -541,20 +541,14 @@ async function main() {
   // Step 7: Merge into Kilo branch
   logger.step(7, 8, "Merging into Kilo branch...")
 
-<<<<<<< HEAD
   // Force checkout: opencode branch may have new upstream files not in kilo branch,
   // and kilo branch has czcode customizations not in opencode branch.
   await $`git clean -fd`.quiet().nothrow()
   await git.checkout(kiloBranch, true)
-||||||| 12f7967ca4
-  await git.checkout(kiloBranch)
-=======
-  await git.checkout(kiloBranch)
   if (prior) {
     const linked = await git.recordAncestor(targetVersion.commit, `merge: record upstream ${targetVersion.tag}`)
     if (linked) logger.info(`Recorded upstream ${targetVersion.tag} as Kilo branch ancestry`)
   }
->>>>>>> yunqiqiliang/opencode-v7.3.0
   const mergeResult = await git.merge(opencodeBranch)
 
   if (!mergeResult.success) {

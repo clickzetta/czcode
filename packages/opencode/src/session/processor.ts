@@ -445,12 +445,7 @@ export const layer: Layer.Layer<
               tokens: usage.tokens,
               cost: usage.cost,
               elapsed: Math.round(performance.now() - (ctx.stepStart || performance.now())),
-<<<<<<< HEAD
-||||||| 12f7967ca4
-              elapsed: Math.round(performance.now() - ctx.stepStart),
-=======
               telemetry: ctx.telemetry,
->>>>>>> yunqiqiliang/opencode-v7.3.0
             })
             // kilocode_change end
             ctx.assistantMessage.finish = value.finishReason
@@ -486,9 +481,6 @@ export const layer: Layer.Layer<
                 ignored: true,
               })
             }
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
             const providerError = KiloSessionProcessor.providerFinishError(ctx.assistantMessage)
             if (providerError) {
               yield* bus.publish(Session.Event.Error, {
@@ -497,7 +489,6 @@ export const layer: Layer.Layer<
               })
               yield* status.set(ctx.sessionID, { type: "idle" })
             }
->>>>>>> yunqiqiliang/opencode-v7.3.0
             // kilocode_change end
             yield* session.updateMessage(ctx.assistantMessage)
             if (ctx.snapshot) {

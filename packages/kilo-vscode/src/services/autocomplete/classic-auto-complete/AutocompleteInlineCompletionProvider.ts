@@ -158,24 +158,10 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
 
     const ide = new VsCodeIde(context)
     this.contextService = new ContextRetrievalService(ide)
-<<<<<<< HEAD
-    const contextProvider: AutocompleteContextProvider = {
-||||||| 12f7967ca4
-    const contextService = new ContextRetrievalService(ide)
-    const contextProvider: AutocompleteContextProvider = {
-=======
     this.contextProvider = {
->>>>>>> yunqiqiliang/opencode-v7.3.0
       ide,
       contextService: this.contextService,
-<<<<<<< HEAD
-      model,
-||||||| 12f7967ca4
-      contextService,
-      model,
-=======
       modelId,
->>>>>>> yunqiqiliang/opencode-v7.3.0
       ignoreController: this.ignoreController,
     }
     this.fimPromptBuilder = new FimPromptBuilder(this.contextProvider)

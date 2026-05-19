@@ -91,10 +91,6 @@ export const dict = {
   "snapshot.slowRepo.answer.disable.description":
     "Slå av Kilos snapshots for dette prosjektet. Du mister angre/gjør om for Kilo-endringer, men git fortsetter å spore alt.",
 
-<<<<<<< HEAD
-  "ui.messagePart.openInDiffViewer": "Åpne i diff-viser",
-||||||| 12f7967ca4
-=======
   // Edit-tool header and shell-tool section labels
   "ui.messagePart.openInDiffViewer": "Åpne i diff-visning",
   "ui.messagePart.shell.command": "Kommando",
@@ -105,5 +101,4 @@ export const dict = {
   "ui.message.feedback.helpful": "Dette var nyttig",
   "ui.message.feedback.notHelpful": "Dette var ikke nyttig",
   "ui.message.feedback.clearRating": "Fjern vurdering",
->>>>>>> yunqiqiliang/opencode-v7.3.0
 }

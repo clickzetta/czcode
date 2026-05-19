@@ -13,16 +13,7 @@ import { ReadTool } from "../../src/tool/read"
 import { Truncate } from "@/tool/truncate"
 import { Tool } from "@/tool/tool"
 import { Filesystem } from "@/util/filesystem"
-<<<<<<< HEAD
-import { provideInstance, tmpdirScoped } from "../fixture/fixture"
-||||||| 12f7967ca4
-import { Truncate } from "../../src/tool"
-import { Tool } from "../../src/tool"
-import { Filesystem } from "../../src/util"
-import { provideInstance, tmpdirScoped } from "../fixture/fixture"
-=======
 import { disposeAllInstances, provideInstance, tmpdirScoped } from "../fixture/fixture"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { testEffect } from "../lib/effect"
 
 const FIXTURES_DIR = path.join(import.meta.dir, "fixtures")

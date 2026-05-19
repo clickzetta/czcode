@@ -265,9 +265,6 @@ describe("session processor empty tool-calls", () => {
     ),
   )
 
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   it.effect("treats provider finish errors without details as retryable API errors", () =>
     provideTmpdirInstance(
       (dir) =>
@@ -342,7 +339,6 @@ describe("session processor empty tool-calls", () => {
     ),
   )
 
->>>>>>> yunqiqiliang/opencode-v7.3.0
   it.effect("adds generic warning when model stops after text length finish", () =>
     provideTmpdirInstance(
       (dir) =>

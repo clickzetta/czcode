@@ -5,25 +5,13 @@ import { InstanceState } from "@/effect/instance-state"
 import { EffectBridge } from "@/effect/bridge"
 import { lazy } from "@opencode-ai/core/util/lazy"
 import { Plugin } from "@/plugin"
-<<<<<<< HEAD
-import { Instance } from "@/project/instance"
-||||||| 12f7967ca4
-=======
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Shell } from "@/shell/shell"
 import type { Proc } from "#pty"
 import * as Log from "@opencode-ai/core/util/log"
 import { PtyID } from "./schema"
 import { Effect, Layer, Context, Schema, Types } from "effect"
 import { zod } from "@/util/effect-zod"
-<<<<<<< HEAD
-import { withStatics } from "@/util/schema"
-||||||| 12f7967ca4
-import { withStatics } from "@/util/schema"
-import { EffectBridge } from "@/effect"
-=======
 import { NonNegativeInt, PositiveInt, withStatics } from "@/util/schema"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 const log = Log.create({ service: "pty" })
 

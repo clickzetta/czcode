@@ -6,14 +6,8 @@ import { Cause, Effect, Exit } from "effect"
 import { SessionID, PartID } from "@/session/schema"
 import { MessageV2 } from "@/session/message-v2"
 import { Session } from "@/session/session"
-<<<<<<< HEAD
-||||||| 12f7967ca4
-import { Session } from "@/session"
-import { Flag } from "@/flag/flag"
-=======
 import { Instance } from "@/project/instance"
 import type { SessionStatus } from "@/session/status"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Flag } from "@opencode-ai/core/flag/flag"
 import { PlanFollowup } from "@/kilocode/plan-followup"
 import { KiloSession } from "@/kilocode/session"

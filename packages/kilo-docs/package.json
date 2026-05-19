@@ -1,12 +1,6 @@
 {
   "name": "@kilocode/kilo-docs",
-<<<<<<< HEAD
-  "version": "7.2.34",
-||||||| 12f7967ca4
-  "version": "7.2.31",
-=======
   "version": "7.2.49",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "private": true,
   "scripts": {
     "dev": "next dev --webpack --port 3002",

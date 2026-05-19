@@ -9,12 +9,7 @@ import { useRouteData } from "@tui/context/route"
 import { usePromptRef } from "../context/prompt"
 import { useLocal } from "../context/local"
 import { TuiPluginRuntime } from "@/cli/cmd/tui/plugin/runtime"
-<<<<<<< HEAD
 import { t } from "@/kilocode/plugins/czcode-i18n" // czcode_change
-||||||| 12f7967ca4
-import { TuiPluginRuntime } from "../plugin"
-=======
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 let once = false
 // czcode_change start - per-agent placeholder prompts

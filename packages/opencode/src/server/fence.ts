@@ -5,13 +5,8 @@ import { EventSequenceTable } from "@/sync/event.sql"
 import { Workspace } from "@/control-plane/workspace"
 import type { WorkspaceID } from "@/control-plane/schema"
 import * as Log from "@opencode-ai/core/util/log"
-<<<<<<< HEAD
-||||||| 12f7967ca4
-import { Log } from "@/util"
-=======
 import { AppRuntime } from "@/effect/app-runtime"
 import { Effect } from "effect"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 const HEADER = "x-kilo-sync"
 type State = Record<string, number>

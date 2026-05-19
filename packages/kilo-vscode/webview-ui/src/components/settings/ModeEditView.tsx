@@ -259,12 +259,7 @@ const ModeEditView: Component<Props> = (props) => {
             </div>
             <div
               style={{
-<<<<<<< HEAD
-                "font-size": "12px",
-||||||| 12f7967ca4
-=======
                 "font-size": "var(--kilo-font-size-12)",
->>>>>>> yunqiqiliang/opencode-v7.3.0
                 color: "var(--text-weak-base, var(--vscode-descriptionForeground))",
                 "line-height": "1.45",
               }}

@@ -3,13 +3,6 @@ import { Effect } from "effect"
 import { Instance } from "../../src/project/instance"
 import { Session as SessionNs } from "@/session/session"
 import * as Log from "@opencode-ai/core/util/log"
-<<<<<<< HEAD
-import { tmpdir } from "../fixture/fixture"
-||||||| 12f7967ca4
-import { Session as SessionNs } from "../../src/session"
-import { Log } from "../../src/util"
-import { tmpdir } from "../fixture/fixture"
-=======
 import { disposeAllInstances, tmpdir } from "../fixture/fixture"
 import { Flag } from "@opencode-ai/core/flag/flag"
 import { mkdir } from "fs/promises"
@@ -17,7 +10,6 @@ import path from "path"
 import { Database } from "@/storage/db"
 import { SessionTable } from "@/session/session.sql"
 import { eq } from "drizzle-orm"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 void Log.init({ print: false })
 const originalWorkspaces = Flag.KILO_EXPERIMENTAL_WORKSPACES

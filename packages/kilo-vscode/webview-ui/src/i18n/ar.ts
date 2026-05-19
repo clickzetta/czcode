@@ -1055,16 +1055,11 @@ export const dict = {
   "settings.indexing.title": "الفهرسة",
   "settings.indexing.enable.title": "تمكين الفهرسة",
   "settings.indexing.enable.description": "تشغيل أو إيقاف فهرسة قاعدة الكود الدلالية.",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-  "settings.indexing.enable.description": "تشغيل أو إيقاف فهرسة قاعدة الكود الدلالية لمساحة العمل هذه.",
-=======
   "settings.indexing.globalEnable.title": "تمكين عام",
   "settings.indexing.globalEnable.description": "تمكين الفهرسة لكل مساحة عمل.",
   "settings.indexing.projectEnable.title": "تمكين لهذا المشروع",
   "settings.indexing.projectEnable.description": "تمكين الفهرسة لمساحة العمل هذه عندما تكون الفهرسة العامة متوقفة.",
   "settings.indexing.projectEnable.disabledTooltip": "الفهرسة العامة مفعلة، لذا هذا المشروع مشمول بالفعل.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.indexing.provider.title": "موفر التضمين",
   "settings.indexing.provider.description": "اختر الموفر المستخدم لإنشاء التضمينات للبحث الدلالي.",
   "settings.indexing.kiloModel.title": "إعداد مسبق لنموذج Kilo",
@@ -1231,9 +1226,6 @@ export const dict = {
   "settings.experimental.agentManagerTool.title": "أداة Agent Manager",
   "settings.experimental.agentManagerTool.description":
     "السماح للوكلاء ببدء جلسات Agent Manager المحلية وجلسات worktree من استدعاء أداة",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.experimental.speechToText.title": "تحويل الصوت إلى نص",
   "settings.experimental.speechToText.description":
     "تمكين الإدخال الصوتي في حقول المطالبة باستخدام حساب Kilo الخاص بك من خلال Kilo Gateway.",
@@ -1241,7 +1233,6 @@ export const dict = {
     "قم بتمكين وتسجيل الدخول إلى Kilo provider لاستخدام الإدخال الصوتي في حقول المطالبة.",
   "settings.experimental.speechToTextModel.title": "نموذج تحويل الصوت إلى نص",
   "settings.experimental.speechToTextModel.description": "اختر نموذج نسخ Kilo Gateway للإدخال الصوتي.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.experimental.continueOnDeny.title": "المتابعة عند الرفض",
   "settings.experimental.continueOnDeny.description": "متابعة حلقة الوكيل عند رفض الإذن",
   "settings.experimental.mcpTimeout.title": "مهلة MCP (مللي ثانية)",
@@ -1433,12 +1424,8 @@ export const dict = {
   "settings.display.layout.description": "وضع التخطيط لواجهة الدردشة",
   "settings.display.layout.auto": "تلقائي",
   "settings.display.layout.stretch": "تمديد",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.display.fontSize.title": "حجم الخط",
   "settings.display.fontSize.description": "اضبط حجم خط webview UI الخاص بـ Kilo بشكل مستقل عن VS Code.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.display.reasoningAutoCollapse.title": "طي الاستدلال تلقائيًا",
   "settings.display.reasoningAutoCollapse.description":
     "يطوي كتل الاستدلال بعد أن ينتهي الوكيل من كتابتها. اتركه معطلاً لإبقاء الاستدلال موسعًا ما لم تطوه يدويًا.",

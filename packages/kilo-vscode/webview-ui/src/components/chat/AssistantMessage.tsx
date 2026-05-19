@@ -179,11 +179,7 @@ export const AssistantMessage: Component<AssistantMessageProps> = (props) => {
                                   message={props.message as SDKMessage}
                                   showAssistantCopyPartID={props.showAssistantCopyPartID}
                                   reasoningAutoCollapse={display.reasoningAutoCollapse()}
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
                                   feedback={props.feedback}
->>>>>>> yunqiqiliang/opencode-v7.3.0
                                   animate={
                                     part.type === "tool" &&
                                     ((part as unknown as ToolPart).state?.status === "pending" ||

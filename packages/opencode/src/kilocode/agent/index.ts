@@ -396,14 +396,9 @@ export function patchAgents(
         user,
         Permission.fromConfig({ semantic_search: "allow" }),
       ),
-<<<<<<< HEAD
       // czcode_change start - add Lakehouse skill guidance for code agent
       prompt: (agents.build.prompt ? agents.build.prompt + "\n\n" : "") + CZ_LAKEHOUSE_SKILL_HINT,
       // czcode_change end
-||||||| 12f7967ca4
-      permission: Permission.merge(defaults, Permission.fromConfig({ semantic_search: "allow" }), user),
-=======
->>>>>>> yunqiqiliang/opencode-v7.3.0
     }
     delete agents.build
   }

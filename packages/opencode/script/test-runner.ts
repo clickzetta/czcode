@@ -348,17 +348,6 @@ async function merge() {
       const extracted = extract(content)
       if (extracted) {
         suites.push(extracted)
-<<<<<<< HEAD
-        // kilocode_change start - count nested suites without matching the root testsuites tag.
-        counts.tests += sum(extracted, "tests")
-        counts.failures += sum(extracted, "failures")
-        counts.errors += sum(extracted, "errors")
-        // kilocode_change end
-||||||| 12f7967ca4
-        counts.tests += attr(extracted, "tests")
-        counts.failures += attr(extracted, "failures")
-        counts.errors += attr(extracted, "errors")
-=======
         // Counts come from the outer <testsuites ...> root attributes, not from
         // regex-scanning the inner content, so nested <testsuite> blocks (bun
         // emits one per `describe`) don't get double-counted.
@@ -368,7 +357,6 @@ async function merge() {
           counts.failures += attr(root[1], "failures")
           counts.errors += attr(root[1], "errors")
         }
->>>>>>> yunqiqiliang/opencode-v7.3.0
         continue
       }
     }
@@ -405,28 +393,6 @@ async function merge() {
   await Bun.write(path.join(dir, "junit.xml"), body)
 }
 
-<<<<<<< HEAD
-function extract(content: string, from = 0): string {
-  const close = "</testsuite>"
-  const s = open(content, from) // kilocode_change
-  if (s === -1) return ""
-  const e = content.indexOf(close, s)
-  if (e === -1) return ""
-  const suite = content.slice(s, e + close.length)
-  const rest = extract(content, e + close.length)
-  return rest ? suite + "\n" + rest : suite
-||||||| 12f7967ca4
-function extract(content: string, from = 0): string {
-  const open = "<testsuite"
-  const close = "</testsuite>"
-  const s = content.indexOf(open, from)
-  if (s === -1) return ""
-  const e = content.indexOf(close, s)
-  if (e === -1) return ""
-  const suite = content.slice(s, e + close.length)
-  const rest = extract(content, e + close.length)
-  return rest ? suite + "\n" + rest : suite
-=======
 // Grab everything between the outer <testsuites ...> and </testsuites> of a
 // per-file JUnit XML. Preserves nested <testsuite> blocks verbatim — the
 // previous hand-rolled walker matched the first </testsuite> it found, which
@@ -438,27 +404,11 @@ function extract(content: string): string {
   const end = content.lastIndexOf("</testsuites>")
   if (end === -1 || end <= start) return ""
   return content.slice(start, end).trim()
->>>>>>> yunqiqiliang/opencode-v7.3.0
 }
 
-<<<<<<< HEAD
-// kilocode_change start
-function open(content: string, from: number): number {
-  const tag = "<testsuite"
-  const s = content.indexOf(tag, from)
-  if (s === -1) return -1
-  const ch = content[s + tag.length]
-  if (ch === ">" || /\s/.test(ch)) return s
-  return open(content, s + 1)
-||||||| 12f7967ca4
-function attr(content: string, name: string): number {
-  const match = content.match(new RegExp(`${name}="(\\d+)"`))
-  return match ? Number(match[1]) : 0
-=======
 function attr(attrs: string, name: string): number {
   const m = attrs.match(new RegExp(`\\b${name}="(\\d+)"`))
   return m ? Number(m[1]) : 0
->>>>>>> yunqiqiliang/opencode-v7.3.0
 }
 
 function sum(content: string, name: string): number {

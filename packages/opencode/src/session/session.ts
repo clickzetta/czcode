@@ -11,30 +11,16 @@ import { InstallationVersion } from "@opencode-ai/core/installation/version"
 import { Database } from "@/storage/db"
 import { NotFoundError } from "@/storage/storage"
 // kilocode_change - drop unused inArray/lt (listGlobal delegated to KiloSession)
-<<<<<<< HEAD
-import { eq, and, gte, isNull, desc, like } from "drizzle-orm"
-||||||| 12f7967ca4
-import { Database, NotFoundError, eq, and, gte, isNull, desc, like } from "../storage" // kilocode_change - listGlobal delegated to KiloSession
-=======
 import { eq, and, gte, isNull, desc, like, or } from "drizzle-orm"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { SyncEvent } from "../sync"
 import { PartTable, SessionTable } from "./session.sql"
 // kilocode_change - ProjectTable removed (unused)
 import { Storage } from "@/storage/storage"
 import * as Log from "@opencode-ai/core/util/log"
 import { MessageV2 } from "./message-v2"
-<<<<<<< HEAD
-import { Instance } from "../project/instance"
-import { InstanceState } from "@/effect/instance-state"
-||||||| 12f7967ca4
-import { Instance } from "../project/instance"
-import { InstanceState } from "@/effect"
-=======
 import type { InstanceContext } from "../project/instance"
 import { InstanceState } from "@/effect/instance-state"
 import { Instance } from "@/project/instance" // kilocode_change - children() uses Instance.current to scope by project_id
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Snapshot } from "@/snapshot"
 import { ProjectID } from "../project/schema"
 import { WorkspaceID } from "../control-plane/schema"
@@ -50,13 +36,7 @@ import { fn } from "@/util/fn"
 // kilocode_change end
 import { Effect, Layer, Option, Context, Schema, Types } from "effect"
 import { zod } from "@/util/effect-zod"
-<<<<<<< HEAD
-import { optionalOmitUndefined, withStatics } from "@/util/schema"
-||||||| 12f7967ca4
-import { withStatics } from "@/util/schema"
-=======
 import { NonNegativeInt, optionalOmitUndefined, withStatics } from "@/util/schema"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 const log = Log.create({ service: "session" })
 
@@ -150,20 +130,9 @@ function sessionPath(worktree: string, cwd: string) {
 }
 
 const Summary = Schema.Struct({
-<<<<<<< HEAD
-  additions: Schema.Number,
-  deletions: Schema.Number,
-  files: Schema.Number,
-||||||| 12f7967ca4
-  additions: Schema.Number,
-  deletions: Schema.Number,
-  files: Schema.Number,
-  diffs: Schema.optional(Schema.Array(Snapshot.SummaryFileDiff)), // kilocode_change
-=======
   additions: NonNegativeInt,
   deletions: NonNegativeInt,
   files: NonNegativeInt,
->>>>>>> yunqiqiliang/opencode-v7.3.0
   diffs: optionalOmitUndefined(Schema.Array(Snapshot.SummaryFileDiff)), // kilocode_change - lightweight diff without patch
 })
 
@@ -176,22 +145,10 @@ const Share = Schema.Struct({
 export const ArchivedTimestamp = Schema.Finite
 
 const Time = Schema.Struct({
-<<<<<<< HEAD
-  created: Schema.Number,
-  updated: Schema.Number,
-  compacting: optionalOmitUndefined(Schema.Number),
-  archived: optionalOmitUndefined(Schema.Number),
-||||||| 12f7967ca4
-  created: Schema.Number,
-  updated: Schema.Number,
-  compacting: Schema.optional(Schema.Number),
-  archived: Schema.optional(Schema.Number),
-=======
   created: NonNegativeInt,
   updated: NonNegativeInt,
   compacting: optionalOmitUndefined(NonNegativeInt),
   archived: optionalOmitUndefined(ArchivedTimestamp),
->>>>>>> yunqiqiliang/opencode-v7.3.0
 })
 
 const Revert = Schema.Struct({

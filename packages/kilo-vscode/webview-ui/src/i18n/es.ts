@@ -785,11 +785,6 @@ export const dict = {
   "settings.indexing.title": "Indexación",
   "settings.indexing.enable.title": "Habilitar indexación",
   "settings.indexing.enable.description": "Activar o desactivar la indexación semántica de la base de código.",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-  "settings.indexing.enable.description":
-    "Activar o desactivar la indexación semántica de la base de código para este espacio de trabajo.",
-=======
   "settings.indexing.globalEnable.title": "Habilitar globalmente",
   "settings.indexing.globalEnable.description": "Habilitar la indexación para cada área de trabajo.",
   "settings.indexing.projectEnable.title": "Habilitar para este proyecto",
@@ -797,7 +792,6 @@ export const dict = {
     "Habilitar la indexación para esta área de trabajo cuando la indexación global está desactivada.",
   "settings.indexing.projectEnable.disabledTooltip":
     "La indexación global está habilitada, por lo que este proyecto ya está cubierto.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.indexing.provider.title": "Proveedor de embeddings",
   "settings.indexing.provider.description":
     "Elige el proveedor utilizado para generar embeddings para búsqueda semántica.",
@@ -1268,9 +1262,6 @@ export const dict = {
   "settings.experimental.agentManagerTool.title": "Herramienta Agent Manager",
   "settings.experimental.agentManagerTool.description":
     "Permitir que los agentes inicien sesiones locales y sesiones de worktree de Agent Manager desde una llamada de herramienta",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.experimental.speechToText.title": "Voz a texto",
   "settings.experimental.speechToText.description":
     "Habilita la entrada de voz en los campos de prompt usando tu cuenta de Kilo a través de Kilo Gateway.",
@@ -1279,7 +1270,6 @@ export const dict = {
   "settings.experimental.speechToTextModel.title": "Modelo de voz a texto",
   "settings.experimental.speechToTextModel.description":
     "Elige el modelo de transcripción de Kilo Gateway para la entrada de voz.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.experimental.continueOnDeny.title": "Continuar al denegar",
   "settings.experimental.continueOnDeny.description": "Continuar el bucle del agente cuando se deniega un permiso",
   "settings.experimental.mcpTimeout.title": "Tiempo de espera MCP (ms)",
@@ -1483,13 +1473,9 @@ export const dict = {
   "settings.display.layout.description": "Modo de diseño para la interfaz de chat",
   "settings.display.layout.auto": "Automático",
   "settings.display.layout.stretch": "Estirar",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.display.fontSize.title": "Tamaño de fuente",
   "settings.display.fontSize.description":
     "Ajusta el tamaño de fuente de la webview UI de Kilo de forma independiente a VS Code.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.display.reasoningAutoCollapse.title": "Contraer razonamiento automáticamente",
   "settings.display.reasoningAutoCollapse.description":
     "Contrae los bloques de razonamiento después de que el agente termine de escribirlos. Déjalo desactivado para mantener el razonamiento expandido, a menos que lo contraigas manualmente.",

@@ -2,25 +2,12 @@ import { afterEach, describe, expect, test } from "bun:test"
 import { Instance } from "../../src/project/instance"
 import { ProjectTable } from "../../src/project/project.sql"
 import { ProjectID } from "../../src/project/schema"
-<<<<<<< HEAD
-||||||| 12f7967ca4
-import { Session } from "../../src/session"
-=======
 import { AppRuntime } from "../../src/effect/app-runtime"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Session } from "../../src/session/session"
 import { SessionTable } from "../../src/session/session.sql"
 import { Database, eq } from "../../src/storage/db"
 import * as Log from "@opencode-ai/core/util/log"
-<<<<<<< HEAD
-import { tmpdir } from "../fixture/fixture"
-||||||| 12f7967ca4
-import { Database, eq } from "../../src/storage"
-import { Log } from "../../src/util"
-import { tmpdir } from "../fixture/fixture"
-=======
 import { disposeAllInstances, tmpdir } from "../fixture/fixture"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 Log.init({ print: false })
 

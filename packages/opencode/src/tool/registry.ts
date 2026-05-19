@@ -23,22 +23,10 @@ import { Plugin } from "../plugin"
 import { Provider } from "@/provider/provider"
 import { ProviderID, type ModelID } from "../provider/schema"
 import { WebSearchTool } from "./websearch"
-<<<<<<< HEAD
-import { CodeSearchTool } from "./codesearch"
-import { KiloToolRegistry } from "../kilocode/tool/registry" // kilocode_change
-import { makeRuntime } from "@/effect/run-service" // kilocode_change
-||||||| 12f7967ca4
-import { CodeSearchTool } from "./codesearch"
-import { KiloToolRegistry } from "../kilocode/tool/registry" // kilocode_change
-import { makeRuntime } from "@/effect/run-service" // kilocode_change
-import { Flag } from "@/flag/flag"
-import { Log } from "@/util"
-=======
 // kilocode_change start
 import { KiloToolRegistry } from "../kilocode/tool/registry"
 import { makeRuntime } from "@/effect/run-service"
 // kilocode_change end
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Flag } from "@opencode-ai/core/flag/flag"
 import * as Log from "@opencode-ai/core/util/log"
 import { LspTool } from "./lsp"

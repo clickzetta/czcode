@@ -1,14 +1,5 @@
-<<<<<<< HEAD
-// kilocode_change new file
-import { fetchKiloModels } from "@kilocode/kilo-gateway"
-||||||| 12f7967ca4
-// kilocode_change new file
-import { fetchKiloModels } from "@kilocode/kilo-gateway"
-import { Config } from "../config"
-=======
 // kilocode_change - new file
 import { fetchKiloModels, type KiloModelsResult } from "@kilocode/kilo-gateway"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Config } from "../config/config"
 import { Auth } from "../auth"
 import * as Log from "@opencode-ai/core/util/log"

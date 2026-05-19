@@ -34,51 +34,6 @@ export const Info = Schema.Struct({
   mode: Schema.Literals(["subagent", "primary", "all"]),
   native: Schema.optional(Schema.Boolean),
   hidden: Schema.optional(Schema.Boolean),
-<<<<<<< HEAD
-  topP: Schema.optional(Schema.Number),
-  temperature: Schema.optional(Schema.Number),
-  color: Schema.optional(Schema.String),
-  permission: Permission.Ruleset,
-  model: Schema.optional(
-    Schema.Struct({
-      modelID: ModelID,
-      providerID: ProviderID,
-    }),
-  ),
-  variant: Schema.optional(Schema.String),
-  prompt: Schema.optional(Schema.String),
-  options: Schema.Record(Schema.String, Schema.Unknown),
-  steps: Schema.optional(Schema.Number),
-||||||| 12f7967ca4
-export const Info = z
-  .object({
-    name: z.string(),
-    displayName: z.string().optional(), // kilocode_change - human-readable name for org modes
-    description: z.string().optional(),
-    deprecated: z.boolean().optional(), // kilocode_change
-    mode: z.enum(["subagent", "primary", "all"]),
-    native: z.boolean().optional(),
-    hidden: z.boolean().optional(),
-    topP: z.number().optional(),
-    temperature: z.number().optional(),
-    color: z.string().optional(),
-    permission: Permission.Ruleset.zod,
-    model: z
-      .object({
-        modelID: ModelID.zod,
-        providerID: ProviderID.zod,
-      })
-      .optional(),
-    variant: z.string().optional(),
-    prompt: z.string().optional(),
-    options: z.record(z.string(), z.any()),
-    steps: z.number().int().positive().optional(),
-  })
-  .meta({
-    ref: "Agent",
-  })
-export type Info = z.infer<typeof Info>
-=======
   topP: Schema.optional(Schema.Finite),
   temperature: Schema.optional(Schema.Finite),
   color: Schema.optional(Schema.String),
@@ -93,7 +48,6 @@ export type Info = z.infer<typeof Info>
   prompt: Schema.optional(Schema.String),
   options: Schema.Record(Schema.String, Schema.Unknown),
   steps: Schema.optional(Schema.Finite),
->>>>>>> yunqiqiliang/opencode-v7.3.0
 })
   .annotate({ identifier: "Agent" })
   .pipe(withStatics((s) => ({ zod: zod(s) })))

@@ -18,14 +18,8 @@ import { InstanceMiddleware } from "./routes/instance/middleware"
 import { WorkspaceRoutes } from "./routes/control/workspace"
 import * as KiloServer from "@/kilocode/server/server" // kilocode_change
 import { ExperimentalHttpApiServer } from "./routes/instance/httpapi/server"
-<<<<<<< HEAD
-||||||| 12f7967ca4
-import { WorkspacePaths } from "./routes/instance/httpapi/workspace"
-import { Context } from "effect"
-=======
 import * as ServerBackend from "./backend"
 import type { CorsOptions } from "./cors"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 // @ts-ignore This global is needed to prevent ai-sdk from logging warnings to stdout https://github.com/vercel/ai/blob/2dc67e0ef538307f21368db32d5a12345d98831b/packages/ai/src/logger/log-warnings.ts#L85
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -45,40 +39,7 @@ type ServerApp = {
   fetch(request: Request): Response | Promise<Response>
   request(input: string | URL | Request, init?: RequestInit): Response | Promise<Response>
 }
-<<<<<<< HEAD
 
-const DefaultHono = lazy(() => createHono({}))
-const DefaultHttpApi = lazy(() => createHttpApi())
-export const Default = () => (Flag.KILO_EXPERIMENTAL_HTTPAPI ? DefaultHttpApi() : DefaultHono())
-||||||| 12f7967ca4
-export const Default = lazy(() => create({}))
-=======
->>>>>>> yunqiqiliang/opencode-v7.3.0
-
-<<<<<<< HEAD
-function create(opts: { cors?: string[] }) {
-  if (Flag.KILO_EXPERIMENTAL_HTTPAPI) return createHttpApi()
-  return createHono(opts)
-}
-
-function createHttpApi() {
-  const handler = ExperimentalHttpApiServer.webHandler().handler
-  const app: ServerApp = {
-    fetch: (request: Request) => handler(request, ExperimentalHttpApiServer.context),
-    request(input, init) {
-      return app.fetch(input instanceof Request ? input : new Request(new URL(input, "http://localhost"), init))
-    },
-  }
-  return {
-    app,
-    runtime: adapter.createFetch(app),
-  }
-}
-
-function createHono(opts: { cors?: string[] }) {
-||||||| 12f7967ca4
-function create(opts: { cors?: string[] }) {
-=======
 type ListenOptions = CorsOptions & {
   port: number
   hostname: string
@@ -138,7 +99,6 @@ function createHttpApi(corsOptions?: CorsOptions) {
 
 function createHono(opts: CorsOptions, selection: ServerBackend.Selection = ServerBackend.force(select(), "hono")) {
   const backendAttributes = ServerBackend.attributes(selection)
->>>>>>> yunqiqiliang/opencode-v7.3.0
   const app = new Hono()
     .onError(ErrorMiddleware)
     .use(AuthMiddleware)

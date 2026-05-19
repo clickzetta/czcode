@@ -783,11 +783,6 @@ export const dict = {
   "settings.indexing.title": "Индексация",
   "settings.indexing.enable.title": "Включить индексацию",
   "settings.indexing.enable.description": "Включить или отключить семантическую индексацию кодовой базы.",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-  "settings.indexing.enable.description":
-    "Включить или отключить семантическую индексацию кодовой базы для этого рабочего пространства.",
-=======
   "settings.indexing.globalEnable.title": "Включить глобально",
   "settings.indexing.globalEnable.description": "Включить индексирование для каждого рабочего пространства.",
   "settings.indexing.projectEnable.title": "Включить для этого проекта",
@@ -795,7 +790,6 @@ export const dict = {
     "Включить индексирование для этого рабочего пространства, если глобальное индексирование отключено.",
   "settings.indexing.projectEnable.disabledTooltip":
     "Глобальное индексирование включено, поэтому этот проект уже охвачен.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.indexing.status.title": "Статус",
   "settings.indexing.provider.title": "Провайдер эмбеддингов",
   "settings.indexing.provider.description": "Выберите провайдера для генерации эмбеддингов при семантическом поиске.",
@@ -1257,9 +1251,6 @@ export const dict = {
   "settings.experimental.agentManagerTool.title": "Инструмент Agent Manager",
   "settings.experimental.agentManagerTool.description":
     "Разрешить агентам запускать локальные сеансы Agent Manager и сеансы worktree через вызов инструмента",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.experimental.speechToText.title": "Речь в текст",
   "settings.experimental.speechToText.description":
     "Включите голосовой ввод в полях запросов, используя вашу учетную запись Kilo через Kilo Gateway.",
@@ -1268,7 +1259,6 @@ export const dict = {
   "settings.experimental.speechToTextModel.title": "Модель речи в текст",
   "settings.experimental.speechToTextModel.description":
     "Выберите модель транскрипции Kilo Gateway для голосового ввода.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.experimental.continueOnDeny.title": "Продолжить при отказе",
   "settings.experimental.continueOnDeny.description": "Продолжить цикл агента при отказе в разрешении",
   "settings.experimental.mcpTimeout.title": "Таймаут MCP (мс)",
@@ -1468,12 +1458,8 @@ export const dict = {
   "settings.display.layout.description": "Режим макета для интерфейса чата",
   "settings.display.layout.auto": "Авто",
   "settings.display.layout.stretch": "Растянуть",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.display.fontSize.title": "Размер шрифта",
   "settings.display.fontSize.description": "Настройте размер шрифта webview UI для Kilo независимо от VS Code.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.display.reasoningAutoCollapse.title": "Автоматически сворачивать рассуждение",
   "settings.display.reasoningAutoCollapse.description":
     "Сворачивает блоки рассуждения после того, как агент закончит их писать. Оставьте выключенным, чтобы рассуждение оставалось раскрытым, пока вы не свернете его вручную.",

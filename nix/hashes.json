@@ -1,20 +1,8 @@
 {
   "nodeModules": {
-<<<<<<< HEAD
-    "x86_64-linux": "sha256-uDEFWmG84/Ml/hXqV0U80f6re45sAUExyHzgRLWqcZg=",
-    "aarch64-linux": "sha256-4r/OG9jq17HXLxehUneUB1Y7cjblgprmi8FRvwYgdjY=",
-    "aarch64-darwin": "sha256-X5/ejqcGD8Ea8sk0uRpgE/TEKdq8gdCd9lHHqalKyTM=",
-    "x86_64-darwin": "sha256-4YG1MNzMRJNNOx2phFQyiNc09G9ksgitJ2PNbfhM1e4="
-||||||| 12f7967ca4
-    "x86_64-linux": "sha256-cAQ3LYGSSUAxDH77qouZcG4dPjTBIysPAkLwXHkRza4=",
-    "aarch64-linux": "sha256-49haI3uiwlTn4YYJsCyEEMTXmjGYyktm8qC5zQ0MAzg=",
-    "aarch64-darwin": "sha256-sdd37hufZNCHQuVkDxaHc6xVqovz/BuCPbBOoDbcuMQ=",
-    "x86_64-darwin": "sha256-Ndl68EHo83z9C3WFDNqRDni6fdKSX9nj4/5o+3wxzNs="
-=======
     "x86_64-linux": "sha256-n8qDAnmhHLO3PICGFAL6UzPi6k+Dwtl9Wg87PKqa/vY=",
     "aarch64-linux": "sha256-XBCHg6BYL1J3M5JCUZda9e8ZKi8EEpI2hez6w3ICOYs=",
     "aarch64-darwin": "sha256-3K35v/UghrM8CSpWvbvJVLeoF94MALWVA7F5B++Po00=",
     "x86_64-darwin": "sha256-aTjNOPvGygJ34A1Q5+qziyyuSFa0w6WMUjUcsXSLtBU="
->>>>>>> yunqiqiliang/opencode-v7.3.0
   }
 }

@@ -67,9 +67,6 @@ const DisplayTab: Component = () => {
         </SettingsRow>
 
         <SettingsRow
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
           title={language.t("settings.display.fontSize.title")}
           description={language.t("settings.display.fontSize.description")}
         >
@@ -88,7 +85,6 @@ const DisplayTab: Component = () => {
         </SettingsRow>
 
         <SettingsRow
->>>>>>> yunqiqiliang/opencode-v7.3.0
           title={language.t("settings.display.reasoningAutoCollapse.title")}
           description={language.t("settings.display.reasoningAutoCollapse.description")}
         >

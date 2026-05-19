@@ -2370,15 +2370,11 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       partial.provider !== undefined ||
       partial.disabled_providers !== undefined ||
       partial.enabled_providers !== undefined
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
     const refreshAgents =
       partial.default_agent !== undefined ||
       partial.agent !== undefined ||
       project.default_agent !== undefined ||
       project.agent !== undefined
->>>>>>> yunqiqiliang/opencode-v7.3.0
     const hasGlobal = Object.keys(partial).length > 0
     const hasProject = Object.keys(project).length > 0
 
@@ -2417,15 +2413,10 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       ])
     } catch (error) {
       console.error("[Kilo New] KiloProvider: Config write succeeded but post-write refresh failed:", error)
-<<<<<<< HEAD
-      const patch = { ...partial, ...project }
-||||||| 12f7967ca4
-=======
       const patch =
         partial.indexing === undefined && project.indexing === undefined
           ? { ...partial, ...project }
           : { ...partial, ...project, indexing: { ...(partial.indexing ?? {}), ...(project.indexing ?? {}) } }
->>>>>>> yunqiqiliang/opencode-v7.3.0
       const cached = (this.cachedConfigMessage as { config?: unknown } | null)?.config
       const features = (this.cachedConfigMessage as { features?: unknown } | null)?.features
       const optimistic =
@@ -2440,8 +2431,6 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       this.pending--
     }
   }
-<<<<<<< HEAD
-
   private postConfigFailure(error: unknown): void {
     console.error("[Kilo New] KiloProvider: Failed to update config:", error)
     this.postMessage({
@@ -2450,19 +2439,6 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       details: getConfigErrorDetails(error),
     })
   }
-
-||||||| 12f7967ca4
-
-=======
-  private postConfigFailure(error: unknown): void {
-    console.error("[Kilo New] KiloProvider: Failed to update config:", error)
-    this.postMessage({
-      type: "configUpdateFailed",
-      message: getErrorMessage(error) || "Failed to update config",
-      details: getConfigErrorDetails(error),
-    })
-  }
->>>>>>> yunqiqiliang/opencode-v7.3.0
   private async resolveSession(sessionID?: string, draftID?: string, context?: string) {
     if (!this.client) return undefined
 

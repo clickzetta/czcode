@@ -25,13 +25,9 @@ import { errorMessage } from "@/util/error"
 import { PluginLoader } from "./loader"
 import { parsePluginSpecifier, readPluginId, readV1Plugin, resolvePluginId } from "./shared"
 import { KiloAuthPlugin } from "@kilocode/kilo-gateway" // kilocode_change
-<<<<<<< HEAD
 import { CzCodeLakehousePlugin } from "@czcode/lakehouse" // czcode_change
-||||||| 12f7967ca4
-=======
 import { registerAdapter } from "@/control-plane/adapters"
 import type { WorkspaceAdapter } from "@/control-plane/types"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 const log = Log.create({ service: "plugin" })
 
@@ -69,22 +65,12 @@ const INTERNAL_PLUGINS: PluginInstance[] = [
   // kilocode_change - external auth plugins ship against @opencode-ai/plugin; bridge to our @kilocode/plugin types
   GitlabAuthPlugin as unknown as PluginInstance,
   PoeAuthPlugin as unknown as PluginInstance,
-<<<<<<< HEAD
-  CloudflareWorkersAuthPlugin as unknown as PluginInstance,
-  CloudflareAIGatewayAuthPlugin as unknown as PluginInstance,
-  CzCodeLakehousePlugin as unknown as PluginInstance, // czcode_change
-] // kilocode_change end
-||||||| 12f7967ca4
-  CloudflareWorkersAuthPlugin as unknown as PluginInstance,
-  CloudflareAIGatewayAuthPlugin as unknown as PluginInstance,
-] // kilocode_change end
-=======
   CloudflareWorkersAuthPlugin,
   CloudflareAIGatewayAuthPlugin,
   AzureAuthPlugin,
+  CzCodeLakehousePlugin as unknown as PluginInstance, // czcode_change
 ]
 // kilocode_change end
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 function isServerPlugin(value: unknown): value is PluginInstance {
   return typeof value === "function"

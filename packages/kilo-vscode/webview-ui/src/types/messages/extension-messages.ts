@@ -1,10 +1,5 @@
 import type { ProviderAuthAuthorization, ProviderAuthMethod } from "@kilocode/sdk/v2/client"
-<<<<<<< HEAD
-||||||| 12f7967ca4
-import type { PartBatch, PartUpdate } from "../../../../src/shared/stream-messages"
-=======
 import type { DiffSourceCapabilities, DiffSourceDescriptor } from "../../../../src/diff/sources/types"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import type { PartBatch, PartRemove, PartUpdate } from "../../../../src/shared/stream-messages"
 import type { SessionMode } from "../../context/worktree-mode"
 import type { MarketplaceItem, MarketplaceInstalledMetadata } from "../marketplace"
@@ -778,12 +773,6 @@ export interface DiffViewerRevertFileResultMessage {
   message: string
 }
 
-<<<<<<< HEAD
-export interface DiffViewerMarkdownRenderMessage {
-  type: "diffViewer.markdownRender"
-  render: boolean
-||||||| 12f7967ca4
-=======
 export interface DiffViewerDiffFileMessage {
   type: "diffViewer.diffFile"
   file: string
@@ -831,7 +820,6 @@ export interface DiffViewerBranchesLoadedMessage {
   currentBase: string | undefined
   isAuto: boolean
   currentBranch: string | undefined
->>>>>>> yunqiqiliang/opencode-v7.3.0
 }
 
 export interface ClearPendingPromptsMessage {
@@ -1048,17 +1036,12 @@ export type ExtensionMessage =
   | DiffViewerDiffsMessage
   | DiffViewerLoadingMessage
   | DiffViewerRevertFileResultMessage
-<<<<<<< HEAD
-  | DiffViewerMarkdownRenderMessage
-||||||| 12f7967ca4
-=======
   | DiffViewerDiffFileMessage
   | DiffViewerMarkdownRenderMessage
   | SetAvailableSourcesMessage
   | DiffViewerCapabilitiesMessage
   | DiffViewerNoticeMessage
   | DiffViewerBranchesLoadedMessage
->>>>>>> yunqiqiliang/opencode-v7.3.0
   | MarketplaceDataMessage
   | MarketplaceInstallResultMessage
   | MarketplaceRemoveResultMessage

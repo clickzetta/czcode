@@ -2,14 +2,7 @@ import { Installation } from "@/installation"
 import { Server } from "@/server/server"
 import * as Log from "@opencode-ai/core/util/log"
 import { Instance } from "@/project/instance"
-<<<<<<< HEAD
-import { InstanceBootstrap } from "@/project/bootstrap"
-||||||| 12f7967ca4
-import { InstanceBootstrap } from "@/project/bootstrap"
-import { Rpc } from "@/util"
-=======
 import { InstanceStore } from "@/project/instance-store"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Rpc } from "@/util/rpc"
 import { upgrade } from "@/cli/upgrade"
 import { Config } from "@/config/config"
@@ -17,21 +10,13 @@ import { GlobalBus } from "@/bus/global"
 import { Flag } from "@opencode-ai/core/flag/flag"
 import { writeHeapSnapshot } from "node:v8"
 import { Heap } from "@/cli/heap"
-<<<<<<< HEAD
-import { AppRuntime } from "@/effect/app-runtime"
+import { AppRuntime, getBootstrapRunEffect } from "@/effect/app-runtime"
 import { ensureProcessMetadata } from "@opencode-ai/core/util/opencode-process"
 import { Telemetry } from "@kilocode/kilo-telemetry" // czcode_change
 // czcode_change start - init telemetry in worker process
 import { Global } from "@opencode-ai/core/global"
 import { InstallationVersion } from "@opencode-ai/core/installation/version"
 // czcode_change end
-||||||| 12f7967ca4
-import { AppRuntime } from "@/effect/app-runtime"
-import { ensureProcessMetadata } from "@/util/opencode-process"
-=======
-import { AppRuntime, getBootstrapRunEffect } from "@/effect/app-runtime"
-import { ensureProcessMetadata } from "@opencode-ai/core/util/opencode-process"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 ensureProcessMetadata("worker")
 

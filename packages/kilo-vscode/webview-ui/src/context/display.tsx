@@ -1,25 +1,3 @@
-<<<<<<< HEAD
-import { createContext, createMemo, useContext, type Accessor, type ParentComponent } from "solid-js"
-import { useConfig } from "./config"
-
-interface DisplayContextValue {
-  reasoningAutoCollapse: Accessor<boolean>
-  setReasoningAutoCollapse: (collapse: boolean) => void
-}
-
-export const DisplayContext = createContext<DisplayContextValue>()
-
-export const DisplayProvider: ParentComponent = (props) => {
-  const { config, updateConfig } = useConfig()
-  const reasoningAutoCollapse = createMemo(() => config().auto_collapse_reasoning ?? false)
-
-  return (
-    <DisplayContext.Provider
-      value={{
-        reasoningAutoCollapse,
-        setReasoningAutoCollapse: (collapse) => updateConfig({ auto_collapse_reasoning: collapse }),
-||||||| 12f7967ca4
-=======
 import {
   createContext,
   createEffect,
@@ -72,7 +50,6 @@ export const DisplayProvider: ParentComponent = (props) => {
           setFontSizeSignal(next)
           vscode.postMessage({ type: "updateSetting", key: "fontSize", value: next })
         },
->>>>>>> yunqiqiliang/opencode-v7.3.0
       }}
     >
       {props.children}

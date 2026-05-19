@@ -12,14 +12,7 @@ import { Process } from "@/util/process"
 import { spawn as lspspawn } from "./launch"
 import { Effect, Layer, Context, Schema } from "effect"
 import { InstanceState } from "@/effect/instance-state"
-<<<<<<< HEAD
-import { AppFileSystem } from "@opencode-ai/core/filesystem"
-||||||| 12f7967ca4
-import { InstanceState } from "@/effect"
-import { AppFileSystem } from "@opencode-ai/shared/filesystem"
-=======
 import { containsPath } from "@/project/instance-context"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { TsClient } from "../kilocode/ts-client" // kilocode_change
 import { NonNegativeInt, withStatics } from "@/util/schema"
 import { zod, ZodOverride } from "@/util/effect-zod"

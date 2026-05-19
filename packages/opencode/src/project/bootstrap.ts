@@ -7,26 +7,11 @@ import * as Project from "./project"
 import * as Vcs from "./vcs"
 import { Bus } from "../bus"
 import { Command } from "../command"
-<<<<<<< HEAD
-import { Instance } from "./instance"
-import * as Log from "@opencode-ai/core/util/log"
-||||||| 12f7967ca4
-import { Instance } from "./instance"
-import { Log } from "@/util"
-=======
 import { InstanceState } from "@/effect/instance-state"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { FileWatcher } from "@/file/watcher"
 import { KilocodeBootstrap } from "@/kilocode/bootstrap" // kilocode_change
-<<<<<<< HEAD
-import * as Effect from "effect/Effect"
-||||||| 12f7967ca4
-import * as Effect from "effect/Effect"
-import { Config } from "@/config"
-=======
 // import { ShareNext } from "@/share/share-next" // kilocode_change - handled by KilocodeBootstrap
 import { Context, Effect, Layer } from "effect"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Config } from "@/config/config"
 
 export interface Interface {

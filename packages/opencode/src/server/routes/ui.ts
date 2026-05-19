@@ -1,12 +1,7 @@
 import { Flag } from "@opencode-ai/core/flag/flag"
-<<<<<<< HEAD
-||||||| 12f7967ca4
-import { Flag } from "@/flag/flag"
-=======
 import { AppFileSystem } from "@opencode-ai/core/filesystem"
 import { Effect } from "effect"
 import { HttpClient, HttpServerRequest, HttpServerResponse } from "effect/unstable/http"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Hono } from "hono"
 import { getMimeType } from "hono/utils/mime"
 import fs from "node:fs/promises"

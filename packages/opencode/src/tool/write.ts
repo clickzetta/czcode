@@ -10,14 +10,7 @@ import { File } from "../file"
 import { FileWatcher } from "../file/watcher"
 import { Format } from "../format"
 import { AppFileSystem } from "@opencode-ai/core/filesystem"
-<<<<<<< HEAD
-import { Instance } from "../project/instance"
-||||||| 12f7967ca4
-import { AppFileSystem } from "@opencode-ai/shared/filesystem"
-import { Instance } from "../project/instance"
-=======
 import { InstanceState } from "@/effect/instance-state"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { trimDiff, buildFileDiff } from "./edit" // kilocode_change
 import { assertExternalDirectoryEffect } from "./external-directory"
 import { filterDiagnostics } from "./diagnostics" // kilocode_change

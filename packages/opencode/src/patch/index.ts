@@ -2,14 +2,7 @@ import z from "zod"
 import * as path from "path"
 import * as fs from "fs/promises"
 import * as Log from "@opencode-ai/core/util/log"
-<<<<<<< HEAD
-import { Encoding } from "../kilocode/encoding" // kilocode_change
-||||||| 12f7967ca4
-import { Log } from "../util"
-import { Encoding } from "../kilocode/encoding" // kilocode_change
-=======
 import * as Encoding from "../kilocode/encoding" // kilocode_change
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import * as Bom from "../util/bom"
 
 const log = Log.create({ service: "patch" })

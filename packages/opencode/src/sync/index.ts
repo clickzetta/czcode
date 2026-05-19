@@ -9,14 +9,7 @@ import { EventSequenceTable, EventTable } from "./event.sql"
 import type { WorkspaceID } from "@/control-plane/schema"
 import { EventID } from "./schema"
 import { Flag } from "@opencode-ai/core/flag/flag"
-<<<<<<< HEAD
-import { Schema as EffectSchema } from "effect"
-||||||| 12f7967ca4
-import { Flag } from "@/flag/flag"
-import { Schema as EffectSchema } from "effect"
-=======
 import { Context, Effect, Layer, Schema as EffectSchema } from "effect"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { zodObject } from "@/util/effect-zod"
 import type { DeepMutable } from "@/util/schema"
 import { makeRuntime } from "@/effect/run-service"

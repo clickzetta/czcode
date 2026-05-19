@@ -141,19 +141,9 @@ export function Prompt(props: PromptProps) {
   const list = createMemo(() => props.placeholders?.normal ?? [])
   const shell = createMemo(() => props.placeholders?.shell ?? [])
   const fileContextEnabled = createMemo(() => kv.get("file_context_enabled", true))
-<<<<<<< HEAD
-  const editorPath = createMemo(() => (fileContextEnabled() ? editor.selection()?.filePath : undefined))
-  const editorSelectionLabel = createMemo(() => {
-    const selection = fileContextEnabled() ? editor.selection()?.selection : undefined
-||||||| 12f7967ca4
-  const editorPath = createMemo(() => editor.selection()?.filePath)
-  const editorSelectionLabel = createMemo(() => {
-    const selection = editor.selection()?.selection
-=======
   const [dismissedEditorSelectionKey, setDismissedEditorSelectionKey] = createSignal<string>()
   const editorContext = createMemo(() => {
     const selection = fileContextEnabled() ? editor.selection() : undefined
->>>>>>> yunqiqiliang/opencode-v7.3.0
     if (!selection) return
     return editorSelectionKey(selection) === dismissedEditorSelectionKey() ? undefined : selection
   })
@@ -819,61 +809,6 @@ export function Prompt(props: PromptProps) {
     // Capture mode before it gets reset
     const currentMode = store.mode
     const variant = local.model.variant.current()
-<<<<<<< HEAD
-    const editorSelection = fileContextEnabled() ? editor.selection() : undefined
-    const editorParts = editorSelection
-      ? [
-          {
-            id: PartID.ascending(),
-            type: "text" as const,
-            text: (() => {
-              const start = editorSelection.selection.start
-              const end = editorSelection.selection.end
-
-              let text = ""
-              if (start.line === end.line && start.character === end.character) {
-                text = `Note: The user opened the file "${editorSelection.filePath}".`
-              } else if (start.line === end.line) {
-                text = `Note: The user selected line ${start.line + 1} from "${editorSelection.filePath}". \`\`\`${editorSelection.text}\`\`\`\n\n`
-              } else {
-                text = `Note: The user selected lines ${start.line + 1} to ${end.line + 1} from "${editorSelection.filePath}". \`\`\`${editorSelection.text}\`\`\`\n\n`
-              }
-
-              return `<system-reminder>${text} This may or may not be relevant to the current task.</system-reminder>\n`
-            })(),
-            synthetic: true,
-            metadata: {
-              kind: "editor_context",
-              source: editorSelection.source ?? "editor",
-              filePath: editorSelection.filePath,
-              selection: editorSelection.selection,
-            },
-          },
-        ]
-      : []
-||||||| 12f7967ca4
-    const editorSelection = editor.selection()
-    const editorParts = editorSelection
-      ? [
-          {
-            id: PartID.ascending(),
-            type: "text" as const,
-            text: (() => {
-              const start = editorSelection.selection.start
-              const end = editorSelection.selection.end
-              if (start.line === end.line && start.character === end.character) {
-                return `Note: The user opened the file "${editorSelection.filePath}".`
-              }
-              if (start.line === end.line) {
-                return `Note: The user selected line ${start.line} from  "${editorSelection.filePath}": ${editorSelection.text}`
-              }
-              return `Note: The user selected lines ${start.line} to ${end.line} from "${editorSelection.filePath}": ${editorSelection.text}`
-            })(),
-            synthetic: true,
-          },
-        ]
-      : []
-=======
     const editorSelection = editorContext()
     const currentEditorSelectionKey = editorSelectionKey(editorSelection)
     const editorParts =
@@ -893,7 +828,6 @@ export function Prompt(props: PromptProps) {
             },
           ]
         : []
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
     if (store.mode === "shell") {
       void sdk.client.session.shell({
@@ -971,12 +905,7 @@ export function Prompt(props: PromptProps) {
           ],
         })
         .catch(() => {})
-<<<<<<< HEAD
-      editor.clearSelection()
-||||||| 12f7967ca4
-=======
       lastSubmittedEditorSelectionKey = currentEditorSelectionKey
->>>>>>> yunqiqiliang/opencode-v7.3.0
     }
     toast.dismiss() // kilocode_change - dismiss persistent config warning on first submit
     history.append({

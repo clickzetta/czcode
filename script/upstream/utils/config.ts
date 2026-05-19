@@ -124,11 +124,8 @@ export const defaultConfig: MergeConfig = {
     ".github/workflows/deploy.yml",
     ".github/workflows/docs-update.yml",
     ".github/workflows/docs-locale-sync.yml",
-<<<<<<< HEAD
     // czcode_change: czcode watches kilocode releases, not opencode directly
     ".github/workflows/watch-opencode-releases.yml",
-||||||| 12f7967ca4
-=======
     // Workflows deleted in Kilo (replaced or no longer needed)
     ".github/workflows/opencode.yml",
     ".github/workflows/publish-vscode.yml",
@@ -142,7 +139,6 @@ export const defaultConfig: MergeConfig = {
     "packages/opencode/bin/opencode",
     // Removed prompt file
     "packages/opencode/src/session/prompt/build-switch.txt",
->>>>>>> yunqiqiliang/opencode-v7.3.0
     // Vouch files (Kilo doesn't use Vouch).
     // Upstream currently ships VOUCHED.td (typo extension). The glob covers both
     // the current .td file and any future .md rename without another merge breaking.

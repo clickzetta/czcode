@@ -5,11 +5,7 @@ import {
   adjacentHint,
   restoreLocalSessions,
   reconcileLocalSessions,
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   filterUnassignedSessions,
->>>>>>> yunqiqiliang/opencode-v7.3.0
   LOCAL,
 } from "../../webview-ui/agent-manager/navigate"
 

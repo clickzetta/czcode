@@ -9,15 +9,7 @@ import path from "path"
 import { Effect, Layer, ManagedRuntime } from "effect"
 import { EditTool } from "../../src/tool/edit"
 import { Instance } from "../../src/project/instance"
-<<<<<<< HEAD
-import { tmpdir } from "../fixture/fixture"
-||||||| 12f7967ca4
-import { tmpdir } from "../fixture/fixture"
-import { LSP } from "../../src/lsp"
-import { AppFileSystem } from "@opencode-ai/shared/filesystem"
-=======
 import { disposeAllInstances, tmpdir } from "../fixture/fixture"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { LSP } from "../../src/lsp/lsp"
 import { AppFileSystem } from "@opencode-ai/core/filesystem"
 import { Format } from "../../src/format"

@@ -763,16 +763,11 @@ export const dict = {
   "settings.indexing.title": "索引",
   "settings.indexing.enable.title": "启用索引",
   "settings.indexing.enable.description": "打开或关闭语义代码库索引。",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-  "settings.indexing.enable.description": "为此工作区打开或关闭语义代码库索引。",
-=======
   "settings.indexing.globalEnable.title": "全局启用",
   "settings.indexing.globalEnable.description": "为每个工作区启用索引。",
   "settings.indexing.projectEnable.title": "为此项目启用",
   "settings.indexing.projectEnable.description": "当全局索引关闭时，为此工作区启用索引。",
   "settings.indexing.projectEnable.disabledTooltip": "全局索引已启用，当前项目已包含在内。",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.indexing.provider.title": "嵌入提供商",
   "settings.indexing.provider.description": "选择用于生成语义搜索嵌入的提供商。",
   "settings.indexing.kiloModel.title": "Kilo 模型预设",
@@ -1221,15 +1216,11 @@ export const dict = {
   "settings.experimental.codebaseSearch.description": "启用 AI 驱动的自然语言代码库搜索",
   "settings.experimental.agentManagerTool.title": "Agent Manager 工具",
   "settings.experimental.agentManagerTool.description": "允许智能体通过工具调用启动 Agent Manager 本地会话和工作树会话",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.experimental.speechToText.title": "语音转文本",
   "settings.experimental.speechToText.description": "通过 Kilo Gateway 使用您的 Kilo 帐户在提示词字段中启用语音输入。",
   "settings.experimental.speechToText.disabledDescription": "启用并登录 Kilo provider 以在提示词字段中使用语音输入。",
   "settings.experimental.speechToTextModel.title": "语音转文本模型",
   "settings.experimental.speechToTextModel.description": "选择用于语音输入的 Kilo Gateway 转录模型。",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.experimental.continueOnDeny.title": "拒绝后继续",
   "settings.experimental.continueOnDeny.description": "权限被拒绝时继续智能体循环",
   "settings.experimental.mcpTimeout.title": "MCP 超时（毫秒）",
@@ -1404,12 +1395,8 @@ export const dict = {
   "settings.display.layout.description": "聊天界面的布局模式",
   "settings.display.layout.auto": "自动",
   "settings.display.layout.stretch": "拉伸",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.display.fontSize.title": "字体大小",
   "settings.display.fontSize.description": "独立于 VS Code 调整 Kilo webview UI 的字体大小。",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.display.reasoningAutoCollapse.title": "自动折叠推理",
   "settings.display.reasoningAutoCollapse.description":
     "在智能体写完推理后折叠推理块。保持关闭可让推理保持展开，除非你手动折叠它。",

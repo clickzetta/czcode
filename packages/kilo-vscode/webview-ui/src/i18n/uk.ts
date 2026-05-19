@@ -1070,18 +1070,12 @@ export const dict = {
   "settings.indexing.status.title": "Статус",
   "settings.indexing.enable.title": "Увімкнути індексування",
   "settings.indexing.enable.description": "Увімкніть або вимкніть семантичне індексування кодової бази.",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-  "settings.indexing.enable.description":
-    "Увімкніть або вимкніть семантичне індексування кодової бази для цього робочого простору.",
-=======
   "settings.indexing.globalEnable.title": "Увімкнути глобально",
   "settings.indexing.globalEnable.description": "Увімкнути індексування для кожного робочого простору.",
   "settings.indexing.projectEnable.title": "Увімкнути для цього проєкту",
   "settings.indexing.projectEnable.description":
     "Увімкнути індексування для цього робочого простору, коли глобальне індексування вимкнено.",
   "settings.indexing.projectEnable.disabledTooltip": "Глобальне індексування ввімкнено, тому цей проєкт уже охоплено.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.indexing.provider.title": "Провайдер ембедингів",
   "settings.indexing.provider.description": "Виберіть провайдера для генерації ембедингів для семантичного пошуку.",
   "settings.indexing.model.title": "Модель ембедингів",
@@ -1253,9 +1247,6 @@ export const dict = {
   "settings.experimental.agentManagerTool.title": "Інструмент Agent Manager",
   "settings.experimental.agentManagerTool.description":
     "Дозволити агентам запускати локальні сесії Agent Manager і сесії worktree через виклик інструмента",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.experimental.speechToText.title": "Мовлення в текст",
   "settings.experimental.speechToText.description":
     "Увімкніть голосове введення в полях запитів, використовуючи ваш обліковий запис Kilo через Kilo Gateway.",
@@ -1264,7 +1255,6 @@ export const dict = {
   "settings.experimental.speechToTextModel.title": "Модель мовлення в текст",
   "settings.experimental.speechToTextModel.description":
     "Виберіть модель транскрипції Kilo Gateway для голосового введення.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.experimental.continueOnDeny.title": "Продовжувати при відхиленні",
   "settings.experimental.continueOnDeny.description": "Продовжувати цикл агента, коли дозвіл відхилено",
   "settings.experimental.mcpTimeout.title": "Тайм-аут MCP (мс)",
@@ -1430,12 +1420,8 @@ export const dict = {
   "settings.display.layout.description": "Режим макету для інтерфейсу чату",
   "settings.display.layout.auto": "Автоматично",
   "settings.display.layout.stretch": "Розтягнути",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.display.fontSize.title": "Розмір шрифту",
   "settings.display.fontSize.description": "Налаштуйте розмір шрифту webview UI для Kilo незалежно від VS Code.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.display.reasoningAutoCollapse.title": "Автоматично згортати міркування",
   "settings.display.reasoningAutoCollapse.description":
     "Згортає блоки міркувань після того, як агент закінчить їх писати. Залиште вимкненим, щоб міркування залишалися розгорнутими, доки ви не згорнете їх вручну.",

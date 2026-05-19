@@ -2,12 +2,7 @@ import { Hono } from "hono"
 import { describeRoute, validator } from "hono-openapi"
 import { resolver } from "hono-openapi"
 import { Instance } from "@/project/instance"
-<<<<<<< HEAD
-||||||| 12f7967ca4
-import { Project } from "@/project"
-=======
 import { InstanceStore } from "@/project/instance-store"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Project } from "@/project/project"
 import z from "zod"
 import { ProjectID } from "@/project/schema"

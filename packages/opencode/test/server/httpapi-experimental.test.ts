@@ -4,56 +4,6 @@ import { Flag } from "@opencode-ai/core/flag/flag"
 import { GlobalBus } from "@/bus/global"
 import { Instance } from "../../src/project/instance"
 import { Server } from "../../src/server/server"
-<<<<<<< HEAD
-import { ExperimentalPaths } from "../../src/server/routes/instance/httpapi/experimental"
-import { Session } from "@/session/session"
-import { Database } from "@/storage/db"
-import * as Log from "@opencode-ai/core/util/log"
-import { Worktree } from "../../src/worktree"
-import { resetDatabase } from "../fixture/db"
-import { tmpdir } from "../fixture/fixture"
-
-void Log.init({ print: false })
-
-const original = Flag.KILO_EXPERIMENTAL_HTTPAPI
-const testWorktreeMutations = process.platform === "win32" ? test.skip : test
-
-function app() {
-  Flag.KILO_EXPERIMENTAL_HTTPAPI = true
-  return Server.Default().app
-}
-
-function runSession<A, E>(fx: Effect.Effect<A, E, Session.Service>) {
-  return Effect.runPromise(fx.pipe(Effect.provide(Session.defaultLayer)))
-}
-
-function createSession(input?: Session.CreateInput) {
-  return runSession(Session.Service.use((svc) => svc.create(input)))
-}
-
-async function waitReady(directory: string) {
-  return await new Promise<void>((resolve, reject) => {
-    const timer = setTimeout(() => {
-      GlobalBus.off("event", onEvent)
-      reject(new Error("timed out waiting for worktree.ready"))
-    }, 10_000)
-
-    function onEvent(event: { directory?: string; payload: { type?: string } }) {
-      if (event.payload.type !== Worktree.Event.Ready.type || event.directory !== directory) return
-      clearTimeout(timer)
-      GlobalBus.off("event", onEvent)
-      resolve()
-    }
-
-    GlobalBus.on("event", onEvent)
-  })
-}
-
-afterEach(async () => {
-  Flag.KILO_EXPERIMENTAL_HTTPAPI = original
-  await Instance.disposeAll()
-||||||| 12f7967ca4
-=======
 import { ExperimentalPaths } from "../../src/server/routes/instance/httpapi/groups/experimental"
 import { Session } from "@/session/session"
 import { Database } from "@/storage/db"
@@ -101,7 +51,6 @@ async function waitReady(directory: string) {
 afterEach(async () => {
   Flag.KILO_EXPERIMENTAL_HTTPAPI = original
   await disposeAllInstances()
->>>>>>> yunqiqiliang/opencode-v7.3.0
   await resetDatabase()
 })
 

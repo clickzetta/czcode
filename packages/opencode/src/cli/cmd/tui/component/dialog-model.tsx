@@ -11,21 +11,7 @@ import { useKeybind } from "../context/keybind"
 import type { Model } from "@kilocode/sdk/v2" // kilocode_change
 import * as fuzzysort from "fuzzysort"
 import { useConnected } from "./use-connected"
-<<<<<<< HEAD
-||||||| 12f7967ca4
-
-export function useConnected() {
-  const sync = useSync()
-  // kilocode_change - exclude "kilo" (anonymous autoload) alongside "opencode"
-  return createMemo(() =>
-    sync.data.provider.some(
-      (x) => (x.id !== "opencode" && x.id !== "kilo") || Object.values(x.models).some((y) => y.cost?.input !== 0),
-    ),
-  )
-}
-=======
 import { ModelInfoPanel } from "@/kilocode/components/model-info-panel" // kilocode_change
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 export function DialogModel(props: { providerID?: string }) {
   const local = useLocal()

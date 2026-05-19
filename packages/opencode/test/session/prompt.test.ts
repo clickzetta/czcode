@@ -1443,15 +1443,7 @@ unix(
   30_000,
 )
 
-<<<<<<< HEAD
-// kilocode_change start - TODO(#8990): flaky on Linux CI
-unixSkip(
-||||||| 12f7967ca4
-// kilocode_change start - TODO(#8990): flaky on Linux CI
-unixSkip(
-=======
 unix(
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "cancel interrupts shell and resolves cleanly",
   () =>
     withSh(() =>

@@ -3,13 +3,7 @@ import * as path from "path"
 import type { KiloClient, Session } from "@kilocode/sdk/v2/client"
 import type { KiloConnectionService } from "../services/cli-backend"
 import { getErrorMessage } from "../kilo-provider-utils"
-<<<<<<< HEAD
-import { resolveLocalDiffTarget } from "../review-utils"
-||||||| 12f7967ca4
-import { resolveLocalDiffTarget } from "../review-utils"
-=======
 import { resolveLocalDiffTarget } from "../diff/shared/target"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { getDiffMarkdownRender, setDiffMarkdownRender } from "../review-settings"
 import { isAbsolutePath } from "../path-utils"
 import { WorktreeManager, type CreateWorktreeResult } from "./WorktreeManager"
@@ -76,11 +70,7 @@ export class AgentManagerProvider implements Disposable {
   private cachedWorktreeStats: { type: "agentManager.worktreeStats"; stats: WorktreeStats[] } | undefined
   private cachedLocalStats: { type: "agentManager.localStats"; stats: LocalStats } | undefined
   private unsubTool: (() => void) | undefined
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   private closing: Promise<void> | undefined
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
   /** Session ID most recently loaded via a `loadMessages` message from the webview.
    *  Updated synchronously — unlike the session provider's currentSession which depends on
@@ -850,9 +840,6 @@ export class AgentManagerProvider implements Disposable {
     await this.stateReady.catch((err) => this.log(`${context}: stateReady rejected, continuing:`, err))
   }
 
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   private shouldWaitForState(m: AgentManagerInMessage): boolean {
     switch (m.type) {
       case "agentManager.deleteWorktree":
@@ -887,7 +874,6 @@ export class AgentManagerProvider implements Disposable {
     }
   }
 
->>>>>>> yunqiqiliang/opencode-v7.3.0
   private onToolEvent(event: unknown, directory?: string): void {
     const properties = (event as { properties?: unknown }).properties
     const req = parseToolRequest(properties)
@@ -1731,16 +1717,12 @@ export class AgentManagerProvider implements Disposable {
   }
 
   public dispose(): void {
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
     void this.shutdown()
   }
 
   private async disposeAsync(): Promise<void> {
     await this.stateReady?.catch((err) => this.log("dispose: stateReady rejected:", err))
     await this.state?.flush().catch((err) => this.log("dispose: state flush failed:", err))
->>>>>>> yunqiqiliang/opencode-v7.3.0
     this.unsubTool?.()
     this.connectionService.unregisterFocused("agent-manager")
     this.connectionService.registerOpen("agent-manager", [])

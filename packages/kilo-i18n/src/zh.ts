@@ -86,10 +86,6 @@ export const dict = {
   "snapshot.slowRepo.answer.disable.description":
     "关闭本项目的 Kilo 快照。你将失去对 Kilo 更改的撤销/重做，但 git 仍会追踪所有内容。",
 
-<<<<<<< HEAD
-  "ui.messagePart.openInDiffViewer": "在差异查看器中打开",
-||||||| 12f7967ca4
-=======
   // Edit-tool header and shell-tool section labels
   "ui.messagePart.openInDiffViewer": "在差异查看器中打开",
   "ui.messagePart.shell.command": "命令",
@@ -100,5 +96,4 @@ export const dict = {
   "ui.message.feedback.helpful": "这有帮助",
   "ui.message.feedback.notHelpful": "这没有帮助",
   "ui.message.feedback.clearRating": "清除评分",
->>>>>>> yunqiqiliang/opencode-v7.3.0
 }

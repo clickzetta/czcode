@@ -8,14 +8,7 @@ import { KiloToolRegistry } from "../../src/kilocode/tool/registry"
 import { ToolRegistry } from "../../src/tool/registry"
 import type * as Tool from "../../src/tool/tool"
 import { Instance } from "../../src/project/instance"
-<<<<<<< HEAD
-import { provideTmpdirInstance } from "../fixture/fixture"
-||||||| 12f7967ca4
-import { provideTmpdirInstance } from "../fixture/fixture"
-import * as CrossSpawnSpawner from "../../src/effect/cross-spawn-spawner"
-=======
 import { disposeAllInstances, provideTmpdirInstance } from "../fixture/fixture"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import * as CrossSpawnSpawner from "@opencode-ai/core/cross-spawn-spawner"
 import { testEffect } from "../lib/effect"
 

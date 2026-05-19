@@ -1,12 +1,6 @@
 export * as ConfigAgent from "./agent"
 
-<<<<<<< HEAD
-||||||| 12f7967ca4
-import { Schema } from "effect"
-import z from "zod"
-=======
 import path from "path" // kilocode_change
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Exit, Schema, SchemaGetter } from "effect"
 import { Bus } from "@/bus"
 import { zod } from "@/util/effect-zod"
@@ -39,17 +33,8 @@ const AgentSchema = Schema.StructWithRest(
     variant: Schema.optional(Schema.String).annotate({
       description: "Default model variant for this agent (applies only when using the agent's configured model).",
     }),
-<<<<<<< HEAD
-    temperature: Schema.optional(Schema.NullOr(Schema.Number)), // kilocode_change - nullable for delete sentinel
-    top_p: Schema.optional(Schema.NullOr(Schema.Number)), // kilocode_change - nullable for delete sentinel
-||||||| 12f7967ca4
-    temperature: Schema.optional(Schema.Number),
-    top_p: Schema.optional(Schema.Number),
-    prompt: Schema.optional(Schema.String),
-=======
     temperature: Schema.optional(Schema.NullOr(Schema.Finite)), // kilocode_change - nullable for delete sentinel
     top_p: Schema.optional(Schema.NullOr(Schema.Finite)), // kilocode_change - nullable for delete sentinel
->>>>>>> yunqiqiliang/opencode-v7.3.0
     prompt: Schema.optional(Schema.NullOr(Schema.String)), // kilocode_change - nullable for delete sentinel
     tools: Schema.optional(Schema.Record(Schema.String, Schema.Boolean)).annotate({
       description: "@deprecated Use 'permission' field instead",
@@ -193,15 +178,7 @@ export async function load(dir: string, warnings?: Warning[]) {
       ...md.data,
       prompt,
     }
-<<<<<<< HEAD
-||||||| 12f7967ca4
-    const parsed = Info.safeParse(config)
-    if (parsed.success) {
-      result[config.name] = parsed.data
-      continue
-=======
     // kilocode_change end
->>>>>>> yunqiqiliang/opencode-v7.3.0
     // kilocode_change start - use Effect schema (propertyOrder: original) + non-fatal handleInvalid
     try {
       result[config.name] = ConfigParse.effectSchema(Info, config, item) as Info

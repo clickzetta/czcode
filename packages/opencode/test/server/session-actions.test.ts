@@ -5,14 +5,7 @@ import { Server } from "../../src/server/server"
 import { Session as SessionNs } from "@/session/session"
 import type { SessionID } from "../../src/session/schema"
 import * as Log from "@opencode-ai/core/util/log"
-<<<<<<< HEAD
-import { tmpdir } from "../fixture/fixture"
-||||||| 12f7967ca4
-import { Log } from "../../src/util"
-import { tmpdir } from "../fixture/fixture"
-=======
 import { disposeAllInstances, tmpdir } from "../fixture/fixture"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 void Log.init({ print: false })
 

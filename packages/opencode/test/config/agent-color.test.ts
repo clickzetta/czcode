@@ -2,16 +2,7 @@ import { test, expect } from "bun:test"
 import { Effect, Layer } from "effect"
 import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
 import path from "path"
-<<<<<<< HEAD
-import { provideInstance, tmpdir } from "../fixture/fixture"
-import { Instance } from "../../src/project/instance"
-||||||| 12f7967ca4
-import { provideInstance, tmpdir } from "../fixture/fixture"
-import { Instance } from "../../src/project/instance"
-import { Config } from "../../src/config"
-=======
 import { provideInstance, tmpdirScoped } from "../fixture/fixture"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Config } from "@/config/config"
 import { Agent as AgentSvc } from "../../src/agent/agent"
 import { Color } from "@/util/color"

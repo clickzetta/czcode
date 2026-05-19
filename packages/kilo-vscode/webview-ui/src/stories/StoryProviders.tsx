@@ -338,87 +338,6 @@ export const StoryProviders: ParentComponent<StoryProvidersProps> = (props) => {
   return (
     <VSCodeProvider>
       <ServerProvider>
-<<<<<<< HEAD
-        <ConfigWrapper config={props.config} onConfigChange={props.onConfigChange}>
-          <DisplayProvider>
-            <MockProviderProvider>
-              <DialogProvider>
-                <LanguageContext.Provider
-                  value={{
-                    locale,
-                    setLocale: noop,
-                    userOverride: () => "" as any,
-                    t,
-                  }}
-                >
-                  <I18nProvider value={{ locale: () => "en", t }}>
-                    <NotificationsContext.Provider value={notifications}>
-                      <SessionContext.Provider value={session as any}>
-                        <IndexingProvider>
-                          <DataProvider data={data()} directory="/project/">
-                            <DiffComponentProvider component={Diff}>
-                              <CodeComponentProvider component={Code}>
-                                <FileComponentProvider component={File}>
-                                  <MarkedProvider>
-                                    {props.noPadding ? (
-                                      props.children
-                                    ) : (
-                                      <div style={{ padding: "12px" }}>{props.children}</div>
-                                    )}
-                                  </MarkedProvider>
-                                </FileComponentProvider>
-                              </CodeComponentProvider>
-                            </DiffComponentProvider>
-                          </DataProvider>
-                        </IndexingProvider>
-                      </SessionContext.Provider>
-                    </NotificationsContext.Provider>
-                  </I18nProvider>
-                </LanguageContext.Provider>
-              </DialogProvider>
-            </MockProviderProvider>
-          </DisplayProvider>
-        </ConfigWrapper>
-||||||| 12f7967ca4
-        <ConfigWrapper config={props.config} onConfigChange={props.onConfigChange}>
-          <MockProviderProvider>
-            <DialogProvider>
-              <LanguageContext.Provider
-                value={{
-                  locale,
-                  setLocale: noop,
-                  userOverride: () => "" as any,
-                  t,
-                }}
-              >
-                <I18nProvider value={{ locale: () => "en", t }}>
-                  <NotificationsContext.Provider value={notifications}>
-                    <SessionContext.Provider value={session as any}>
-                      <IndexingProvider>
-                        <DataProvider data={data()} directory="/project/">
-                          <DiffComponentProvider component={Diff}>
-                            <CodeComponentProvider component={Code}>
-                              <FileComponentProvider component={File}>
-                                <MarkedProvider>
-                                  {props.noPadding ? (
-                                    props.children
-                                  ) : (
-                                    <div style={{ padding: "12px" }}>{props.children}</div>
-                                  )}
-                                </MarkedProvider>
-                              </FileComponentProvider>
-                            </CodeComponentProvider>
-                          </DiffComponentProvider>
-                        </DataProvider>
-                      </IndexingProvider>
-                    </SessionContext.Provider>
-                  </NotificationsContext.Provider>
-                </I18nProvider>
-              </LanguageContext.Provider>
-            </DialogProvider>
-          </MockProviderProvider>
-        </ConfigWrapper>
-=======
         <FeedbackProvider>
           <ConfigWrapper config={props.config} onConfigChange={props.onConfigChange}>
             <DisplayProvider>
@@ -463,7 +382,6 @@ export const StoryProviders: ParentComponent<StoryProvidersProps> = (props) => {
             </DisplayProvider>
           </ConfigWrapper>
         </FeedbackProvider>
->>>>>>> yunqiqiliang/opencode-v7.3.0
       </ServerProvider>
     </VSCodeProvider>
   )

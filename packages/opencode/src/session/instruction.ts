@@ -7,14 +7,7 @@ import { Flag } from "@opencode-ai/core/flag/flag"
 import { AppFileSystem } from "@opencode-ai/core/filesystem"
 import { withTransientReadRetry } from "@/util/effect-http-client"
 import { Global } from "@opencode-ai/core/global"
-<<<<<<< HEAD
-import * as Log from "@opencode-ai/core/util/log"
-||||||| 12f7967ca4
-import { Global } from "../global"
-import { Log } from "../util"
-=======
 import { KilocodeInstruction } from "@/kilocode/session/instruction" // kilocode_change
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import type { MessageV2 } from "./message-v2"
 import type { MessageID } from "./schema"
 

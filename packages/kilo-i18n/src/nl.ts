@@ -93,10 +93,6 @@ export const dict = {
   "snapshot.slowRepo.answer.disable.description":
     "Zet Kilo-snapshots uit voor dit project. Je verliest ongedaan maken/opnieuw doen van Kilo-wijzigingen, maar git blijft alles volgen.",
 
-<<<<<<< HEAD
-  "ui.messagePart.openInDiffViewer": "Openen in diff-viewer",
-||||||| 12f7967ca4
-=======
   // Edit-tool header and shell-tool section labels
   "ui.messagePart.openInDiffViewer": "Openen in Diff-weergave",
   "ui.messagePart.shell.command": "Opdracht",
@@ -107,5 +103,4 @@ export const dict = {
   "ui.message.feedback.helpful": "Dit was nuttig",
   "ui.message.feedback.notHelpful": "Dit was niet nuttig",
   "ui.message.feedback.clearRating": "Beoordeling wissen",
->>>>>>> yunqiqiliang/opencode-v7.3.0
 }

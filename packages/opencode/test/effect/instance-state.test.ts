@@ -1,21 +1,9 @@
-<<<<<<< HEAD
-import { afterEach, expect, test } from "bun:test"
-import { Deferred, Duration, Effect, Exit, Fiber, Layer, ManagedRuntime, Context } from "effect"
-import { InstanceState } from "@/effect/instance-state"
-import { InstanceRef } from "../../src/effect/instance-ref"
-||||||| 12f7967ca4
-import { afterEach, expect, test } from "bun:test"
-import { Deferred, Duration, Effect, Exit, Fiber, Layer, ManagedRuntime, Context } from "effect"
-import { InstanceState } from "../../src/effect"
-import { InstanceRef } from "../../src/effect/instance-ref"
-=======
 import { afterEach, expect } from "bun:test"
 import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
 import { $ } from "bun"
 import { Context, Deferred, Duration, Effect, Exit, Fiber, Layer } from "effect"
 import { InstanceState } from "@/effect/instance-state"
 import { InstanceStore } from "../../src/project/instance-store"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Instance } from "../../src/project/instance"
 import { disposeAllInstances, provideInstance, tmpdirScoped } from "../fixture/fixture"
 import { testEffect } from "../lib/effect"

@@ -12,15 +12,8 @@ import { eq } from "drizzle-orm"
 import { EventTable } from "@/sync/event.sql"
 import { lazy } from "@/util/lazy"
 import * as Log from "@opencode-ai/core/util/log"
-<<<<<<< HEAD
-import { startWorkspaceSyncing } from "@/control-plane/workspace"
-||||||| 12f7967ca4
-import { Log } from "@/util"
-import { startWorkspaceSyncing } from "@/control-plane/workspace"
-=======
 import { Workspace } from "@/control-plane/workspace"
 import { AppRuntime } from "@/effect/app-runtime"
->>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Instance } from "@/project/instance"
 import { errors } from "../../error"
 

@@ -1846,13 +1846,8 @@ export class Session2 extends HeyApiClient {
     parameters?: {
       directory?: string
       workspace?: string
-<<<<<<< HEAD
-||||||| 12f7967ca4
-      roots?: boolean
-=======
       scope?: "project"
       path?: string
->>>>>>> yunqiqiliang/opencode-v7.3.0
       roots?: boolean | "true" | "false"
       start?: number
       search?: string

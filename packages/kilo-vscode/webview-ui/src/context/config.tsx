@@ -231,15 +231,6 @@ export const ConfigProvider: ParentComponent = (props) => {
     // If the write fails, the save bar stays visible so the user can retry.
     setSaving(true)
     setSaveError(null)
-<<<<<<< HEAD
-    // Split so per-project settings (e.g. commit_message.prompt) land in the
-    // workspace's kilo.json instead of the global one. Send one message so the
-    // extension confirms only after both scopes are saved.
-    const split = splitByScope(changes)
-    vscode.postMessage({ type: "updateConfig", config: split.global, projectConfig: split.project })
-||||||| 12f7967ca4
-    vscode.postMessage({ type: "updateConfig", config: changes })
-=======
     if (settingsDirty) {
       for (const [key, value] of Object.entries(pending)) {
         vscode.postMessage({ type: "updateSetting", key, value })
@@ -257,7 +248,6 @@ export const ConfigProvider: ParentComponent = (props) => {
     const split = splitConfigByScope(changes)
     const next = deepMerge(split.global as Config, globals)
     vscode.postMessage({ type: "updateConfig", config: next, projectConfig: split.project })
->>>>>>> yunqiqiliang/opencode-v7.3.0
   }
 
   function discardConfig() {

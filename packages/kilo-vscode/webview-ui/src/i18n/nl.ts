@@ -1071,10 +1071,6 @@ export const dict = {
   "settings.indexing.status.title": "Status",
   "settings.indexing.enable.title": "Indexering inschakelen",
   "settings.indexing.enable.description": "Schakel semantische codebase-indexering in of uit.",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-  "settings.indexing.enable.description": "Schakel semantische codebase-indexering in of uit voor deze werkruimte.",
-=======
   "settings.indexing.globalEnable.title": "Globaal inschakelen",
   "settings.indexing.globalEnable.description": "Indexering inschakelen voor elke werkruimte.",
   "settings.indexing.projectEnable.title": "Inschakelen voor dit project",
@@ -1082,7 +1078,6 @@ export const dict = {
     "Indexering inschakelen voor deze werkruimte wanneer globale indexering is uitgeschakeld.",
   "settings.indexing.projectEnable.disabledTooltip":
     "Globale indexering is ingeschakeld, dus dit project is al opgenomen.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.indexing.provider.title": "Embedding-provider",
   "settings.indexing.provider.description":
     "Kies de provider die wordt gebruikt om embeddings te genereren voor semantisch zoeken.",
@@ -1259,9 +1254,6 @@ export const dict = {
   "settings.experimental.agentManagerTool.title": "Agent Manager-tool",
   "settings.experimental.agentManagerTool.description":
     "Sta agents toe om lokale Agent Manager-sessies en worktree-sessies te starten vanuit een tool call",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.experimental.speechToText.title": "Spraak naar tekst",
   "settings.experimental.speechToText.description":
     "Schakel spraakinvoer in promptvelden in met uw Kilo-account via Kilo Gateway.",
@@ -1269,7 +1261,6 @@ export const dict = {
     "Schakel Kilo provider in en meld u aan om spraakinvoer in promptvelden te gebruiken.",
   "settings.experimental.speechToTextModel.title": "Spraak-naar-tekst-model",
   "settings.experimental.speechToTextModel.description": "Kies het Kilo Gateway-transcriptiemodel voor spraakinvoer.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.experimental.continueOnDeny.title": "Doorgaan bij weigering",
   "settings.experimental.continueOnDeny.description":
     "Ga door met de agent loop wanneer een toestemming wordt geweigerd",
@@ -1440,12 +1431,8 @@ export const dict = {
   "settings.display.layout.description": "Lay-outmodus voor de chatinterface",
   "settings.display.layout.auto": "Auto",
   "settings.display.layout.stretch": "Uitrekken",
-<<<<<<< HEAD
-||||||| 12f7967ca4
-=======
   "settings.display.fontSize.title": "Lettergrootte",
   "settings.display.fontSize.description": "Pas de lettergrootte van de Kilo webview UI onafhankelijk van VS Code aan.",
->>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.display.reasoningAutoCollapse.title": "Redenering automatisch inklappen",
   "settings.display.reasoningAutoCollapse.description":
     "Klapt redeneerblokken in nadat de agent klaar is met schrijven. Laat uitgeschakeld om redenering uitgeklapt te houden, tenzij je die handmatig inklapt.",

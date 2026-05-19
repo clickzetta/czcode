@@ -814,11 +814,6 @@ export interface DiffViewerRevertFileRequest {
   file: string
 }
 
-<<<<<<< HEAD
-export interface DiffViewerCloseRequest {
-  type: "diffViewer.close"
-||||||| 12f7967ca4
-=======
 export interface DiffViewerRequestFileRequest {
   type: "diffViewer.requestFile"
   file: string
@@ -839,7 +834,6 @@ export interface DiffViewerRequestBranchesRequest {
 export interface DiffViewerSetBaseBranchRequest {
   type: "diffViewer.setBaseBranch"
   branch: string | undefined
->>>>>>> yunqiqiliang/opencode-v7.3.0
 }
 
 export interface DiffVirtualSetMarkdownRenderRequest {
@@ -1194,15 +1188,10 @@ export type WebviewMessage =
   | DiffViewerSetDiffStyleRequest
   | DiffViewerSetMarkdownRenderRequest
   | DiffViewerRevertFileRequest
-<<<<<<< HEAD
-  | DiffViewerCloseRequest
-||||||| 12f7967ca4
-=======
   | DiffViewerRequestFileRequest
   | DiffViewerCloseRequest
   | DiffViewerRequestBranchesRequest
   | DiffViewerSetBaseBranchRequest
->>>>>>> yunqiqiliang/opencode-v7.3.0
   | DiffVirtualSetMarkdownRenderRequest
   | RetryConnectionRequest
   | OpenSubAgentViewerRequest
