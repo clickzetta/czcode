@@ -23,9 +23,7 @@ import { Spinner } from "@tui/component/spinner"
 import { selectedForeground, useTheme } from "@tui/context/theme"
 import { BoxRenderable, ScrollBoxRenderable, addDefaultParsers, TextAttributes, RGBA } from "@opentui/core"
 import { Prompt, type PromptRef } from "@tui/component/prompt"
-// kilocode_change start
 import type { AssistantMessage, Part, Provider, ToolPart, UserMessage, TextPart, ReasoningPart } from "@kilocode/sdk/v2"
-// kilocode_change end
 import { useLocal } from "@tui/context/local"
 import { Locale } from "@/util/locale"
 import type { Tool } from "@/tool/tool"
@@ -42,7 +40,7 @@ import type { WebSearchTool } from "@/tool/websearch"
 import type { TaskTool } from "@/tool/task"
 import type { QuestionTool } from "@/tool/question"
 import type { SkillTool } from "@/tool/skill"
-import type { SemanticSearchTool } from "@/kilocode/tool/semantic-search" // kilocode_change
+import type { SemanticSearchTool } from "@/kilocode/tool/semantic-search"
 import { useKeyboard, useRenderer, useTerminalDimensions, type JSX } from "@opentui/solid"
 import { useSDK } from "@tui/context/sdk"
 import { useEditorContext } from "@tui/context/editor"
@@ -54,11 +52,13 @@ import { TodoItem } from "../../component/todo-item"
 import { DialogMessage } from "./dialog-message"
 import type { PromptInfo } from "../../component/prompt/history"
 import { DialogConfirm } from "@tui/ui/dialog-confirm"
-import { KiloErrorBlock } from "@/kilocode/components/kilo-error-display" // kilocode_change
+import { KiloErrorBlock } from "@/kilocode/components/kilo-error-display"
 import { DialogTimeline } from "./dialog-timeline"
 import { DialogForkFromTimeline } from "./dialog-fork-from-timeline"
+// kilocode_change start
 import { Link } from "@tui/ui/link" // czcode_change
 import { t } from "@/kilocode/plugins/czcode-i18n" // czcode_change
+// kilocode_change end
 import { DialogSessionRename } from "../../component/dialog-session-rename"
 import { Sidebar } from "./sidebar"
 import { SubagentFooter } from "./subagent-footer.tsx"
@@ -77,20 +77,20 @@ import { Filesystem } from "@/util/filesystem"
 import { Global } from "@opencode-ai/core/global"
 import { PermissionPrompt } from "./permission"
 import { QuestionPrompt } from "./question"
-import { Suggest } from "@/kilocode/suggestion/tui/render" // kilocode_change
-import { SuggestPrompt } from "@/kilocode/suggestion/tui/prompt" // kilocode_change
-import { NetworkPrompt } from "./network" // kilocode_change
+import { Suggest } from "@/kilocode/suggestion/tui/render"
+import { SuggestPrompt } from "@/kilocode/suggestion/tui/prompt"
+import { NetworkPrompt } from "./network"
 import { DialogExportOptions } from "../../ui/dialog-export-options"
 import * as Model from "../../util/model"
 import { formatTranscript } from "../../util/transcript"
 import { UI } from "@/cli/ui.ts"
 import { useTuiConfig } from "../../context/tui-config"
-import { splitDiffHunks } from "@/kilocode/tui/diff" // kilocode_change
+import { splitDiffHunks } from "@/kilocode/tui/diff"
 
-import { formatMarkdownTables } from "../../util/markdown" // kilocode_change
-import { bell } from "@/kilocode/bell" // kilocode_change
-import { SessionIndexing } from "@/kilocode/components/session-indexing" // kilocode_change
-import { submitFeedback } from "@/kilocode/cli/cmd/tui/feedback" // kilocode_change
+import { formatMarkdownTables } from "../../util/markdown"
+import { bell } from "@/kilocode/bell"
+import { SessionIndexing } from "@/kilocode/components/session-indexing"
+import { submitFeedback } from "@/kilocode/cli/cmd/tui/feedback"
 import { getScrollAcceleration } from "../../util/scroll"
 import { TuiPluginRuntime } from "@/cli/cmd/tui/plugin/runtime"
 import { DialogGoUpsell } from "../../component/dialog-go-upsell"
@@ -99,6 +99,7 @@ import { getRevertDiffFiles } from "../../util/revert-diff"
 
 addDefaultParsers(parsers.parsers)
 
+// kilocode_change start
 // czcode_change start
 function buildSkillReportUrl(skillName: string, sql: string, errorMsg: string): string {
   const title = encodeURIComponent(t("skillReport.issueTitle", { skillName }))
@@ -128,6 +129,7 @@ function buildSkillReportUrl(skillName: string, sql: string, errorMsg: string): 
   return `https://github.com/clickzetta/clickzetta-skills/issues/new?title=${title}&body=${body}`
 }
 // czcode_change end
+// kilocode_change end
 
 const GO_UPSELL_LAST_SEEN_AT = "go_upsell_last_seen_at"
 const GO_UPSELL_DONT_SHOW = "go_upsell_dont_show"
@@ -179,7 +181,6 @@ export function Session() {
     if (session()?.parentID) return []
     return children().flatMap((x) => sync.data.question[x.id] ?? [])
   })
-  // kilocode_change start
   const suggestions = createMemo(() => {
     if (session()?.parentID) return []
     return children().flatMap((x) => sync.data.suggestion[x.id] ?? [])
@@ -192,10 +193,8 @@ export function Session() {
   const nonBlockingQuestions = createMemo(() => questions().filter((q) => q.blocking === false))
   const question = createMemo(() => blockingQuestions()[0] ?? nonBlockingQuestions()[0])
   const blockingSuggestions = createMemo(() => suggestions().filter((s) => s.blocking !== false))
-  // kilocode_change start - footer overlay only hosts blocking suggestions now;
   // non-blocking ones render inline at the tool-part slot via `SuggestBar`.
   const blockingSuggestion = createMemo(() => blockingSuggestions()[0])
-  // kilocode_change end
   const visible = createMemo(
     () =>
       !session()?.parentID &&
@@ -226,9 +225,7 @@ export function Session() {
   const lastAssistant = createMemo(() => {
     return messages().findLast((x) => x.role === "assistant")
   })
-  // kilocode_change end
 
-  // kilocode_change start - ring terminal bell on task completion
   createEffect(
     on(
       () => [route.sessionID, sync.data.session_status?.[route.sessionID]?.type] as const,
@@ -238,9 +235,7 @@ export function Session() {
       },
     ),
   )
-  // kilocode_change end
 
-  // kilocode_change start - ring terminal bell when input is needed
   createEffect(
     on(
       () => [route.sessionID, permissions().length] as const,
@@ -261,14 +256,13 @@ export function Session() {
   )
   createEffect(
     on(
-      () => [route.sessionID, suggestions().length + network().length] as const, // kilocode_change
+      () => [route.sessionID, suggestions().length + network().length] as const,
       ([id, len], prev) => {
         if (!prev || prev[0] !== id) return
         if (len > prev[1] && bellEnabled()) bell()
       },
     ),
   )
-  // kilocode_change end
 
   const dimensions = useTerminalDimensions()
   const [sidebar, setSidebar] = kv.signal<"auto" | "hide">("sidebar", "auto")
@@ -281,7 +275,7 @@ export function Session() {
   const [showScrollbar, setShowScrollbar] = kv.signal("scrollbar_visible", false)
   const [diffWrapMode] = kv.signal<"word" | "none">("diff_wrap_mode", "word")
   const [_animationsEnabled, _setAnimationsEnabled] = kv.signal("animations_enabled", true)
-  const [bellEnabled, _setBellEnabled] = kv.signal("bell_enabled", true) // kilocode_change - terminal bell toggle (toggled via kv.set in app.tsx command)
+  const [bellEnabled, _setBellEnabled] = kv.signal("bell_enabled", true)
   const [showGenericToolOutput, setShowGenericToolOutput] = kv.signal("generic_tool_output_visibility", false)
 
   const wide = createMemo(() => dimensions().width > 120)
@@ -348,7 +342,6 @@ export function Session() {
     if (part.state.status !== "completed") return
     if (part.id === lastSwitch) return
 
-    // kilocode_change - plan_exit no longer switches agent; PlanFollowup handles it
     if (part.tool === "plan_enter") {
       local.agent.set("plan")
       lastSwitch = part.id
@@ -404,7 +397,6 @@ export function Session() {
     // kilocode_change end
   })
 
-  // kilocode_change start - double ctrl+c to exit for child sessions
   const [exitPress, setExitPress] = createSignal(0)
   useKeyboard((evt) => {
     if (!session()?.parentID) return
@@ -419,7 +411,6 @@ export function Session() {
       exit()
     }
   })
-  // kilocode_change end
 
   // Helper: Find next visible message boundary in direction
   const findNextVisibleMessage = (direction: "next" | "prev"): string | null => {
@@ -985,7 +976,6 @@ export function Session() {
         dialog.clear()
       },
     },
-    // kilocode_change start - message feedback
     {
       title: "Rate last assistant message helpful",
       value: "messages.feedback.up",
@@ -1000,7 +990,6 @@ export function Session() {
       category: "Session",
       onSelect: (dialog) => submitFeedback("down", dialog, { toast, session, messages }),
     },
-    // kilocode_change end
     {
       title: "Copy session transcript",
       value: "session.copy",
@@ -1214,13 +1203,11 @@ export function Session() {
               scrollAcceleration={scrollAcceleration()}
             >
               <box height={1} />
-              {/* kilocode_change start */}
               <Show when={session()?.parentID && messages().length === 0}>
                 <box paddingLeft={3}>
                   <text fg={theme.textMuted}>↳ Initializing...</text>
                 </box>
               </Show>
-              {/* kilocode_change end */}
               <For each={messages()}>
                 {(message, index) => (
                   <Switch>
@@ -1321,7 +1308,6 @@ export function Session() {
               <Show when={permissions().length > 0}>
                 <PermissionPrompt request={permissions()[0]} />
               </Show>
-              {/* kilocode_change start */}
               <Show when={permissions().length === 0 && question()} keyed>
                 {(request) => (
                   <QuestionPrompt
@@ -1332,8 +1318,6 @@ export function Session() {
                 )}
               </Show>
               <Show when={permissions().length === 0 && !question()}>
-                {/* kilocode_change end */}
-                {/* kilocode_change start */}
                 <Show when={blockingSuggestion()} keyed>
                   {(request) => <SuggestPrompt request={request} />}
                 </Show>
@@ -1341,13 +1325,9 @@ export function Session() {
               <Show when={session()?.parentID}>
                 <SubagentFooter />
               </Show>
-              {/* kilocode_change end */}
-              {/* kilocode_change start */}
               <Show when={networkVisible()}>
                 <NetworkPrompt request={network()[0]} />
               </Show>
-              {/* kilocode_change end */}
-              {/* kilocode_change start */}
               <Show when={!session()?.parentID}>
                 <TuiPluginRuntime.Slot
                   name="session_prompt"
@@ -1370,12 +1350,9 @@ export function Session() {
                   />
                 </TuiPluginRuntime.Slot>
               </Show>
-              {/* kilocode_change end */}
             </box>
           </Show>
-          {/* kilocode_change start */}
           <SessionIndexing />
-          {/* kilocode_change end */}
           <Toast />
         </box>
         <Show when={sidebarVisible()}>
@@ -1567,7 +1544,6 @@ function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; las
         </box>
       </Show>
       <Show when={props.message.error && props.message.error.name !== "MessageAbortedError"}>
-        {/* kilocode_change start - Kilo-specific error display */}
         <KiloErrorBlock
           error={props.message.error!}
           fallback={
@@ -1585,7 +1561,6 @@ function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; las
             </box>
           }
         />
-        {/* kilocode_change end */}
       </Show>
       <Switch>
         <Match when={props.last || final() || props.message.error?.name === "MessageAbortedError"}>
@@ -1659,9 +1634,7 @@ function ReasoningPart(props: { last: boolean; part: ReasoningPart; message: Ass
 function TextPart(props: { last: boolean; part: TextPart; message: AssistantMessage }) {
   const ctx = use()
   const { theme, syntax } = useTheme()
-  // kilocode_change start - format markdown tables with fixed-width columns
   const content = createMemo(() => formatMarkdownTables(props.part.text.trim()))
-  // kilocode_change end
   return (
     <Show when={props.part.text.trim()}>
       <box id={"text-" + props.part.id} paddingLeft={3} marginTop={1} flexShrink={0}>
@@ -1744,11 +1717,9 @@ function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMess
         <Match when={props.part.tool === "grep"}>
           <Grep {...toolprops} />
         </Match>
-        {/* kilocode_change start */}
         <Match when={props.part.tool === "semantic_search"}>
           <SemanticSearch {...toolprops} />
         </Match>
-        {/* kilocode_change end */}
         <Match when={props.part.tool === "webfetch"}>
           <WebFetch {...toolprops} />
         </Match>
@@ -1773,7 +1744,6 @@ function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMess
         <Match when={props.part.tool === "question"}>
           <Question {...toolprops} />
         </Match>
-        {/* kilocode_change start */}
         <Match when={props.part.tool === "suggest"}>
           {(() => {
             const pending = createMemo(() => {
@@ -1788,7 +1758,6 @@ function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMess
             return <Suggest {...toolprops} InlineTool={InlineTool} BlockTool={BlockTool} pendingRequest={pending()} />
           })()}
         </Match>
-        {/* kilocode_change end */}
         <Match when={props.part.tool === "skill"}>
           <Skill {...toolprops} />
         </Match>
@@ -1823,7 +1792,9 @@ function GenericTool(props: ToolProps<any>) {
 
   return (
     <Show
+      /* kilocode_change start */
       when={props.output && (ctx.showGenericToolOutput() || props.metadata?.skillName)} // czcode_change: always show if skill error
+      /* kilocode_change end */
       fallback={
         <InlineTool icon="⚙" pending="Writing command..." complete={true} part={props.part}>
           {props.tool} {input(props.input)}
@@ -1840,6 +1811,7 @@ function GenericTool(props: ToolProps<any>) {
           <Show when={overflow()}>
             <text fg={theme.textMuted}>{expanded() ? "Click to collapse" : "Click to expand"}</text>
           </Show>
+          {/* kilocode_change start */}
           {/* czcode_change start */}
           <Show when={props.metadata?.skillName as string | undefined}>
             {(skillName) => {
@@ -1856,6 +1828,7 @@ function GenericTool(props: ToolProps<any>) {
             }}
           </Show>
           {/* czcode_change end */}
+          {/* kilocode_change end */}
         </box>
       </BlockTool>
     </Show>
@@ -2173,7 +2146,6 @@ function WebSearch(props: ToolProps<typeof WebSearchTool>) {
   )
 }
 
-// kilocode_change start
 function SemanticSearch(props: ToolProps<typeof SemanticSearchTool>) {
   const meta = createMemo(() => props.metadata as { results?: { length: number }[] })
   const args = createMemo(() => props.input as { query?: string; path?: string })
@@ -2188,7 +2160,6 @@ function SemanticSearch(props: ToolProps<typeof SemanticSearchTool>) {
     </InlineTool>
   )
 }
-// kilocode_change end
 
 function Task(props: ToolProps<typeof TaskTool>) {
   const { navigate } = useRoute()
@@ -2226,7 +2197,6 @@ function Task(props: ToolProps<typeof TaskTool>) {
     if (!props.input.description) return ""
     let content = [`${Locale.titlecase(props.input.subagent_type ?? "General")} Task — ${props.input.description}`]
 
-    // kilocode_change start
     if (isRunning()) {
       if (tools().length === 0) {
         content.push(`↳ Starting...`)
@@ -2238,7 +2208,6 @@ function Task(props: ToolProps<typeof TaskTool>) {
         content.push(`↳ ${tools().length} toolcalls`)
       }
     }
-    // kilocode_change end
 
     if (props.part.state.status === "completed") {
       content.push(`└ ${tools().length} toolcalls · ${Locale.duration(duration())}`)
@@ -2279,13 +2248,12 @@ function Edit(props: ToolProps<typeof EditTool>) {
   const ft = createMemo(() => filetype(props.input.filePath))
 
   const diffContent = createMemo(() => props.metadata.diff)
-  const hunks = createMemo(() => splitDiffHunks(diffContent() ?? "")) // kilocode_change
+  const hunks = createMemo(() => splitDiffHunks(diffContent() ?? ""))
 
   return (
     <Switch>
       <Match when={props.metadata.diff !== undefined}>
         <BlockTool title={"← Edit " + normalizePath(props.input.filePath!)} part={props.part}>
-          {/* kilocode_change start */}
           <box paddingLeft={1} flexDirection="column">
             <For each={hunks()}>
               {(hunk, i) => (
@@ -2318,7 +2286,6 @@ function Edit(props: ToolProps<typeof EditTool>) {
               )}
             </For>
           </box>
-          {/* kilocode_change end */}
           <Diagnostics diagnostics={props.metadata.diagnostics} filePath={props.input.filePath ?? ""} />
         </BlockTool>
       </Match>
@@ -2344,7 +2311,6 @@ function ApplyPatch(props: ToolProps<typeof ApplyPatchTool>) {
   })
 
   function Diff(p: { diff: string; filePath: string }) {
-    // kilocode_change start
     const hunks = createMemo(() => splitDiffHunks(p.diff))
     return (
       <box paddingLeft={1} flexDirection="column">
@@ -2380,7 +2346,6 @@ function ApplyPatch(props: ToolProps<typeof ApplyPatchTool>) {
         </For>
       </box>
     )
-    // kilocode_change end
   }
 
   function title(file: { type: string; relativePath: string; filePath: string; deletions: number }) {

@@ -21,7 +21,7 @@ export class ServerAuthConfig extends ConfigService.Service<ServerAuthConfig>()(
   "@opencode/ExperimentalHttpApiServerAuthConfig",
   {
     password: Config.string("KILO_SERVER_PASSWORD").pipe(Config.option),
-    username: Config.string("KILO_SERVER_USERNAME").pipe(Config.withDefault("kilo")), // kilocode_change
+    username: Config.string("KILO_SERVER_USERNAME").pipe(Config.withDefault("kilo")),
   },
 ) {}
 

@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm"
 import { ProjectTable } from "./project.sql"
 import { SessionTable } from "../session/session.sql"
 import * as Log from "@opencode-ai/core/util/log"
-import { makeRuntime } from "@/effect/run-service" // kilocode_change
+import { makeRuntime } from "@/effect/run-service"
 import { Flag } from "@opencode-ai/core/flag/flag"
 import { BusEvent } from "@/bus/bus-event"
 import { GlobalBus } from "@/bus/global"
@@ -247,7 +247,7 @@ export const layer: Layer.Layer<
 
           id = roots[0] ? ProjectID.make(roots[0]) : undefined
           if (id) {
-            yield* fs.writeFileString(pathSvc.join(common, "kilo"), id).pipe(Effect.ignore) // kilocode_change
+            yield* fs.writeFileString(pathSvc.join(common, "kilo"), id).pipe(Effect.ignore)
           }
         }
 
@@ -513,10 +513,8 @@ export function setInitialized(id: ProjectID) {
   )
 }
 
-// kilocode_change start - legacy promise helpers for Kilo callsites
 const { runPromise } = makeRuntime(Service, defaultLayer)
 export const fromDirectory = (directory: string) => runPromise((svc) => svc.fromDirectory(directory))
 export const sandboxes = (id: ProjectID) => runPromise((svc) => svc.sandboxes(id))
-// kilocode_change end
 
 export * as Project from "./project"

@@ -72,7 +72,7 @@ describe("plugin.workspace", () => {
             path.join(dir, "opencode.json"),
             JSON.stringify(
               {
-                $schema: "https://opencode.ai/config.json",
+                $schema: "https://opencode.ai/config.json", // kilocode_change
                 plugin: [pathToFileURL(file).href],
               },
               null,

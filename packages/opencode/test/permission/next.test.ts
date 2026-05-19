@@ -1,11 +1,11 @@
-import { afterAll, afterEach, test, expect } from "bun:test" // kilocode_change
-import fs from "fs/promises" // kilocode_change
+import { afterAll, afterEach, test, expect } from "bun:test"
+import fs from "fs/promises"
 import os from "os"
-import path from "path" // kilocode_change
+import path from "path"
 import { Cause, Effect, Exit, Fiber, Layer } from "effect"
 import { Bus } from "../../src/bus"
-import { Config } from "../../src/config/config" // kilocode_change
-import { Global } from "@opencode-ai/core/global" // kilocode_change
+import { Config } from "../../src/config/config"
+import { Global } from "@opencode-ai/core/global"
 import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
 import { Permission } from "../../src/permission"
 import { PermissionID } from "../../src/permission/schema"
@@ -23,7 +23,6 @@ afterEach(async () => {
   await disposeAllInstances()
 })
 
-// kilocode_change start
 afterAll(async () => {
   const dir = Global.Path.config
   for (const file of ["kilo.jsonc", "kilo.json", "config.json", "opencode.json", "opencode.jsonc"]) {
@@ -31,7 +30,6 @@ afterAll(async () => {
   }
   await Config.invalidate(true)
 })
-// kilocode_change end
 
 const rejectAll = (message?: string) =>
   Effect.gen(function* () {
@@ -805,7 +803,6 @@ it.live("reply - always persists approval and resolves", () =>
   }),
 )
 
-// kilocode_change start - session-scoped allowEverything enable
 it.live("allowEverything - session-scoped enable stays within one session", () =>
   withDir({ git: true }, () =>
     Effect.gen(function* () {
@@ -864,7 +861,6 @@ it.live("allowEverything - session-scoped enable stays within one session", () =
     }),
   ),
 )
-// kilocode_change end
 
 it.live("reply - reject cancels all pending for same session", () =>
   withDir({ git: true }, () =>
@@ -934,7 +930,6 @@ it.live("reply - always resolves matching pending requests in same session", () 
   ),
 )
 
-// kilocode_change start
 it.live("reply - always resolves matching pending requests from other sessions", () =>
   withDir({ git: true }, () =>
     Effect.gen(function* () {
@@ -1002,7 +997,6 @@ it.live("reply - always does not resolve dangerous variants from other sessions"
     }),
   ),
 )
-// kilocode_change end
 
 it.live("reply - publishes replied event", () =>
   withDir({ git: true }, () =>
@@ -1081,7 +1075,6 @@ it.live("permission requests stay isolated by directory", () =>
     const onePending = yield* waitForPending(1).pipe(runOne)
     const twoPending = yield* waitForPending(1).pipe(runTwo)
 
-    // kilocode_change start
     expect(onePending).toHaveLength(1)
     expect(twoPending).toHaveLength(1)
     expect(onePending[0].id).toBe(PermissionID.make("per_dir_a"))
@@ -1092,7 +1085,6 @@ it.live("permission requests stay isolated by directory", () =>
 
     yield* Fiber.await(a)
     yield* Fiber.await(b)
-    // kilocode_change end
   }),
 )
 
@@ -1144,7 +1136,6 @@ it.live("pending permission rejects on instance reload", () =>
   }),
 )
 
-// kilocode_change start
 it.live("reply - returns false for unknown requestID", () =>
   withDir({ git: true }, () =>
     Effect.gen(function* () {
@@ -1154,7 +1145,6 @@ it.live("reply - returns false for unknown requestID", () =>
     }),
   ),
 )
-// kilocode_change end
 
 it.live("ask - checks all patterns and stops on first deny", () =>
   withDir({ git: true }, () =>

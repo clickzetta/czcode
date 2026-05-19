@@ -60,7 +60,6 @@ export const layer: Layer.Layer<Service, never, Project.Service> = Layer.effect(
                 })),
               )
         if (input.init) {
-          // kilocode_change - run init inside the Instance ALS so KilocodeBootstrap
           // (and anything it forks via Effect.forkDetach) sees Instance.directory.
           const ready = input.init.pipe(Effect.provideService(InstanceRef, ctx)) as Effect.Effect<void>
           yield* Effect.promise(() => instanceContext.provide(ctx, () => Effect.runPromise(ready)))

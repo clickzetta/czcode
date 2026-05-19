@@ -221,7 +221,7 @@ describe("HttpApi workspace routing middleware", () => {
       const project = yield* Project.use.fromDirectory(dir)
       let forwarded: ProxiedRequest | undefined
 
-      // This starts a second HTTP server that stands in for the opencode server
+      // This starts a second HTTP server that stands in for the opencode server // kilocode_change
       // backing a remote workspace. The client below still calls the local test
       // server; only the middleware should call this server.
       const remoteUrl = yield* startRemoteWorkspaceHttpServer((request) => {

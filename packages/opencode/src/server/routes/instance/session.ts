@@ -46,7 +46,7 @@ export const SessionRoutes = lazy(() =>
       "/",
       describeRoute({
         summary: "List sessions",
-        description: "Get a list of all OpenCode sessions, sorted by most recently updated.",
+        description: "Get a list of all OpenCode sessions, sorted by most recently updated.", // kilocode_change
         operationId: "session.list",
         responses: {
           200: {
@@ -124,7 +124,7 @@ export const SessionRoutes = lazy(() =>
       "/:sessionID",
       describeRoute({
         summary: "Get session",
-        description: "Retrieve detailed information about a specific OpenCode session.",
+        description: "Retrieve detailed information about a specific OpenCode session.", // kilocode_change
         tags: ["Session"],
         operationId: "session.get",
         responses: {
@@ -222,7 +222,7 @@ export const SessionRoutes = lazy(() =>
       "/",
       describeRoute({
         summary: "Create session",
-        description: "Create a new OpenCode session for interacting with AI assistants and managing conversations.",
+        description: "Create a new OpenCode session for interacting with AI assistants and managing conversations.", // kilocode_change
         operationId: "session.create",
         responses: {
           ...errors(400),
@@ -1123,7 +1123,6 @@ export const SessionRoutes = lazy(() =>
     )
     .post(
       "/viewed",
-      // kilocode_change start
       describeRoute({
         summary: "Set viewed sessions",
         description: "Notify the server which sessions the user is currently viewing, or clear all.",
@@ -1146,7 +1145,6 @@ export const SessionRoutes = lazy(() =>
         const { KiloSessions } = await import("@/kilo-sessions/kilo-sessions")
         const body = c.req.valid("json")
         KiloSessions.setViewedSessions({ focused: body.focused ?? [], open: body.open ?? [] })
-        // kilocode_change end
         return c.json(true)
       },
     ),

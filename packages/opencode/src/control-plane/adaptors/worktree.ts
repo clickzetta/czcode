@@ -1,3 +1,4 @@
+// kilocode_change - new file
 import { Schema } from "effect"
 import { AppRuntime } from "@/effect/app-runtime"
 import { Worktree } from "@/worktree"

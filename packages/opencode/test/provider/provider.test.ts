@@ -15,7 +15,7 @@ import { Env } from "../../src/env"
 import { Effect } from "effect"
 import { AppRuntime } from "../../src/effect/app-runtime"
 import { makeRuntime } from "../../src/effect/run-service"
-import { Auth } from "../../src/auth" // kilocode_change
+import { Auth } from "../../src/auth"
 
 const env = makeRuntime(Env.Service, Env.defaultLayer)
 const set = (k: string, v: string) => env.runSync((svc) => svc.set(k, v))
@@ -57,7 +57,6 @@ async function defaultModel() {
   return run((provider) => provider.defaultModel())
 }
 
-// kilocode_change start - upstream #24416 fixture adapted for @kilocode/plugin
 async function markPluginDependenciesReady(dir: string) {
   await mkdir(path.join(dir, "node_modules"), { recursive: true })
   await Bun.write(
@@ -65,11 +64,10 @@ async function markPluginDependenciesReady(dir: string) {
     JSON.stringify({ packages: { "": { dependencies: { "@kilocode/plugin": "0.0.0" } } } }),
   )
 }
-// kilocode_change end
 
 function paid(providers: Awaited<ReturnType<typeof list>>) {
   const item = providers[ProviderID.make("opencode")]
-  if (!item) return 0 // kilocode_change - Kilo drops opencode provider without apiKey/auth
+  if (!item) return 0
   return Object.values(item.models).filter((model) => model.cost.input > 0).length
 }
 
@@ -100,7 +98,6 @@ test("provider loaded from env variable", async () => {
   })
 })
 
-// kilocode_change start
 test("provider OAuth auth overrides inherited env variable", async () => {
   await Auth.remove("openai")
   await Auth.set("openai", {
@@ -142,7 +139,6 @@ test("provider OAuth auth overrides inherited env variable", async () => {
     await Auth.remove("openai")
   }
 })
-// kilocode_change end
 
 test("provider loaded from config with apiKey option", async () => {
   await using tmp = await tmpdir({
@@ -366,7 +362,7 @@ test("custom DeepSeek openai-compatible model defaults interleaved reasoning fie
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "https://opencode.ai/config.json", // kilocode_change
           provider: {
             "custom-provider": {
               name: "Custom Provider",
@@ -2407,7 +2403,7 @@ test("Google Vertex: retains baseURL for custom proxy", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "https://opencode.ai/config.json", // kilocode_change
           provider: {
             "vertex-proxy": {
               name: "Vertex Proxy",
@@ -2451,7 +2447,7 @@ test("Google Vertex: supports OpenAI compatible models", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "https://opencode.ai/config.json", // kilocode_change
           provider: {
             "vertex-openai": {
               name: "Vertex OpenAI",
@@ -2498,7 +2494,7 @@ test("cloudflare-ai-gateway loads with env variables", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "https://opencode.ai/config.json", // kilocode_change
         }),
       )
     },
@@ -2523,7 +2519,7 @@ test("cloudflare-ai-gateway forwards config metadata options", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "https://opencode.ai/config.json", // kilocode_change
           provider: {
             "cloudflare-ai-gateway": {
               options: {
@@ -2556,13 +2552,11 @@ test("cloudflare-ai-gateway forwards config metadata options", async () => {
 test("plugin config providers persist after instance dispose", async () => {
   await using tmp = await tmpdir({
     init: async (dir) => {
-      // kilocode_change start - upstream #24416 avoids real plugin dependency installs
       const configDir = path.join(dir, ".opencode")
       const root = path.join(configDir, "plugin")
       await mkdir(root, { recursive: true })
       await markPluginDependenciesReady(configDir)
       await markPluginDependenciesReady(Global.Path.config)
-      // kilocode_change end
       await Bun.write(
         path.join(root, "demo-provider.ts"),
         [
@@ -2607,12 +2601,10 @@ test("plugin config providers persist after instance dispose", async () => {
   expect(first[ProviderID.make("demo")]).toBeDefined()
   expect(first[ProviderID.make("demo")].models[ModelID.make("chat")]).toBeDefined()
 
-  // kilocode_change start
   await Instance.provide({
     directory: tmp.path,
     fn: () => InstanceStore.disposeInstance(Instance.current),
   })
-  // kilocode_change end
 
   const second = await Instance.provide({
     directory: tmp.path,
@@ -2665,7 +2657,7 @@ test("opencode loader keeps paid models when config apiKey is present", async ()
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "https://opencode.ai/config.json", // kilocode_change
         }),
       )
     },
@@ -2681,7 +2673,7 @@ test("opencode loader keeps paid models when config apiKey is present", async ()
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "https://opencode.ai/config.json", // kilocode_change
           provider: {
             opencode: {
               options: {
@@ -2709,7 +2701,7 @@ test("opencode loader keeps paid models when auth exists", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "https://opencode.ai/config.json", // kilocode_change
         }),
       )
     },
@@ -2725,7 +2717,7 @@ test("opencode loader keeps paid models when auth exists", async () => {
       await Bun.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "https://opencode.ai/config.json", // kilocode_change
         }),
       )
     },

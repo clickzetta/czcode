@@ -221,7 +221,6 @@ describe("HttpApi server", () => {
     expect(Server.backend()).toEqual({ backend: "effect-httpapi", reason: "env" })
   })
 
-  // kilocode_change start - skip Effect HttpApi parity tests until Kilo overlay routes are migrated.
   // These tests verify every Hono route has an Effect HttpApi contract. Kilo-specific routes
   // (/config/warnings, /indexing/status, /kilo/claw/*, /kilo/cloud-sessions, /experimental/worktree/diff*)
   // aren't yet wired into PublicApi. The Effect HttpApi bridge is gated behind KILO_EXPERIMENTAL_HTTPAPI
@@ -256,7 +255,6 @@ describe("HttpApi server", () => {
         .map((route) => ({ route, hono: hono[route], effect: effect[route] })),
     ).toEqual([])
   })
-  // kilocode_change end
 
   test("matches SDK-affecting query parameter schemas", async () => {
     const effect = effectOpenApi()
@@ -341,13 +339,13 @@ describe("HttpApi server", () => {
       }),
       app({ password: "secret" }).request(fileUrl(), {
         headers: {
-          authorization: authorization("kilo", "wrong"), // kilocode_change - match Hono username default
+          authorization: authorization("kilo", "wrong"),
           "x-kilo-directory": tmp.path,
         },
       }),
       app({ password: "secret" }).request(fileUrl(), {
         headers: {
-          authorization: authorization("kilo", "secret"), // kilocode_change - match Hono username default
+          authorization: authorization("kilo", "secret"),
           "x-kilo-directory": tmp.path,
         },
       }),
@@ -363,7 +361,7 @@ describe("HttpApi server", () => {
     await Bun.write(`${tmp.path}/hello.txt`, "hello")
 
     const response = await app({ password: "secret" }).request(
-      fileUrl({ token: Buffer.from("kilo:secret").toString("base64") }), // kilocode_change - match Hono username default
+      fileUrl({ token: Buffer.from("kilo:secret").toString("base64") }),
       {
         headers: {
           "x-kilo-directory": tmp.path,

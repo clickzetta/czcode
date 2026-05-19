@@ -3,7 +3,7 @@ import { ChildProcess, ChildProcessSpawner } from "effect/unstable/process"
 import { formatPatch, structuredPatch } from "diff"
 import path from "path"
 import z from "zod"
-import { makeRuntime } from "@/effect/run-service" // kilocode_change
+import { makeRuntime } from "@/effect/run-service"
 import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
 import { InstanceState } from "@/effect/instance-state"
 import { AppFileSystem } from "@opencode-ai/core/filesystem"
@@ -11,10 +11,10 @@ import { Hash } from "@opencode-ai/core/util/hash"
 import { Config } from "@/config/config"
 import { Global } from "@opencode-ai/core/global"
 import * as Log from "@opencode-ai/core/util/log"
-import { Flag } from "@opencode-ai/core/flag/flag" // kilocode_change
-import { DiffFull } from "../kilocode/snapshot/diff-full" // kilocode_change
-import { KiloSnapshotTrack } from "../kilocode/snapshot/track" // kilocode_change
-import type { MessageID, SessionID } from "../session/schema" // kilocode_change
+import { Flag } from "@opencode-ai/core/flag/flag"
+import { DiffFull } from "../kilocode/snapshot/diff-full"
+import { KiloSnapshotTrack } from "../kilocode/snapshot/track"
+import type { MessageID, SessionID } from "../session/schema"
 import { NonNegativeInt, withStatics } from "@/util/schema"
 import { zod } from "@/util/effect-zod"
 
@@ -35,12 +35,10 @@ export const FileDiff = Schema.Struct({
   .pipe(withStatics((s) => ({ zod: zod(s) })))
 export type FileDiff = typeof FileDiff.Type
 
-// kilocode_change start - lightweight FileDiff without `patch` for session.summary.diffs (keeps DB payload small)
 export const SummaryFileDiff = FileDiff.mapFields(Struct.omit(["patch"]))
   .annotate({ identifier: "SnapshotSummaryFileDiff" })
   .pipe(withStatics((s) => ({ zod: zod(s) })))
 export type SummaryFileDiff = typeof SummaryFileDiff.Type
-// kilocode_change end
 
 const log = Log.create({ service: "snapshot" })
 const prune = "7.days"
@@ -54,21 +52,17 @@ interface GitResult {
   readonly stderr: string
 }
 
-// kilocode_change start
 export const MAX_DIFF_SIZE = 256 * 1024
 const cache = new Map<string, Promise<FileDiff[]>>()
 const max = 100
-// kilocode_change end
 
 type State = Omit<Interface, "init">
 
 export interface Interface {
   readonly init: () => Effect.Effect<void>
   readonly cleanup: () => Effect.Effect<void>
-  // kilocode_change start - accept optional sessionID/messageID so the slow-repo prompt can target
   // a client and the in-message "initializing snapshot" indicator can attach to the live turn
   readonly track: (opts?: { sessionID?: SessionID; messageID?: MessageID }) => Effect.Effect<string | undefined>
-  // kilocode_change end
   readonly patch: (hash: string) => Effect.Effect<Patch>
   readonly restore: (snapshot: string) => Effect.Effect<void>
   readonly revert: (patches: Patch[]) => Effect.Effect<void>
@@ -202,9 +196,7 @@ export const layer: Layer.Layer<
 
         const enabled = Effect.fnUntraced(function* () {
           if (state.vcs !== "git") return false
-          // kilocode_change start - ACP guard: disable snapshots for ACP clients
           if (Flag.KILO_CLIENT === "acp") return false
-          // kilocode_change end
           return (yield* config.get()).snapshot !== false
         })
 
@@ -727,7 +719,6 @@ export const layer: Layer.Layer<
               const patch = (file: string, before: string, after: string) =>
                 formatPatch(structuredPatch(file, file, before, after, "", "", { context: Number.MAX_SAFE_INTEGER }))
 
-              // kilocode_change start — route patches through git (DiffFull.batch) instead of the
               // JS Myers implementation. Upstream Myers loop below is kept as dead code so our
               // diff from upstream stays minimal and future merges don't conflict.
               for (let i = 0; i < rows.length; i += step) {
@@ -749,7 +740,6 @@ export const layer: Layer.Layer<
                 }
               }
               return result
-              // kilocode_change end
 
               for (let i = 0; i < rows.length; i += step) {
                 const run = rows.slice(i, i + step)
@@ -787,9 +777,7 @@ export const layer: Layer.Layer<
       }),
     )
 
-    // kilocode_change start - per-instance state for the slow-repo track wrapper
     const trackState = KiloSnapshotTrack.makeState()
-    // kilocode_change end
 
     return Service.of({
       init: Effect.fn("Snapshot.init")(function* () {
@@ -798,7 +786,6 @@ export const layer: Layer.Layer<
       cleanup: Effect.fn("Snapshot.cleanup")(function* () {
         return yield* InstanceState.useEffect(state, (s) => s.cleanup())
       }),
-      // kilocode_change start - timeout + interactive "disable for this project" prompt
       track: Effect.fn("Snapshot.track")(function* (opts) {
         return yield* KiloSnapshotTrack.wrap({
           inner: InstanceState.useEffect(state, (s) => s.track()),
@@ -806,7 +793,6 @@ export const layer: Layer.Layer<
           sessionID: opts?.sessionID,
           messageID: opts?.messageID,
         })
-        // kilocode_change end
       }),
       patch: Effect.fn("Snapshot.patch")(function* (hash: string) {
         return yield* InstanceState.useEffect(state, (s) => s.patch(hash))
@@ -821,7 +807,6 @@ export const layer: Layer.Layer<
         return yield* InstanceState.useEffect(state, (s) => s.diff(hash))
       }),
       diffFull: Effect.fn("Snapshot.diffFull")(function* (from: string, to: string) {
-        // kilocode_change start - cache full diffs at the service boundary
         if (from === to) return []
         const key = `${from}:${to}`
         const hit = cache.get(key)
@@ -839,7 +824,6 @@ export const layer: Layer.Layer<
         )
         cache.set(key, pending)
         return yield* Effect.promise(() => pending)
-        // kilocode_change end
       }),
     })
   }),
@@ -851,7 +835,6 @@ export const defaultLayer = layer.pipe(
   Layer.provide(Config.defaultLayer),
 )
 
-// kilocode_change start - legacy promise helpers for Kilo callsites
 const { runPromise } = makeRuntime(Service, defaultLayer)
 export const track = () => runPromise((svc) => svc.track())
 export const patch = (hash: string) => runPromise((svc) => svc.patch(hash))
@@ -861,6 +844,5 @@ export const diff = (hash: string) => runPromise((svc) => svc.diff(hash))
 export const diffFull = (from: string, to: string) => runPromise((svc) => svc.diffFull(from, to))
 export const cleanup = () => runPromise((svc) => svc.cleanup())
 export const init = () => runPromise((svc) => svc.init())
-// kilocode_change end
 
 export * as Snapshot from "."

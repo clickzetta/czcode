@@ -1,9 +1,9 @@
 // @ts-nocheck
 
-import { OpenCode } from "@opencode-ai/core"
+import { OpenCode } from "@opencode-ai/core" // kilocode_change
 import { ReadTool } from "@opencode-ai/core/tools"
 
-const opencode = OpenCode.make({})
+const opencode = OpenCode.make({}) // kilocode_change
 
 opencode.tool.add(ReadTool)
 

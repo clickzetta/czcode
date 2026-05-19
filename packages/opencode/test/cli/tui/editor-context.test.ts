@@ -1,3 +1,4 @@
+// kilocode_change - new file
 import { Database } from "bun:sqlite"
 import path from "node:path"
 import { expect, test } from "bun:test"

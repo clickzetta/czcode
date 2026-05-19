@@ -26,7 +26,7 @@ const ctx = {
   sessionID: SessionID.make("ses_test"),
   messageID: MessageID.make(""),
   callID: "",
-  agent: "code", // kilocode_change
+  agent: "code",
   abort: AbortSignal.any([]),
   messages: [],
   metadata: () => Effect.void,
@@ -212,9 +212,7 @@ describe("tool.read env file permissions", () => {
     ["environment.ts", false],
   ]
 
-  // kilocode_change start - renamed from "build" to "code"
   for (const agentName of ["code", "plan"] as const) {
-    // kilocode_change end
     describe(`agent=${agentName}`, () => {
       for (const [filename, shouldAsk] of cases) {
         it.live(`${filename} asks=${shouldAsk}`, () =>

@@ -16,7 +16,7 @@ import { GlobalRoutes } from "./routes/global"
 import { WorkspaceRouterMiddleware } from "./workspace"
 import { InstanceMiddleware } from "./routes/instance/middleware"
 import { WorkspaceRoutes } from "./routes/control/workspace"
-import * as KiloServer from "@/kilocode/server/server" // kilocode_change
+import * as KiloServer from "@/kilocode/server/server"
 import { ExperimentalHttpApiServer } from "./routes/instance/httpapi/server"
 import * as ServerBackend from "./backend"
 import type { CorsOptions } from "./cors"
@@ -145,9 +145,9 @@ export async function openapi() {
   const result = await generateSpecs(app, {
     documentation: {
       info: {
-        title: KiloServer.DOC_TITLE, // kilocode_change
+        title: KiloServer.DOC_TITLE,
         version: "1.0.0",
-        description: KiloServer.DOC_DESCRIPTION, // kilocode_change
+        description: KiloServer.DOC_DESCRIPTION,
       },
       openapi: "3.1.1",
     },

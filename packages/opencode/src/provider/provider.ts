@@ -7,7 +7,7 @@ import * as Log from "@opencode-ai/core/util/log"
 import { Npm } from "@opencode-ai/core/npm"
 import { Hash } from "@opencode-ai/core/util/hash"
 import { Plugin } from "../plugin"
-import { makeRuntime } from "@/effect/run-service" // kilocode_change
+import { makeRuntime } from "@/effect/run-service"
 import { type LanguageModelV3 } from "@ai-sdk/provider"
 import * as ModelsDev from "./models"
 import { Auth } from "../auth"
@@ -29,7 +29,6 @@ import { optionalOmitUndefined, withStatics } from "@/util/schema"
 
 import * as ProviderTransform from "./transform"
 import { ModelID, ProviderID } from "./schema"
-// kilocode_change start
 import {
   KILO_BUNDLED_PROVIDERS,
   kiloCustomLoaders,
@@ -41,7 +40,6 @@ import {
   buildTimeoutSignal,
   REQUEST_TIMEOUT_MS,
 } from "@/kilocode/provider/provider"
-// kilocode_change end
 
 const log = Log.create({ service: "provider" })
 
@@ -128,7 +126,7 @@ const BUNDLED_PROVIDERS: Record<string, () => Promise<(opts: any) => BundledSDK>
   "gitlab-ai-provider": () => import("gitlab-ai-provider").then((m) => m.createGitLab),
   "@ai-sdk/github-copilot": () => import("./sdk/copilot/copilot-provider").then((m) => m.createOpenaiCompatible),
   "venice-ai-sdk-provider": () => import("venice-ai-sdk-provider").then((m) => m.createVenice),
-  ...KILO_BUNDLED_PROVIDERS, // kilocode_change
+  ...KILO_BUNDLED_PROVIDERS,
 }
 
 type CustomModelLoader = (sdk: any, modelID: string, options?: Record<string, any>) => Promise<any>
@@ -215,7 +213,6 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
     azure: Effect.fnUntraced(function* (provider: Info) {
       const env = yield* dep.env()
       const auth = yield* dep.auth(provider.id)
-      // kilocode_change start - prefer explicit Azure endpoint over resource name to avoid conflicting SDK options
       const endpoint = iife(() => {
         return [
           provider.options?.baseURL,
@@ -233,14 +230,13 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
               env["AZURE_OPENAI_RESOURCE_NAME"],
             ].find((name) => typeof name === "string" && name.trim() !== "")
           })
-      // kilocode_change end
 
-      if (!resource && !endpoint) { // kilocode_change
+      if (!resource && !endpoint) {
         return {
           autoload: false,
           async getModel() {
             throw new Error(
-              "Azure resource name or endpoint is missing. Set AZURE_RESOURCE_NAME, AZURE_OPENAI_RESOURCE_NAME, AZURE_OPENAI_ENDPOINT, or reconnect the azure provider.", // kilocode_change
+              "Azure resource name or endpoint is missing. Set AZURE_RESOURCE_NAME, AZURE_OPENAI_RESOURCE_NAME, AZURE_OPENAI_ENDPOINT, or reconnect the azure provider.",
             )
           },
         }
@@ -257,7 +253,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
           }
         },
         options: {
-          ...(endpoint ? { baseURL: endpoint } : { resourceName: resource }), // kilocode_change
+          ...(endpoint ? { baseURL: endpoint } : { resourceName: resource }),
         },
         vars(_options): Record<string, string> {
           if (resource) {
@@ -440,7 +436,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
+            "HTTP-Referer": "https://opencode.ai/", // kilocode_change
             "X-Title": "opencode",
             "X-Source": "opencode",
           },
@@ -451,7 +447,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
+            "HTTP-Referer": "https://opencode.ai/", // kilocode_change
             "X-Title": "opencode",
           },
         },
@@ -461,7 +457,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
+            "HTTP-Referer": "https://opencode.ai/", // kilocode_change
             "X-Title": "opencode",
           },
         },
@@ -471,7 +467,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "http-referer": "https://opencode.ai/",
+            "http-referer": "https://opencode.ai/", // kilocode_change
             "x-title": "opencode",
           },
         },
@@ -569,7 +565,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
+            "HTTP-Referer": "https://opencode.ai/", // kilocode_change
             "X-Title": "opencode",
           },
         },
@@ -595,7 +591,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
       const directory = yield* InstanceState.directory
 
       const aiGatewayHeaders = {
-        "User-Agent": `kilo/${InstallationVersion} gitlab-ai-provider/${GITLAB_PROVIDER_VERSION} (${os.platform()} ${os.release()}; ${os.arch()})`, // kilocode_change
+        "User-Agent": `kilo/${InstallationVersion} gitlab-ai-provider/${GITLAB_PROVIDER_VERSION} (${os.platform()} ${os.release()}; ${os.arch()})`,
         "anthropic-beta": "context-1m-2025-08-07",
         ...providerConfig?.options?.aiGatewayHeaders,
       }
@@ -796,7 +792,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
       if (!apiToken) {
         throw new Error(
           "CLOUDFLARE_API_TOKEN (or CF_AIG_TOKEN) is required for Cloudflare AI Gateway. " +
-            "Set it via environment variable or run `kilo auth cloudflare-ai-gateway`.", // kilocode_change
+            "Set it via environment variable or run `kilo auth cloudflare-ai-gateway`.",
         )
       }
 
@@ -854,7 +850,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/",
+            "HTTP-Referer": "https://opencode.ai/", // kilocode_change
             "X-Title": "opencode",
           },
         },
@@ -931,7 +927,7 @@ export const Model = Schema.Struct({
   headers: Schema.Record(Schema.String, Schema.String),
   release_date: Schema.String,
   variants: optionalOmitUndefined(Schema.Record(Schema.String, Schema.Record(Schema.String, Schema.Any))),
-  ...KILO_MODEL_SCHEMA_EXTENSIONS, // kilocode_change
+  ...KILO_MODEL_SCHEMA_EXTENSIONS,
 })
   .annotate({ identifier: "Model" })
   .pipe(withStatics((s) => ({ zod: zod(s) })))
@@ -956,7 +952,7 @@ export const ListResult = Schema.Struct({
   all: Schema.Array(Info),
   default: DefaultModelIDs,
   connected: Schema.Array(Schema.String),
-  failed: Schema.Array(Schema.String), // kilocode_change
+  failed: Schema.Array(Schema.String),
 }).pipe(withStatics((s) => ({ zod: zod(s) })))
 export type ListResult = Types.DeepMutable<Schema.Schema.Type<typeof ListResult>>
 
@@ -1059,7 +1055,7 @@ function fromModelsDevModel(provider: ModelsDev.Provider, model: ModelsDev.Model
     release_date: model.release_date ?? "",
     variants: {},
   }
-  Object.assign(base, patchKiloModel(provider.id, model)) // kilocode_change
+  Object.assign(base, patchKiloModel(provider.id, model))
 
   return {
     ...base,
@@ -1200,7 +1196,7 @@ const layer: Layer.Layer<
 
         // extend database from config
         for (const [providerID, provider] of configProviders) {
-          if (!provider) continue // kilocode_change - null entries are transient delete sentinels
+          if (!provider) continue
           const existing = database[providerID]
           const parsed: Info = {
             id: ProviderID.make(providerID),
@@ -1212,7 +1208,7 @@ const layer: Layer.Layer<
           }
 
           for (const [modelID, model] of Object.entries(provider.models ?? {})) {
-            if (!model) continue // kilocode_change - null entries are transient delete sentinels
+            if (!model) continue
             const existingModel = parsed.models[model.id ?? modelID]
             const apiID = model.id ?? existingModel?.api.id ?? modelID
             const apiNpm =
@@ -1282,12 +1278,12 @@ const layer: Layer.Layer<
               headers: mergeDeep(existingModel?.headers ?? {}, model.headers ?? {}),
               family: model.family ?? existingModel?.family ?? "",
               release_date: model.release_date ?? existingModel?.release_date ?? "",
-              // variants: {}, // kilocode_change, moved into patchKiloConfigModel
-              ...patchKiloConfigModel(model, existingModel), // kilocode_change
+              // variants: {},
+              ...patchKiloConfigModel(model, existingModel),
             }
             const merged = mergeDeep(ProviderTransform.variants(parsedModel), model.variants ?? {})
             parsedModel.variants = mapValues(
-              pickBy(merged, (v): v is NonNullable<typeof v> => !!v && !v.disabled), // kilocode_change - drop null delete sentinels
+              pickBy(merged, (v): v is NonNullable<typeof v> => !!v && !v.disabled),
               (v) => omit(v, ["disabled"]),
             )
             parsed.models[modelID] = parsedModel
@@ -1295,14 +1291,12 @@ const layer: Layer.Layer<
           database[providerID] = parsed
         }
 
-        // kilocode_change start - load auths before env so OAuth plugins can override inherited credentials
         const auths = yield* auth.all().pipe(Effect.orDie)
         // load env
         const envs = yield* env.all()
         for (const [id, provider] of Object.entries(database)) {
           const providerID = ProviderID.make(id)
           if (disabled.has(providerID)) continue
-          // kilocode_change start - prefer explicit OAuth auth over inherited env credentials
           if (
             auths[providerID]?.type === "oauth" &&
             plugins.some((x) => x.auth?.provider === providerID && x.auth.loader)
@@ -1310,7 +1304,6 @@ const layer: Layer.Layer<
             continue
           }
           const apiKey = provider.env.map((item) => envs[item]).find(Boolean)
-          // kilocode_change end
           if (!apiKey) continue
           mergeProvider(providerID, {
             source: "env",
@@ -1351,11 +1344,8 @@ const layer: Layer.Layer<
           mergeProvider(providerID, patch)
         }
 
-        // kilocode_change start - resolve env once for patchCustomLoaderResult (azure env fallback)
         const kiloEnv = yield* env.all()
-        // kilocode_change end
         for (const [id, fn] of Object.entries({ ...custom(dep), ...kiloCustomLoaders(dep) })) {
-          // kilocode_change
           const providerID = ProviderID.make(id)
           if (disabled.has(providerID)) continue
           const data = database[providerID]
@@ -1364,7 +1354,7 @@ const layer: Layer.Layer<
             continue
           }
           const result = yield* fn(data)
-          if (result) patchCustomLoaderResult(id, result, kiloEnv) // kilocode_change
+          if (result) patchCustomLoaderResult(id, result, kiloEnv)
           if (result && (result.autoload || providers[providerID])) {
             if (result.getModel) modelLoaders[providerID] = result.getModel
             if (result.vars) varsLoaders[providerID] = result.vars
@@ -1377,14 +1367,12 @@ const layer: Layer.Layer<
 
         // load config - re-apply with updated data
         for (const [id, provider] of configProviders) {
-          if (!provider) continue // kilocode_change - null entries are transient delete sentinels
+          if (!provider) continue
           const providerID = ProviderID.make(id)
-          // kilocode_change start - keep OAuth plugin source when config and Codex auth coexist
           const oauth =
             auths[providerID]?.type === "oauth" && plugins.some((x) => x.auth?.provider === providerID && x.auth.loader)
           const partial: Partial<Info> = oauth ? {} : { source: "config" }
           if (provider.env) partial.env = provider.env
-          // kilocode_change end
           if (provider.name) partial.name = provider.name
           if (provider.options) partial.options = provider.options
           mergeProvider(providerID, partial)
@@ -1438,7 +1426,7 @@ const layer: Layer.Layer<
             if (configVariants && model.variants) {
               const merged = mergeDeep(model.variants, configVariants)
               model.variants = mapValues(
-                pickBy(merged, (v): v is NonNullable<typeof v> => !!v && !v.disabled), // kilocode_change - drop null delete sentinels
+                pickBy(merged, (v): v is NonNullable<typeof v> => !!v && !v.disabled),
                 (v) => omit(v, ["disabled"]),
               )
             }
@@ -1527,14 +1515,12 @@ const layer: Layer.Layer<
           const fetchFn = customFetch ?? fetch
           const opts = init ?? {}
           const chunkAbortCtl = typeof chunkTimeout === "number" && chunkTimeout > 0 ? new AbortController() : undefined
-          // kilocode_change start - use cancellable timeout for connection phase
           const timeout = buildTimeoutSignal(options)
           const signals: AbortSignal[] = []
 
           if (opts.signal) signals.push(opts.signal)
           if (chunkAbortCtl) signals.push(chunkAbortCtl.signal)
           if (timeout.signal) signals.push(timeout.signal)
-          // kilocode_change end
 
           const combined = signals.length === 0 ? null : signals.length === 1 ? signals[0] : AbortSignal.any(signals)
           if (combined) opts.signal = combined
@@ -1557,7 +1543,6 @@ const layer: Layer.Layer<
             }
           }
 
-          // kilocode_change start - clear connection-phase timeout once headers arrive
           try {
             const res = await fetchFn(input, {
               ...opts,
@@ -1571,7 +1556,6 @@ const layer: Layer.Layer<
             timeout.clear()
             throw err
           }
-          // kilocode_change end
         }
 
         const bundledLoader = BUNDLED_PROVIDERS[model.api.npm]
@@ -1710,10 +1694,8 @@ const layer: Layer.Layer<
       if (providerID.startsWith("github-copilot")) {
         priority = ["gpt-5-mini", "claude-haiku-4.5", ...priority]
       }
-      // kilocode_change start
       const kiloPriority = kiloSmallModelPriority(providerID)
       if (kiloPriority) priority = kiloPriority
-      // kilocode_change end
       for (const item of priority) {
         if (providerID === ProviderID.amazonBedrock) {
           const crossRegionPrefixes = ["global.", "us.", "eu."]
@@ -1740,12 +1722,10 @@ const layer: Layer.Layer<
         }
       }
 
-      // kilocode_change start - fall back to kilo's auto small model
       const kiloFallback = s.providers[ProviderID.make("kilo")]
       if (kiloFallback?.models["kilo-auto/small"]) {
         return yield* getModel(ProviderID.make("kilo"), ModelID.make("kilo-auto/small"))
       }
-      // kilocode_change end
 
       return undefined
     })
@@ -1809,7 +1789,6 @@ export function sort<T extends { id: string }>(models: T[]) {
   )
 }
 
-// kilocode_change start - legacy promise helpers for Kilo callsites
 const { runPromise: runProviderPromise } = makeRuntime(Service, defaultLayer)
 export const list = () => runProviderPromise((svc) => svc.list())
 export const getModel = (providerID: ProviderID, modelID: ModelID) =>
@@ -1818,7 +1797,6 @@ export const getProvider = (providerID: ProviderID) => runProviderPromise((svc) 
 export const getLanguage = (model: Model) => runProviderPromise((svc) => svc.getLanguage(model))
 export const getSmallModel = (providerID: ProviderID) => runProviderPromise((svc) => svc.getSmallModel(providerID))
 export const defaultModel = () => runProviderPromise((svc) => svc.defaultModel())
-// kilocode_change end
 
 export function parseModel(model: string) {
   const [providerID, ...rest] = model.split("/")

@@ -58,7 +58,6 @@ describe("config HttpApi", () => {
     expect(response.status).toBe(200)
     expect(await response.json()).toMatchObject({ username: "patched-user", formatter: false, lsp: false })
     await disposed
-    // kilocode_change - fixture wrote opencode.json; KilocodeConfig.updateProjectConfig patches it in place
     expect(await Bun.file(path.join(tmp.path, "opencode.json")).json()).toMatchObject({
       username: "patched-user",
       formatter: false,

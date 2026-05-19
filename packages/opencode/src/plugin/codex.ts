@@ -5,7 +5,7 @@ import { OAUTH_DUMMY_KEY } from "../auth"
 import os from "os"
 import { setTimeout as sleep } from "node:timers/promises"
 import { createServer } from "http"
-import { refreshCodexAuth } from "@/kilocode/provider/codex-refresh" // kilocode_change
+import { refreshCodexAuth } from "@/kilocode/provider/codex-refresh"
 
 const log = Log.create({ service: "plugin.codex" })
 
@@ -439,9 +439,7 @@ export async function CodexAuthPlugin(input: PluginInput): Promise<Hooks> {
             // Check if token needs refresh
             if (!currentAuth.access || currentAuth.expires < Date.now()) {
               log.info("refreshing codex access token")
-              // kilocode_change start
               await refreshCodexAuth({ input, getAuth, auth: currentAuth, refresh: refreshAccessToken, account: extractAccountId })
-              // kilocode_change end
             }
 
             // Build headers

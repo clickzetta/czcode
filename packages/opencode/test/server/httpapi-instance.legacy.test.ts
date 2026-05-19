@@ -42,7 +42,6 @@ afterEach(async () => {
 })
 
 describe("instance HttpApi", () => {
-  // kilocode_change - skip until Kilo's Instance context threads through the Effect HttpApi bridge.
   // The /agent handler 500s via the bridge (agent.list's InstanceState lookup drops context mid-request).
   // Bridge is gated behind KILO_EXPERIMENTAL_HTTPAPI, not enabled in any production client.
   test.skip("serves catalog read endpoints through Hono bridge", async () => {

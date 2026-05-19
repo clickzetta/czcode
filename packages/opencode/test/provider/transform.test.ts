@@ -1725,7 +1725,7 @@ describe("ProviderTransform.message - strip openai metadata when store=false", (
       providerID: "opencode",
       api: {
         id: "opencode-test",
-        url: "https://api.opencode.ai",
+        url: "https://api.opencode.ai", // kilocode_change
         npm: "@ai-sdk/openai-compatible",
       },
     }
@@ -1759,7 +1759,7 @@ describe("ProviderTransform.message - strip openai metadata when store=false", (
       providerID: "opencode",
       api: {
         id: "opencode-test",
-        url: "https://api.opencode.ai",
+        url: "https://api.opencode.ai", // kilocode_change
         npm: "@ai-sdk/openai-compatible",
       },
     }
@@ -2367,7 +2367,6 @@ describe("ProviderTransform.variants", () => {
       expect(Object.keys(result)).toEqual(["none", "minimal", "low", "medium", "high", "xhigh"])
     })
 
-    // kilocode_change start
     test("mercury-2 returns OPENAI_EFFORTS with reasoning", () => {
       const model = createMockModel({
         id: "openrouter/inception/mercury-2",
@@ -2383,7 +2382,6 @@ describe("ProviderTransform.variants", () => {
       expect(result.low).toEqual({ reasoning: { effort: "low" } })
       expect(result.high).toEqual({ reasoning: { effort: "high" } })
     })
-    // kilocode_change end
 
     test("grok-4 returns empty object", () => {
       const model = createMockModel({
@@ -2416,7 +2414,6 @@ describe("ProviderTransform.variants", () => {
     })
   })
 
-  // kilocode_change start
   describe("@kilocode/kilo-gateway", () => {
     test("claude models return empty variants (reasoning disabled)", () => {
       const model = createMockModel({
@@ -2524,7 +2521,6 @@ describe("ProviderTransform.variants", () => {
       expect(result.xhigh).toEqual({ reasoning: { effort: "xhigh" } })
     })
 
-    // kilocode_change start
     test("mercury-2 uses server-provided variants from kilo gateway", () => {
       const serverVariants = {
         low: { reasoningEffort: "low" },
@@ -2545,9 +2541,7 @@ describe("ProviderTransform.variants", () => {
       expect(result).toEqual(serverVariants)
       expect(Object.keys(result)).toEqual(["low", "medium", "high"])
     })
-    // kilocode_change end
   })
-  // kilocode_change end
 
   describe("@ai-sdk/gateway", () => {
     test("anthropic sonnet 4.6 models return adaptive thinking options", () => {
@@ -2818,7 +2812,6 @@ describe("ProviderTransform.variants", () => {
     })
   })
 
-  // kilocode_change start
   describe("@ai-sdk/azure", () => {
     test("gpt-5.4 includes xhigh", () => {
       const model = createMockModel({
@@ -2840,7 +2833,6 @@ describe("ProviderTransform.variants", () => {
       })
     })
   })
-  // kilocode_change end
 
   describe("@ai-sdk/cerebras", () => {
     test("returns WIDELY_SUPPORTED_EFFORTS with reasoningEffort", () => {
@@ -2945,7 +2937,6 @@ describe("ProviderTransform.variants", () => {
       expect(result.high).toEqual({ reasoningEffort: "high" })
     })
 
-    // kilocode_change start
     test("mercury-2 returns WIDELY_SUPPORTED_EFFORTS with reasoningEffort", () => {
       const model = createMockModel({
         id: "inception/mercury-2",
@@ -2961,7 +2952,6 @@ describe("ProviderTransform.variants", () => {
       expect(result.low).toEqual({ reasoningEffort: "low" })
       expect(result.high).toEqual({ reasoningEffort: "high" })
     })
-    // kilocode_change end
   })
 
   describe("@ai-sdk/azure", () => {
@@ -3525,7 +3515,6 @@ describe("ProviderTransform.variants", () => {
     })
   })
 
-  // kilocode_change start
   describe("ProviderTransform.smallOptions", () => {
     describe("@kilocode/kilo-gateway", () => {
       test("claude models return reasoningEffort minimal", () => {
@@ -3610,9 +3599,7 @@ describe("ProviderTransform.variants", () => {
     })
   })
 })
-// kilocode_change end
 
-// kilocode_change start - tests for reasoningSummary guard
 describe("ProviderTransform.options - OpenAI Responses API params guard", () => {
   const sessionID = "test-session"
 
@@ -3699,4 +3686,3 @@ describe("ProviderTransform.options - OpenAI Responses API params guard", () => 
     }
   })
 })
-// kilocode_change end

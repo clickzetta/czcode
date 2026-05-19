@@ -19,14 +19,12 @@ import { Bus } from "@/bus"
 import { Wildcard } from "@/util/wildcard"
 import { SessionID } from "@/session/schema"
 import { Auth } from "@/auth"
-// kilocode_change start
 import { DEFAULT_HEADERS } from "@/kilocode/const"
 import { getKiloProjectId } from "@/kilocode/project-id"
 import { HEADER_PROJECTID, HEADER_MACHINEID, HEADER_TASKID } from "@kilocode/kilo-gateway"
 import { Identity } from "@kilocode/kilo-telemetry"
 import { makeRuntime } from "@/effect/run-service"
 import { KiloLLM } from "@/kilocode/session/llm"
-// kilocode_change end
 import { Installation } from "@/installation"
 import { InstallationVersion } from "@opencode-ai/core/installation/version"
 import { EffectBridge } from "@/effect/bridge"
@@ -64,7 +62,7 @@ export type Event = Result["fullStream"] extends AsyncIterable<infer T> ? T : ne
 
 export interface Interface {
   readonly stream: (input: StreamInput) => Stream.Stream<Event, unknown>
-  readonly raw: (input: StreamRequest) => Effect.Effect<Result> // kilocode_change - raw streamText result for Kilo helpers
+  readonly raw: (input: StreamRequest) => Effect.Effect<Result>
 }
 
 export class Service extends Context.Service<Service, Interface>()("@opencode/LLM") {}
@@ -112,9 +110,7 @@ const live: Layer.Layer<
       const system: string[] = []
       system.push(
         [
-          // kilocode_change start - soul defines core identity and personality
           ...(isOpenaiOauth ? [] : [SystemPrompt.soul()]),
-          // kilocode_change end
           // use agent prompt otherwise provider prompt
           ...(input.agent.prompt ? [input.agent.prompt] : SystemPrompt.provider(input.model)),
           // any custom prompt passed into this call
@@ -152,9 +148,7 @@ const live: Layer.Layer<
           })
       const options = mergeOptions(mergeOptions(mergeOptions(base, input.model.options), input.agent.options), variant)
       if (isOpenaiOauth) {
-        // kilocode_change start - prepend soul to instructions
         options.instructions = SystemPrompt.soul() + "\n" + system.join("\n")
-        // kilocode_change end
       }
 
       const isWorkflow = language instanceof GitLabWorkflowLanguageModel
@@ -187,14 +181,12 @@ const live: Layer.Layer<
             : undefined,
           topP: input.agent.topP ?? ProviderTransform.topP(input.model),
           topK: ProviderTransform.topK(input.model),
-          // kilocode_change start - gpt-5 via @ai-sdk/openai-compatible proxies (e.g. LiteLLM)
           // rejects `max_tokens`; OpenAI requires `max_completion_tokens` and the compatible
           // SDK cannot rename the field, so drop the cap and let the upstream default apply.
           maxOutputTokens:
             input.model.api.npm === "@ai-sdk/openai-compatible" && input.model.api.id.toLowerCase().includes("gpt-5")
               ? undefined
               : ProviderTransform.maxOutputTokens(input.model),
-          // kilocode_change end
           options,
         },
       )
@@ -213,7 +205,6 @@ const live: Layer.Layer<
         },
       )
 
-      // kilocode_change start - resolve project ID and machine ID for kilo provider
       const isKilo = input.model.api.npm === "@kilocode/kilo-gateway"
       const kiloProjectId = yield* isKilo
         ? Effect.promise(() => getKiloProjectId().catch(() => undefined))
@@ -221,17 +212,14 @@ const live: Layer.Layer<
       const machineId = yield* isKilo
         ? Effect.promise(() => Identity.getMachineId().catch(() => undefined))
         : Effect.succeed(undefined)
-      // kilocode_change end
 
       const tools = resolveTools(input)
-      // kilocode_change start - cap maxOutputTokens to fit within context after estimating real input size
       params.maxOutputTokens = KiloLLM.capOutputTokens({
         model: input.model,
         messages,
         tools,
         configured: params.maxOutputTokens,
       })
-      // kilocode_change end
 
       // LiteLLM and some Anthropic proxies require the tools parameter to be present
       // when message history contains tool calls, even if no tools are being used.
@@ -409,7 +397,7 @@ const live: Layer.Layer<
         maxOutputTokens: params.maxOutputTokens,
         abortSignal: input.abort,
         headers: {
-          ...(input.model.providerID.startsWith("kilo") // kilocode_change
+          ...(input.model.providerID.startsWith("kilo")
             ? {
                 "x-kilo-project": opencodeProjectID,
                 "x-kilo-session": input.sessionID,
@@ -420,14 +408,12 @@ const live: Layer.Layer<
                 "x-session-affinity": input.sessionID,
                 ...(input.parentSessionID ? { "x-parent-session-id": input.parentSessionID } : {}),
                 "User-Agent": `opencode/${InstallationVersion}`,
-                ...(input.model.providerID !== "anthropic" ? DEFAULT_HEADERS : undefined), // kilocode_change
+                ...(input.model.providerID !== "anthropic" ? DEFAULT_HEADERS : undefined),
               }),
-          // kilocode_change start - headers for kilo provider
           ...(isKilo && input.agent.name ? { "x-kilocode-mode": input.agent.name.toLowerCase() } : {}),
           ...(isKilo && kiloProjectId ? { [HEADER_PROJECTID]: kiloProjectId } : {}),
           ...(isKilo && machineId ? { [HEADER_MACHINEID]: machineId } : {}),
           ...(isKilo ? { [HEADER_TASKID]: input.sessionID } : {}),
-          // kilocode_change end
           ...input.model.headers,
           ...headers,
         },
@@ -448,7 +434,6 @@ const live: Layer.Layer<
             },
           ],
         }),
-        // kilocode_change - disable AI SDK span recording (ai.* / gen_ai.*)
         experimental_telemetry: { isEnabled: false },
       })
     })
@@ -469,7 +454,6 @@ const live: Layer.Layer<
         ),
       )
 
-    // kilocode_change - expose raw streamText result for Kilo helpers; Effect.orDie collapses AuthError into a defect
     return Service.of({ stream, raw: (input) => run(input).pipe(Effect.orDie) })
   }),
 )
@@ -485,12 +469,10 @@ export const defaultLayer = Layer.suspend(() =>
   ),
 )
 
-// kilocode_change start - keep raw async stream wrapper for Kilo callsites during Effect migration
 const runtime = makeRuntime(Service, defaultLayer)
 export async function stream(input: StreamRequest) {
   return runtime.runPromise((svc) => svc.raw(input), { signal: input.abort })
 }
-// kilocode_change end
 
 function resolveTools(input: Pick<StreamInput, "tools" | "agent" | "permission" | "user">) {
   const disabled = Permission.disabled(

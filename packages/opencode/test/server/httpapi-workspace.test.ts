@@ -343,7 +343,7 @@ describe("workspace HttpApi", () => {
             "content-type": "application/json",
             "x-kilo-workspace": "internal",
           },
-          body: JSON.stringify({ $schema: "https://opencode.ai/config.json" }),
+          body: JSON.stringify({ $schema: "https://opencode.ai/config.json" }), // kilocode_change
         })
 
         const responseBody = yield* Effect.promise(() => response.text())
@@ -360,7 +360,7 @@ describe("workspace HttpApi", () => {
               "content-type": "application/json",
               "x-target-auth": "secret",
             }),
-            body: JSON.stringify({ $schema: "https://opencode.ai/config.json" }),
+            body: JSON.stringify({ $schema: "https://opencode.ai/config.json" }), // kilocode_change
           },
         ])
         expect(forwarded[0]?.headers).not.toHaveProperty("x-kilo-directory")

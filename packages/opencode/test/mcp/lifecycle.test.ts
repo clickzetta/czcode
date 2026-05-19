@@ -186,7 +186,7 @@ function withInstance(
         await Bun.write(
           `${dir}/opencode.json`,
           JSON.stringify({
-            $schema: "https://opencode.ai/config.json",
+            $schema: "https://opencode.ai/config.json", // kilocode_change
             mcp: config,
           }),
         )

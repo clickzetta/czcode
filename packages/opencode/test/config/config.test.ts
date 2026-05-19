@@ -95,7 +95,7 @@ async function check(map: (dir: string) => string) {
   await clear()
   try {
     await writeConfig(globalTmp.path, {
-      $schema: "https://opencode.ai/config.json",
+      $schema: "https://opencode.ai/config.json", // kilocode_change
       snapshot: false,
     })
     await Instance.provide({
@@ -149,7 +149,7 @@ test("loads shell config field", async () => {
   await using tmp = await tmpdir({
     init: async (dir) => {
       await writeConfig(dir, {
-        $schema: "https://opencode.ai/config.json",
+        $schema: "https://opencode.ai/config.json", // kilocode_change
         shell: "bash",
       })
     },
@@ -164,11 +164,10 @@ test("loads shell config field", async () => {
 })
 
 test("updates config and preserves empty shell sentinel", async () => {
-  // kilocode_change - upstream hardcodes project config to config.json; Kilo writes to kilo.json
   await using tmp = await tmpdir({
     init: async (dir) => {
       await writeConfig(dir, {
-        $schema: "https://opencode.ai/config.json",
+        $schema: "https://opencode.ai/config.json", // kilocode_change
         shell: "bash",
       })
     },
@@ -185,11 +184,10 @@ test("updates config and preserves empty shell sentinel", async () => {
 })
 
 test("updates global config and omits empty shell key in json", async () => {
-  // kilocode_change - globalConfigFile() prefers kilo.json over opencode.json
   await using tmp = await tmpdir({
     init: async (dir) => {
       await writeConfig(dir, {
-        $schema: "https://opencode.ai/config.json",
+        $schema: "https://opencode.ai/config.json", // kilocode_change
         shell: "bash",
       })
     },
@@ -216,7 +214,7 @@ test("updates global config and omits empty shell key in jsonc", async () => {
       await Filesystem.write(
         path.join(dir, "opencode.jsonc"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "https://opencode.ai/config.json", // kilocode_change
           shell: "bash",
           model: "test/model",
         }),
@@ -247,7 +245,7 @@ test("loads formatter boolean config", async () => {
   await using tmp = await tmpdir({
     init: async (dir) => {
       await writeConfig(dir, {
-        $schema: "https://opencode.ai/config.json",
+        $schema: "https://opencode.ai/config.json", // kilocode_change
         formatter: true,
       })
     },
@@ -265,7 +263,7 @@ test("loads lsp boolean config", async () => {
   await using tmp = await tmpdir({
     init: async (dir) => {
       await writeConfig(dir, {
-        $schema: "https://opencode.ai/config.json",
+        $schema: "https://opencode.ai/config.json", // kilocode_change
         lsp: true,
       })
     },
@@ -300,7 +298,7 @@ test("ignores legacy tui keys in opencode config", async () => {
   await using tmp = await tmpdir({
     init: async (dir) => {
       await writeConfig(dir, {
-        $schema: "https://opencode.ai/config.json",
+        $schema: "https://opencode.ai/config.json", // kilocode_change
         model: "test/model",
         theme: "legacy",
         tui: { scroll_speed: 4 },
@@ -580,7 +578,6 @@ test("validates config schema and reports warning on invalid fields", async () =
   await Instance.provide({
     directory: tmp.path,
     fn: async () => {
-      // kilocode_change - invalid schema surfaces as warnings, not a throw
       await load()
       const warnings = await Config.warnings()
       expect(warnings.length).toBeGreaterThan(0)
@@ -597,7 +594,6 @@ test("reports warning for invalid JSON", async () => {
   await Instance.provide({
     directory: tmp.path,
     fn: async () => {
-      // kilocode_change - invalid JSON surfaces as a warning, not a throw
       await load()
       const warnings = await Config.warnings()
       expect(warnings.length).toBeGreaterThan(0)
@@ -1343,7 +1339,7 @@ test("keeps plugin origins aligned with merged plugin list", async () => {
       await Filesystem.write(
         path.join(dir, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "https://opencode.ai/config.json", // kilocode_change
           plugin: [["shared-plugin@1.0.0", { source: "global" }], "global-only@1.0.0"],
         }),
       )
@@ -1351,7 +1347,7 @@ test("keeps plugin origins aligned with merged plugin list", async () => {
       await Filesystem.write(
         path.join(local, "opencode.json"),
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "https://opencode.ai/config.json", // kilocode_change
           plugin: [["shared-plugin@2.0.0", { source: "local" }], "local-only@1.0.0"],
         }),
       )
@@ -1685,7 +1681,6 @@ test("permission config preserves user key order", async () => {
   // sorts wildcards before specifics before iterating. See the
   // "fromConfig - specific key beats wildcard regardless of JSON key order"
   // test in test/permission/next.test.ts for the behavioural guarantee.
-  // kilocode_change start — isolate from global config to prevent cross-test contamination
   // (migrateBashPermission may write permission.bash to a global config file created by other
   // test files running in parallel, which mergeDeep then prepends to the project permission keys)
   await using globalTmp = await tmpdir()
@@ -1693,13 +1688,12 @@ test("permission config preserves user key order", async () => {
   ;(Global.Path as { config: string }).config = globalTmp.path
   await clear(true)
   try {
-    // kilocode_change end
     await using tmp = await tmpdir({
       init: async (dir) => {
         await Filesystem.write(
-          path.join(dir, "kilo.json"), // kilocode_change
+          path.join(dir, "kilo.json"),
           JSON.stringify({
-            $schema: "https://app.kilo.ai/config.json", // kilocode_change
+            $schema: "https://app.kilo.ai/config.json",
             permission: {
               "*": "deny",
               edit: "ask",
@@ -1734,12 +1728,10 @@ test("permission config preserves user key order", async () => {
         ])
       },
     })
-    // kilocode_change start
   } finally {
     ;(Global.Path as { config: string }).config = prev
     await clear(true)
   }
-  // kilocode_change end
 })
 
 test("Effect config parser preserves permission order while rejecting unknown top-level keys", () => {
@@ -1770,7 +1762,6 @@ test("Effect config parser preserves permission order while rejecting unknown to
 test("project config can override MCP server enabled status", async () => {
   await using tmp = await tmpdir({
     init: async (dir) => {
-      // kilocode_change start — base config in .json, override in .jsonc (jsonc loads second and wins)
       // Simulates a base config with disabled MCP
       await Filesystem.write(
         path.join(dir, "kilo.json"),
@@ -1804,7 +1795,6 @@ test("project config can override MCP server enabled status", async () => {
           },
         }),
       )
-      // kilocode_change end
     },
   })
   await Instance.provide({
@@ -1830,7 +1820,6 @@ test("project config can override MCP server enabled status", async () => {
 test("MCP config deep merges preserving base config properties", async () => {
   await using tmp = await tmpdir({
     init: async (dir) => {
-      // kilocode_change start — base config in .json, override in .jsonc (jsonc loads second and wins)
       // Base config with full MCP definition
       await Filesystem.write(
         path.join(dir, "kilo.json"),
@@ -1849,7 +1838,6 @@ test("MCP config deep merges preserving base config properties", async () => {
         }),
       )
       // Override just enables it, should preserve other properties
-      // kilocode_change end
       await Filesystem.write(
         path.join(dir, "kilo.jsonc"),
         JSON.stringify({
@@ -2040,7 +2028,7 @@ test("wellknown URL with trailing slash is normalized", async () => {
 describe("resolvePluginSpec", () => {
   test("keeps package specs unchanged", async () => {
     await using tmp = await tmpdir()
-    const file = path.join(tmp.path, "kilo.json") // kilocode_change
+    const file = path.join(tmp.path, "kilo.json")
     expect(await ConfigPlugin.resolvePluginSpec("oh-my-opencode@2.4.3", file)).toBe("oh-my-opencode@2.4.3")
     expect(await ConfigPlugin.resolvePluginSpec("@scope/pkg", file)).toBe("@scope/pkg")
   })
@@ -2068,7 +2056,7 @@ describe("resolvePluginSpec", () => {
       },
     })
 
-    const file = path.join(tmp.path, "kilo.json") // kilocode_change
+    const file = path.join(tmp.path, "kilo.json")
     const hit = await ConfigPlugin.resolvePluginSpec("./plugin.ts", file)
     expect(ConfigPlugin.pluginSpecifier(hit)).toBe(pathToFileURL(path.join(tmp.path, "plugin.ts")).href)
   })
@@ -2087,7 +2075,7 @@ describe("resolvePluginSpec", () => {
       },
     })
 
-    const file = path.join(tmp.path, "kilo.json") // kilocode_change
+    const file = path.join(tmp.path, "kilo.json")
     const hit = await ConfigPlugin.resolvePluginSpec("./plugin", file)
     expect(ConfigPlugin.pluginSpecifier(hit)).toBe(pathToFileURL(path.join(tmp.path, "plugin")).href)
   })
@@ -2224,7 +2212,6 @@ describe("KILO_DISABLE_PROJECT_CONFIG", () => {
   })
 
   test("skips project .kilo/ directories when flag is set", async () => {
-    // kilocode_change - test .kilo/ directory (the test body writes to .kilo/command/)
     const originalEnv = process.env["KILO_DISABLE_PROJECT_CONFIG"]
     process.env["KILO_DISABLE_PROJECT_CONFIG"] = "true"
 
@@ -2241,7 +2228,7 @@ describe("KILO_DISABLE_PROJECT_CONFIG", () => {
         directory: tmp.path,
         fn: async () => {
           const directories = await listDirs()
-          // Project .kilo should NOT be in directories list  // kilocode_change
+          // Project .kilo should NOT be in directories list
           const hasProjectOpencode = directories.some((d) => d.startsWith(tmp.path))
           expect(hasProjectOpencode).toBe(false)
         },
@@ -2392,7 +2379,7 @@ describe("KILO_CONFIG_CONTENT token substitution", () => {
     const originalTestVar = process.env["TEST_CONFIG_VAR"]
     process.env["TEST_CONFIG_VAR"] = "test_api_key_12345"
     process.env["KILO_CONFIG_CONTENT"] = JSON.stringify({
-      $schema: "https://opencode.ai/config.json",
+      $schema: "https://opencode.ai/config.json", // kilocode_change
       username: "{env:TEST_CONFIG_VAR}",
     })
 
@@ -2427,7 +2414,7 @@ describe("KILO_CONFIG_CONTENT token substitution", () => {
         init: async (dir) => {
           await Filesystem.write(path.join(dir, "api_key.txt"), "secret_key_from_file")
           process.env["KILO_CONFIG_CONTENT"] = JSON.stringify({
-            $schema: "https://opencode.ai/config.json",
+            $schema: "https://opencode.ai/config.json", // kilocode_change
             username: "{file:./api_key.txt}",
           })
         },
@@ -2457,7 +2444,7 @@ test("parseManagedPlist strips MDM metadata keys", async () => {
     ConfigParse.jsonc(
       await ConfigManaged.parseManagedPlist(
         JSON.stringify({
-          PayloadDisplayName: "OpenCode Managed",
+          PayloadDisplayName: "OpenCode Managed", // kilocode_change
           PayloadIdentifier: "ai.opencode.managed.test",
           PayloadType: "ai.opencode.managed",
           PayloadUUID: "AAAA-BBBB-CCCC",
@@ -2485,7 +2472,7 @@ test("parseManagedPlist parses server settings", async () => {
     ConfigParse.jsonc(
       await ConfigManaged.parseManagedPlist(
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "https://opencode.ai/config.json", // kilocode_change
           server: { hostname: "127.0.0.1", mdns: false },
           autoupdate: true,
         }),
@@ -2505,7 +2492,7 @@ test("parseManagedPlist parses permission rules", async () => {
     ConfigParse.jsonc(
       await ConfigManaged.parseManagedPlist(
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "https://opencode.ai/config.json", // kilocode_change
           permission: {
             "*": "ask",
             bash: { "*": "ask", "rm -rf *": "deny", "curl *": "deny" },
@@ -2535,7 +2522,7 @@ test("parseManagedPlist parses enabled_providers", async () => {
     ConfigParse.jsonc(
       await ConfigManaged.parseManagedPlist(
         JSON.stringify({
-          $schema: "https://opencode.ai/config.json",
+          $schema: "https://opencode.ai/config.json", // kilocode_change
           enabled_providers: ["anthropic", "google"],
         }),
       ),
@@ -2550,10 +2537,10 @@ test("parseManagedPlist handles empty config", async () => {
   const config = ConfigParse.effectSchema(
     Config.Info,
     ConfigParse.jsonc(
-      await ConfigManaged.parseManagedPlist(JSON.stringify({ $schema: "https://opencode.ai/config.json" })),
+      await ConfigManaged.parseManagedPlist(JSON.stringify({ $schema: "https://opencode.ai/config.json" })), // kilocode_change
       "test:mobileconfig",
     ),
     "test:mobileconfig",
   )
-  expect(config.$schema).toBe("https://opencode.ai/config.json")
+  expect(config.$schema).toBe("https://opencode.ai/config.json") // kilocode_change
 })

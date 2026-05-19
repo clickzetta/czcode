@@ -89,7 +89,7 @@ const PathParameterSchemas = {
 
 const LegacyComponentDescriptions = {
   LogLevel: "Log level",
-  ServerConfig: "Server configuration for opencode serve and web commands",
+  ServerConfig: "Server configuration for opencode serve and web commands", // kilocode_change
   LayoutConfig: "@deprecated Always uses stretch layout.",
 } satisfies Record<string, string>
 

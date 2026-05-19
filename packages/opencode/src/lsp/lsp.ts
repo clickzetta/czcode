@@ -13,7 +13,7 @@ import { spawn as lspspawn } from "./launch"
 import { Effect, Layer, Context, Schema } from "effect"
 import { InstanceState } from "@/effect/instance-state"
 import { containsPath } from "@/project/instance-context"
-import { TsClient } from "../kilocode/ts-client" // kilocode_change
+import { TsClient } from "../kilocode/ts-client"
 import { NonNegativeInt, withStatics } from "@/util/schema"
 import { zod, ZodOverride } from "@/util/effect-zod"
 
@@ -275,7 +275,6 @@ export const layer = Layer.effect(
           if (!root) continue
           if (s.broken.has(root + server.id)) continue
 
-          // kilocode_change start - use lightweight tsgo-based client when persistent LSP is not enabled
           if (server.id === "typescript" && !Flag.KILO_EXPERIMENTAL_LSP_TOOL) {
             const existing = s.clients.find((x) => x.root === root && x.serverID === server.id)
             if (existing) {
@@ -288,7 +287,6 @@ export const layer = Layer.effect(
             Bus.publish(Event.Updated, {})
             continue
           }
-          // kilocode_change end
 
           const match = s.clients.find((x) => x.root === root && x.serverID === server.id)
           if (match) {

@@ -7,7 +7,7 @@ import { Instance } from "../../src/project/instance"
 import { Session } from "@/session/session"
 import { MessageV2 } from "../../src/session/message-v2"
 import type { SessionPrompt } from "../../src/session/prompt"
-import { MessageID, PartID, SessionID } from "../../src/session/schema" // kilocode_change - SessionID used by cost propagation tests
+import { MessageID, PartID, SessionID } from "../../src/session/schema"
 import { ModelID, ProviderID } from "../../src/provider/schema"
 import { TaskTool, type TaskPromptOps } from "../../src/tool/task"
 import { Truncate } from "@/tool/truncate"
@@ -64,7 +64,6 @@ const seed = Effect.fn("TaskToolTest.seed")(function* (title = "Pinned") {
   return { chat, assistant }
 })
 
-// kilocode_change start - stub signature + prompt body extended to persist assistant cost for propagation tests
 function stubOps(opts?: {
   onPrompt?: (input: SessionPrompt.PromptInput) => void
   text?: string
@@ -85,7 +84,6 @@ function stubOps(opts?: {
       }),
   }
 }
-// kilocode_change end
 
 function reply(input: SessionPrompt.PromptInput, text: string): MessageV2.WithParts {
   const id = MessageID.ascending()
@@ -355,7 +353,6 @@ describe("tool.task", () => {
 
           const child = yield* sessions.get(result.metadata.sessionId)
           expect(child.parentID).toBe(chat.id)
-          // kilocode_change start — use arrayContaining: Kilo appends inherited caller restrictions
           expect(child.permission).toEqual(
             expect.arrayContaining([
               {
@@ -380,10 +377,9 @@ describe("tool.task", () => {
               },
             ]),
           )
-          // kilocode_change end
           expect(seen?.tools).toEqual({
             todowrite: false,
-            task: false, // kilocode_change - Kilo disallows nested subagents
+            task: false,
             bash: false,
             read: false,
           })
@@ -400,7 +396,7 @@ describe("tool.task", () => {
           },
           experimental: {
             primary_tools: ["bash", "read"],
-            openTelemetry: true, // kilocode_change
+            openTelemetry: true,
           },
         },
       },
@@ -408,7 +404,6 @@ describe("tool.task", () => {
   )
 })
 
-// kilocode_change start - subagent cost propagation coverage (#6321)
 const assistantCost = Effect.fn("TaskToolTest.assistantCost")(function* (sessionID: string) {
   const sessions = yield* Session.Service
   const msgs = yield* sessions.messages({ sessionID: SessionID.make(sessionID) })
@@ -617,4 +612,3 @@ describe("tool.task cost propagation", () => {
     ),
   )
 })
-// kilocode_change end

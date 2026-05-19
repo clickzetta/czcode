@@ -93,7 +93,6 @@ afterEach(async () => {
   await resetDatabase()
 })
 
-// kilocode_change - HttpApi vs legacy Hono parity is structurally broken on Kilo:
 //   1. Effect's HttpApi runtime emits `field: null` for Schema.optional() values when
 //      the source data has the property as undefined. JSON.stringify (Hono) omits them.
 //      Many Kilo-specific Model fields (ai_sdk_provider, prompt, recommendedIndex,

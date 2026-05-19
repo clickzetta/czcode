@@ -86,7 +86,7 @@ function withProviderProject<A, E, R>(self: (dir: string) => Effect.Effect<A, E,
 
     yield* fs.writeFileString(
       path.join(dir, "opencode.json"),
-      JSON.stringify({ $schema: "https://opencode.ai/config.json", formatter: false, lsp: false }),
+      JSON.stringify({ $schema: "https://opencode.ai/config.json", formatter: false, lsp: false }), // kilocode_change
     )
     yield* writeProviderAuthPlugin(dir)
     yield* Effect.addFinalizer(() =>

@@ -27,12 +27,12 @@ import { EventRoutes } from "./event"
 import { SyncRoutes } from "./sync"
 import { InstanceMiddleware } from "./middleware"
 import { jsonRequest } from "./trace"
-import { register as registerKiloRoutes } from "@/kilocode/server/instance" // kilocode_change
+import { register as registerKiloRoutes } from "@/kilocode/server/instance"
 
 export const InstanceRoutes = (upgrade: UpgradeWebSocket): Hono => {
   const app = new Hono()
 
-  const full = app // kilocode_change
+  const full = app
   full
     .route("/project", ProjectRoutes())
     .route("/pty", PtyRoutes(upgrade))
@@ -51,7 +51,7 @@ export const InstanceRoutes = (upgrade: UpgradeWebSocket): Hono => {
       "/instance/dispose",
       describeRoute({
         summary: "Dispose instance",
-        description: "Clean up and dispose the current OpenCode instance, releasing all resources.",
+        description: "Clean up and dispose the current OpenCode instance, releasing all resources.", // kilocode_change
         operationId: "instance.dispose",
         responses: {
           200: {
@@ -73,7 +73,7 @@ export const InstanceRoutes = (upgrade: UpgradeWebSocket): Hono => {
       "/path",
       describeRoute({
         summary: "Get paths",
-        description: "Retrieve the current working directory and related path information for the OpenCode instance.",
+        description: "Retrieve the current working directory and related path information for the OpenCode instance.", // kilocode_change
         operationId: "path.get",
         responses: {
           200: {
@@ -167,7 +167,7 @@ export const InstanceRoutes = (upgrade: UpgradeWebSocket): Hono => {
       "/command",
       describeRoute({
         summary: "List commands",
-        description: "Get a list of all available commands in the OpenCode system.",
+        description: "Get a list of all available commands in the OpenCode system.", // kilocode_change
         operationId: "command.list",
         responses: {
           200: {
@@ -190,7 +190,7 @@ export const InstanceRoutes = (upgrade: UpgradeWebSocket): Hono => {
       "/agent",
       describeRoute({
         summary: "List agents",
-        description: "Get a list of all available AI agents in the OpenCode system.",
+        description: "Get a list of all available AI agents in the OpenCode system.", // kilocode_change
         operationId: "app.agents",
         responses: {
           200: {
@@ -213,7 +213,7 @@ export const InstanceRoutes = (upgrade: UpgradeWebSocket): Hono => {
       "/skill",
       describeRoute({
         summary: "List skills",
-        description: "Get a list of all available skills in the OpenCode system.",
+        description: "Get a list of all available skills in the OpenCode system.", // kilocode_change
         operationId: "app.skills",
         responses: {
           200: {
@@ -279,5 +279,5 @@ export const InstanceRoutes = (upgrade: UpgradeWebSocket): Hono => {
         }),
     )
 
-  return registerKiloRoutes(full) // kilocode_change
+  return registerKiloRoutes(full)
 }

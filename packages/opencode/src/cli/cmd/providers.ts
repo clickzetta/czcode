@@ -224,10 +224,8 @@ export function resolvePluginProviders(input: {
 }
 
 export const ProvidersCommand = cmd({
-  // kilocode_change start - keep "auth" as primary command name
   command: "auth",
   aliases: ["providers"],
-  // kilocode_change end
   describe: "manage AI providers and credentials",
   builder: (yargs) =>
     yargs.command(ProvidersListCommand).command(ProvidersLoginCommand).command(ProvidersLogoutCommand).demandCommand(),
@@ -239,7 +237,6 @@ export const ProvidersListCommand = cmd({
   aliases: ["ls"],
   describe: "list providers",
   async handler() {
-    // kilocode_change start - wrap with Instance.provide for ModelsDev.get() -> Config.get() dependency
     await Instance.provide({
       directory: process.cwd(),
       async fn() {
@@ -289,7 +286,6 @@ export const ProvidersListCommand = cmd({
         }
       },
     })
-    // kilocode_change end
   },
 })
 
@@ -299,7 +295,7 @@ export const ProvidersLoginCommand = cmd({
   builder: (yargs) =>
     yargs
       .positional("url", {
-        describe: "kilo auth provider", // kilocode_change
+        describe: "kilo auth provider",
         type: "string",
       })
       .option("provider", {
@@ -370,7 +366,6 @@ export const ProvidersLoginCommand = cmd({
           }),
         )
 
-        // kilocode_change start
         const priority: Record<string, number> = {
           kilo: 0,
           opencode: 1,
@@ -381,7 +376,6 @@ export const ProvidersLoginCommand = cmd({
           openrouter: 6,
           vercel: 7,
         }
-        // kilocode_change end
 
         const pluginProviders = resolvePluginProviders({
           hooks,
@@ -390,7 +384,7 @@ export const ProvidersLoginCommand = cmd({
           enabled,
           providerNames: Object.fromEntries(
             Object.entries(config.provider ?? {}).flatMap(([id, p]) => (p ? [[id, p.name]] : [])),
-          ), // kilocode_change
+          ),
         })
         const options = [
           ...pipe(
@@ -404,9 +398,9 @@ export const ProvidersLoginCommand = cmd({
               label: x.name,
               value: x.id,
               hint: {
-                kilo: "recommended", // kilocode_change
+                kilo: "recommended",
                 opencode: "recommended",
-                openai: "ChatGPT login or API key", // kilocode_change
+                openai: "ChatGPT login or API key",
               }[x.id],
             })),
           ),
@@ -422,10 +416,8 @@ export const ProvidersLoginCommand = cmd({
           const input = args.provider
           const byID = options.find((x) => x.value === input)
           const byName = options.find((x) => x.label.toLowerCase() === input.toLowerCase())
-          // kilocode_change start - accept codex as an alias for OpenAI ChatGPT auth
           const alias = input.toLowerCase() === "codex" ? options.find((x) => x.value === "openai") : undefined
           const match = byID ?? byName ?? alias
-          // kilocode_change end
           if (!match) {
             prompts.log.error(`Unknown provider "${input}"`)
             process.exit(1)
@@ -483,7 +475,7 @@ export const ProvidersLoginCommand = cmd({
         }
 
         if (provider === "opencode") {
-          prompts.log.info("Create an api key at https://opencode.ai/auth")
+          prompts.log.info("Create an api key at https://opencode.ai/auth") // kilocode_change
         }
 
         if (provider === "vercel") {
@@ -492,7 +484,7 @@ export const ProvidersLoginCommand = cmd({
 
         if (["cloudflare", "cloudflare-ai-gateway"].includes(provider)) {
           prompts.log.info(
-            "Cloudflare AI Gateway can be configured with CLOUDFLARE_GATEWAY_ID, CLOUDFLARE_ACCOUNT_ID, and CLOUDFLARE_API_TOKEN environment variables. Read more: https://opencode.ai/docs/providers/#cloudflare-ai-gateway",
+            "Cloudflare AI Gateway can be configured with CLOUDFLARE_GATEWAY_ID, CLOUDFLARE_ACCOUNT_ID, and CLOUDFLARE_API_TOKEN environment variables. Read more: https://opencode.ai/docs/providers/#cloudflare-ai-gateway", // kilocode_change
           )
         }
 
@@ -516,7 +508,6 @@ export const ProvidersLogoutCommand = cmd({
   command: "logout",
   describe: "log out from a configured provider",
   async handler() {
-    // kilocode_change start - wrap with Instance.provide for ModelsDev.get() -> Config.get() dependency
     await Instance.provide({
       directory: process.cwd(),
       async fn() {
@@ -546,6 +537,5 @@ export const ProvidersLogoutCommand = cmd({
         prompts.outro("Logout successful")
       },
     })
-    // kilocode_change end
   },
 })

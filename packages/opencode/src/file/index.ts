@@ -6,7 +6,7 @@ import { Git } from "@/git"
 import { Effect, Layer, Context, Schema, Scope } from "effect"
 import * as Stream from "effect/Stream"
 import { formatPatch, structuredPatch } from "diff"
-import { DiffFull } from "@/kilocode/snapshot/diff-full" // kilocode_change
+import { DiffFull } from "@/kilocode/snapshot/diff-full"
 import fuzzysort from "fuzzysort"
 import ignore from "ignore"
 import path from "path"
@@ -559,13 +559,11 @@ export const layer = Layer.effect(
           diff = yield* gitText(["-c", "core.fsmonitor=false", "diff", "--staged", "--", file])
         }
         if (diff.trim()) {
-          // kilocode_change start — patch via git (DiffFull.file) instead of the JS Myers
           // implementation. Upstream structuredPatch branch below is kept as dead code so
           // our diff from upstream stays minimal and future merges don't conflict.
           const got = yield* DiffFull.file(gitText, file)
           if (got) return { type: "text" as const, content, patch: got.patch, diff: got.text }
           return { type: "text" as const, content }
-          // kilocode_change end
           const original = yield* git.show(ctx.directory, "HEAD", file)
           const patch = structuredPatch(file, file, original, content, "old", "new", {
             context: Infinity,

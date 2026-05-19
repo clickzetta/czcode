@@ -30,7 +30,6 @@ const node = CrossSpawnSpawner.defaultLayer
 
 const it = testEffect(Layer.mergeAll(ToolRegistry.defaultLayer, node))
 
-// kilocode_change - skip on windows: address windows ci failures #9496
 const unix = process.platform !== "win32" ? it.live : it.live.skip
 
 describe("tool.skill", () => {
@@ -97,7 +96,6 @@ Use this skill.
     ),
   )
 
-  // kilocode_change start
   it.live("built-in kilo-config includes named command lookup guidance", () =>
     provideTmpdirInstance(
       (dir) =>
@@ -136,5 +134,4 @@ Use this skill.
       { git: true },
     ),
   )
-  // kilocode_change end
 })

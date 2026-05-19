@@ -31,7 +31,14 @@ jobs:
       - name: Check kilocode_change annotations in shared upstream files
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
+          # czcode_change start - skip annotation check for upstream merge PRs
+          if [[ "$PR_TITLE" == merge:* || "$PR_TITLE" == "merge: upstream"* ]]; then
+            echo "Upstream merge PR detected ('$PR_TITLE') — skipping annotation check."
+            exit 0
+          fi
+          # czcode_change end
           if [ -n "$BASE_SHA" ]; then
             bun run script/check-opencode-annotations.ts --base "$BASE_SHA"
           else

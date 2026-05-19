@@ -22,8 +22,8 @@ import { isMedia } from "@/util/media"
 import type { SystemError } from "bun"
 import type { Provider } from "@/provider/provider"
 import { ModelID, ProviderID } from "@/provider/schema"
-import { SessionNetwork } from "./network" // kilocode_change
-import { CodexAuthExpiredError } from "@/kilocode/provider/codex-refresh" // kilocode_change
+import { SessionNetwork } from "./network"
+import { CodexAuthExpiredError } from "@/kilocode/provider/codex-refresh"
 import { Effect, Schema, Types } from "effect"
 import { zod, ZodOverride } from "@/util/effect-zod"
 import { NonNegativeInt, withStatics } from "@/util/schema"
@@ -377,7 +377,6 @@ const messageBase = {
   sessionID: SessionID,
 }
 
-// kilocode_change start - shared editor context schema (used by MessageV2.User and SessionPrompt.PromptInput)
 export const EditorContext = Schema.Struct({
   visibleFiles: Schema.optional(Schema.Array(Schema.String)),
   openTabs: Schema.optional(Schema.Array(Schema.String)),
@@ -385,7 +384,6 @@ export const EditorContext = Schema.Struct({
   shell: Schema.optional(Schema.String),
 })
 export type EditorContext = Types.DeepMutable<Schema.Schema.Type<typeof EditorContext>>
-// kilocode_change end
 
 export const User = Schema.Struct({
   ...messageBase,
@@ -409,9 +407,7 @@ export const User = Schema.Struct({
   }),
   system: Schema.optional(Schema.String),
   tools: Schema.optional(Schema.Record(Schema.String, Schema.Boolean)),
-  // kilocode_change start
   editorContext: Schema.optional(EditorContext),
-  // kilocode_change end
 })
   .annotate({ identifier: "UserMessage" })
   .pipe(withStatics((s) => ({ zod: zod(s) })))
@@ -691,7 +687,6 @@ export const cursor = {
   },
 }
 
-// kilocode_change start - strip bloated metadata fields from stored parts to prevent multi-MB payloads
 // This handles both legacy data that was stored with full file contents and keeps the API response lean.
 function stripPatch(value: unknown) {
   if (typeof value !== "string") return undefined
@@ -705,7 +700,6 @@ function withPatch(value: unknown) {
 }
 
 export function stripPartMetadata(part: Part): Part {
-  // kilocode_change - exported for testing
   if (part.type !== "tool") return part
   const { state } = part
   if (state.status !== "completed" && state.status !== "running") return part
@@ -760,7 +754,6 @@ export function stripPartMetadata(part: Part): Part {
 }
 
 export function stripMessageMetadata(info: Info): Info {
-  // kilocode_change - exported for testing
   // Strip oversized summary.diffs patches from user messages to limit SSE payload.
   // Small patches are preserved so the UI can render inline diffs.
   if (info.role !== "user") return info
@@ -776,9 +769,7 @@ export function stripMessageMetadata(info: Info): Info {
     },
   } as Info
 }
-// kilocode_change end
 
-// kilocode_change - apply stripping inside helpers so all read paths are covered
 const info = (row: typeof MessageTable.$inferSelect) =>
   stripMessageMetadata({
     ...row.data,
@@ -793,7 +784,6 @@ const part = (row: typeof PartTable.$inferSelect) =>
     sessionID: row.session_id,
     messageID: row.message_id,
   } as Part)
-// kilocode_change end
 
 const older = (row: Cursor) =>
   or(lt(MessageTable.time_created, row.time), and(eq(MessageTable.time_created, row.time), lt(MessageTable.id, row.id)))
@@ -959,9 +949,7 @@ export const toModelMessagesEffect = Effect.fnUntraced(function* (
         parts: [],
       }
       for (const part of msg.parts) {
-        // kilocode_change start - keep local UI warnings out of future prompts
         if (part.type === "text" && !part.ignored)
-          // kilocode_change end
           assistantMessage.parts.push({
             type: "text",
             text: part.text,
@@ -1162,14 +1150,12 @@ export function parts(message_id: MessageID) {
   )
   return rows.map(
     (row) =>
-      // kilocode_change - apply stripping to parts fetched individually as well to cover all read paths
       stripPartMetadata({
         ...row.data,
         id: row.id,
         sessionID: row.session_id,
         messageID: row.message_id,
       } as Part),
-    // kilocode_change end
   )
 }
 
@@ -1241,18 +1227,18 @@ export function fromError(
         },
         { cause: e },
       ).toObject()
-    case e instanceof CodexAuthExpiredError: // kilocode_change start
+    case e instanceof CodexAuthExpiredError:
       return new AuthError(
         {
           providerID: "openai",
           message: e.message,
         },
         { cause: e },
-      ).toObject() // kilocode_change end
-    case SessionNetwork.disconnected(e): // kilocode_change start
+      ).toObject()
+    case SessionNetwork.disconnected(e):
       return new APIError(
         {
-          message: SessionNetwork.message(e), // kilocode_change end
+          message: SessionNetwork.message(e),
           isRetryable: true,
           metadata: {
             code: (e as SystemError).code ?? "",

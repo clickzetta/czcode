@@ -26,7 +26,7 @@ normalize "$SDK/src/v2/gen/types.gen.ts" > /tmp/sdk-types-hono.ts
 git -C "$SDK" checkout -- src/ 2>/dev/null
 
 echo "Generating HttpApi SDK..." >&2
-(cd "$SDK" && OPENCODE_SDK_OPENAPI=httpapi bun run script/build.ts >/dev/null 2>&1)
+(cd "$SDK" && OPENCODE_SDK_OPENAPI=httpapi bun run script/build.ts >/dev/null 2>&1) # kilocode_change
 normalize "$SDK/src/v2/gen/types.gen.ts" > /tmp/sdk-types-httpapi.ts
 git -C "$SDK" checkout -- src/ 2>/dev/null
 

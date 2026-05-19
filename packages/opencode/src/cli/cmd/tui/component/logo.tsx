@@ -2,7 +2,7 @@ import { BoxRenderable, MouseButton, MouseEvent, RGBA, TextAttributes } from "@o
 import { useRenderer } from "@opentui/solid"
 import { For, createMemo, createSignal, onCleanup, onMount, type JSX } from "solid-js"
 import { useTheme, tint } from "@tui/context/theme"
-import { KiloLogo } from "./kilo-logo" // kilocode_change
+import { KiloLogo } from "./kilo-logo"
 import * as Sound from "@tui/util/sound"
 import { go, logo } from "@/cli/logo"
 
@@ -553,11 +553,9 @@ function buildIdleState(t: number, ctx: LogoContext): IdleState {
   return { cfg, reach, rings, active }
 }
 
-// kilocode_change start
 export function Logo(_props: { shape?: LogoShape; ink?: RGBA; idle?: boolean } = {}) {
   return <KiloLogo />
 }
-// kilocode_change end
 
 export function GoLogo() {
   const { theme } = useTheme()

@@ -7,7 +7,6 @@ import EXIT_DESCRIPTION from "./plan-exit.txt"
 
 export const Parameters = Schema.Struct({})
 
-// kilocode_change start - simplified plan_exit: readiness signal only, no user prompt
 export const PlanExitTool = Tool.define(
   "plan_exit",
   Effect.gen(function* () {
@@ -30,4 +29,3 @@ export const PlanExitTool = Tool.define(
     }
   }),
 )
-// kilocode_change end

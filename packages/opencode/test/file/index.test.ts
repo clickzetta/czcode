@@ -676,7 +676,6 @@ describe("file/index Filesystem patterns", () => {
     })
   })
 
-  // kilocode_change - skip on windows: address windows ci failures #9496
   describe.skipIf(process.platform === "win32")("search()", () => {
     async function setupSearchableRepo() {
       const tmp = await tmpdir({ git: true })
@@ -894,7 +893,6 @@ describe("file/index Filesystem patterns", () => {
     })
   })
 
-  // kilocode_change - skip on windows: address windows ci failures #9496
   describe.skipIf(process.platform === "win32")("InstanceState isolation", () => {
     test("two directories get independent file caches", async () => {
       await using one = await tmpdir({ git: true })

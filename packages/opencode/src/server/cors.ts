@@ -1,4 +1,4 @@
-import * as KiloServer from "@/kilocode/server/server" // kilocode_change
+import * as KiloServer from "@/kilocode/server/server"
 
 const opencodeOrigin = /^https:\/\/([a-z0-9-]+\.)*opencode\.ai$/
 
@@ -12,8 +12,6 @@ export function isAllowedCorsOrigin(input: string | undefined, opts?: CorsOption
   if (input === "tauri://localhost" || input === "http://tauri.localhost" || input === "https://tauri.localhost")
     return true
   if (opencodeOrigin.test(input)) return true
-  // kilocode_change start
   if (KiloServer.corsOrigin(input)) return true
-  // kilocode_change end
   return opts?.cors?.includes(input) ?? false
 }

@@ -45,7 +45,7 @@ function withMcpProject<A, E, R>(self: (dir: string) => Effect.Effect<A, E, R>) 
     yield* fs.writeFileString(
       path.join(dir, "opencode.json"),
       JSON.stringify({
-        $schema: "https://opencode.ai/config.json",
+        $schema: "https://opencode.ai/config.json", // kilocode_change
         formatter: false,
         lsp: false,
         mcp: {

@@ -3,7 +3,7 @@ import { PermissionID } from "@/permission/schema"
 import { Effect, Schema } from "effect"
 import { HttpApiBuilder, HttpApiError } from "effect/unstable/httpapi"
 import { InstanceHttpApi } from "../api"
-import { SaveAlwaysRulesBody } from "../groups/permission" // kilocode_change
+import { SaveAlwaysRulesBody } from "../groups/permission"
 
 export const permissionHandlers = HttpApiBuilder.group(InstanceHttpApi, "permission", (handlers) =>
   Effect.gen(function* () {
@@ -22,11 +22,10 @@ export const permissionHandlers = HttpApiBuilder.group(InstanceHttpApi, "permiss
         reply: ctx.payload.reply,
         message: ctx.payload.message,
       })
-      if (!ok) return yield* new HttpApiError.NotFound({}) // kilocode_change
+      if (!ok) return yield* new HttpApiError.NotFound({})
       return true
     })
 
-    // kilocode_change start
     const saveAlwaysRules = Effect.fn("PermissionHttpApi.saveAlwaysRules")(function* (ctx: {
       params: { requestID: PermissionID }
       payload: Schema.Schema.Type<typeof SaveAlwaysRulesBody>
@@ -39,8 +38,7 @@ export const permissionHandlers = HttpApiBuilder.group(InstanceHttpApi, "permiss
       if (!ok) return yield* new HttpApiError.NotFound({})
       return true
     })
-    // kilocode_change end
 
-    return handlers.handle("list", list).handle("reply", reply).handle("saveAlwaysRules", saveAlwaysRules) // kilocode_change
+    return handlers.handle("list", list).handle("reply", reply).handle("saveAlwaysRules", saveAlwaysRules)
   }),
 )

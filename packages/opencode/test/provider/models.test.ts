@@ -118,7 +118,6 @@ const initialState: MockState = {
   calls: [],
 }
 
-// kilocode_change - skip: upstream tests assert raw-fixture passthrough but Kilo's
 // ModelsDev.get() filters/injects providers based on Config.get() (kilo-allowed gating,
 // apertis options, kilo provider injection). The test setup doesn't provide an Instance
 // context, so Config.get() throws "No context found for instance".

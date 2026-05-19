@@ -34,7 +34,7 @@ function withProject<A, E, R>(source: string, self: Effect.Effect<A, E, R>) {
               path.join(dir, "opencode.json"),
               JSON.stringify(
                 {
-                  $schema: "https://opencode.ai/config.json",
+                  $schema: "https://opencode.ai/config.json", // kilocode_change
                   plugin: [pathToFileURL(file).href],
                 },
                 null,

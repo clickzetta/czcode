@@ -28,7 +28,7 @@ const configLayer = Layer.succeed(
     invalidate: () => Effect.void,
     directories: () => Effect.succeed([]),
     waitForDependencies: () => Effect.void,
-    warnings: () => Effect.succeed([]), // kilocode_change
+    warnings: () => Effect.succeed([]),
   }),
 )
 

@@ -44,7 +44,7 @@ import { DialogSkill } from "../dialog-skill"
 import { DialogWorkspaceCreate, restoreWorkspaceSession } from "../dialog-workspace-create"
 import { DialogWorkspaceUnavailable } from "../dialog-workspace-unavailable"
 import { useArgs } from "@tui/context/args"
-import { KiloSessionTuiSync } from "@/kilocode/session/tui-sync" // kilocode_change
+import { KiloSessionTuiSync } from "@/kilocode/session/tui-sync"
 
 export type PromptProps = {
   sessionID?: string
@@ -249,7 +249,7 @@ export function Prompt(props: PromptProps) {
     mode: "normal" | "shell"
     extmarkToPartIndex: Map<number, number>
     interrupt: number
-    exitPress: number // kilocode_change - track double ctrl+c to exit
+    exitPress: number
     placeholder: number
   }>({
     placeholder: randomIndex(list().length),
@@ -260,7 +260,7 @@ export function Prompt(props: PromptProps) {
     mode: "normal",
     extmarkToPartIndex: new Map(),
     interrupt: 0,
-    exitPress: 0, // kilocode_change
+    exitPress: 0,
   })
 
   createEffect(
@@ -273,17 +273,14 @@ export function Prompt(props: PromptProps) {
     ),
   )
 
-  // kilocode_change start - sync local agent/model whenever newest user message changes
   let syncedKey: string | undefined
   createEffect(() => {
     const sessionID = props.sessionID
     const msg = lastUserMessage()
     if (!sessionID || !msg) return
-    // kilocode_change start - skip compaction messages while syncing local agent/model
     const parts = sync.data.part[msg.id]
     if (!parts) return
     if (!KiloSessionTuiSync.model({ role: msg.role, parts })) return
-    // kilocode_change end
 
     const key = [sessionID, msg.id].join(":")
     if (key === syncedKey) return
@@ -300,7 +297,6 @@ export function Prompt(props: PromptProps) {
       }
     }
   })
-  // kilocode_change end
 
   command.register(() => {
     return [
@@ -552,13 +548,11 @@ export function Prompt(props: PromptProps) {
     props.ref?.(undefined)
   })
 
-  // kilocode_change start - close autocomplete while blocking overlays hide the prompt
   createEffect(() => {
     if (props.visible === false || props.disabled) {
       auto()?.dismiss()
     }
   })
-  // kilocode_change end
 
   createEffect(() => {
     if (!input || input.isDestroyed) return
@@ -832,7 +826,7 @@ export function Prompt(props: PromptProps) {
     if (store.mode === "shell") {
       void sdk.client.session.shell({
         sessionID,
-        agent: local.agent.current()?.name ?? "", // kilocode_change
+        agent: local.agent.current()?.name ?? "",
         model: {
           providerID: selectedModel.providerID,
           modelID: selectedModel.modelID,
@@ -859,7 +853,7 @@ export function Prompt(props: PromptProps) {
         sessionID,
         command: command.slice(1),
         arguments: args,
-        agent: local.agent.current()?.name ?? "", // kilocode_change
+        agent: local.agent.current()?.name ?? "",
         model: `${selectedModel.providerID}/${selectedModel.modelID}`,
         messageID,
         variant,
@@ -871,6 +865,7 @@ export function Prompt(props: PromptProps) {
           })),
       })
     } else {
+      // kilocode_change start
       // czcode_change start — passive ALHF: detect dissatisfaction signals in user text
       const lowerText = inputText.toLowerCase()
       const dissatisfactionPatterns = [
@@ -886,12 +881,13 @@ export function Prompt(props: PromptProps) {
         Telemetry.trackUserDissatisfied(sessionID, local.agent.current()?.name)
       }
       // czcode_change end
+      // kilocode_change end
       sdk.client.session
         .prompt({
           sessionID,
           ...selectedModel,
           messageID,
-          agent: local.agent.current()?.name ?? "", // kilocode_change
+          agent: local.agent.current()?.name ?? "",
           model: selectedModel,
           variant,
           parts: [
@@ -907,7 +903,7 @@ export function Prompt(props: PromptProps) {
         .catch(() => {})
       lastSubmittedEditorSelectionKey = currentEditorSelectionKey
     }
-    toast.dismiss() // kilocode_change - dismiss persistent config warning on first submit
+    toast.dismiss()
     history.append({
       ...store.prompt,
       mode: currentMode,
@@ -1020,7 +1016,7 @@ export function Prompt(props: PromptProps) {
     if (store.mode === "shell") return theme.primary
     const agent = local.agent.current()
     if (!agent) return theme.border
-    return local.agent.color(agent.name ?? "") // kilocode_change
+    return local.agent.color(agent.name ?? "")
   })
 
   const showVariant = createMemo(() => {
@@ -1051,7 +1047,7 @@ export function Prompt(props: PromptProps) {
 
   const spinnerDef = createMemo(() => {
     const agent = local.agent.current()
-    const color = agent ? local.agent.color(agent.name ?? "") : theme.border // kilocode_change
+    const color = agent ? local.agent.color(agent.name ?? "") : theme.border
     return {
       frames: createFrames({
         color,
@@ -1125,11 +1121,9 @@ export function Prompt(props: PromptProps) {
                 autocomplete.onInput(value)
                 syncExtmarksWithPromptParts()
               }}
-              // kilocode_change start
               onCursorChange={() => {
                 if (store.mode === "normal") autocomplete.onCursorChange()
               }}
-              // kilocode_change end
               keyBindings={textareaKeybindings()}
               onKeyDown={async (e) => {
                 if (props.disabled) {
@@ -1164,7 +1158,6 @@ export function Prompt(props: PromptProps) {
                 }
                 if (keybind.match("app_exit", e)) {
                   if (store.prompt.input === "") {
-                    // kilocode_change start - double ctrl+c to exit, single ctrl+d exits immediately
                     if (e.ctrl && e.name === "c") {
                       setStore("exitPress", store.exitPress + 1)
                       setTimeout(() => {
@@ -1178,7 +1171,6 @@ export function Prompt(props: PromptProps) {
                       e.preventDefault()
                       return
                     }
-                    // kilocode_change end
                     await exit()
                     // Don't preventDefault - let textarea potentially handle the event
                     e.preventDefault()
@@ -1294,7 +1286,7 @@ export function Prompt(props: PromptProps) {
 
                 const lineCount = (pastedContent.match(/\n/g)?.length ?? 0) + 1
                 if (
-                  (lineCount >= 5 || pastedContent.length > 800) && // kilocode_change #7252 delay paste summary
+                  (lineCount >= 5 || pastedContent.length > 800) &&
                   kv.get("paste_summary_enabled", !sync.data.config.experimental?.disable_paste_summary)
                 ) {
                   pasteText(pastedContent, `[Pasted ~${lineCount} lines]`)
@@ -1334,12 +1326,10 @@ export function Prompt(props: PromptProps) {
                   {(agent) => (
                     <>
                       <text fg={fadeColor(highlight(), agentMetaAlpha())}>
-                        {/* kilocode_change start */}
                         {store.mode === "shell"
                           ? "Shell"
                           : (local.agent.current()?.displayName ??
                             Locale.titlecase(local.agent.current()?.name ?? ""))}{" "}
-                        {/* kilocode_change end */}
                       </text>
                       <Show when={store.mode === "normal"}>
                         <box flexDirection="row" gap={1}>
@@ -1375,7 +1365,7 @@ export function Prompt(props: PromptProps) {
         </box>
         <box
           height={1}
-          flexShrink={0} // kilocode_change - prevent border box from shrinking in narrow terminals (#6309)
+          flexShrink={0}
           border={["left"]}
           borderColor={borderHighlight()}
           customBorderChars={{
@@ -1483,13 +1473,11 @@ export function Prompt(props: PromptProps) {
           </Show>
           <Show when={status().type !== "retry"}>
             <box gap={2} flexDirection="row">
-              {/* kilocode_change start - show "ctrl+c again to exit" hint */}
               <Show when={store.exitPress > 0}>
                 <text fg={theme.primary}>
                   ctrl+c <span style={{ fg: theme.primary }}>again to exit</span>
                 </text>
               </Show>
-              {/* kilocode_change end */}
               <Show when={editorFileLabelDisplay()}>
                 {(file) => (
                   <text

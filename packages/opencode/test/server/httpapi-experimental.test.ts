@@ -55,7 +55,6 @@ afterEach(async () => {
 })
 
 describe("experimental HttpApi", () => {
-  // kilocode_change - skip until Kilo's Instance context threads through the Effect HttpApi bridge.
   // The /experimental/tool handler 500s via the bridge (InstanceState/AsyncLocalStorage leak).
   // Bridge is gated behind KILO_EXPERIMENTAL_HTTPAPI, not enabled in any production client.
   test.skip("serves read-only experimental endpoints through Hono bridge", async () => {

@@ -253,7 +253,6 @@ describe("InstanceStore", () => {
     }),
   )
 
-  // kilocode_change - Kilo wraps init in the Instance ALS so KilocodeBootstrap (and the
   // KiloIndexing.init that it forkDetaches) can read Instance.directory. Upstream's test
   // asserted the opposite contract; rewrite to assert Kilo's contract.
   it.live("installs Instance ALS around Effect init for Kilo bootstrap compatibility", () =>

@@ -134,7 +134,6 @@ function eventStreamResponse() {
   })
 }
 
-// kilocode_change - skip these tests after upstream's Workspace refactor.
 // They rely on spyOn(globalThis, "fetch") and spyOn(SyncEvent, "replayAll") to
 // intercept HTTP and replay paths. Upstream now routes those through the Effect
 // FetchHttpClient layer (fiber-ref defaultValue, not the spied globalThis.fetch

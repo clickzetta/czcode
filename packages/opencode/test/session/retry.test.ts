@@ -286,7 +286,6 @@ describe("session.message-v2.fromError", () => {
     expect(retryable).toBe("Connection reset by server")
   })
 
-  // kilocode_change start
   test("ECONNREFUSED socket error is retryable", () => {
     const result = MessageV2.fromError(
       {
@@ -301,7 +300,6 @@ describe("session.message-v2.fromError", () => {
     expect(result.data.message).toBe("Connection refused")
     expect(result.data.metadata?.code).toBe("ECONNREFUSED")
   })
-  // kilocode_change end
 
   test("marks OpenAI 404 status codes as retryable", () => {
     const error = new APICallError({
