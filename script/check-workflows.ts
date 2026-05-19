@@ -44,6 +44,7 @@ const active = new Set([
   "nix-hashes.yml",
   "publish-jetbrains.yml",
   "publish.yml",
+  "release.yml", // czcode_change - added in v7.3.0 upstream merge (replaces watch-opencode-releases.yml)
   "smoke-test.yml",
   "source-check-links.yml",
   "test-vscode.yml",
@@ -51,7 +52,7 @@ const active = new Set([
   "triage.yml",
   "typecheck.yml",
   "visual-regression.yml",
-  "watch-opencode-releases.yml",
+  // "watch-opencode-releases.yml", // czcode_change - removed in v7.3.0 upstream merge
 ])
 
 // GitHub picks up both .yml and .yaml in .github/workflows/. We accept both so
