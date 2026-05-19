@@ -1,3 +1,4 @@
+// kilocode_change - new file
 import { Database } from "bun:sqlite"
 import path from "node:path"
 import { expect, test } from "bun:test"
@@ -52,13 +53,17 @@ test("resolveZedSelection returns active editor selection", async () => {
   expect(await resolveZedSelection(fixture.dbPath, tmp.path)).toEqual({
     type: "selection",
     selection: {
-      text: "two",
       filePath: fixture.filePath,
       source: "zed",
-      selection: {
-        start: { line: 2, character: 1 },
-        end: { line: 2, character: 4 },
-      },
+      ranges: [
+        {
+          text: "two",
+          selection: {
+            start: { line: 2, character: 1 },
+            end: { line: 2, character: 4 },
+          },
+        },
+      ],
     },
   })
 })

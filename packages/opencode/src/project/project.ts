@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm"
 import { ProjectTable } from "./project.sql"
 import { SessionTable } from "../session/session.sql"
 import * as Log from "@opencode-ai/core/util/log"
-import { makeRuntime } from "@/effect/run-service" // kilocode_change
+import { makeRuntime } from "@/effect/run-service"
 import { Flag } from "@opencode-ai/core/flag/flag"
 import { BusEvent } from "@/bus/bus-event"
 import { GlobalBus } from "@/bus/global"
@@ -17,37 +17,38 @@ import { NodePath } from "@effect/platform-node"
 import { AppFileSystem } from "@opencode-ai/core/filesystem"
 import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
 import { zod } from "@/util/effect-zod"
-import { withStatics } from "@/util/schema"
+import { NonNegativeInt, optionalOmitUndefined, withStatics } from "@/util/schema"
+import { serviceUse } from "@/effect/service-use"
 
 const log = Log.create({ service: "project" })
 
 const ProjectVcs = Schema.Literal("git")
 
 const ProjectIcon = Schema.Struct({
-  url: Schema.optional(Schema.String),
-  override: Schema.optional(Schema.String),
-  color: Schema.optional(Schema.String),
+  url: optionalOmitUndefined(Schema.String),
+  override: optionalOmitUndefined(Schema.String),
+  color: optionalOmitUndefined(Schema.String),
 })
 
 const ProjectCommands = Schema.Struct({
-  start: Schema.optional(
+  start: optionalOmitUndefined(
     Schema.String.annotate({ description: "Startup script to run when creating a new workspace (worktree)" }),
   ),
 })
 
 const ProjectTime = Schema.Struct({
-  created: Schema.Number,
-  updated: Schema.Number,
-  initialized: Schema.optional(Schema.Number),
+  created: NonNegativeInt,
+  updated: NonNegativeInt,
+  initialized: optionalOmitUndefined(NonNegativeInt),
 })
 
 export const Info = Schema.Struct({
   id: ProjectID,
   worktree: Schema.String,
-  vcs: Schema.optional(ProjectVcs),
-  name: Schema.optional(Schema.String),
-  icon: Schema.optional(ProjectIcon),
-  commands: Schema.optional(ProjectCommands),
+  vcs: optionalOmitUndefined(ProjectVcs),
+  name: optionalOmitUndefined(Schema.String),
+  icon: optionalOmitUndefined(ProjectIcon),
+  commands: optionalOmitUndefined(ProjectCommands),
   time: ProjectTime,
   sandboxes: Schema.Array(Schema.String),
 })
@@ -181,7 +182,7 @@ export const layer: Layer.Layer<
       return yield* fs.readFileString(pathSvc.join(dir, "kilo")).pipe(
         // kilocode change end
         Effect.map((x) => x.trim()),
-        Effect.map(ProjectID.make),
+        Effect.map((x) => ProjectID.make(x)),
         Effect.catch(() => Effect.void),
       )
     })
@@ -246,7 +247,7 @@ export const layer: Layer.Layer<
 
           id = roots[0] ? ProjectID.make(roots[0]) : undefined
           if (id) {
-            yield* fs.writeFileString(pathSvc.join(common, "kilo"), id).pipe(Effect.ignore) // kilocode_change
+            yield* fs.writeFileString(pathSvc.join(common, "kilo"), id).pipe(Effect.ignore)
           }
         }
 
@@ -488,6 +489,8 @@ export const defaultLayer = layer.pipe(
   Layer.provide(NodePath.layer),
 )
 
+export const use = serviceUse(Service)
+
 export function list() {
   return Database.use((db) =>
     db
@@ -510,10 +513,8 @@ export function setInitialized(id: ProjectID) {
   )
 }
 
-// kilocode_change start - legacy promise helpers for Kilo callsites
 const { runPromise } = makeRuntime(Service, defaultLayer)
 export const fromDirectory = (directory: string) => runPromise((svc) => svc.fromDirectory(directory))
 export const sandboxes = (id: ProjectID) => runPromise((svc) => svc.sandboxes(id))
-// kilocode_change end
 
 export * as Project from "./project"

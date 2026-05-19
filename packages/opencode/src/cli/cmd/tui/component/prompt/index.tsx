@@ -12,11 +12,12 @@ import { useRoute } from "@tui/context/route"
 import { useProject } from "@tui/context/project"
 import { useSync } from "@tui/context/sync"
 import { useEvent } from "@tui/context/event"
-import { useEditorContext } from "@tui/context/editor"
+import { editorSelectionKey, useEditorContext, type EditorSelection } from "@tui/context/editor"
 import { MessageID, PartID } from "@/session/schema"
 import { createStore, produce, unwrap } from "solid-js/store"
 import { useKeybind } from "@tui/context/keybind"
 import { usePromptHistory, type PromptInfo } from "./history"
+import { computePromptTraits } from "./traits"
 import { assign } from "./part"
 import { usePromptStash } from "./stash"
 import { DialogStash } from "../dialog-stash"
@@ -43,6 +44,7 @@ import { DialogSkill } from "../dialog-skill"
 import { DialogWorkspaceCreate, restoreWorkspaceSession } from "../dialog-workspace-create"
 import { DialogWorkspaceUnavailable } from "../dialog-workspace-unavailable"
 import { useArgs } from "@tui/context/args"
+import { KiloSessionTuiSync } from "@/kilocode/session/tui-sync"
 
 export type PromptProps = {
   sessionID?: string
@@ -84,6 +86,32 @@ function fadeColor(color: RGBA, alpha: number) {
   return RGBA.fromValues(color.r, color.g, color.b, color.a * alpha)
 }
 
+function hasEditorRangeSelection(selection: EditorSelection["ranges"][number]) {
+  return (
+    selection.selection.start.line !== selection.selection.end.line ||
+    selection.selection.start.character !== selection.selection.end.character
+  )
+}
+
+function getEditorRangeLabel(selection: EditorSelection["ranges"][number]) {
+  if (!hasEditorRangeSelection(selection)) return
+  if (selection.selection.start.line === selection.selection.end.line) return `#${selection.selection.start.line}`
+  return `#${selection.selection.start.line}-${selection.selection.end.line}`
+}
+
+function formatEditorContext(selection: EditorSelection) {
+  const selected = selection.ranges.filter(hasEditorRangeSelection)
+  if (selected.length === 0)
+    return `<system-reminder>Note: The user opened the file "${selection.filePath}". This may or may not be relevant to the current task.</system-reminder>\n`
+
+  const ranges = selected.map((range, index) => {
+    const prefix = selected.length > 1 ? `Selection ${index + 1}: ` : ""
+    return `Note: The user selected ${prefix}${getEditorRangeLabel(range)} from "${selection.filePath}". \`\`\`${range.text}\`\`\`\n\n`
+  })
+
+  return `<system-reminder>${ranges.join("\n")} This may or may not be relevant to the current task.</system-reminder>\n`
+}
+
 let stashed: { prompt: PromptInfo; cursor: number } | undefined
 
 export function Prompt(props: PromptProps) {
@@ -113,13 +141,21 @@ export function Prompt(props: PromptProps) {
   const list = createMemo(() => props.placeholders?.normal ?? [])
   const shell = createMemo(() => props.placeholders?.shell ?? [])
   const fileContextEnabled = createMemo(() => kv.get("file_context_enabled", true))
-  const editorPath = createMemo(() => (fileContextEnabled() ? editor.selection()?.filePath : undefined))
-  const editorSelectionLabel = createMemo(() => {
-    const selection = fileContextEnabled() ? editor.selection()?.selection : undefined
+  const [dismissedEditorSelectionKey, setDismissedEditorSelectionKey] = createSignal<string>()
+  const editorContext = createMemo(() => {
+    const selection = fileContextEnabled() ? editor.selection() : undefined
     if (!selection) return
-    if (selection.start.line === selection.end.line && selection.start.character === selection.end.character) return
-    if (selection.start.line === selection.end.line) return `#${selection.start.line}`
-    return `#${selection.start.line}-${selection.end.line}`
+    return editorSelectionKey(selection) === dismissedEditorSelectionKey() ? undefined : selection
+  })
+  const editorPath = createMemo(() => editorContext()?.filePath)
+  const editorSelectionLabel = createMemo(() => {
+    const ranges = editorContext()?.ranges
+    if (!ranges) return
+    const first = ranges.find(hasEditorRangeSelection) ?? ranges[0]
+    if (!first) return
+    return [getEditorRangeLabel(first), ranges.length > 1 ? `+${ranges.length - 1}` : undefined]
+      .filter(Boolean)
+      .join(" ")
   })
   const editorFileLabel = createMemo(() => {
     const value = editorPath()
@@ -135,6 +171,8 @@ export function Prompt(props: PromptProps) {
     if (!file) return
     return Locale.truncateMiddle(file, Math.max(12, Math.min(48, Math.floor(dimensions().width / 3))))
   })
+  const [editorContextHover, setEditorContextHover] = createSignal(false)
+  let lastSubmittedEditorSelectionKey: string | undefined
   const [auto, setAuto] = createSignal<AutocompleteRef>()
   const currentProviderLabel = createMemo(() => local.model.parsed().provider)
   const hasRightContent = createMemo(() => Boolean(props.right))
@@ -148,6 +186,11 @@ export function Prompt(props: PromptProps) {
     if (sync.data.provider.length === 0) {
       dialog.replace(() => <DialogProviderConnect />)
     }
+  }
+
+  function dismissEditorContext() {
+    setDismissedEditorSelectionKey(editorSelectionKey(editorContext()))
+    editor.clearSelection()
   }
 
   const textareaKeybindings = useTextareaKeybindings()
@@ -206,7 +249,7 @@ export function Prompt(props: PromptProps) {
     mode: "normal" | "shell"
     extmarkToPartIndex: Map<number, number>
     interrupt: number
-    exitPress: number // kilocode_change - track double ctrl+c to exit
+    exitPress: number
     placeholder: number
   }>({
     placeholder: randomIndex(list().length),
@@ -217,7 +260,7 @@ export function Prompt(props: PromptProps) {
     mode: "normal",
     extmarkToPartIndex: new Map(),
     interrupt: 0,
-    exitPress: 0, // kilocode_change
+    exitPress: 0,
   })
 
   createEffect(
@@ -230,12 +273,14 @@ export function Prompt(props: PromptProps) {
     ),
   )
 
-  // kilocode_change start - sync local agent/model whenever newest user message changes
   let syncedKey: string | undefined
   createEffect(() => {
     const sessionID = props.sessionID
     const msg = lastUserMessage()
     if (!sessionID || !msg) return
+    const parts = sync.data.part[msg.id]
+    if (!parts) return
+    if (!KiloSessionTuiSync.model({ role: msg.role, parts })) return
 
     const key = [sessionID, msg.id].join(":")
     if (key === syncedKey) return
@@ -252,7 +297,6 @@ export function Prompt(props: PromptProps) {
       }
     }
   })
-  // kilocode_change end
 
   command.register(() => {
     return [
@@ -278,6 +322,16 @@ export function Prompt(props: PromptProps) {
           const handled = await submit()
           if (!handled) return
 
+          dialog.clear()
+        },
+      },
+      {
+        title: "Remove editor context",
+        value: "prompt.editor_context.clear",
+        category: "Prompt",
+        enabled: Boolean(editorContext()),
+        onSelect: (dialog) => {
+          dismissEditorContext()
           dialog.clear()
         },
       },
@@ -494,13 +548,11 @@ export function Prompt(props: PromptProps) {
     props.ref?.(undefined)
   })
 
-  // kilocode_change start - close autocomplete while blocking overlays hide the prompt
   createEffect(() => {
     if (props.visible === false || props.disabled) {
       auto()?.dismiss()
     }
   })
-  // kilocode_change end
 
   createEffect(() => {
     if (!input || input.isDestroyed) return
@@ -516,17 +568,11 @@ export function Prompt(props: PromptProps) {
 
   createEffect(() => {
     if (!input || input.isDestroyed) return
-    const capture =
-      store.mode === "normal"
-        ? auto()?.visible
-          ? (["escape", "navigate", "submit", "tab"] as const)
-          : (["tab"] as const)
-        : undefined
-    input.traits = {
-      capture,
-      suspend: !!props.disabled || store.mode === "shell",
-      status: store.mode === "shell" ? "SHELL" : undefined,
-    }
+    input.traits = computePromptTraits({
+      mode: store.mode,
+      disabled: !!props.disabled,
+      autocompleteVisible: !!auto()?.visible,
+    })
   })
 
   function restoreExtmarksFromParts(parts: PromptInfo["parts"]) {
@@ -757,42 +803,30 @@ export function Prompt(props: PromptProps) {
     // Capture mode before it gets reset
     const currentMode = store.mode
     const variant = local.model.variant.current()
-    const editorSelection = fileContextEnabled() ? editor.selection() : undefined
-    const editorParts = editorSelection
-      ? [
-          {
-            id: PartID.ascending(),
-            type: "text" as const,
-            text: (() => {
-              const start = editorSelection.selection.start
-              const end = editorSelection.selection.end
-
-              let text = ""
-              if (start.line === end.line && start.character === end.character) {
-                text = `Note: The user opened the file "${editorSelection.filePath}".`
-              } else if (start.line === end.line) {
-                text = `Note: The user selected line ${start.line + 1} from "${editorSelection.filePath}". \`\`\`${editorSelection.text}\`\`\`\n\n`
-              } else {
-                text = `Note: The user selected lines ${start.line + 1} to ${end.line + 1} from "${editorSelection.filePath}". \`\`\`${editorSelection.text}\`\`\`\n\n`
-              }
-
-              return `<system-reminder>${text} This may or may not be relevant to the current task.</system-reminder>\n`
-            })(),
-            synthetic: true,
-            metadata: {
-              kind: "editor_context",
-              source: editorSelection.source ?? "editor",
-              filePath: editorSelection.filePath,
-              selection: editorSelection.selection,
+    const editorSelection = editorContext()
+    const currentEditorSelectionKey = editorSelectionKey(editorSelection)
+    const editorParts =
+      editorSelection && currentEditorSelectionKey !== lastSubmittedEditorSelectionKey
+        ? [
+            {
+              id: PartID.ascending(),
+              type: "text" as const,
+              text: formatEditorContext(editorSelection),
+              synthetic: true,
+              metadata: {
+                kind: "editor_context",
+                source: editorSelection.source ?? "editor",
+                filePath: editorSelection.filePath,
+                ranges: editorSelection.ranges,
+              },
             },
-          },
-        ]
-      : []
+          ]
+        : []
 
     if (store.mode === "shell") {
       void sdk.client.session.shell({
         sessionID,
-        agent: local.agent.current()?.name ?? "", // kilocode_change
+        agent: local.agent.current()?.name ?? "",
         model: {
           providerID: selectedModel.providerID,
           modelID: selectedModel.modelID,
@@ -819,7 +853,7 @@ export function Prompt(props: PromptProps) {
         sessionID,
         command: command.slice(1),
         arguments: args,
-        agent: local.agent.current()?.name ?? "", // kilocode_change
+        agent: local.agent.current()?.name ?? "",
         model: `${selectedModel.providerID}/${selectedModel.modelID}`,
         messageID,
         variant,
@@ -831,6 +865,7 @@ export function Prompt(props: PromptProps) {
           })),
       })
     } else {
+      // kilocode_change start
       // czcode_change start — passive ALHF: detect dissatisfaction signals in user text
       const lowerText = inputText.toLowerCase()
       const dissatisfactionPatterns = [
@@ -846,12 +881,13 @@ export function Prompt(props: PromptProps) {
         Telemetry.trackUserDissatisfied(sessionID, local.agent.current()?.name)
       }
       // czcode_change end
+      // kilocode_change end
       sdk.client.session
         .prompt({
           sessionID,
           ...selectedModel,
           messageID,
-          agent: local.agent.current()?.name ?? "", // kilocode_change
+          agent: local.agent.current()?.name ?? "",
           model: selectedModel,
           variant,
           parts: [
@@ -865,9 +901,9 @@ export function Prompt(props: PromptProps) {
           ],
         })
         .catch(() => {})
-      editor.clearSelection()
+      lastSubmittedEditorSelectionKey = currentEditorSelectionKey
     }
-    toast.dismiss() // kilocode_change - dismiss persistent config warning on first submit
+    toast.dismiss()
     history.append({
       ...store.prompt,
       mode: currentMode,
@@ -980,7 +1016,7 @@ export function Prompt(props: PromptProps) {
     if (store.mode === "shell") return theme.primary
     const agent = local.agent.current()
     if (!agent) return theme.border
-    return local.agent.color(agent.name ?? "") // kilocode_change
+    return local.agent.color(agent.name ?? "")
   })
 
   const showVariant = createMemo(() => {
@@ -1011,7 +1047,7 @@ export function Prompt(props: PromptProps) {
 
   const spinnerDef = createMemo(() => {
     const agent = local.agent.current()
-    const color = agent ? local.agent.color(agent.name ?? "") : theme.border // kilocode_change
+    const color = agent ? local.agent.color(agent.name ?? "") : theme.border
     return {
       frames: createFrames({
         color,
@@ -1085,11 +1121,9 @@ export function Prompt(props: PromptProps) {
                 autocomplete.onInput(value)
                 syncExtmarksWithPromptParts()
               }}
-              // kilocode_change start
               onCursorChange={() => {
                 if (store.mode === "normal") autocomplete.onCursorChange()
               }}
-              // kilocode_change end
               keyBindings={textareaKeybindings()}
               onKeyDown={async (e) => {
                 if (props.disabled) {
@@ -1124,7 +1158,6 @@ export function Prompt(props: PromptProps) {
                 }
                 if (keybind.match("app_exit", e)) {
                   if (store.prompt.input === "") {
-                    // kilocode_change start - double ctrl+c to exit, single ctrl+d exits immediately
                     if (e.ctrl && e.name === "c") {
                       setStore("exitPress", store.exitPress + 1)
                       setTimeout(() => {
@@ -1138,7 +1171,6 @@ export function Prompt(props: PromptProps) {
                       e.preventDefault()
                       return
                     }
-                    // kilocode_change end
                     await exit()
                     // Don't preventDefault - let textarea potentially handle the event
                     e.preventDefault()
@@ -1254,8 +1286,8 @@ export function Prompt(props: PromptProps) {
 
                 const lineCount = (pastedContent.match(/\n/g)?.length ?? 0) + 1
                 if (
-                  (lineCount >= 5 || pastedContent.length > 800) && // kilocode_change #7252 delay paste summary
-                  !sync.data.config.experimental?.disable_paste_summary
+                  (lineCount >= 5 || pastedContent.length > 800) &&
+                  kv.get("paste_summary_enabled", !sync.data.config.experimental?.disable_paste_summary)
                 ) {
                   pasteText(pastedContent, `[Pasted ~${lineCount} lines]`)
                   return
@@ -1294,12 +1326,10 @@ export function Prompt(props: PromptProps) {
                   {(agent) => (
                     <>
                       <text fg={fadeColor(highlight(), agentMetaAlpha())}>
-                        {/* kilocode_change start */}
                         {store.mode === "shell"
                           ? "Shell"
                           : (local.agent.current()?.displayName ??
                             Locale.titlecase(local.agent.current()?.name ?? ""))}{" "}
-                        {/* kilocode_change end */}
                       </text>
                       <Show when={store.mode === "normal"}>
                         <box flexDirection="row" gap={1}>
@@ -1335,7 +1365,7 @@ export function Prompt(props: PromptProps) {
         </box>
         <box
           height={1}
-          flexShrink={0} // kilocode_change - prevent border box from shrinking in narrow terminals (#6309)
+          flexShrink={0}
           border={["left"]}
           borderColor={borderHighlight()}
           customBorderChars={{
@@ -1443,14 +1473,23 @@ export function Prompt(props: PromptProps) {
           </Show>
           <Show when={status().type !== "retry"}>
             <box gap={2} flexDirection="row">
-              {/* kilocode_change start - show "ctrl+c again to exit" hint */}
               <Show when={store.exitPress > 0}>
                 <text fg={theme.primary}>
                   ctrl+c <span style={{ fg: theme.primary }}>again to exit</span>
                 </text>
               </Show>
-              {/* kilocode_change end */}
-              <Show when={editorFileLabelDisplay()}>{(file) => <text fg={theme.secondary}>{file()}</text>}</Show>
+              <Show when={editorFileLabelDisplay()}>
+                {(file) => (
+                  <text
+                    fg={theme.secondary}
+                    onMouseOver={() => setEditorContextHover(true)}
+                    onMouseOut={() => setEditorContextHover(false)}
+                    onMouseUp={dismissEditorContext}
+                  >
+                    {editorContextHover() ? `x ${file()}` : file()}
+                  </text>
+                )}
+              </Show>
               <Switch>
                 <Match when={store.mode === "normal"}>
                   <Switch>

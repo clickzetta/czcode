@@ -8,9 +8,14 @@ import type * as Scope from "effect/Scope"
 import { ChildProcess, ChildProcessSpawner } from "effect/unstable/process"
 import type { Config } from "@/config/config"
 import { InstanceRef } from "../../src/effect/instance-ref"
+import { InstanceStore } from "../../src/project/instance-store"
 import { Instance } from "../../src/project/instance"
 import { TestLLMServer } from "../lib/llm-server"
-import { remove as cleanup } from "../kilocode/cleanup" // kilocode_change
+import { remove as cleanup } from "../kilocode/cleanup"
+
+// Re-export for test ergonomics. The implementation lives next to the runtime
+// it consumes; see `InstanceStore.disposeAllInstances` for the rationale.
+export { disposeAllInstances } from "../../src/project/instance-store"
 
 // Strip null bytes from paths (defensive fix for CI environment issues)
 function sanitizePath(p: string): string {
@@ -25,7 +30,7 @@ function exists(dir: string) {
 }
 
 function clean(dir: string) {
-  return cleanup(dir) // kilocode_change
+  return cleanup(dir)
 }
 
 async function stop(dir: string) {
@@ -107,7 +112,7 @@ export function tmpdirScoped(options?: { git?: boolean; config?: Partial<Config.
       yield* Effect.promise(() =>
         fs.writeFile(
           path.join(dir, "opencode.json"),
-          JSON.stringify({ $schema: "https://opencode.ai/config.json", ...options.config }),
+          JSON.stringify({ $schema: "https://opencode.ai/config.json", ...options.config }), // kilocode_change
         ),
       )
     }
@@ -141,7 +146,7 @@ export function provideTmpdirInstance<A, E, R>(
         ? Effect.promise(() =>
             Instance.provide({
               directory: path,
-              fn: () => Instance.dispose(),
+              fn: () => InstanceStore.disposeInstance(Instance.current),
             }),
           ).pipe(Effect.ignore)
         : Effect.void,

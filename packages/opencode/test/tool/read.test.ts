@@ -13,20 +13,20 @@ import { ReadTool } from "../../src/tool/read"
 import { Truncate } from "@/tool/truncate"
 import { Tool } from "@/tool/tool"
 import { Filesystem } from "@/util/filesystem"
-import { provideInstance, tmpdirScoped } from "../fixture/fixture"
+import { disposeAllInstances, provideInstance, tmpdirScoped } from "../fixture/fixture"
 import { testEffect } from "../lib/effect"
 
 const FIXTURES_DIR = path.join(import.meta.dir, "fixtures")
 
 afterEach(async () => {
-  await Instance.disposeAll()
+  await disposeAllInstances()
 })
 
 const ctx = {
   sessionID: SessionID.make("ses_test"),
   messageID: MessageID.make(""),
   callID: "",
-  agent: "code", // kilocode_change
+  agent: "code",
   abort: AbortSignal.any([]),
   messages: [],
   metadata: () => Effect.void,
@@ -212,9 +212,7 @@ describe("tool.read env file permissions", () => {
     ["environment.ts", false],
   ]
 
-  // kilocode_change start - renamed from "build" to "code"
   for (const agentName of ["code", "plan"] as const) {
-    // kilocode_change end
     describe(`agent=${agentName}`, () => {
       for (const [filename, shouldAsk] of cases) {
         it.live(`${filename} asks=${shouldAsk}`, () =>
@@ -440,6 +438,24 @@ root_type Monster;`
       expect(result.attachments).toBeUndefined()
       expect(result.output).toContain("namespace MyGame")
       expect(result.output).toContain("table Monster")
+    }),
+  )
+
+  it.live("falls through unsupported image mime types to text", () =>
+    Effect.gen(function* () {
+      const dir = yield* tmpdirScoped()
+      const cases = [
+        ["image.bmp", "BM text content"],
+        ["photo.tiff", "II text content"],
+        ["photo.avif", "avif text content"],
+      ] as const
+
+      for (const item of cases) {
+        yield* put(path.join(dir, item[0]), item[1])
+        const result = yield* exec(dir, { filePath: path.join(dir, item[0]) })
+        expect(result.attachments).toBeUndefined()
+        expect(result.output).toContain(item[1])
+      }
     }),
   )
 })

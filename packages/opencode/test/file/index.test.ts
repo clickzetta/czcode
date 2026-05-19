@@ -6,10 +6,10 @@ import fs from "fs/promises"
 import { File } from "../../src/file"
 import { Instance } from "../../src/project/instance"
 import { Filesystem } from "@/util/filesystem"
-import { provideInstance, tmpdir } from "../fixture/fixture"
+import { disposeAllInstances, provideInstance, tmpdir } from "../fixture/fixture"
 
 afterEach(async () => {
-  await Instance.disposeAll()
+  await disposeAllInstances()
 })
 
 const init = () => run(File.Service.use((svc) => svc.init()))
@@ -676,7 +676,6 @@ describe("file/index Filesystem patterns", () => {
     })
   })
 
-  // kilocode_change - skip on windows: address windows ci failures #9496
   describe.skipIf(process.platform === "win32")("search()", () => {
     async function setupSearchableRepo() {
       const tmp = await tmpdir({ git: true })
@@ -894,7 +893,6 @@ describe("file/index Filesystem patterns", () => {
     })
   })
 
-  // kilocode_change - skip on windows: address windows ci failures #9496
   describe.skipIf(process.platform === "win32")("InstanceState isolation", () => {
     test("two directories get independent file caches", async () => {
       await using one = await tmpdir({ git: true })
@@ -938,7 +936,7 @@ describe("file/index Filesystem patterns", () => {
         },
       })
 
-      await Instance.disposeAll()
+      await disposeAllInstances()
 
       await fs.writeFile(path.join(tmp.path, "after.ts"), "after", "utf-8")
       await fs.rm(path.join(tmp.path, "before.ts"))

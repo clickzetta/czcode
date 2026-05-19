@@ -865,4 +865,14 @@ module.exports = [
     basePath: false,
     permanent: true,
   },
+<<<<<<< HEAD
+||||||| 12f7967ca4
+=======
+  {
+    source: "/docs/code-with-ai/gastown/wasteland/troubleshooting",
+    destination: "/docs/code-with-ai/gastown/wasteland",
+    basePath: false,
+    permanent: true,
+  },
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 ]

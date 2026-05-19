@@ -12,9 +12,9 @@ import { Process } from "@/util/process"
 import { spawn as lspspawn } from "./launch"
 import { Effect, Layer, Context, Schema } from "effect"
 import { InstanceState } from "@/effect/instance-state"
-import { AppFileSystem } from "@opencode-ai/core/filesystem"
-import { TsClient } from "../kilocode/ts-client" // kilocode_change
-import { withStatics } from "@/util/schema"
+import { containsPath } from "@/project/instance-context"
+import { TsClient } from "../kilocode/ts-client"
+import { NonNegativeInt, withStatics } from "@/util/schema"
 import { zod, ZodOverride } from "@/util/effect-zod"
 
 const log = Log.create({ service: "lsp" })
@@ -24,8 +24,8 @@ export const Event = {
 }
 
 const Position = Schema.Struct({
-  line: Schema.Number,
-  character: Schema.Number,
+  line: NonNegativeInt,
+  character: NonNegativeInt,
 })
 
 export const Range = Schema.Struct({
@@ -38,7 +38,7 @@ export type Range = typeof Range.Type
 
 export const Symbol = Schema.Struct({
   name: Schema.String,
-  kind: Schema.Number,
+  kind: NonNegativeInt,
   location: Schema.Struct({
     uri: Schema.String,
     range: Range,
@@ -51,7 +51,7 @@ export type Symbol = typeof Symbol.Type
 export const DocumentSymbol = Schema.Struct({
   name: Schema.String,
   detail: Schema.optional(Schema.String),
-  kind: Schema.Number,
+  kind: NonNegativeInt,
   range: Range,
   selectionRange: Range,
 })
@@ -222,12 +222,7 @@ export const layer = Layer.effect(
 
     const getClients = Effect.fnUntraced(function* (file: string) {
       const ctx = yield* InstanceState.context
-      if (
-        !AppFileSystem.contains(ctx.directory, file) &&
-        (ctx.worktree === "/" || !AppFileSystem.contains(ctx.worktree, file))
-      ) {
-        return [] as LSPClient.Info[]
-      }
+      if (!containsPath(file, ctx)) return [] as LSPClient.Info[]
       const s = yield* InstanceState.get(state)
       return yield* Effect.promise(async () => {
         const extension = path.parse(file).ext || file
@@ -280,7 +275,6 @@ export const layer = Layer.effect(
           if (!root) continue
           if (s.broken.has(root + server.id)) continue
 
-          // kilocode_change start - use lightweight tsgo-based client when persistent LSP is not enabled
           if (server.id === "typescript" && !Flag.KILO_EXPERIMENTAL_LSP_TOOL) {
             const existing = s.clients.find((x) => x.root === root && x.serverID === server.id)
             if (existing) {
@@ -293,7 +287,6 @@ export const layer = Layer.effect(
             Bus.publish(Event.Updated, {})
             continue
           }
-          // kilocode_change end
 
           const match = s.clients.find((x) => x.root === root && x.serverID === server.id)
           if (match) {

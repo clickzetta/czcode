@@ -5,12 +5,12 @@ import fs from "fs"
 import path from "path"
 import { fileURLToPath } from "url"
 import { createSolidTransformPlugin } from "@opentui/solid/bun-plugin"
-import { createRequire } from "module" // kilocode_change
+import { createRequire } from "module"
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const dir = path.resolve(__dirname, "..")
-const require = createRequire(import.meta.url) // kilocode_change
+const require = createRequire(import.meta.url)
 
 process.chdir(dir)
 
@@ -18,7 +18,22 @@ await import("./generate.ts")
 
 import { Script } from "@opencode-ai/script"
 import pkg from "../package.json"
-import { LanceDBRuntime } from "../src/kilocode/lancedb" // kilocode_change
+import rootPkg from "../../../package.json" // czcode_change - resolve catalog: versions // kilocode_change
+import { LanceDBRuntime } from "../src/kilocode/lancedb"
+
+// kilocode_change start
+// czcode_change start - resolve catalog: version references
+function resolveVersion(name: string, version: string): string {
+  if (!version.startsWith("catalog:")) return version
+  const catalog = (rootPkg as any).workspaces?.catalog ?? {}
+  return catalog[name] ?? version
+}
+function resolveDep(name: string): string {
+  const raw = (pkg.dependencies as Record<string, string>)[name] ?? (pkg.devDependencies as Record<string, string>)[name] ?? ""
+  return resolveVersion(name, raw)
+}
+// czcode_change end
+// kilocode_change end
 
 // Load migrations from migration directories
 const migrationDirs = (
@@ -53,35 +68,9 @@ console.log(`Loaded ${migrations.length} migrations`)
 const singleFlag = process.argv.includes("--single")
 const baselineFlag = process.argv.includes("--baseline")
 const skipInstall = process.argv.includes("--skip-install")
+const sourcemapsFlag = process.argv.includes("--sourcemaps")
 const plugin = createSolidTransformPlugin()
-const skipEmbedWebUi = process.argv.includes("--skip-embed-web-ui")
 
-const createEmbeddedWebUIBundle = async () => {
-  console.log(`Building Web UI to embed in the binary`)
-  const appDir = path.join(import.meta.dirname, "../../app")
-  const dist = path.join(appDir, "dist")
-  await $`bun run --cwd ${appDir} build`
-  const files = (await Array.fromAsync(new Bun.Glob("**/*").scan({ cwd: dist })))
-    .map((file) => file.replaceAll("\\", "/"))
-    .sort()
-  const imports = files.map((file, i) => {
-    const spec = path.relative(dir, path.join(dist, file)).replaceAll("\\", "/")
-    return `import file_${i} from ${JSON.stringify(spec.startsWith(".") ? spec : `./${spec}`)} with { type: "file" };`
-  })
-  const entries = files.map((file, i) => `  ${JSON.stringify(file)}: file_${i},`)
-  return [
-    `// Import all files as file_$i with type: "file"`,
-    ...imports,
-    `// Export with original mappings`,
-    `export default {`,
-    ...entries,
-    `}`,
-  ].join("\n")
-}
-
-const embeddedFileMap = skipEmbedWebUi ? null : await createEmbeddedWebUIBundle()
-
-// kilocode_change start - codebase indexing
 async function copyTreeSitterWasms(outputDir: string) {
   const runtimeWasmPath = require.resolve("web-tree-sitter/tree-sitter.wasm")
   const languagePackagePath = require.resolve("tree-sitter-wasms/package.json")
@@ -99,7 +88,6 @@ async function copyTreeSitterWasms(outputDir: string) {
 
   console.log(`copied ${languageWasmFiles.length + 1} tree-sitter wasm files to ${targetDir}`)
 }
-// kilocode_change end
 
 const allTargets: {
   os: string
@@ -189,8 +177,10 @@ await $`rm -rf dist`
 
 const binaries: Record<string, string> = {}
 if (!skipInstall) {
-  await $`bun install --os="*" --cpu="*" @opentui/core@${pkg.dependencies["@opentui/core"]}`
-  await $`bun install --os="*" --cpu="*" @parcel/watcher@${pkg.dependencies["@parcel/watcher"]}`
+  // kilocode_change start
+  await $`bun install --os="*" --cpu="*" @opentui/core@${resolveDep("@opentui/core")}` // czcode_change
+  await $`bun install --os="*" --cpu="*" @parcel/watcher@${resolveDep("@parcel/watcher")}` // czcode_change
+  // kilocode_change end
 }
 for (const item of targets) {
   const name = [
@@ -219,10 +209,8 @@ for (const item of targets) {
     conditions: ["browser"],
     tsconfig: "./tsconfig.json",
     plugins: [plugin],
-    // kilocode_change start - skip sourcemaps for release builds (each .js.map adds ~50 MB per target → ~600 MB total)
     sourcemap: Script.release ? "none" : "external",
-    // kilocode_change end
-    external: ["node-gyp", ...LanceDBRuntime.external], // kilocode_change
+    external: ["node-gyp", ...LanceDBRuntime.external],
     format: "esm",
     minify: true,
     splitting: true,
@@ -232,12 +220,12 @@ for (const item of targets) {
       autoloadTsconfig: true,
       autoloadPackageJson: true,
       target: name.replace(pkg.name, "bun") as any,
-      outfile: `dist/${name}/bin/czcode`, // czcode_change
-      execArgv: [`--user-agent=kilo/${Script.version}`, "--use-system-ca", "--"], // kilocode_change
+      outfile: `dist/${name}/bin/czcode`, // czcode_change // kilocode_change
+      execArgv: [`--user-agent=kilo/${Script.version}`, "--use-system-ca", "--"],
       windows: {},
     },
-    files: embeddedFileMap ? { "opencode-web-ui.gen.ts": embeddedFileMap } : {},
-    entrypoints: ["./src/index.ts", parserWorker, workerPath, ...(embeddedFileMap ? ["opencode-web-ui.gen.ts"] : [])],
+    files: {},
+    entrypoints: ["./src/index.ts", parserWorker, workerPath],
     define: {
       KILO_VERSION: `'${Script.version}'`,
       KILO_MIGRATIONS: JSON.stringify(migrations),
@@ -245,11 +233,11 @@ for (const item of targets) {
       KILO_WORKER_PATH: workerPath,
       KILO_CHANNEL: `'${Script.channel}'`,
       KILO_LIBC: item.os === "linux" ? `'${item.abi ?? "glibc"}'` : "",
-      KILO_BUILD_KIND: Script.release ? `'release'` : `'source'`, // kilocode_change
+      KILO_BUILD_KIND: Script.release ? `'release'` : `'source'`,
     },
   })
 
-  await copyTreeSitterWasms(path.resolve(dir, `dist/${name}/bin`)) // kilocode_change
+  await copyTreeSitterWasms(path.resolve(dir, `dist/${name}/bin`))
 
   // kilocode_change start - fix Nix-specific ELF interpreter paths for Linux binaries
   if (item.os === "linux") {
@@ -274,7 +262,7 @@ for (const item of targets) {
 
   // Smoke test: only run if binary is for current platform
   if (item.os === process.platform && item.arch === process.arch && !item.abi) {
-    const binaryPath = `dist/${name}/bin/czcode` // czcode_change
+    const binaryPath = `dist/${name}/bin/czcode` // czcode_change // kilocode_change
     console.log(`Running smoke test: ${binaryPath} --version`)
     try {
       const versionOutput = await $`${binaryPath} --version`.text()
@@ -293,12 +281,10 @@ for (const item of targets) {
         version: Script.version,
         os: [item.os],
         cpu: [item.arch],
-        // kilocode_change start
         repository: {
           type: "git",
           url: "https://github.com/Kilo-Org/kilocode",
         },
-        // kilocode_change end
       },
       null,
       2,
@@ -308,6 +294,7 @@ for (const item of targets) {
 }
 
 if (Script.release) {
+  // kilocode_change start
   // czcode_change start — bundle clickzetta-skills into release archives
   console.log("Downloading clickzetta-skills for bundling...")
   const skillsTmp = path.resolve("dist", "_skills_tmp")
@@ -323,21 +310,22 @@ if (Script.release) {
   await $`rm -rf ${skillsTmp}`
   console.log("Bundled clickzetta-skills into all platform archives")
   // czcode_change end
+  // kilocode_change end
 
-  const archives: string[] = [] // kilocode_change
+  const archives: string[] = []
   for (const key of Object.keys(binaries)) {
-    const archive = key.replace(pkg.name, "czcode") // czcode_change
+    const archive = key.replace(pkg.name, "czcode") // czcode_change // kilocode_change
     if (key.includes("linux")) {
-      const out = path.resolve("dist", `${archive}.tar.gz`) // kilocode_change
-      await $`tar -czf ${out} *`.cwd(`dist/${key}/bin`) // kilocode_change
-      archives.push(out) // kilocode_change
+      const out = path.resolve("dist", `${archive}.tar.gz`)
+      await $`tar -czf ${out} *`.cwd(`dist/${key}/bin`)
+      archives.push(out)
     } else {
-      const out = path.resolve("dist", `${archive}.zip`) // kilocode_change
-      await $`zip -r ${out} *`.cwd(`dist/${key}/bin`) // kilocode_change
-      archives.push(out) // kilocode_change
+      const out = path.resolve("dist", `${archive}.zip`)
+      await $`zip -r ${out} *`.cwd(`dist/${key}/bin`)
+      archives.push(out)
     }
   }
-  await $`gh release upload v${Script.version} ${archives} --clobber` // kilocode_change
+  await $`gh release upload v${Script.version} ${archives} --clobber`
 }
 
 export { binaries }

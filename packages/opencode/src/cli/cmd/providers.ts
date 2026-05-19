@@ -4,6 +4,9 @@ import { cmd } from "./cmd"
 import * as prompts from "@clack/prompts"
 import { UI } from "../ui"
 import { ModelsDev } from "@/provider/models"
+
+const getModels = () => AppRuntime.runPromise(ModelsDev.Service.use((s) => s.get()))
+const refreshModels = () => AppRuntime.runPromise(ModelsDev.Service.use((s) => s.refresh(true)))
 import { map, pipe, sortBy, values } from "remeda"
 import path from "path"
 import os from "os"
@@ -156,28 +159,38 @@ async function handlePluginAuth(plugin: { auth: PluginAuth }, provider: string, 
   }
 
   if (method.type === "api") {
-    if (method.authorize) {
-      const key = await prompts.password({
-        message: "Enter your API key",
-        validate: (x) => (x && x.length > 0 ? undefined : "Required"),
-      })
-      if (prompts.isCancel(key)) throw new UI.CancelledError()
+    const key = await prompts.password({
+      message: "Enter your API key",
+      validate: (x) => (x && x.length > 0 ? undefined : "Required"),
+    })
+    if (prompts.isCancel(key)) throw new UI.CancelledError()
 
-      const result = await method.authorize(inputs)
-      if (result.type === "failed") {
-        prompts.log.error("Failed to authorize")
-      }
-      if (result.type === "success") {
-        const saveProvider = result.provider ?? provider
-        await put(saveProvider, {
-          type: "api",
-          key: result.key ?? key,
-        })
-        prompts.log.success("Login successful")
-      }
+    const metadata = Object.keys(inputs).length ? { metadata: inputs } : {}
+    if (!method.authorize) {
+      await put(provider, {
+        type: "api",
+        key,
+        ...metadata,
+      })
       prompts.outro("Done")
       return true
     }
+
+    const result = await method.authorize(inputs)
+    if (result.type === "failed") {
+      prompts.log.error("Failed to authorize")
+    }
+    if (result.type === "success") {
+      const saveProvider = result.provider ?? provider
+      await put(saveProvider, {
+        type: "api",
+        key: result.key ?? key,
+        ...metadata,
+      })
+      prompts.log.success("Login successful")
+    }
+    prompts.outro("Done")
+    return true
   }
 
   return false
@@ -211,10 +224,8 @@ export function resolvePluginProviders(input: {
 }
 
 export const ProvidersCommand = cmd({
-  // kilocode_change start - keep "auth" as primary command name
   command: "auth",
   aliases: ["providers"],
-  // kilocode_change end
   describe: "manage AI providers and credentials",
   builder: (yargs) =>
     yargs.command(ProvidersListCommand).command(ProvidersLoginCommand).command(ProvidersLogoutCommand).demandCommand(),
@@ -226,7 +237,6 @@ export const ProvidersListCommand = cmd({
   aliases: ["ls"],
   describe: "list providers",
   async handler() {
-    // kilocode_change start - wrap with Instance.provide for ModelsDev.get() -> Config.get() dependency
     await Instance.provide({
       directory: process.cwd(),
       async fn() {
@@ -241,7 +251,7 @@ export const ProvidersListCommand = cmd({
             return Object.entries(yield* auth.all())
           }),
         )
-        const database = await ModelsDev.get()
+        const database = await getModels()
 
         for (const [providerID, result] of results) {
           const name = database[providerID]?.name || providerID
@@ -276,7 +286,6 @@ export const ProvidersListCommand = cmd({
         }
       },
     })
-    // kilocode_change end
   },
 })
 
@@ -286,7 +295,7 @@ export const ProvidersLoginCommand = cmd({
   builder: (yargs) =>
     yargs
       .positional("url", {
-        describe: "kilo auth provider", // kilocode_change
+        describe: "kilo auth provider",
         type: "string",
       })
       .option("provider", {
@@ -334,14 +343,14 @@ export const ProvidersLoginCommand = cmd({
           prompts.outro("Done")
           return
         }
-        await ModelsDev.refresh(true).catch(() => {})
+        await refreshModels().catch(() => {})
 
         const config = await AppRuntime.runPromise(Config.Service.use((cfg) => cfg.get()))
 
         const disabled = new Set(config.disabled_providers ?? [])
         const enabled = config.enabled_providers ? new Set(config.enabled_providers) : undefined
 
-        const providers = await ModelsDev.get().then((x) => {
+        const providers = await getModels().then((x) => {
           const filtered: Record<string, (typeof x)[string]> = {}
           for (const [key, value] of Object.entries(x)) {
             if ((enabled ? enabled.has(key) : true) && !disabled.has(key)) {
@@ -357,7 +366,6 @@ export const ProvidersLoginCommand = cmd({
           }),
         )
 
-        // kilocode_change start
         const priority: Record<string, number> = {
           kilo: 0,
           opencode: 1,
@@ -368,14 +376,15 @@ export const ProvidersLoginCommand = cmd({
           openrouter: 6,
           vercel: 7,
         }
-        // kilocode_change end
 
         const pluginProviders = resolvePluginProviders({
           hooks,
           existingProviders: providers,
           disabled,
           enabled,
-          providerNames: Object.fromEntries(Object.entries(config.provider ?? {}).map(([id, p]) => [id, p.name])),
+          providerNames: Object.fromEntries(
+            Object.entries(config.provider ?? {}).flatMap(([id, p]) => (p ? [[id, p.name]] : [])),
+          ),
         })
         const options = [
           ...pipe(
@@ -389,9 +398,9 @@ export const ProvidersLoginCommand = cmd({
               label: x.name,
               value: x.id,
               hint: {
-                kilo: "recommended", // kilocode_change
+                kilo: "recommended",
                 opencode: "recommended",
-                openai: "ChatGPT login or API key", // kilocode_change
+                openai: "ChatGPT login or API key",
               }[x.id],
             })),
           ),
@@ -407,10 +416,8 @@ export const ProvidersLoginCommand = cmd({
           const input = args.provider
           const byID = options.find((x) => x.value === input)
           const byName = options.find((x) => x.label.toLowerCase() === input.toLowerCase())
-          // kilocode_change start - accept codex as an alias for OpenAI ChatGPT auth
           const alias = input.toLowerCase() === "codex" ? options.find((x) => x.value === "openai") : undefined
           const match = byID ?? byName ?? alias
-          // kilocode_change end
           if (!match) {
             prompts.log.error(`Unknown provider "${input}"`)
             process.exit(1)
@@ -468,7 +475,7 @@ export const ProvidersLoginCommand = cmd({
         }
 
         if (provider === "opencode") {
-          prompts.log.info("Create an api key at https://opencode.ai/auth")
+          prompts.log.info("Create an api key at https://opencode.ai/auth") // kilocode_change
         }
 
         if (provider === "vercel") {
@@ -477,7 +484,7 @@ export const ProvidersLoginCommand = cmd({
 
         if (["cloudflare", "cloudflare-ai-gateway"].includes(provider)) {
           prompts.log.info(
-            "Cloudflare AI Gateway can be configured with CLOUDFLARE_GATEWAY_ID, CLOUDFLARE_ACCOUNT_ID, and CLOUDFLARE_API_TOKEN environment variables. Read more: https://opencode.ai/docs/providers/#cloudflare-ai-gateway",
+            "Cloudflare AI Gateway can be configured with CLOUDFLARE_GATEWAY_ID, CLOUDFLARE_ACCOUNT_ID, and CLOUDFLARE_API_TOKEN environment variables. Read more: https://opencode.ai/docs/providers/#cloudflare-ai-gateway", // kilocode_change
           )
         }
 
@@ -501,7 +508,6 @@ export const ProvidersLogoutCommand = cmd({
   command: "logout",
   describe: "log out from a configured provider",
   async handler() {
-    // kilocode_change start - wrap with Instance.provide for ModelsDev.get() -> Config.get() dependency
     await Instance.provide({
       directory: process.cwd(),
       async fn() {
@@ -512,7 +518,7 @@ export const ProvidersLogoutCommand = cmd({
           prompts.log.error("No credentials found")
           return
         }
-        const database = await ModelsDev.get()
+        const database = await getModels()
         const selected = await prompts.select({
           message: "Select provider",
           options: credentials.map(([key, value]) => ({
@@ -531,6 +537,5 @@ export const ProvidersLogoutCommand = cmd({
         prompts.outro("Logout successful")
       },
     })
-    // kilocode_change end
   },
 })

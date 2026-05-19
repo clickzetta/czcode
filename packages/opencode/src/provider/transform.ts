@@ -7,7 +7,7 @@ import type * as ModelsDev from "./models"
 import { iife } from "@/util/iife"
 import { Flag } from "@opencode-ai/core/flag/flag"
 import { kiloProviderOptions } from "@/kilocode/provider-options"
-import { isLing } from "@/kilocode/model-match" // kilocode_change
+import { isLing } from "@/kilocode/model-match"
 
 type Modality = NonNullable<ModelsDev.Model["modalities"]>["input"][number]
 
@@ -43,7 +43,7 @@ function sdkKey(npm: string): string | undefined {
       return "gateway"
     case "@openrouter/ai-sdk-provider":
       return "openrouter"
-    case "@kilocode/kilo-gateway": // kilocode_change
+    case "@kilocode/kilo-gateway":
       return "openrouter"
   }
   return undefined
@@ -77,10 +77,8 @@ function normalizeMessages(
   }
 
   // Bedrock specific transforms
-  // kilocode_change start - only filter for Claude models on Bedrock, not all Bedrock models
   const claude = model.api.id.includes("anthropic") || model.api.id.includes("claude") || model.id.includes("claude")
   if (model.api.npm === "@ai-sdk/amazon-bedrock" && claude) {
-    // kilocode_change end
     msgs = msgs
       .map((msg) => {
         if (typeof msg.content === "string") {
@@ -204,7 +202,7 @@ function normalizeMessages(
   }
 
   // Deepseek requires all assistant messages to have reasoning on them
-  if (model.api.id.includes("deepseek")) {
+  if (model.api.id.toLowerCase().includes("deepseek")) {
     msgs = msgs.map((msg) => {
       if (msg.role !== "assistant") return msg
       if (Array.isArray(msg.content)) {
@@ -409,7 +407,7 @@ export function temperature(model: Provider.Model) {
     }
     return 0.6
   }
-  if (isLing(model.api.id)) return 0.3 // kilocode_change
+  if (isLing(model.api.id)) return 0.3
   return undefined
 }
 
@@ -419,7 +417,7 @@ export function topP(model: Provider.Model) {
   if (["minimax-m2", "gemini", "kimi-k2.5", "kimi-k2p5", "kimi-k2-5"].some((s) => id.includes(s))) {
     return 0.95
   }
-  if (isLing(model.api.id)) return 0.95 // kilocode_change
+  if (isLing(model.api.id)) return 0.95
   return undefined
 }
 
@@ -430,7 +428,7 @@ export function topK(model: Provider.Model) {
     return 20
   }
   if (id.includes("gemini")) return 64
-  if (isLing(model.api.id)) return 20 // kilocode_change
+  if (isLing(model.api.id)) return 20
   return undefined
 }
 
@@ -448,7 +446,6 @@ function anthropicAdaptiveEfforts(apiId: string): string[] | null {
 }
 
 export function variants(model: Provider.Model): Record<string, Record<string, any>> {
-  // kilocode_change start
   if (
     ["@kilocode/kilo-gateway", "@ai-sdk/openai-compatible"].includes(model.api.npm) &&
     model.variants &&
@@ -456,7 +453,6 @@ export function variants(model: Provider.Model): Record<string, Record<string, a
   ) {
     return model.variants
   }
-  // kilocode_change end
 
   if (!model.capabilities.reasoning) return {}
 
@@ -469,8 +465,8 @@ export function variants(model: Provider.Model): Record<string, Record<string, a
     id.includes("deepseek-r1") ||
     id.includes("deepseek-v3") ||
     id.includes("minimax") ||
-    // id.includes("glm") || // kilocode_change
-    // id.includes("kimi") || // kilocode_change
+    // id.includes("glm") ||
+    // id.includes("kimi") ||
     // TODO: Remove this after models.dev data is fixed to use "kimi-k2.5" instead of "k2p5"
     id.includes("k2p") ||
     id.includes("qwen") ||
@@ -481,7 +477,6 @@ export function variants(model: Provider.Model): Record<string, Record<string, a
   // see: https://docs.x.ai/docs/guides/reasoning#control-how-hard-the-model-thinks
   if (id.includes("grok") && id.includes("grok-3-mini")) {
     if (model.api.npm === "@openrouter/ai-sdk-provider" || model.api.npm === "@kilocode/kilo-gateway") {
-      // kilocode_change - add Kilo Gateway support
       return {
         low: { reasoning: { effort: "low" } },
         high: { reasoning: { effort: "high" } },
@@ -495,21 +490,19 @@ export function variants(model: Provider.Model): Record<string, Record<string, a
   if (id.includes("grok")) return {}
 
   switch (model.api.npm) {
-    case "@kilocode/kilo-gateway": // kilocode_change
+    case "@kilocode/kilo-gateway":
     case "@openrouter/ai-sdk-provider":
-      // kilocode_change start
       if (id.includes("glm") || id.includes("kimi") || id.includes("qwen")) {
         return {
           instant: { reasoning: { enabled: false } },
           thinking: { reasoning: { enabled: true } },
         }
       }
-      // kilocode_change end
       if (
         !model.id.includes("gpt") &&
         !model.id.includes("gemini-3") &&
         !model.id.includes("claude") &&
-        !model.id.includes("mercury") // kilocode_change
+        !model.id.includes("mercury")
       )
         return {}
       return Object.fromEntries(OPENAI_EFFORTS.map((effort) => [effort, { reasoning: { effort } }]))
@@ -611,7 +604,7 @@ export function variants(model: Provider.Model): Record<string, Record<string, a
     // https://docs.venice.ai/overview/guides/reasoning-models#reasoning-effort
     case "@ai-sdk/openai-compatible":
       const efforts = [...WIDELY_SUPPORTED_EFFORTS]
-      if (model.api.id.includes("deepseek-v4")) {
+      if (model.api.id.toLowerCase().includes("deepseek-v4")) {
         efforts.push("max")
       }
       return Object.fromEntries(efforts.map((effort) => [effort, { reasoningEffort: effort }]))
@@ -623,11 +616,9 @@ export function variants(model: Provider.Model): Record<string, Record<string, a
       if (id.includes("gpt-5-") || id === "gpt-5") {
         azureEfforts.unshift("minimal")
       }
-      // kilocode_change start
       if (model.release_date >= "2025-12-04") {
         azureEfforts.push("xhigh")
       }
-      // kilocode_change end
       return Object.fromEntries(
         azureEfforts.map((effort) => [
           effort,
@@ -673,16 +664,17 @@ export function variants(model: Provider.Model): Record<string, Record<string, a
     // https://v5.ai-sdk.dev/providers/ai-sdk-providers/anthropic
     case "@ai-sdk/google-vertex/anthropic":
       // https://v5.ai-sdk.dev/providers/ai-sdk-providers/google-vertex#anthropic-provider
-
-      if (model.providerID === "github-copilot") {
-        if (model.api.id.includes("opus-4.7")) {
-          return Object.fromEntries(["medium"].map((effort) => [effort, { reasoningEffort: effort }]))
-        }
-      }
-
       if (adaptiveEfforts) {
+        let efforts = [...adaptiveEfforts]
+        if (model.providerID === "github-copilot") {
+          if (model.api.id.includes("opus-4.7")) {
+            efforts = ["medium"]
+          }
+          // Efforts currently supported are: low, medium, high
+          efforts = efforts.filter((v) => v !== "max" && v !== "xhigh")
+        }
         return Object.fromEntries(
-          adaptiveEfforts.map((effort) => [
+          efforts.map((effort) => [
             effort,
             {
               thinking: {
@@ -802,9 +794,10 @@ export function variants(model: Provider.Model): Record<string, Record<string, a
       // https://v5.ai-sdk.dev/providers/ai-sdk-providers/mistral
       // https://docs.mistral.ai/capabilities/reasoning/adjustable
       if (!model.capabilities.reasoning) return {}
-      // Only Mistral Small 4 supports reasoning (mistral-small-2603, mistral-small-latest)
+      // Only Mistral Small 4 and Medium 3.5 support reasoning
+      const MISTRAL_REASONING_IDS = ["mistral-small-2603", "mistral-small-latest", "mistral-medium-3.5"]
       const mistralId = model.api.id.toLowerCase()
-      if (!mistralId.includes("mistral-small-2603") && !mistralId.includes("mistral-small-latest")) return {}
+      if (!MISTRAL_REASONING_IDS.some((id) => mistralId.includes(id))) return {}
       return {
         high: { reasoningEffort: "high" },
       }
@@ -907,14 +900,14 @@ export function options(input: {
   }
 
   if (input.model.api.npm === "@ai-sdk/azure") {
-    result["store"] = true
+    result["store"] = false
     result["promptCacheKey"] = input.sessionID
   }
 
   if (
     input.model.api.npm === "@openrouter/ai-sdk-provider" ||
     input.model.api.npm === "@llmgateway/ai-sdk-provider" ||
-    input.model.api.npm === "@kilocode/kilo-gateway" // kilocode_change
+    input.model.api.npm === "@kilocode/kilo-gateway"
   ) {
     result["usage"] = {
       include: true,
@@ -985,21 +978,23 @@ export function options(input: {
   if (input.model.api.id.includes("gpt-5") && !input.model.api.id.includes("gpt-5-chat")) {
     if (!input.model.api.id.includes("gpt-5-pro")) {
       result["reasoningEffort"] = "medium"
-      // Only inject reasoningSummary for providers that support it natively.
-      // @ai-sdk/openai-compatible proxies (e.g. LiteLLM) do not understand this
-      // parameter and return "Unknown parameter: 'reasoningSummary'".
       if (
         input.model.api.npm === "@ai-sdk/openai" ||
         input.model.api.npm === "@ai-sdk/azure" ||
-        input.model.api.npm === "@ai-sdk/github-copilot"
+        input.model.api.npm === "@ai-sdk/github-copilot" ||
+        input.model.api.npm === "@openrouter/ai-sdk-provider" ||
+        input.model.api.npm === "@kilocode/kilo-gateway"
       ) {
         result["reasoningSummary"] = "auto"
       }
     }
 
-    // Only set textVerbosity for non-chat gpt-5.x models
-    // Chat models (e.g. gpt-5.2-chat-latest) only support "medium" verbosity
     if (
+      (input.model.api.npm === "@ai-sdk/openai" ||
+        input.model.api.npm === "@ai-sdk/azure" ||
+        input.model.api.npm === "@ai-sdk/github-copilot" ||
+        input.model.api.npm === "@openrouter/ai-sdk-provider" ||
+        input.model.api.npm === "@kilocode/kilo-gateway") &&
       input.model.api.id.includes("gpt-5.") &&
       !input.model.api.id.includes("codex") &&
       !input.model.api.id.includes("-chat") &&
@@ -1055,7 +1050,7 @@ export function smallOptions(model: Provider.Model) {
   if (
     model.providerID === "openrouter" ||
     model.providerID === "llmgateway" ||
-    model.api.npm === "@kilocode/kilo-gateway" // kilocode_change
+    model.api.npm === "@kilocode/kilo-gateway"
   ) {
     if (model.api.id.includes("google")) {
       return { reasoning: { enabled: false } }
@@ -1107,13 +1102,21 @@ export function providerOptions(model: Provider.Model, options: { [x: string]: a
     return result
   }
 
-  // kilocode_change start
   if (model.api.npm === "@kilocode/kilo-gateway") {
     return kiloProviderOptions(options)
   }
-  // kilocode_change end
 
-  const key = sdkKey(model.api.npm) ?? model.providerID
+  // AI SDK packages that resolve providerOptionsName by splitting the
+  // provider name on "." (e.g. "wafer.ai" -> "wafer") need the same
+  // logic here so the key we write matches the key they read.
+  // Other SDKs (xai, mistral, groq, cohere, etc.) use hardcoded keys
+  // like "xai" or "cohere" - applying .split(".")[0] would break those.
+  const usesDotSplitOptions =
+    model.api.npm === "@ai-sdk/openai-compatible" ||
+    model.api.npm === "@ai-sdk/openai" ||
+    model.api.npm === "@ai-sdk/anthropic"
+
+  const key = sdkKey(model.api.npm) ?? (usesDotSplitOptions ? model.providerID.split(".")[0] : model.providerID)
   // @ai-sdk/azure delegates to OpenAIChatLanguageModel which reads from
   // providerOptions["openai"], but OpenAIResponsesLanguageModel checks
   // "azure" first. Pass both so model options work on either code path.

@@ -9,8 +9,8 @@ import { FileWatcher } from "@/file/watcher"
 import { Git } from "@/git"
 import * as Log from "@opencode-ai/core/util/log"
 import { zod } from "@/util/effect-zod"
-import { makeRuntime } from "@/effect/run-service" // kilocode_change
-import { withStatics } from "@/util/schema"
+import { makeRuntime } from "@/effect/run-service"
+import { NonNegativeInt, withStatics } from "@/util/schema"
 
 const log = Log.create({ service: "vcs" })
 
@@ -126,8 +126,8 @@ export type Info = Schema.Schema.Type<typeof Info>
 export const FileDiff = Schema.Struct({
   file: Schema.String,
   patch: Schema.String,
-  additions: Schema.Number,
-  deletions: Schema.Number,
+  additions: NonNegativeInt,
+  deletions: NonNegativeInt,
   status: Schema.optional(Schema.Literals(["added", "deleted", "modified"])),
 })
   .annotate({ identifier: "VcsFileDiff" })
@@ -224,10 +224,8 @@ export const defaultLayer = layer.pipe(
   Layer.provide(Bus.layer),
 )
 
-// kilocode_change start - legacy promise helpers for Kilo callsites
 const { runPromise } = makeRuntime(Service, defaultLayer)
 export const branch = () => runPromise((svc) => svc.branch())
 export const defaultBranch = () => runPromise((svc) => svc.defaultBranch())
-// kilocode_change end
 
 export * as Vcs from "./vcs"

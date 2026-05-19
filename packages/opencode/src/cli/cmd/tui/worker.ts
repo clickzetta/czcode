@@ -2,7 +2,7 @@ import { Installation } from "@/installation"
 import { Server } from "@/server/server"
 import * as Log from "@opencode-ai/core/util/log"
 import { Instance } from "@/project/instance"
-import { InstanceBootstrap } from "@/project/bootstrap"
+import { InstanceStore } from "@/project/instance-store"
 import { Rpc } from "@/util/rpc"
 import { upgrade } from "@/cli/upgrade"
 import { Config } from "@/config/config"
@@ -10,16 +10,19 @@ import { GlobalBus } from "@/bus/global"
 import { Flag } from "@opencode-ai/core/flag/flag"
 import { writeHeapSnapshot } from "node:v8"
 import { Heap } from "@/cli/heap"
-import { AppRuntime } from "@/effect/app-runtime"
+import { AppRuntime, getBootstrapRunEffect } from "@/effect/app-runtime"
 import { ensureProcessMetadata } from "@opencode-ai/core/util/opencode-process"
+// kilocode_change start
 import { Telemetry } from "@kilocode/kilo-telemetry" // czcode_change
 // czcode_change start - init telemetry in worker process
 import { Global } from "@opencode-ai/core/global"
 import { InstallationVersion } from "@opencode-ai/core/installation/version"
 // czcode_change end
+// kilocode_change end
 
 ensureProcessMetadata("worker")
 
+// kilocode_change start
 // czcode_change start - init telemetry early in worker so skill/revert/abort events are captured
 ;(async () => {
   const globalCfg = await Config.getGlobal().catch(() => null)
@@ -30,6 +33,7 @@ ensureProcessMetadata("worker")
   })
 })()
 // czcode_change end
+// kilocode_change end
 
 await Log.init({
   print: process.argv.includes("--print-logs"),
@@ -93,7 +97,7 @@ export const rpc = {
   async checkUpgrade(input: { directory: string }) {
     await Instance.provide({
       directory: input.directory,
-      init: () => AppRuntime.runPromise(InstanceBootstrap),
+      init: await getBootstrapRunEffect(),
       fn: async () => {
         await upgrade().catch(() => {})
       },
@@ -105,14 +109,12 @@ export const rpc = {
   async shutdown() {
     Log.Default.info("worker shutting down")
 
-    await Instance.disposeAll()
+    await InstanceStore.disposeAllInstances()
     if (server) await server.stop(true)
-    await Telemetry.shutdown() // czcode_change — flush pending telemetry events before worker exits
-    // kilocode_change start - Clear the Rpc message channel so the worker's event loop can drain and
+    await Telemetry.shutdown() // czcode_change — flush pending telemetry events before worker exits // kilocode_change
     // exit naturally. Without this, the active onmessage handle keeps the
     // worker alive even after all async work is done.
     onmessage = null
-    // kilocode_change end
   },
 }
 
@@ -121,6 +123,6 @@ Rpc.listen(rpc)
 function getAuthorizationHeader(): string | undefined {
   const password = Flag.KILO_SERVER_PASSWORD
   if (!password) return undefined
-  const username = Flag.KILO_SERVER_USERNAME ?? "kilo" // kilocode_change
+  const username = Flag.KILO_SERVER_USERNAME ?? "kilo"
   return `Basic ${btoa(`${username}:${password}`)}`
 }

@@ -2,11 +2,11 @@ import { afterEach, describe, expect, test } from "bun:test"
 import { Context } from "effect"
 import path from "path"
 import { ExperimentalHttpApiServer } from "../../src/server/routes/instance/httpapi/server"
-import { FilePaths } from "../../src/server/routes/instance/httpapi/file"
+import { FilePaths } from "../../src/server/routes/instance/httpapi/groups/file"
 import { Instance } from "../../src/project/instance"
 import * as Log from "@opencode-ai/core/util/log"
 import { resetDatabase } from "../fixture/db"
-import { tmpdir } from "../fixture/fixture"
+import { disposeAllInstances, tmpdir } from "../fixture/fixture"
 
 void Log.init({ print: false })
 
@@ -28,7 +28,7 @@ function request(route: string, directory: string, query?: Record<string, string
 }
 
 afterEach(async () => {
-  await Instance.disposeAll()
+  await disposeAllInstances()
   await resetDatabase()
 })
 
@@ -55,7 +55,6 @@ describe("file HttpApi", () => {
     expect(await status.json()).toContainEqual({ path: "hello.txt", added: 1, removed: 0, status: "added" })
   })
 
-  // kilocode_change - skip on Windows: Kilo file search returns [] for hello.txt via the experimental bridge.
   // Other platforms pass; bridge is gated behind KILO_EXPERIMENTAL_HTTPAPI and not enabled in production.
   // Tracked in Kilo-Org/kilocode#9831.
   const searchTest = process.platform === "win32" ? test.skip : test

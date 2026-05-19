@@ -4,13 +4,13 @@ import { Flag } from "@opencode-ai/core/flag/flag"
 import { GlobalBus } from "@/bus/global"
 import { Instance } from "../../src/project/instance"
 import { Server } from "../../src/server/server"
-import { ExperimentalPaths } from "../../src/server/routes/instance/httpapi/experimental"
+import { ExperimentalPaths } from "../../src/server/routes/instance/httpapi/groups/experimental"
 import { Session } from "@/session/session"
 import { Database } from "@/storage/db"
 import * as Log from "@opencode-ai/core/util/log"
 import { Worktree } from "../../src/worktree"
 import { resetDatabase } from "../fixture/db"
-import { tmpdir } from "../fixture/fixture"
+import { disposeAllInstances, tmpdir } from "../fixture/fixture"
 
 void Log.init({ print: false })
 
@@ -50,12 +50,11 @@ async function waitReady(directory: string) {
 
 afterEach(async () => {
   Flag.KILO_EXPERIMENTAL_HTTPAPI = original
-  await Instance.disposeAll()
+  await disposeAllInstances()
   await resetDatabase()
 })
 
 describe("experimental HttpApi", () => {
-  // kilocode_change - skip until Kilo's Instance context threads through the Effect HttpApi bridge.
   // The /experimental/tool handler 500s via the bridge (InstanceState/AsyncLocalStorage leak).
   // Bridge is gated behind KILO_EXPERIMENTAL_HTTPAPI, not enabled in any production client.
   test.skip("serves read-only experimental endpoints through Hono bridge", async () => {

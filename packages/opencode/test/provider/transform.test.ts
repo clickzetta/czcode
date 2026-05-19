@@ -101,7 +101,7 @@ describe("ProviderTransform.options - setCacheKey", () => {
     expect(result.store).toBe(false)
   })
 
-  test("should set store=true for azure provider by default", () => {
+  test("should set store=false for azure provider by default", () => {
     const azureModel = {
       ...mockModel,
       providerID: "azure",
@@ -116,7 +116,7 @@ describe("ProviderTransform.options - setCacheKey", () => {
       sessionID,
       providerOptions: {},
     })
-    expect(result.store).toBe(true)
+    expect(result.store).toBe(false)
   })
 })
 
@@ -1725,7 +1725,7 @@ describe("ProviderTransform.message - strip openai metadata when store=false", (
       providerID: "opencode",
       api: {
         id: "opencode-test",
-        url: "https://api.opencode.ai",
+        url: "https://api.opencode.ai", // kilocode_change
         npm: "@ai-sdk/openai-compatible",
       },
     }
@@ -1759,7 +1759,7 @@ describe("ProviderTransform.message - strip openai metadata when store=false", (
       providerID: "opencode",
       api: {
         id: "opencode-test",
-        url: "https://api.opencode.ai",
+        url: "https://api.opencode.ai", // kilocode_change
         npm: "@ai-sdk/openai-compatible",
       },
     }
@@ -2258,12 +2258,29 @@ describe("ProviderTransform.variants", () => {
     expect(result.low).toEqual({ reasoningEffort: "low" })
   })
 
-  test("mistral with reasoning returns variants", () => {
+  test("mistral models with reasoning support return variants", () => {
     const model = createMockModel({
       id: "mistral/mistral-small-latest",
       providerID: "mistral",
       api: {
         id: "mistral-small-latest",
+        url: "https://api.mistral.com",
+        npm: "@ai-sdk/mistral",
+      },
+      capabilities: { reasoning: true },
+    })
+    const result = ProviderTransform.variants(model)
+    expect(result).toEqual({
+      high: { reasoningEffort: "high" },
+    })
+  })
+
+  test("mistral-medium-3.5 with reasoning returns variants", () => {
+    const model = createMockModel({
+      id: "mistral/mistral-medium-3.5",
+      providerID: "mistral",
+      api: {
+        id: "mistral-medium-3.5",
         url: "https://api.mistral.com",
         npm: "@ai-sdk/mistral",
       },
@@ -2350,7 +2367,6 @@ describe("ProviderTransform.variants", () => {
       expect(Object.keys(result)).toEqual(["none", "minimal", "low", "medium", "high", "xhigh"])
     })
 
-    // kilocode_change start
     test("mercury-2 returns OPENAI_EFFORTS with reasoning", () => {
       const model = createMockModel({
         id: "openrouter/inception/mercury-2",
@@ -2366,7 +2382,6 @@ describe("ProviderTransform.variants", () => {
       expect(result.low).toEqual({ reasoning: { effort: "low" } })
       expect(result.high).toEqual({ reasoning: { effort: "high" } })
     })
-    // kilocode_change end
 
     test("grok-4 returns empty object", () => {
       const model = createMockModel({
@@ -2399,7 +2414,6 @@ describe("ProviderTransform.variants", () => {
     })
   })
 
-  // kilocode_change start
   describe("@kilocode/kilo-gateway", () => {
     test("claude models return empty variants (reasoning disabled)", () => {
       const model = createMockModel({
@@ -2507,7 +2521,6 @@ describe("ProviderTransform.variants", () => {
       expect(result.xhigh).toEqual({ reasoning: { effort: "xhigh" } })
     })
 
-    // kilocode_change start
     test("mercury-2 uses server-provided variants from kilo gateway", () => {
       const serverVariants = {
         low: { reasoningEffort: "low" },
@@ -2528,9 +2541,7 @@ describe("ProviderTransform.variants", () => {
       expect(result).toEqual(serverVariants)
       expect(Object.keys(result)).toEqual(["low", "medium", "high"])
     })
-    // kilocode_change end
   })
-  // kilocode_change end
 
   describe("@ai-sdk/gateway", () => {
     test("anthropic sonnet 4.6 models return adaptive thinking options", () => {
@@ -2801,7 +2812,6 @@ describe("ProviderTransform.variants", () => {
     })
   })
 
-  // kilocode_change start
   describe("@ai-sdk/azure", () => {
     test("gpt-5.4 includes xhigh", () => {
       const model = createMockModel({
@@ -2823,7 +2833,6 @@ describe("ProviderTransform.variants", () => {
       })
     })
   })
-  // kilocode_change end
 
   describe("@ai-sdk/cerebras", () => {
     test("returns WIDELY_SUPPORTED_EFFORTS with reasoningEffort", () => {
@@ -2928,7 +2937,6 @@ describe("ProviderTransform.variants", () => {
       expect(result.high).toEqual({ reasoningEffort: "high" })
     })
 
-    // kilocode_change start
     test("mercury-2 returns WIDELY_SUPPORTED_EFFORTS with reasoningEffort", () => {
       const model = createMockModel({
         id: "inception/mercury-2",
@@ -2944,7 +2952,6 @@ describe("ProviderTransform.variants", () => {
       expect(result.low).toEqual({ reasoningEffort: "low" })
       expect(result.high).toEqual({ reasoningEffort: "high" })
     })
-    // kilocode_change end
   })
 
   describe("@ai-sdk/azure", () => {
@@ -3108,6 +3115,28 @@ describe("ProviderTransform.variants", () => {
           display: "summarized",
         },
         effort: "max",
+      })
+    })
+
+    test("github copilot opus 4.7 returns only medium reasoning effort", () => {
+      const model = createMockModel({
+        id: "claude-opus-4.7",
+        providerID: "github-copilot",
+        api: {
+          id: "claude-opus-4.7",
+          url: "https://api.githubcopilot.com/v1",
+          npm: "@ai-sdk/anthropic",
+        },
+      })
+      const result = ProviderTransform.variants(model)
+      expect(result).toEqual({
+        medium: {
+          thinking: {
+            type: "adaptive",
+            display: "summarized",
+          },
+          effort: "medium",
+        },
       })
     })
 
@@ -3486,7 +3515,6 @@ describe("ProviderTransform.variants", () => {
     })
   })
 
-  // kilocode_change start
   describe("ProviderTransform.smallOptions", () => {
     describe("@kilocode/kilo-gateway", () => {
       test("claude models return reasoningEffort minimal", () => {
@@ -3571,4 +3599,90 @@ describe("ProviderTransform.variants", () => {
     })
   })
 })
-// kilocode_change end
+
+describe("ProviderTransform.options - OpenAI Responses API params guard", () => {
+  const sessionID = "test-session"
+
+  const gpt5Model = (npm: string, providerID: string, apiId = "gpt-5.4"): any => ({
+    id: `${providerID}/${apiId}`,
+    providerID,
+    api: { id: apiId, npm, url: "" },
+    name: apiId,
+    capabilities: {
+      temperature: true,
+      reasoning: true,
+      attachment: true,
+      toolcall: true,
+      input: { text: true, audio: false, image: false, video: false, pdf: false },
+      output: { text: true, audio: false, image: false, video: false, pdf: false },
+      interleaved: false,
+    },
+    cost: { input: 0, output: 0 },
+    limit: { context: 200000, output: 32000 },
+    options: {},
+    headers: {},
+  })
+
+  test("includes reasoningSummary and textVerbosity for @ai-sdk/openai", () => {
+    const result = ProviderTransform.options({
+      model: gpt5Model("@ai-sdk/openai", "openai"),
+      sessionID,
+    })
+    expect(result.reasoningSummary).toBe("auto")
+    expect(result.reasoningEffort).toBe("medium")
+    expect(result.textVerbosity).toBe("low")
+  })
+
+  test("includes reasoningSummary for @ai-sdk/azure", () => {
+    const result = ProviderTransform.options({
+      model: gpt5Model("@ai-sdk/azure", "azure"),
+      sessionID,
+    })
+    expect(result.reasoningSummary).toBe("auto")
+  })
+
+  test("excludes reasoningSummary and textVerbosity for @ai-sdk/openai-compatible", () => {
+    const result = ProviderTransform.options({
+      model: gpt5Model("@ai-sdk/openai-compatible", "my-proxy"),
+      sessionID,
+    })
+    expect(result.reasoningSummary).toBeUndefined()
+    expect(result.textVerbosity).toBeUndefined()
+    expect(result.reasoningEffort).toBe("medium")
+  })
+
+  test("excludes reasoningSummary for unknown SDK packages", () => {
+    const result = ProviderTransform.options({
+      model: gpt5Model("@ai-sdk/xai", "xai"),
+      sessionID,
+    })
+    expect(result.reasoningSummary).toBeUndefined()
+    expect(result.reasoningEffort).toBe("medium")
+  })
+
+  test("includes reasoningSummary for @openrouter/ai-sdk-provider", () => {
+    const result = ProviderTransform.options({
+      model: gpt5Model("@openrouter/ai-sdk-provider", "openrouter"),
+      sessionID,
+    })
+    expect(result.reasoningSummary).toBe("auto")
+  })
+
+  test("includes reasoningSummary for @kilocode/kilo-gateway", () => {
+    const result = ProviderTransform.options({
+      model: gpt5Model("@kilocode/kilo-gateway", "kilo"),
+      sessionID,
+    })
+    expect(result.reasoningSummary).toBe("auto")
+  })
+
+  test("reasoningEffort remains universal across all providers", () => {
+    for (const npm of ["@ai-sdk/openai-compatible", "@ai-sdk/xai", "@ai-sdk/deepinfra"]) {
+      const result = ProviderTransform.options({
+        model: gpt5Model(npm, "test"),
+        sessionID,
+      })
+      expect(result.reasoningEffort).toBe("medium")
+    }
+  })
+})

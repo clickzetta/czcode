@@ -11,7 +11,7 @@ import { MessageV2 } from "./message-v2"
 import { SessionID, MessageID, PartID } from "./schema"
 import { SessionRunState } from "./run-state"
 import { SessionSummary } from "./summary"
-import { Telemetry } from "@kilocode/kilo-telemetry" // czcode_change
+import { Telemetry } from "@kilocode/kilo-telemetry" // czcode_change // kilocode_change
 
 const log = Log.create({ service: "session.revert" })
 
@@ -39,6 +39,7 @@ export const layer = Layer.effect(
     const bus = yield* Bus.Service
     const summary = yield* SessionSummary.Service
     const state = yield* SessionRunState.Service
+    const sync = yield* SyncEvent.Service
 
     const revert = Effect.fn("SessionRevert.revert")(function* (input: RevertInput) {
       yield* state.assertNotBusy(input.sessionID)
@@ -75,24 +76,20 @@ export const layer = Layer.effect(
       rev.snapshot = session.revert?.snapshot ?? (yield* snap.track())
       if (session.revert?.snapshot) yield* snap.restore(session.revert.snapshot)
 
-      // kilocode_change start - compute diffs BEFORE reverting files so the diff
       // reflects changes being undone (files on disk still have AI modifications)
       const range = all.filter((msg) => msg.info.id >= rev!.messageID)
       const diffs = yield* summary.computeDiff({ messages: range })
-      // kilocode_change end
 
       yield* snap.revert(patches)
       if (rev.snapshot) rev.diff = yield* snap.diff(rev.snapshot as string)
       yield* storage.write(["session_diff", input.sessionID], diffs).pipe(Effect.ignore)
       yield* bus.publish(Session.Event.Diff, { sessionID: input.sessionID, diff: diffs })
-      // kilocode_change start
       const summaryDiffs: Snapshot.SummaryFileDiff[] = diffs.map((d) => ({
         file: d.file,
         additions: d.additions,
         deletions: d.deletions,
         status: d.status,
       }))
-      // kilocode_change end
       yield* sessions.setRevert({
         sessionID: input.sessionID,
         revert: rev,
@@ -100,12 +97,14 @@ export const layer = Layer.effect(
           additions: diffs.reduce((sum, x) => sum + x.additions, 0),
           deletions: diffs.reduce((sum, x) => sum + x.deletions, 0),
           files: diffs.length,
-          diffs: summaryDiffs, // kilocode_change
+          diffs: summaryDiffs,
         },
       })
+      // kilocode_change start
       // czcode_change start — passive ALHF signal: user reverted AI output
       Telemetry.trackSessionReverted(input.sessionID)
       // czcode_change end
+      // kilocode_change end
       return yield* sessions.get(input.sessionID)
     })
 
@@ -139,7 +138,7 @@ export const layer = Layer.effect(
         remove.push(msg)
       }
       for (const msg of remove) {
-        SyncEvent.run(MessageV2.Event.Removed, {
+        yield* sync.run(MessageV2.Event.Removed, {
           sessionID,
           messageID: msg.info.id,
         })
@@ -151,7 +150,7 @@ export const layer = Layer.effect(
           const removeParts = target.parts.slice(idx)
           target.parts = target.parts.slice(0, idx)
           for (const part of removeParts) {
-            SyncEvent.run(MessageV2.Event.PartRemoved, {
+            yield* sync.run(MessageV2.Event.PartRemoved, {
               sessionID,
               messageID: target.info.id,
               partID: part.id,
@@ -174,6 +173,7 @@ export const defaultLayer = Layer.suspend(() =>
     Layer.provide(Storage.defaultLayer),
     Layer.provide(Bus.layer),
     Layer.provide(SessionSummary.defaultLayer),
+    Layer.provide(SyncEvent.defaultLayer),
   ),
 )
 

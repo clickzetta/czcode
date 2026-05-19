@@ -6,7 +6,7 @@ import { Instance } from "../../src/project/instance"
 import { Server } from "../../src/server/server"
 import * as Log from "@opencode-ai/core/util/log"
 import { resetDatabase } from "../fixture/db"
-import { tmpdir } from "../fixture/fixture"
+import { disposeAllInstances, tmpdir } from "../fixture/fixture"
 
 void Log.init({ print: false })
 
@@ -37,7 +37,7 @@ async function waitDisposed(directory: string) {
 
 afterEach(async () => {
   Flag.KILO_EXPERIMENTAL_HTTPAPI = original
-  await Instance.disposeAll()
+  await disposeAllInstances()
   await resetDatabase()
 })
 
@@ -58,7 +58,6 @@ describe("config HttpApi", () => {
     expect(response.status).toBe(200)
     expect(await response.json()).toMatchObject({ username: "patched-user", formatter: false, lsp: false })
     await disposed
-    // kilocode_change - fixture wrote opencode.json; KilocodeConfig.updateProjectConfig patches it in place
     expect(await Bun.file(path.join(tmp.path, "opencode.json")).json()).toMatchObject({
       username: "patched-user",
       formatter: false,

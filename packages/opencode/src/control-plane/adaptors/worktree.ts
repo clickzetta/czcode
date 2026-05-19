@@ -1,7 +1,8 @@
+// kilocode_change - new file
 import { Schema } from "effect"
 import { AppRuntime } from "@/effect/app-runtime"
 import { Worktree } from "@/worktree"
-import { type WorkspaceAdaptor, WorkspaceInfo } from "../types"
+import { type WorkspaceAdapter, WorkspaceInfo } from "../types"
 
 const WorktreeConfig = Schema.Struct({
   name: WorkspaceInfo.fields.name,
@@ -10,7 +11,7 @@ const WorktreeConfig = Schema.Struct({
 })
 const decodeWorktreeConfig = Schema.decodeUnknownSync(WorktreeConfig)
 
-export const WorktreeAdaptor: WorkspaceAdaptor = {
+export const WorktreeAdaptor: WorkspaceAdapter = {
   name: "Worktree",
   description: "Create a git worktree",
   async configure(info) {

@@ -1,8 +1,9 @@
 import { afterEach, test, expect } from "bun:test"
 import { Question } from "../../src/question"
 import { Instance } from "../../src/project/instance"
+import { InstanceStore } from "../../src/project/instance-store"
 import { QuestionID } from "../../src/question/schema"
-import { tmpdir } from "../fixture/fixture"
+import { disposeAllInstances, tmpdir } from "../fixture/fixture"
 import { SessionID } from "../../src/session/schema"
 import { AppRuntime } from "../../src/effect/app-runtime"
 
@@ -17,7 +18,7 @@ const reply = (input: { requestID: QuestionID; answers: ReadonlyArray<Question.A
 const reject = (id: QuestionID) => AppRuntime.runPromise(Question.Service.use((svc) => svc.reject(id)))
 
 afterEach(async () => {
-  await Instance.disposeAll()
+  await disposeAllInstances()
 })
 
 /** Reject all pending questions so dangling Deferred fibers don't hang the test. */
@@ -83,7 +84,6 @@ test("ask - adds to pending list", async () => {
   })
 })
 
-// kilocode_change start - review follow-up uses non-blocking question prompts
 test("ask - preserves blocking flag", async () => {
   await using tmp = await tmpdir({ git: true })
   await Instance.provide({
@@ -109,7 +109,6 @@ test("ask - preserves blocking flag", async () => {
     },
   })
 })
-// kilocode_change end
 
 // reply tests
 
@@ -449,7 +448,7 @@ test("pending question rejects on instance dispose", async () => {
     fn: async () => {
       const items = await list()
       expect(items).toHaveLength(1)
-      await Instance.dispose()
+      await InstanceStore.disposeInstance(Instance.current)
     },
   })
 
@@ -484,7 +483,7 @@ test("pending question rejects on instance reload", async () => {
     fn: async () => {
       const items = await list()
       expect(items).toHaveLength(1)
-      await Instance.reload({ directory: tmp.path })
+      await InstanceStore.reloadInstance({ directory: tmp.path })
     },
   })
 

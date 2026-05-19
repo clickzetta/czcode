@@ -14,8 +14,8 @@ import { Filesystem } from "@/util/filesystem"
 import type { GlobalEvent } from "@kilocode/sdk/v2"
 import type { EventSource } from "./context/sdk"
 import { win32DisableProcessedInput, win32InstallCtrlCGuard } from "./win32"
-import { importCloudSession, validateCloudFork } from "@/kilocode/cloud-session" // kilocode_change
-import { createKiloClient } from "@kilocode/sdk/v2" // kilocode_change
+import { importCloudSession, validateCloudFork } from "@/kilocode/cloud-session"
+import { createKiloClient } from "@kilocode/sdk/v2"
 import { writeHeapSnapshot } from "v8"
 import { TuiConfig } from "./config/tui"
 import {
@@ -74,14 +74,20 @@ async function input(value?: string) {
   return piped + "\n" + value
 }
 
+export function resolveThreadDirectory(project?: string, envPWD = process.env.PWD, cwd = process.cwd()) {
+  const root = Filesystem.resolve(envPWD ?? cwd)
+  if (project) return Filesystem.resolve(path.isAbsolute(project) ? project : path.join(root, project))
+  return Filesystem.resolve(cwd)
+}
+
 export const TuiThreadCommand = cmd({
   command: "$0 [project]",
-  describe: "start kilo tui", // kilocode_change
+  describe: "start kilo tui",
   builder: (yargs) =>
     withNetworkOptions(yargs)
       .positional("project", {
         type: "string",
-        describe: "path to start kilo in", // kilocode_change
+        describe: "path to start kilo in",
       })
       .option("model", {
         type: "string",
@@ -132,21 +138,16 @@ export const TuiThreadCommand = cmd({
         process.exitCode = 1
         return
       }
-      // kilocode_change start
       const cloudForkError = validateCloudFork(args)
       if (cloudForkError) {
         UI.error(cloudForkError)
         process.exitCode = 1
         return
       }
-      // kilocode_change end
 
       // Resolve relative --project paths from PWD, then use the real cwd after
       // chdir so the thread and worker share the same directory key.
-      const root = Filesystem.resolve(process.env.PWD ?? process.cwd())
-      const next = args.project
-        ? Filesystem.resolve(path.isAbsolute(args.project) ? args.project : path.join(root, args.project))
-        : Filesystem.resolve(process.cwd())
+      const next = resolveThreadDirectory(args.project)
       const file = await target()
       try {
         process.chdir(next)
@@ -202,7 +203,6 @@ export const TuiThreadCommand = cmd({
         })
         worker.terminate()
       }
-      // kilocode_change start - graceful shutdown on external signals
       // The worker's postMessage for the RPC result may never be delivered
       // after shutdown because the worker's event loop drains. Send the
       // shutdown request without awaiting the response, wait for the worker
@@ -265,7 +265,6 @@ export const TuiThreadCommand = cmd({
         shutdownAndExit({ reason: "parent-exit", code: 0 })
       }, 1000)
       orphanWatch.unref()
-      // kilocode_change end
 
       const prompt = await input(args.prompt)
       const config = await TuiConfig.get()
@@ -309,7 +308,6 @@ export const TuiThreadCommand = cmd({
       }, 1000).unref?.()
 
       try {
-        // kilocode_change start - import cloud session before TUI renders
         if (args.cloudFork && args.session) {
           UI.println("Importing session from cloud...")
           const sdk = createKiloClient({
@@ -326,7 +324,6 @@ export const TuiThreadCommand = cmd({
           args.session = id
           args.cloudFork = false
         }
-        // kilocode_change end
 
         await tui({
           url: transport.url,

@@ -5,6 +5,7 @@ import { Glob } from "@opencode-ai/core/util/glob"
 import * as Truncate from "../../tool/truncate"
 import { Config } from "../../config/config"
 import { Instance } from "../../project/instance"
+import { InstanceStore } from "../../project/instance-store"
 import { makeRuntime } from "@/effect/run-service"
 import z from "zod"
 import path from "path"
@@ -183,13 +184,13 @@ function askGuard(mcp: Record<string, "allow" | "ask" | "deny"> = {}) {
     grep: "allow",
     glob: "allow",
     list: "allow",
+    skill: "allow",
     question: "allow",
     webfetch: "allow",
     websearch: "allow",
     codesearch: "allow",
     codebase_search: "allow",
     semantic_search: "allow",
-    skill: "allow",
     external_directory: {
       [Truncate.GLOB]: "allow",
     },
@@ -197,11 +198,36 @@ function askGuard(mcp: Record<string, "allow" | "ask" | "deny"> = {}) {
   })
 }
 
-function planGuard(mcp: Record<string, "allow" | "ask" | "deny"> = {}) {
+function denies(user: Permission.Ruleset) {
+  return user.filter((rule) => rule.action === "deny")
+}
+
+function askEditGuard() {
+  return Permission.fromConfig({ edit: "deny" })
+}
+
+// Upstream v1.14.33 builds Agent state outside the Instance ALS, so reading
+// Instance.worktree here would crash. Thread worktree through from patchAgents
+// instead.
+function planEditRules(worktree: string) {
+  return {
+    "*": "deny" as const,
+    [path.join(".kilo", "plans", "*.md")]: "allow" as const,
+    [path.join(".opencode", "plans", "*.md")]: "allow" as const,
+    [path.relative(worktree, path.join(Global.Path.data, path.join("plans", "*.md")))]: "allow" as const,
+  }
+}
+
+function planEditGuard(worktree: string) {
+  return Permission.fromConfig({ edit: planEditRules(worktree) })
+}
+
+function planGuard(worktree: string, mcp: Record<string, "allow" | "ask" | "deny"> = {}) {
   return Permission.fromConfig({
     "*": "deny",
     question: "allow",
     suggest: "allow",
+    skill: "allow",
     plan_exit: "allow",
     bash: readOnlyBash,
     read: {
@@ -222,12 +248,7 @@ function planGuard(mcp: Record<string, "allow" | "ask" | "deny"> = {}) {
       [Truncate.GLOB]: "allow",
       [path.join(Global.Path.data, "plans", "*")]: "allow",
     },
-    edit: {
-      "*": "deny",
-      [path.join(".kilo", "plans", "*.md")]: "allow",
-      [path.join(".opencode", "plans", "*.md")]: "allow",
-      [path.relative(Instance.worktree, path.join(Global.Path.data, path.join("plans", "*.md")))]: "allow",
-    },
+    edit: planEditRules(worktree),
     ...mcp,
   })
 }
@@ -360,6 +381,8 @@ export function patchAgents(
   user: Permission.Ruleset,
   cfg: Config.Info,
   kilo: KiloData,
+  worktree: string,
+  whitelistedDirs: string[],
 ) {
   // Rename "build" → "code" for backward compatibility
   if (agents.build) {
@@ -386,9 +409,10 @@ export function patchAgents(
       description: "Plan mode. Can only edit plan files; all other filesystem mutations are denied.",
       permission: Permission.merge(
         defaults,
+        planGuard(worktree, kilo.mcpRules),
         user,
-        planGuard(kilo.mcpRules),
-        user.filter((r: Permission.Rule) => r.action === "deny"),
+        planEditGuard(worktree),
+        denies(user),
       ),
       // czcode_change start - add Lakehouse skill guidance for plan agent
       prompt: (agents.plan.prompt ? agents.plan.prompt + "\n\n" : "") + CZ_LAKEHOUSE_SKILL_HINT,
@@ -408,6 +432,7 @@ export function patchAgents(
           glob: "allow",
           list: "allow",
           bash: "allow",
+          skill: "allow",
           webfetch: "allow",
           websearch: "allow",
           codesearch: "allow",
@@ -415,8 +440,13 @@ export function patchAgents(
           semantic_search: "allow",
           read: "allow",
           external_directory: {
+            // Mirror upstream explore's shape: the outer "*": "deny" above wins
+            // over defaults' external_directory rules via findLast, so re-apply
+            // the full whitelist (Truncate.GLOB, tmp, skill, config, globalDirs)
+            // here. Upstream adds these inline in agent.ts; we do the same from
+            // within the patch.
             "*": "ask",
-            [Truncate.GLOB]: "allow",
+            ...Object.fromEntries(whitelistedDirs.map((dir) => [dir, "allow"])),
           },
         }),
         user,
@@ -606,6 +636,7 @@ export function patchAgents(
         glob: "allow",
         list: "allow",
         question: "allow",
+        skill: "allow",
         suggest: "allow", // kilocode_change
         task: "allow",
         todoread: "allow",
@@ -635,12 +666,7 @@ export function patchAgents(
     description: "Get answers and explanations without making changes to the codebase.",
     prompt: PROMPT_ASK,
     options: {},
-    permission: Permission.merge(
-      defaults,
-      user, // user before ask-specific so ask's deny+allowlist wins
-      askGuard(kilo.mcpRules),
-      user.filter((r: Permission.Rule) => r.action === "deny"), // re-apply user denies so explicit MCP blocks win over mcpRules
-    ),
+    permission: Permission.merge(defaults, askGuard(kilo.mcpRules), user, askEditGuard(), denies(user)),
     mode: "primary",
     native: true,
   }
@@ -732,5 +758,5 @@ export async function remove(name: string) {
 
   if (!found) throw new RemoveError({ name, message: "no agent file found on disk" })
 
-  await Instance.dispose()
+  await InstanceStore.disposeInstance(Instance.current)
 }

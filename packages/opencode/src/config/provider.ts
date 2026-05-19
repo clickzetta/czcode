@@ -1,5 +1,5 @@
 import { Schema } from "effect"
-import { PROMPTS } from "@kilocode/kilo-gateway" // kilocode_change
+import { PROMPTS } from "@kilocode/kilo-gateway"
 import { zod } from "@/util/effect-zod"
 import { PositiveInt, withStatics } from "@/util/schema"
 
@@ -7,7 +7,7 @@ export const Model = Schema.Struct({
   id: Schema.optional(Schema.String),
   name: Schema.optional(Schema.String),
   family: Schema.optional(Schema.String),
-  prompt: Schema.optional(Schema.Literals(PROMPTS)), // kilocode_change
+  prompt: Schema.optional(Schema.Literals(PROMPTS)),
   release_date: Schema.optional(Schema.String),
   attachment: Schema.optional(Schema.Boolean),
   reasoning: Schema.optional(Schema.Boolean),
@@ -23,25 +23,25 @@ export const Model = Schema.Struct({
   ),
   cost: Schema.optional(
     Schema.Struct({
-      input: Schema.Number,
-      output: Schema.Number,
-      cache_read: Schema.optional(Schema.Number),
-      cache_write: Schema.optional(Schema.Number),
+      input: Schema.Finite,
+      output: Schema.Finite,
+      cache_read: Schema.optional(Schema.Finite),
+      cache_write: Schema.optional(Schema.Finite),
       context_over_200k: Schema.optional(
         Schema.Struct({
-          input: Schema.Number,
-          output: Schema.Number,
-          cache_read: Schema.optional(Schema.Number),
-          cache_write: Schema.optional(Schema.Number),
+          input: Schema.Finite,
+          output: Schema.Finite,
+          cache_read: Schema.optional(Schema.Finite),
+          cache_write: Schema.optional(Schema.Finite),
         }),
       ),
     }),
   ),
   limit: Schema.optional(
     Schema.Struct({
-      context: Schema.Number,
-      input: Schema.optional(Schema.Number),
-      output: Schema.Number,
+      context: Schema.Finite,
+      input: Schema.optional(Schema.Finite),
+      output: Schema.Finite,
     }),
   ),
   modalities: Schema.optional(
@@ -61,7 +61,6 @@ export const Model = Schema.Struct({
     Schema.Record(
       Schema.String,
       Schema.NullOr(
-        // kilocode_change - allow null values so removed variants can be deleted via stripNulls on save
         Schema.StructWithRest(
           Schema.Struct({
             disabled: Schema.optional(Schema.Boolean).annotate({ description: "Disable this variant for the model" }),
@@ -109,7 +108,7 @@ export const Info = Schema.Struct({
       [Schema.Record(Schema.String, Schema.Any)],
     ),
   ),
-  models: Schema.optional(Schema.Record(Schema.String, Schema.NullOr(Model))), // kilocode_change - allow null values so removed models can be deleted via stripNulls on save
+  models: Schema.optional(Schema.Record(Schema.String, Schema.NullOr(Model))),
 })
   .annotate({ identifier: "ProviderConfig" })
   .pipe(withStatics((s) => ({ zod: zod(s) })))

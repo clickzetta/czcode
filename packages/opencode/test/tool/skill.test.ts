@@ -8,7 +8,7 @@ import type { Tool } from "@/tool/tool"
 import { Instance } from "../../src/project/instance"
 import { SkillTool } from "../../src/tool/skill"
 import { ToolRegistry } from "@/tool/registry"
-import { provideTmpdirInstance } from "../fixture/fixture"
+import { disposeAllInstances, provideTmpdirInstance } from "../fixture/fixture"
 import { SessionID, MessageID } from "../../src/session/schema"
 import { testEffect } from "../lib/effect"
 
@@ -23,14 +23,13 @@ const baseCtx: Omit<Tool.Context, "ask"> = {
 }
 
 afterEach(async () => {
-  await Instance.disposeAll()
+  await disposeAllInstances()
 })
 
 const node = CrossSpawnSpawner.defaultLayer
 
 const it = testEffect(Layer.mergeAll(ToolRegistry.defaultLayer, node))
 
-// kilocode_change - skip on windows: address windows ci failures #9496
 const unix = process.platform !== "win32" ? it.live : it.live.skip
 
 describe("tool.skill", () => {
@@ -97,7 +96,6 @@ Use this skill.
     ),
   )
 
-  // kilocode_change start
   it.live("built-in kilo-config includes named command lookup guidance", () =>
     provideTmpdirInstance(
       (dir) =>
@@ -136,5 +134,4 @@ Use this skill.
       { git: true },
     ),
   )
-  // kilocode_change end
 })
