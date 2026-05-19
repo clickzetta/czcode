@@ -15,7 +15,15 @@ import { ModelID, ProviderID } from "../../src/provider/schema"
 import { TaskTool, type TaskPromptOps } from "../../src/tool/task"
 import { Truncate } from "../../src/tool/truncate"
 import { ToolRegistry } from "../../src/tool/registry"
+<<<<<<< HEAD
 import { provideTmpdirInstance } from "../fixture/fixture"
+||||||| 12f7967ca4
+import { Truncate } from "../../src/tool"
+import { ToolRegistry } from "../../src/tool"
+import { provideTmpdirInstance } from "../fixture/fixture"
+=======
+import { disposeAllInstances, provideTmpdirInstance } from "../fixture/fixture"
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 import { testEffect } from "../lib/effect"
 
 const state = path.join(Global.Path.state, "model.json")
@@ -23,7 +31,7 @@ const state = path.join(Global.Path.state, "model.json")
 afterEach(async () => {
   process.env.KILO_CLIENT = "cli"
   await fs.rm(state, { force: true }).catch(() => undefined)
-  await Instance.disposeAll()
+  await disposeAllInstances()
 })
 
 beforeAll(async () => {

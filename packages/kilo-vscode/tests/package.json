@@ -1,6 +1,12 @@
 {
   "type": "module",
+<<<<<<< HEAD
   "version": "7.2.34",
+||||||| 12f7967ca4
+  "type": "module"
+=======
+  "version": "7.2.49",
+>>>>>>> yunqiqiliang/opencode-v7.3.0
   "dependencies": {},
   "devDependencies": {},
   "peerDependencies": {}

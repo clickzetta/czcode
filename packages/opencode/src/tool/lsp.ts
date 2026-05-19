@@ -3,7 +3,7 @@ import * as Tool from "./tool"
 import path from "path"
 import { LSP } from "@/lsp/lsp"
 import DESCRIPTION from "./lsp.txt"
-import { Instance } from "../project/instance"
+import { InstanceState } from "@/effect/instance-state"
 import { pathToFileURL } from "url"
 import { assertExternalDirectoryEffect } from "./external-directory"
 import { AppFileSystem } from "@opencode-ai/core/filesystem"
@@ -23,12 +23,28 @@ const operations = [
 export const Parameters = Schema.Struct({
   operation: Schema.Literals(operations).annotate({ description: "The LSP operation to perform" }),
   filePath: Schema.String.annotate({ description: "The absolute or relative path to the file" }),
+<<<<<<< HEAD
   line: Schema.Number.check(Schema.isInt())
     .check(Schema.isGreaterThanOrEqualTo(1))
     .annotate({ description: "The line number (1-based, as shown in editors)" }),
   character: Schema.Number.check(Schema.isInt())
     .check(Schema.isGreaterThanOrEqualTo(1))
     .annotate({ description: "The character offset (1-based, as shown in editors)" }),
+||||||| 12f7967ca4
+  line: Schema.Number.check(Schema.isInt())
+    .check(Schema.isGreaterThanOrEqualTo(1))
+    .annotate({ description: "The line number (1-based, as shown in editors)" }),
+  character: Schema.Number.check(Schema.isInt())
+    .check(Schema.isGreaterThanOrEqualTo(1))
+    .annotate({ description: "The character offset (1-based, as shown in editors)" }),
+=======
+  line: Schema.Int.check(Schema.isGreaterThanOrEqualTo(1)).annotate({
+    description: "The line number (1-based, as shown in editors)",
+  }),
+  character: Schema.Int.check(Schema.isGreaterThanOrEqualTo(1)).annotate({
+    description: "The character offset (1-based, as shown in editors)",
+  }),
+>>>>>>> yunqiqiliang/opencode-v7.3.0
   query: Schema.optional(Schema.String).annotate({
     description: "Search query for workspaceSymbol. Empty string requests all symbols.",
   }),
@@ -44,7 +60,8 @@ export const LspTool = Tool.define(
       parameters: Parameters,
       execute: (args: Schema.Schema.Type<typeof Parameters>, ctx: Tool.Context) =>
         Effect.gen(function* () {
-          const file = path.isAbsolute(args.filePath) ? args.filePath : path.join(Instance.directory, args.filePath)
+          const instance = yield* InstanceState.context
+          const file = path.isAbsolute(args.filePath) ? args.filePath : path.join(instance.directory, args.filePath)
           yield* assertExternalDirectoryEffect(ctx, file)
           const meta =
             args.operation === "workspaceSymbol"
@@ -61,7 +78,14 @@ export const LspTool = Tool.define(
 
           const uri = pathToFileURL(file).href
           const position = { file, line: args.line - 1, character: args.character - 1 }
+<<<<<<< HEAD
           const relPath = path.relative(Instance.worktree, file)
+||||||| 12f7967ca4
+          const relPath = path.relative(Instance.worktree, file)
+          const title = `${args.operation} ${relPath}:${args.line}:${args.character}`
+=======
+          const relPath = path.relative(instance.worktree, file)
+>>>>>>> yunqiqiliang/opencode-v7.3.0
           const detail =
             args.operation === "workspaceSymbol"
               ? ""

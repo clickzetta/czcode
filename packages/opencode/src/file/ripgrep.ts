@@ -12,7 +12,12 @@ import * as Log from "@opencode-ai/core/util/log"
 import { sanitizedProcessEnv } from "@opencode-ai/core/util/opencode-process"
 import { which } from "@/util/which"
 import { zod } from "@/util/effect-zod"
+<<<<<<< HEAD
 import { withStatics } from "@/util/schema"
+||||||| 12f7967ca4
+=======
+import { NonNegativeInt, withStatics } from "@/util/schema"
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 
 const log = Log.create({ service: "ripgrep" })
 const VERSION = "15.1.0"
@@ -27,19 +32,53 @@ const PLATFORM = {
 } as const
 
 const TimeStats = Schema.Struct({
+<<<<<<< HEAD
   secs: Schema.Number,
   nanos: Schema.Number,
+||||||| 12f7967ca4
+const Stats = z.object({
+  elapsed: z.object({
+    secs: z.number(),
+    nanos: z.number(),
+    human: z.string(),
+  }),
+  searches: z.number(),
+  searches_with_match: z.number(),
+  bytes_searched: z.number(),
+  bytes_printed: z.number(),
+  matched_lines: z.number(),
+  matches: z.number(),
+=======
+  secs: NonNegativeInt,
+  nanos: NonNegativeInt,
+>>>>>>> yunqiqiliang/opencode-v7.3.0
   human: Schema.String,
 })
 
 const Stats = Schema.Struct({
   elapsed: TimeStats,
+<<<<<<< HEAD
   searches: Schema.Number,
   searches_with_match: Schema.Number,
   bytes_searched: Schema.Number,
   bytes_printed: Schema.Number,
   matched_lines: Schema.Number,
   matches: Schema.Number,
+||||||| 12f7967ca4
+const Begin = z.object({
+  type: z.literal("begin"),
+  data: z.object({
+    path: z.object({
+      text: z.string(),
+    }),
+=======
+  searches: NonNegativeInt,
+  searches_with_match: NonNegativeInt,
+  bytes_searched: NonNegativeInt,
+  bytes_printed: NonNegativeInt,
+  matched_lines: NonNegativeInt,
+  matches: NonNegativeInt,
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 })
 
 const PathText = Schema.Struct({
@@ -58,15 +97,47 @@ export const SearchMatch = Schema.Struct({
   lines: Schema.Struct({
     text: Schema.String,
   }),
+<<<<<<< HEAD
   line_number: Schema.Number,
   absolute_offset: Schema.Number,
+||||||| 12f7967ca4
+export const Match = z.object({
+  type: z.literal("match"),
+  data: z.object({
+    path: z.object({
+      text: z.string(),
+    }),
+    lines: z.object({
+      text: z.string(),
+    }),
+    line_number: z.number(),
+    absolute_offset: z.number(),
+    submatches: z.array(
+      z.object({
+        match: z.object({
+          text: z.string(),
+        }),
+        start: z.number(),
+        end: z.number(),
+=======
+  line_number: NonNegativeInt,
+  absolute_offset: NonNegativeInt,
+>>>>>>> yunqiqiliang/opencode-v7.3.0
   submatches: Schema.Array(
     Schema.Struct({
       match: Schema.Struct({
         text: Schema.String,
       }),
+<<<<<<< HEAD
       start: Schema.Number,
       end: Schema.Number,
+||||||| 12f7967ca4
+    ),
+  }),
+=======
+      start: NonNegativeInt,
+      end: NonNegativeInt,
+>>>>>>> yunqiqiliang/opencode-v7.3.0
     }),
   ),
 }).pipe(withStatics((s) => ({ zod: zod(s) })))
@@ -80,7 +151,19 @@ const End = Schema.Struct({
   type: Schema.Literal("end"),
   data: Schema.Struct({
     path: PathText,
+<<<<<<< HEAD
     binary_offset: Schema.NullOr(Schema.Number),
+||||||| 12f7967ca4
+const End = z.object({
+  type: z.literal("end"),
+  data: z.object({
+    path: z.object({
+      text: z.string(),
+    }),
+    binary_offset: z.number().nullable(),
+=======
+    binary_offset: Schema.NullOr(NonNegativeInt),
+>>>>>>> yunqiqiliang/opencode-v7.3.0
     stats: Stats,
   }),
 })

@@ -3,6 +3,7 @@
   "extends": "@tsconfig/bun/tsconfig.json",
   "compilerOptions": {
     "noUncheckedIndexedAccess": false,
+<<<<<<< HEAD
     "types": ["bun"],
     "plugins": [
       {
@@ -11,5 +12,9 @@
         "namespaceImportPackages": ["effect", "@effect/*"]
       }
     ]
+||||||| 12f7967ca4
+=======
+    "types": ["bun"]
+>>>>>>> yunqiqiliang/opencode-v7.3.0
   }
 }

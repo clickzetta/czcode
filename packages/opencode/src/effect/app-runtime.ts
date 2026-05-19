@@ -1,4 +1,4 @@
-import { Layer, ManagedRuntime } from "effect"
+import { Effect, Layer, ManagedRuntime } from "effect"
 import { attach } from "./run-service"
 import * as Observability from "@opencode-ai/core/effect/observability"
 
@@ -14,6 +14,13 @@ import { FileWatcher } from "@/file/watcher"
 import { Storage } from "@/storage/storage"
 import { Snapshot } from "@/snapshot"
 import { Plugin } from "@/plugin"
+<<<<<<< HEAD
+||||||| 12f7967ca4
+import { Provider } from "@/provider"
+import { ProviderAuth } from "@/provider"
+=======
+import { ModelsDev } from "@/provider/models"
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Provider } from "@/provider/provider"
 import { ProviderAuth } from "@/provider/auth"
 import { Agent } from "@/agent/agent"
@@ -39,13 +46,33 @@ import { Command } from "@/command"
 import { Truncate } from "@/tool/truncate"
 import { ToolRegistry } from "@/tool/registry"
 import { Format } from "@/format"
+<<<<<<< HEAD
 import { Project } from "@/project/project"
 import { Vcs } from "@/project/vcs"
+||||||| 12f7967ca4
+import { Project } from "@/project"
+import { Vcs } from "@/project"
+=======
+import { InstanceBootstrap } from "@/project/bootstrap"
+import { InstanceStore } from "@/project/instance-store"
+import { Project } from "@/project/project"
+import { Vcs } from "@/project/vcs"
+import { Workspace } from "@/control-plane/workspace"
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Worktree } from "@/worktree"
 import { Pty } from "@/pty"
 import { Installation } from "@/installation"
 import { ShareNext } from "@/share/share-next"
 import { SessionShare } from "@/share/session"
+<<<<<<< HEAD
+||||||| 12f7967ca4
+import { ShareNext } from "@/share"
+import { SessionShare } from "@/share"
+import { Npm } from "@/npm"
+import { memoMap } from "./memo-map"
+=======
+import { SyncEvent } from "@/sync"
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Npm } from "@opencode-ai/core/npm"
 import { memoMap } from "@opencode-ai/core/effect/memo-map"
 
@@ -63,6 +90,7 @@ export const AppLayer = Layer.mergeAll(
   Storage.defaultLayer,
   Snapshot.defaultLayer,
   Plugin.defaultLayer,
+  ModelsDev.defaultLayer,
   Provider.defaultLayer,
   ProviderAuth.defaultLayer,
   Agent.defaultLayer,
@@ -88,17 +116,24 @@ export const AppLayer = Layer.mergeAll(
   Truncate.defaultLayer,
   ToolRegistry.defaultLayer,
   Format.defaultLayer,
+  InstanceBootstrap.defaultLayer,
+  InstanceStore.defaultLayer,
   Project.defaultLayer,
   Vcs.defaultLayer,
+  Workspace.defaultLayer,
   Worktree.defaultLayer,
   Pty.defaultLayer,
   Installation.defaultLayer,
   ShareNext.defaultLayer,
   SessionShare.defaultLayer,
+  SyncEvent.defaultLayer,
 ).pipe(Layer.provideMerge(Observability.layer))
 
 const rt = ManagedRuntime.make(AppLayer, { memoMap })
 type Runtime = Pick<typeof rt, "runSync" | "runPromise" | "runPromiseExit" | "runFork" | "runCallback" | "dispose">
+
+/** Services provided by AppRuntime — i.e. what an Effect run via AppRuntime.runPromise can yield. */
+export type AppServices = ManagedRuntime.ManagedRuntime.Services<typeof rt>
 const wrap = (effect: Parameters<typeof rt.runSync>[0]) => attach(effect as never) as never
 
 export const AppRuntime: Runtime = {
@@ -118,4 +153,16 @@ export const AppRuntime: Runtime = {
     return rt.runCallback(wrap(effect))
   },
   dispose: () => rt.dispose(),
+}
+
+let bootstrapRun: Promise<Effect.Effect<void>>
+export function getBootstrapRunEffect(): Promise<Effect.Effect<void>> {
+  if (!bootstrapRun) {
+    bootstrapRun = AppRuntime.runPromise(
+      Effect.gen(function* () {
+        return (yield* InstanceBootstrap.Service).run
+      }),
+    )
+  }
+  return bootstrapRun
 }

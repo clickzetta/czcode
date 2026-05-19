@@ -5,7 +5,15 @@ import { Effect, Layer } from "effect"
 import { Instance } from "../../src/project/instance"
 import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
 import { ToolRegistry } from "@/tool/registry"
+<<<<<<< HEAD
 import { provideTmpdirInstance, tmpdir } from "../fixture/fixture" // kilocode_change
+||||||| 12f7967ca4
+import * as CrossSpawnSpawner from "../../src/effect/cross-spawn-spawner"
+import { ToolRegistry } from "../../src/tool"
+import { provideTmpdirInstance, tmpdir } from "../fixture/fixture" // kilocode_change
+=======
+import { disposeAllInstances, provideTmpdirInstance, tmpdir } from "../fixture/fixture" // kilocode_change
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 import { testEffect } from "../lib/effect"
 
 const node = CrossSpawnSpawner.defaultLayer
@@ -13,7 +21,7 @@ const node = CrossSpawnSpawner.defaultLayer
 const it = testEffect(Layer.mergeAll(ToolRegistry.defaultLayer, node))
 
 afterEach(async () => {
-  await Instance.disposeAll()
+  await disposeAllInstances()
 })
 
 describe("tool.registry", () => {

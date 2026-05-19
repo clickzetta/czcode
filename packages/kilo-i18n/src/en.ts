@@ -99,4 +99,17 @@ export const dict = {
 
   // Edit-tool header: hover-revealed action opening the diff in a full tab.
   "ui.messagePart.openInDiffViewer": "Open in Diff Viewer",
+<<<<<<< HEAD
+||||||| 12f7967ca4
+=======
+  // Shell-tool section labels and actions.
+  "ui.messagePart.shell.command": "Command",
+  "ui.messagePart.shell.output": "Output",
+  "ui.messagePart.openInEditor": "Open in Editor",
+
+  // Message feedback (thumbs up/down per assistant response)
+  "ui.message.feedback.helpful": "This was helpful",
+  "ui.message.feedback.notHelpful": "This wasn't helpful",
+  "ui.message.feedback.clearRating": "Clear rating",
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 }

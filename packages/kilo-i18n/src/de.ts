@@ -91,5 +91,19 @@ export const dict = {
   "snapshot.slowRepo.answer.disable.description":
     "Kilo-Snapshots für dieses Projekt ausschalten. Rückgängig/Wiederherstellen für Kilo-Änderungen ist nicht mehr möglich, aber git verfolgt weiterhin alles.",
 
+<<<<<<< HEAD
   "ui.messagePart.openInDiffViewer": "Im Diff-Viewer öffnen",
+||||||| 12f7967ca4
+=======
+  // Edit-tool header and shell-tool section labels
+  "ui.messagePart.openInDiffViewer": "Im Diff-Viewer öffnen",
+  "ui.messagePart.shell.command": "Befehl",
+  "ui.messagePart.shell.output": "Ausgabe",
+  "ui.messagePart.openInEditor": "Im Editor öffnen",
+
+  // Message feedback (thumbs up/down per assistant response)
+  "ui.message.feedback.helpful": "Das war hilfreich",
+  "ui.message.feedback.notHelpful": "Das war nicht hilfreich",
+  "ui.message.feedback.clearRating": "Bewertung löschen",
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 }

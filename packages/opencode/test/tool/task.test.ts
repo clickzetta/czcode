@@ -12,11 +12,19 @@ import { ModelID, ProviderID } from "../../src/provider/schema"
 import { TaskTool, type TaskPromptOps } from "../../src/tool/task"
 import { Truncate } from "@/tool/truncate"
 import { ToolRegistry } from "@/tool/registry"
+<<<<<<< HEAD
 import { provideTmpdirInstance } from "../fixture/fixture"
+||||||| 12f7967ca4
+import { Truncate } from "../../src/tool"
+import { ToolRegistry } from "../../src/tool"
+import { provideTmpdirInstance } from "../fixture/fixture"
+=======
+import { disposeAllInstances, provideTmpdirInstance } from "../fixture/fixture"
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 import { testEffect } from "../lib/effect"
 
 afterEach(async () => {
-  await Instance.disposeAll()
+  await disposeAllInstances()
 })
 
 const ref = {
@@ -383,6 +391,7 @@ describe("tool.task", () => {
           // kilocode_change end
           expect(seen?.tools).toEqual({
             todowrite: false,
+            task: false, // kilocode_change - Kilo disallows nested subagents
             bash: false,
             read: false,
           })

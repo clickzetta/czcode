@@ -5,10 +5,18 @@ import { ConfigValidation } from "../../src/kilocode/config-validation"
 import { Instance } from "../../src/project/instance"
 import { Config } from "../../src/config/config"
 import { Filesystem } from "../../src/util/filesystem"
+<<<<<<< HEAD
 import { tmpdir } from "../fixture/fixture"
+||||||| 12f7967ca4
+import { Config } from "../../src/config"
+import { Filesystem } from "../../src/util"
+import { tmpdir } from "../fixture/fixture"
+=======
+import { disposeAllInstances, tmpdir } from "../fixture/fixture"
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 
 afterEach(async () => {
-  await Instance.disposeAll()
+  await disposeAllInstances()
 })
 
 describe("ConfigValidation.check", () => {

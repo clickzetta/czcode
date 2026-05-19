@@ -91,5 +91,19 @@ export const dict = {
   "snapshot.slowRepo.answer.disable.description":
     "Désactivez les instantanés Kilo pour ce projet. Vous perdez l'annulation/restauration des modifications faites par Kilo, mais git continue de tout suivre.",
 
+<<<<<<< HEAD
   "ui.messagePart.openInDiffViewer": "Ouvrir dans la visionneuse de différences",
+||||||| 12f7967ca4
+=======
+  // Edit-tool header and shell-tool section labels
+  "ui.messagePart.openInDiffViewer": "Ouvrir dans le visualiseur de différences",
+  "ui.messagePart.shell.command": "Commande",
+  "ui.messagePart.shell.output": "Sortie",
+  "ui.messagePart.openInEditor": "Ouvrir dans l'éditeur",
+
+  // Message feedback (thumbs up/down per assistant response)
+  "ui.message.feedback.helpful": "C'était utile",
+  "ui.message.feedback.notHelpful": "Ce n'était pas utile",
+  "ui.message.feedback.clearRating": "Effacer la notation",
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 }

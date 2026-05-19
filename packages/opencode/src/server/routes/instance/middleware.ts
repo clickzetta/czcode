@@ -1,7 +1,15 @@
 import type { MiddlewareHandler } from "hono"
 import { Instance } from "@/project/instance"
+<<<<<<< HEAD
 import { InstanceBootstrap } from "@/project/bootstrap"
 import { AppRuntime } from "@/effect/app-runtime"
+||||||| 12f7967ca4
+import { InstanceBootstrap } from "@/project/bootstrap"
+import { AppRuntime } from "@/effect/app-runtime"
+import { AppFileSystem } from "@opencode-ai/shared/filesystem"
+=======
+import { getBootstrapRunEffect } from "@/effect/app-runtime"
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 import { AppFileSystem } from "@opencode-ai/core/filesystem"
 import { WorkspaceContext } from "@/control-plane/workspace-context"
 import { WorkspaceID } from "@/control-plane/schema"
@@ -24,7 +32,7 @@ export function InstanceMiddleware(workspaceID?: WorkspaceID): MiddlewareHandler
       async fn() {
         return Instance.provide({
           directory,
-          init: () => AppRuntime.runPromise(InstanceBootstrap),
+          init: await getBootstrapRunEffect(),
           async fn() {
             return next()
           },

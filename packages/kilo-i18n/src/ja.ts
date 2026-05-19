@@ -89,5 +89,19 @@ export const dict = {
   "snapshot.slowRepo.answer.disable.description":
     "このプロジェクトでは Kilo のスナップショットを無効にします。Kilo による変更の取り消し/やり直しはできなくなりますが、git は引き続きすべてを追跡します。",
 
+<<<<<<< HEAD
   "ui.messagePart.openInDiffViewer": "差分ビューアで開く",
+||||||| 12f7967ca4
+=======
+  // Edit-tool header and shell-tool section labels
+  "ui.messagePart.openInDiffViewer": "差分ビューアーで開く",
+  "ui.messagePart.shell.command": "コマンド",
+  "ui.messagePart.shell.output": "出力",
+  "ui.messagePart.openInEditor": "エディタで開く",
+
+  // Message feedback (thumbs up/down per assistant response)
+  "ui.message.feedback.helpful": "役に立ちました",
+  "ui.message.feedback.notHelpful": "役に立ちませんでした",
+  "ui.message.feedback.clearRating": "評価をクリア",
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 }

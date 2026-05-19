@@ -24,6 +24,11 @@ Use your provider API key to route matching models through your account:
 
 - Anthropic
 - AWS Bedrock
+<<<<<<< HEAD
+||||||| 12f7967ca4
+=======
+- DeepSeek
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 - Fireworks
 - Google AI Studio
 - Inception
@@ -32,6 +37,7 @@ Use your provider API key to route matching models through your account:
 - Moonshot AI (Kimi)
 - Novita
 - OpenAI
+- Xiaomi
 - xAI
 - Z.ai
 

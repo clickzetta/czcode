@@ -70,6 +70,22 @@ test("project config update creates .kilo/kilo.json and reloads it", async () =>
   })
 })
 
+<<<<<<< HEAD
+||||||| 12f7967ca4
+=======
+test("project config update skips empty delete-only writes when no config exists", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      await save({ provider: { missing: null } } as any)
+
+      await expect(fs.access(path.join(tmp.path, ".kilo", "kilo.json"))).rejects.toThrow()
+    },
+  })
+})
+
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 test("project config update prefers existing root kilo.json", async () => {
   await using tmp = await tmpdir()
   await writeConfig(tmp.path, { username: "alice" })

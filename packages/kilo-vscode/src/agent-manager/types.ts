@@ -126,6 +126,7 @@ interface StateMessage {
   tabOrder?: Record<string, string[]>
   worktreeOrder?: string[]
   sessionsCollapsed?: boolean
+  sidebarCollapsed?: boolean
   reviewDiffStyle?: "unified" | "split"
   reviewMarkdownRender?: boolean
   isGitRepo?: boolean
@@ -456,6 +457,11 @@ interface SetSessionsCollapsedIn {
   collapsed: boolean
 }
 
+interface SetSidebarCollapsedIn {
+  type: "agentManager.setSidebarCollapsed"
+  collapsed: boolean
+}
+
 interface SetReviewDiffStyleIn {
   type: "agentManager.setReviewDiffStyle"
   style: "unified" | "split"
@@ -560,6 +566,12 @@ interface GenericOpenFileIn {
 
 interface PreviewImageIn {
   type: "previewImage"
+  dataUrl: string
+  filename: string
+}
+
+interface SaveImageIn {
+  type: "saveImage"
   dataUrl: string
   filename: string
 }
@@ -730,6 +742,7 @@ export type AgentManagerInMessage =
   | SetTabOrderIn
   | SetWorktreeOrderIn
   | SetSessionsCollapsedIn
+  | SetSidebarCollapsedIn
   | SetReviewDiffStyleIn
   | SetReviewMarkdownRenderIn
   | SetDefaultBaseBranchIn
@@ -750,6 +763,7 @@ export type AgentManagerInMessage =
   | OpenFileIn
   | GenericOpenFileIn
   | PreviewImageIn
+  | SaveImageIn
   | LoadMessagesIn
   | SendMessageIn
   | SendCommandIn

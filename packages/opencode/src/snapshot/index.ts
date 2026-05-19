@@ -15,7 +15,13 @@ import { Flag } from "@opencode-ai/core/flag/flag" // kilocode_change
 import { DiffFull } from "../kilocode/snapshot/diff-full" // kilocode_change
 import { KiloSnapshotTrack } from "../kilocode/snapshot/track" // kilocode_change
 import type { MessageID, SessionID } from "../session/schema" // kilocode_change
+<<<<<<< HEAD
 import { withStatics } from "@/util/schema"
+||||||| 12f7967ca4
+import { withStatics } from "@/util/schema"
+=======
+import { NonNegativeInt, withStatics } from "@/util/schema"
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 import { zod } from "@/util/effect-zod"
 
 export const Patch = Schema.Struct({
@@ -27,8 +33,8 @@ export type Patch = typeof Patch.Type
 export const FileDiff = Schema.Struct({
   file: Schema.String,
   patch: Schema.String,
-  additions: Schema.Number,
-  deletions: Schema.Number,
+  additions: NonNegativeInt,
+  deletions: NonNegativeInt,
   status: Schema.optional(Schema.Literals(["added", "deleted", "modified"])),
 })
   .annotate({ identifier: "SnapshotFileDiff" })

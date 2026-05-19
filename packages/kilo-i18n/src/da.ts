@@ -91,5 +91,19 @@ export const dict = {
   "snapshot.slowRepo.answer.disable.description":
     "Slå Kilos snapshots fra for dette projekt. Du mister fortryd/gentag for Kilo-ændringer, men git sporer stadig alt.",
 
+<<<<<<< HEAD
   "ui.messagePart.openInDiffViewer": "Åbn i diff-viser",
+||||||| 12f7967ca4
+=======
+  // Edit-tool header and shell-tool section labels
+  "ui.messagePart.openInDiffViewer": "Åbn i Diff-visning",
+  "ui.messagePart.shell.command": "Kommando",
+  "ui.messagePart.shell.output": "Output",
+  "ui.messagePart.openInEditor": "Åbn i editor",
+
+  // Message feedback (thumbs up/down per assistant response)
+  "ui.message.feedback.helpful": "Dette var nyttigt",
+  "ui.message.feedback.notHelpful": "Dette var ikke nyttigt",
+  "ui.message.feedback.clearRating": "Ryd bedømmelse",
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 }

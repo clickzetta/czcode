@@ -12,7 +12,15 @@ import { eq } from "drizzle-orm"
 import { EventTable } from "@/sync/event.sql"
 import { lazy } from "@/util/lazy"
 import * as Log from "@opencode-ai/core/util/log"
+<<<<<<< HEAD
 import { startWorkspaceSyncing } from "@/control-plane/workspace"
+||||||| 12f7967ca4
+import { Log } from "@/util"
+import { startWorkspaceSyncing } from "@/control-plane/workspace"
+=======
+import { Workspace } from "@/control-plane/workspace"
+import { AppRuntime } from "@/effect/app-runtime"
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Instance } from "@/project/instance"
 import { errors } from "../../error"
 
@@ -46,7 +54,9 @@ export const SyncRoutes = lazy(() =>
         },
       }),
       async (c) => {
-        startWorkspaceSyncing(Instance.project.id)
+        void AppRuntime.runPromise(
+          Workspace.Service.use((workspace) => workspace.startWorkspaceSyncing(Instance.project.id)),
+        )
         return c.json(true)
       },
     )
@@ -91,7 +101,7 @@ export const SyncRoutes = lazy(() =>
           last: events.at(-1)?.seq,
           directory: body.directory,
         })
-        SyncEvent.replayAll(events)
+        await AppRuntime.runPromise(SyncEvent.use.replayAll(events))
 
         log.info("sync replay complete", {
           sessionID: source,

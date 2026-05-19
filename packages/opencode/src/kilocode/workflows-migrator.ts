@@ -4,6 +4,14 @@ import os from "os"
 import type { Config } from "../config/config"
 import type { ConfigCommand } from "../config/command"
 import { Filesystem } from "../util/filesystem"
+<<<<<<< HEAD
+||||||| 12f7967ca4
+import type { Config } from "../config"
+import type { ConfigCommand } from "../config"
+import { Filesystem } from "../util"
+=======
+import { KilocodeMarkdown } from "./config/markdown"
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 import { KilocodePaths } from "./paths"
 
 export namespace WorkflowsMigrator {
@@ -59,7 +67,7 @@ export namespace WorkflowsMigrator {
     const files = await findWorkflowFiles(dir)
     const workflows: KilocodeWorkflow[] = []
     for (const file of files) {
-      const content = await fs.readFile(file, "utf-8")
+      const content = await KilocodeMarkdown.substitute(await fs.readFile(file, "utf-8"), file)
       workflows.push({
         name: extractNameFromFilename(file),
         path: file,

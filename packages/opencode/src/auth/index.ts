@@ -1,6 +1,13 @@
 import path from "path"
 import { Effect, Layer, Record, Result, Schema, Context } from "effect"
 import { zod } from "@/util/effect-zod"
+<<<<<<< HEAD
+||||||| 12f7967ca4
+import { Global } from "../global"
+import { AppFileSystem } from "@opencode-ai/shared/filesystem"
+=======
+import { NonNegativeInt } from "@/util/schema"
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Global } from "@opencode-ai/core/global"
 import { AppFileSystem } from "@opencode-ai/core/filesystem"
 import { Telemetry } from "@kilocode/kilo-telemetry" // kilocode_change
@@ -16,7 +23,7 @@ export class Oauth extends Schema.Class<Oauth>("OAuth")({
   type: Schema.Literal("oauth"),
   refresh: Schema.String,
   access: Schema.String,
-  expires: Schema.Number,
+  expires: NonNegativeInt,
   accountId: Schema.optional(Schema.String),
   enterpriseUrl: Schema.optional(Schema.String),
 }) {}

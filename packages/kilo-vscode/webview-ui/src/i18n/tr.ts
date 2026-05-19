@@ -137,6 +137,16 @@ export const dict = {
   "provider.connect.apiKey.label": "{{provider}} API anahtarı",
   "provider.connect.apiKey.placeholder": "API anahtarı",
   "provider.connect.apiKey.required": "API anahtarı gerekli",
+  "provider.connect.prompt.required": "{{field}} zorunludur",
+  "provider.connect.azure.endpointType.label": "Azure uç nokta yapılandırmasını seçin",
+  "provider.connect.azure.endpointType.resourceName.label": "Kaynak adı",
+  "provider.connect.azure.endpointType.resourceName.hint": "Azure kaynak adınızdan uç nokta oluşturun",
+  "provider.connect.azure.endpointType.baseURL.label": "Tam uç nokta URL'si",
+  "provider.connect.azure.endpointType.baseURL.hint": "Özel bir Azure OpenAI uç noktası kullanın",
+  "provider.connect.azure.resourceName.label": "Azure kaynak adı",
+  "provider.connect.azure.resourceName.placeholder": "örn. my-models",
+  "provider.connect.azure.baseURL.label": "Azure OpenAI uç nokta URL'si",
+  "provider.connect.azure.baseURL.placeholder": "örn. https://my-models.openai.azure.com/openai",
   "provider.connect.opencodeZen.line1":
     "OpenCode Zen, kodlama ajanları için seçilmiş güvenilir optimize edilmiş modellere erişim sağlar.",
   "provider.connect.opencodeZen.line2":
@@ -269,6 +279,20 @@ export const dict = {
   "prompt.action.resetModel": "Modeli varsayılana sıfırla",
   "prompt.action.enhanceDescription":
     "'Komutu Geliştir' düğmesi, ek bağlam, açıklama veya yeniden ifadelendirme sağlayarak komutunuzu iyileştirmeye yardımcı olur. Buraya bir komut yazıp düğmeye tekrar tıklayarak nasıl çalıştığını görebilirsiniz.",
+
+  "speechToText.tooltip.start": "Sesli girişi başlat",
+  "speechToText.tooltip.stop": "Ses yakalamayı durdur",
+  "speechToText.tooltip.transcribing": "Metne dönüştürülüyor... İptal etmek için tıklayın.",
+  "speechToText.tooltip.error": "Sesli giriş başarısız oldu. Temizlemek için tıklayın.",
+  "speechToText.error.title": "Sesli giriş başarısız oldu",
+  "speechToText.error.loginRequired": "Sesli girişi kullanmak için Kilo'ya giriş yapın.",
+  "speechToText.error.permission": "Mikrofon izni reddedildi.",
+  "speechToText.error.microphone": "Mikrofon başlatılamadı.",
+  "speechToText.error.recording": "Kayıt başarısız oldu.",
+  "speechToText.error.emptyRecording": "Hiçbir ses kaydedilmedi.",
+  "speechToText.error.emptyTranscript": "Hiçbir konuşma algılanmadı.",
+  "speechToText.error.encoding": "Kayıt kodlanamadı.",
+  "speechToText.toast.transcribed": "Döküm eklendi",
 
   "prompt.toast.pasteUnsupported.title": "Desteklenmeyen yapıştırma",
   "prompt.toast.pasteUnsupported.description": "Buraya sadece görsel veya PDF yapıştırılabilir.",
@@ -456,6 +480,11 @@ export const dict = {
   "error.promotionLimit.description":
     "Devam etmek ve 500'den fazla modeli keşfetmek için ücretsiz kayıt olun. 2 dakika sürer, kredi kartı gerekmez. Ya da daha sonra gelin.",
   "error.promotionLimit.action": "Kayıt Ol",
+  "error.providerAuth.title": "{{provider}} oturumunuzu kapattı",
+  "error.providerAuth.description": "{{provider}} bağlantısını yeniden kurun ve mesajınızı tekrar gönderin.",
+  "error.providerAuth.chatgpt.title": "OpenAI oturumunuzu kapattı",
+  "error.providerAuth.chatgpt.description":
+    "Codex modellerini kullanmaya devam etmek için ChatGPT ile tekrar giriş yapın ve mesajınızı yeniden gönderin.",
 
   "error.chain.unknown": "Bilinmeyen hata",
   "error.chain.causedBy": "Nedeni:",
@@ -1041,6 +1070,18 @@ export const dict = {
   "settings.indexing.status.title": "Durum",
   "settings.indexing.enable.title": "İndekslemeyi etkinleştir",
   "settings.indexing.enable.description": "Anlamsal kod tabanı indekslemeyi açın veya kapatın.",
+<<<<<<< HEAD
+||||||| 12f7967ca4
+  "settings.indexing.enable.description": "Bu çalışma alanı için anlamsal kod tabanı indekslemeyi açın veya kapatın.",
+=======
+  "settings.indexing.globalEnable.title": "Genel olarak etkinleştir",
+  "settings.indexing.globalEnable.description": "Her çalışma alanı için dizine eklemeyi etkinleştir.",
+  "settings.indexing.projectEnable.title": "Bu proje için etkinleştir",
+  "settings.indexing.projectEnable.description":
+    "Genel dizine ekleme kapalı olduğunda bu çalışma alanı için dizine eklemeyi etkinleştir.",
+  "settings.indexing.projectEnable.disabledTooltip":
+    "Küresel indeksleme etkinleştirildi, bu nedenle bu proje zaten kapsanıyor.",
+>>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.indexing.provider.title": "Yerleştirme sağlayıcısı",
   "settings.indexing.provider.description":
     "Anlamsal arama için yerleştirmeleri oluşturmak amacıyla kullanılacak sağlayıcıyı seçin.",
@@ -1170,6 +1211,8 @@ export const dict = {
   "settings.autocomplete.smartKeybinding.description": "Satır içi görevleri tetiklemek için akıllı tuş ataması kullan",
   "settings.autocomplete.chatAutocomplete.title": "Sohbet metin alanı otomatik tamamlamasını etkinleştir",
   "settings.autocomplete.chatAutocomplete.description": "Sohbet metin alanında otomatik tamamlama önerileri göster",
+  "settings.autocomplete.modelsHint":
+    "Otomatik tamamlama için kullanılacak modeli seçmek için Modeller ayarlarına bakın.",
 
   "settings.notifications.agent.title": "Ajan Tamamlanması",
   "settings.notifications.agent.description": "Ajan bir görevi tamamladığında bildirim göster",
@@ -1209,6 +1252,17 @@ export const dict = {
   "settings.experimental.agentManagerTool.title": "Agent Manager Aracı",
   "settings.experimental.agentManagerTool.description":
     "Ajanların bir araç çağrısından Agent Manager yerel oturumları ve worktree oturumları başlatmasına izin ver",
+<<<<<<< HEAD
+||||||| 12f7967ca4
+=======
+  "settings.experimental.speechToText.title": "Sesten metne",
+  "settings.experimental.speechToText.description":
+    "Kilo Gateway üzerinden Kilo hesabınızı kullanarak komut alanlarında sesli girişi etkinleştirin.",
+  "settings.experimental.speechToText.disabledDescription":
+    "Komut alanlarında sesli girişi kullanmak için Kilo provider'ı etkinleştirin ve giriş yapın.",
+  "settings.experimental.speechToTextModel.title": "Sesten metne modeli",
+  "settings.experimental.speechToTextModel.description": "Sesli giriş için Kilo Gateway transkripsiyon modelini seçin.",
+>>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.experimental.continueOnDeny.title": "Reddetme Durumunda Devam Et",
   "settings.experimental.continueOnDeny.description": "Bir izin reddedildiğinde ajan döngüsüne devam et",
   "settings.experimental.mcpTimeout.title": "MCP Zaman Aşımı (ms)",
@@ -1350,7 +1404,10 @@ export const dict = {
     "Dosya düzenlemelerinden önce kontrol noktaları oluştur, böylece önceki durumları geri yükleyebilirsiniz",
 
   "settings.context.autoCompaction.title": "Otomatik Sıkıştırma",
-  "settings.context.autoCompaction.description": "Bağlam dolduğunda otomatik olarak sıkıştır",
+  "settings.context.autoCompaction.description": "Bağlam sınıra ulaşmadan önce otomatik olarak sıkıştır",
+  "settings.context.compactionLimit.title": "Otomatik sıkıştırma sınırı",
+  "settings.context.compactionLimit.description":
+    "Bağlam model penceresinin bu yüzdesine ulaştığında sıkıştır. Yalnızca güvenlik tamponunu kullanmak için boş bırakın.",
   "settings.context.prune.title": "Eski Çıktıları Temizle",
   "settings.context.prune.description": "Sıkıştırma sırasında eski araç çıktılarını kaldır",
   "settings.context.watcherPatterns": "Dosya İzleyici Yok Sayma Kalıpları",
@@ -1372,6 +1429,12 @@ export const dict = {
   "settings.display.layout.description": "Sohbet arayüzü için düzen modu",
   "settings.display.layout.auto": "Otomatik",
   "settings.display.layout.stretch": "Genişlet",
+<<<<<<< HEAD
+||||||| 12f7967ca4
+=======
+  "settings.display.fontSize.title": "Yazı Tipi Boyutu",
+  "settings.display.fontSize.description": "Kilo webview UI yazı tipi boyutunu VS Code'dan bağımsız olarak ayarlayın.",
+>>>>>>> yunqiqiliang/opencode-v7.3.0
   "settings.display.reasoningAutoCollapse.title": "Akıl yürütmeyi otomatik daralt",
   "settings.display.reasoningAutoCollapse.description":
     "Ajan yazmayı bitirdikten sonra akıl yürütme bloklarını daraltır. Manuel olarak daraltmadığınız sürece akıl yürütmenin geniş kalması için kapalı bırakın.",
@@ -1517,6 +1580,10 @@ export const dict = {
   "notifications.action.close": "Kapat",
   "notifications.action.tryModel": "Dene {{model}}",
   "notifications.action.tryModelGeneric": "Modeli Dene",
+  "settings.indexing.kiloModel.title": "Kilo model önayarı",
+  "settings.indexing.kiloModel.description": "Desteklenen bir Kilo-hosted embeddings modeli seçin.",
+  "settings.indexing.kiloSignIn.title": "Kilo oturumu açmak gerekiyor",
+  "settings.indexing.kiloSignIn.description": "Hosted embeddings kullanmak için Kilo'da oturum açın.",
   // Missing translations - English fallbacks until translated
   "profile.switchingAccount": "Hesap değiştiriliyor…",
   "settings.agentBehaviour.createMode": "Yeni Mod Oluştur",
@@ -1555,4 +1622,28 @@ export const dict = {
   "settings.agentBehaviour.permissions.hint":
     "Kurallar sırayla değerlendirilir — son eşleşen kural kazanır. Bu, CLI arka ucundan çözümlenen kural kümesidir.",
   "settings.agentBehaviour.editMode.save": "Tamam",
+  "diffViewer.source.workspace.label": "Dal",
+  "diffViewer.source.workspace.tooltip":
+    "Bu daldaki tüm değişiklikler, temel dal ile karşılaştırıldığında. Commitlenmemiş dosyaları (staged, unstaged, izlenmeyen) ve temelde henüz bulunmayan yerel commitleri içerir.",
+  "diffViewer.source.staged.label": "Staged",
+  "diffViewer.source.staged.tooltip":
+    "git'in hazırlama alanına eklediğin (`git add`) değişiklikleri içeren dosyalar. Bir sonraki commit'te görüneceği gibi.",
+  "diffViewer.source.unstaged.label": "Unstaged",
+  "diffViewer.source.unstaged.tooltip":
+    "Çalışma ağacında değiştirilmiş ancak henüz staged edilmemiş dosyalar, artı takip edilmeyen (yeni) dosyalar.",
+  "diffViewer.source.session.label": "Oturum",
+  "diffViewer.source.session.tooltip":
+    "Geçerli oturum sırasında Kilo tarafından değiştirilen dosyalar, tur başı anlık görüntülere dayanır. Yeni bir oturum başlatıldığında sıfırlanır.",
+  "diffViewer.group.session": "Oturum",
+  "diffViewer.group.git": "Git",
+  "diffViewer.notice.snapshotsDisabled":
+    "Bu depoda anlık görüntüler devre dışı bırakılmıştır. Oturum değişikliklerini görüntülemek için yapılandırma dosyalarınızı düzenleyin.",
+
+  "diffViewer.baseBranch.auto": "Default",
+  "diffViewer.baseBranch.default": "Default",
+  "diffViewer.baseBranch.remote": "Remote",
+  "diffViewer.baseBranch.search": "Search branches",
+  "diffViewer.baseBranch.empty": "No matching branches",
+  "diffViewer.baseBranch.loading": "Loading branches…",
+  "diffViewer.baseBranch.none": "—",
 }

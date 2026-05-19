@@ -62,7 +62,18 @@ export const SessionRoutes = lazy(() =>
       validator(
         "query",
         z.object({
+<<<<<<< HEAD
           directory: z.string().optional().meta({ description: "Filter sessions by project directory" }),
+||||||| 12f7967ca4
+          directory: z.string().optional().meta({ description: "Filter sessions by project directory" }),
+          roots: z.coerce.boolean().optional().meta({ description: "Only return root sessions (no parentID)" }),
+=======
+          directory: z.string().optional().meta({ description: "Filter sessions by directory" }),
+          // TODO: in 2.0 remove `scope` and `directory` and default
+          // to list all sessions for a project
+          scope: z.enum(["project"]).optional().meta({ description: "List all sessions for the current project" }),
+          path: z.string().optional().meta({ description: "Filter sessions by project-relative path" }),
+>>>>>>> yunqiqiliang/opencode-v7.3.0
           roots: QueryBoolean.optional().meta({ description: "Only return root sessions (no parentID)" }),
           start: z.coerce
             .number()
@@ -74,6 +85,7 @@ export const SessionRoutes = lazy(() =>
       ),
       async (c) => {
         const query = c.req.valid("query")
+<<<<<<< HEAD
         const sessions: Session.Info[] = []
         for await (const session of Session.list({
           directory: query.directory,
@@ -85,6 +97,36 @@ export const SessionRoutes = lazy(() =>
           sessions.push(session)
         }
         return c.json(sessions)
+||||||| 12f7967ca4
+        const sessions: Session.Info[] = []
+        for await (const session of Session.list({
+          directory: query.directory,
+          roots: query.roots,
+          start: query.start,
+          search: query.search,
+          limit: query.limit,
+        })) {
+          sessions.push(session)
+        }
+        return c.json(sessions)
+=======
+        return c.json(
+          await runRequest(
+            "SessionRoutes.list",
+            c,
+            Session.Service.use((svc) =>
+              svc.list({
+                directory: query.scope === "project" ? undefined : query.directory,
+                path: query.path,
+                roots: queryBoolean(query.roots),
+                start: query.start,
+                search: query.search,
+                limit: query.limit,
+              }),
+            ),
+          ),
+        )
+>>>>>>> yunqiqiliang/opencode-v7.3.0
       },
     )
     .get(

@@ -67,6 +67,28 @@ const DisplayTab: Component = () => {
         </SettingsRow>
 
         <SettingsRow
+<<<<<<< HEAD
+||||||| 12f7967ca4
+=======
+          title={language.t("settings.display.fontSize.title")}
+          description={language.t("settings.display.fontSize.description")}
+        >
+          <div class="settings-font-size-control">
+            <input
+              type="range"
+              min="10"
+              max="24"
+              step="1"
+              value={display.fontSize()}
+              onInput={(event) => display.setFontSize(Number(event.currentTarget.value))}
+              aria-label={language.t("settings.display.fontSize.title")}
+            />
+            <span>{display.fontSize()}px</span>
+          </div>
+        </SettingsRow>
+
+        <SettingsRow
+>>>>>>> yunqiqiliang/opencode-v7.3.0
           title={language.t("settings.display.reasoningAutoCollapse.title")}
           description={language.t("settings.display.reasoningAutoCollapse.description")}
         >

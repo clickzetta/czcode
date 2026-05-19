@@ -20,13 +20,20 @@ import { Session } from "../../src/session/session"
 import { Snapshot } from "../../src/snapshot"
 import { Filesystem } from "../../src/util/filesystem"
 import * as Log from "@opencode-ai/core/util/log"
+<<<<<<< HEAD
 import { tmpdir } from "../fixture/fixture"
+||||||| 12f7967ca4
+import { Filesystem, Log } from "../../src/util"
+import { tmpdir } from "../fixture/fixture"
+=======
+import { disposeAllInstances, tmpdir } from "../fixture/fixture"
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 
 Log.init({ print: false })
 
 afterEach(async () => {
   mock.restore()
-  await Instance.disposeAll()
+  await disposeAllInstances()
 })
 
 test("pathological diffFull workload finishes quickly and does not block abort", async () => {

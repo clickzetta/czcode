@@ -12,7 +12,13 @@ import { IconButton } from "@kilocode/kilo-ui/icon-button"
 import { RadioGroup } from "@kilocode/kilo-ui/radio-group"
 import { ThemeProvider } from "@kilocode/kilo-ui/theme"
 import { Tooltip } from "@kilocode/kilo-ui/tooltip"
+<<<<<<< HEAD
 import { normalize, text } from "@kilocode/kilo-ui/session-diff"
+||||||| 12f7967ca4
+import { normalize, text } from "@kilocode/kilo-ui/session-diff"
+=======
+import { normalize } from "@kilocode/kilo-ui/session-diff"
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 import { LanguageProvider, useLanguage } from "../src/context/language"
 import { ServerProvider, useServer } from "../src/context/server"
 import { getVSCodeAPI, VSCodeProvider } from "../src/context/vscode"
@@ -23,8 +29,6 @@ type DiffStyle = "unified" | "split"
 interface DiffVirtualFile {
   file: string
   patch?: string
-  before?: string
-  after?: string
   additions: number
   deletions: number
 }
@@ -63,15 +67,10 @@ const DiffVirtualContent: Component = () => {
     return f.split("/").slice(0, -1).join("/")
   }
 
-  const resolved = createMemo(() => {
+  const view = createMemo(() => {
     const d = diff()
-    if (!d) return { before: "", after: "" }
-    if (d.before !== undefined || d.after !== undefined) return { before: d.before ?? "", after: d.after ?? "" }
-    if (d.patch) {
-      const view = normalize(d as { file: string; patch: string; additions: number; deletions: number })
-      return { before: text(view, "deletions"), after: text(view, "additions") }
-    }
-    return { before: "", after: "" }
+    if (!d?.patch) return
+    return normalize(d)
   })
 
   return (
@@ -120,6 +119,7 @@ const DiffVirtualContent: Component = () => {
               </Show>
             </div>
             <div class="am-review-diff" style={{ width: "100%" }}>
+<<<<<<< HEAD
               <Show
                 when={markdown() && isMarkdownFile(d().file)}
                 fallback={
@@ -131,6 +131,23 @@ const DiffVirtualContent: Component = () => {
                 }
               >
                 <MarkdownDiffView diff={{ file: d().file, before: resolved().before, after: resolved().after }} />
+||||||| 12f7967ca4
+              <Diff
+                before={{ name: d().file, contents: resolved().before }}
+                after={{ name: d().file, contents: resolved().after }}
+                diffStyle={style()}
+              />
+=======
+              <Show when={view()}>
+                {(v) => (
+                  <Show
+                    when={markdown() && isMarkdownFile(d().file)}
+                    fallback={<Diff fileDiff={v().fileDiff} diffStyle={style()} hunkSeparators="simple" />}
+                  >
+                    <MarkdownDiffView diff={{ file: d().file, before: v().before, after: v().after }} />
+                  </Show>
+                )}
+>>>>>>> yunqiqiliang/opencode-v7.3.0
               </Show>
             </div>
           </>

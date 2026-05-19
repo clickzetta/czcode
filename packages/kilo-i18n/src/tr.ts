@@ -91,5 +91,19 @@ export const dict = {
   "snapshot.slowRepo.answer.disable.description":
     "Bu proje için Kilo anlık görüntülerini kapat. Kilo değişiklikleri için geri alma/yeniden yapmayı kaybedersiniz, ancak git her şeyi izlemeye devam eder.",
 
+<<<<<<< HEAD
   "ui.messagePart.openInDiffViewer": "Fark görüntüleyicide aç",
+||||||| 12f7967ca4
+=======
+  // Edit-tool header and shell-tool section labels
+  "ui.messagePart.openInDiffViewer": "Fark Görüntüleyicide Aç",
+  "ui.messagePart.shell.command": "Komut",
+  "ui.messagePart.shell.output": "Çıktı",
+  "ui.messagePart.openInEditor": "Düzenleyicide Aç",
+
+  // Message feedback (thumbs up/down per assistant response)
+  "ui.message.feedback.helpful": "Bu yardımcı oldu",
+  "ui.message.feedback.notHelpful": "Bu yardımcı olmadı",
+  "ui.message.feedback.clearRating": "Değerlendirmeyi temizle",
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 }

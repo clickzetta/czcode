@@ -28,7 +28,12 @@ const AVAILABLE_PERMISSIONS = [
   "task",
   "todowrite",
   "websearch",
+<<<<<<< HEAD
   "codesearch",
+||||||| 12f7967ca4
+const AVAILABLE_TOOLS = ["bash", "read", "write", "edit", "glob", "grep", "webfetch", "task", "todowrite"]
+=======
+>>>>>>> yunqiqiliang/opencode-v7.3.0
   "lsp",
   "skill",
 ]

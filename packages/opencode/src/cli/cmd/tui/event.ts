@@ -1,5 +1,11 @@
 import { BusEvent } from "@/bus/bus-event"
 import { SessionID } from "@/session/schema"
+<<<<<<< HEAD
+||||||| 12f7967ca4
+import { Schema } from "effect"
+=======
+import { PositiveInt } from "@/util/schema"
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Effect, Schema } from "effect"
 
 const DEFAULT_TOAST_DURATION = 5000
@@ -38,7 +44,13 @@ export const TuiEvent = {
       title: Schema.optional(Schema.String),
       message: Schema.String,
       variant: Schema.Literals(["info", "success", "warning", "error"]),
+<<<<<<< HEAD
       duration: Schema.Number.pipe(Schema.withDecodingDefault(Effect.succeed(DEFAULT_TOAST_DURATION))).annotate({
+||||||| 12f7967ca4
+      duration: Schema.optional(Schema.Number).annotate({ description: "Duration in milliseconds" }),
+=======
+      duration: PositiveInt.pipe(Schema.withDecodingDefault(Effect.succeed(DEFAULT_TOAST_DURATION))).annotate({
+>>>>>>> yunqiqiliang/opencode-v7.3.0
         description: "Duration in milliseconds",
       }),
     }),

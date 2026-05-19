@@ -13,7 +13,14 @@ import { EffectFlock } from "@opencode-ai/core/util/effect-flock"
 import { Filesystem } from "../../../src/util/filesystem"
 import { Instance } from "../../../src/project/instance"
 import { Npm } from "@opencode-ai/core/npm"
+<<<<<<< HEAD
 import { tmpdir } from "../../fixture/fixture"
+||||||| 12f7967ca4
+import { Npm } from "../../../src/npm"
+import { tmpdir } from "../../fixture/fixture"
+=======
+import { disposeAllInstances, tmpdir } from "../../fixture/fixture"
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 
 const infra = CrossSpawnSpawner.defaultLayer.pipe(
   Layer.provideMerge(Layer.mergeAll(NodeFileSystem.layer, NodePath.layer)),
@@ -46,7 +53,7 @@ const clear = (wait = false) =>
 
 describe("kilocode default indexing plugin", () => {
   afterEach(async () => {
-    await Instance.disposeAll()
+    await disposeAllInstances()
     await clear(true)
   })
 

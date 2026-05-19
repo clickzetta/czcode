@@ -2,7 +2,14 @@ import { Installation } from "@/installation"
 import { Server } from "@/server/server"
 import * as Log from "@opencode-ai/core/util/log"
 import { Instance } from "@/project/instance"
+<<<<<<< HEAD
 import { InstanceBootstrap } from "@/project/bootstrap"
+||||||| 12f7967ca4
+import { InstanceBootstrap } from "@/project/bootstrap"
+import { Rpc } from "@/util"
+=======
+import { InstanceStore } from "@/project/instance-store"
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 import { Rpc } from "@/util/rpc"
 import { upgrade } from "@/cli/upgrade"
 import { Config } from "@/config/config"
@@ -10,6 +17,7 @@ import { GlobalBus } from "@/bus/global"
 import { Flag } from "@opencode-ai/core/flag/flag"
 import { writeHeapSnapshot } from "node:v8"
 import { Heap } from "@/cli/heap"
+<<<<<<< HEAD
 import { AppRuntime } from "@/effect/app-runtime"
 import { ensureProcessMetadata } from "@opencode-ai/core/util/opencode-process"
 import { Telemetry } from "@kilocode/kilo-telemetry" // czcode_change
@@ -17,6 +25,13 @@ import { Telemetry } from "@kilocode/kilo-telemetry" // czcode_change
 import { Global } from "@opencode-ai/core/global"
 import { InstallationVersion } from "@opencode-ai/core/installation/version"
 // czcode_change end
+||||||| 12f7967ca4
+import { AppRuntime } from "@/effect/app-runtime"
+import { ensureProcessMetadata } from "@/util/opencode-process"
+=======
+import { AppRuntime, getBootstrapRunEffect } from "@/effect/app-runtime"
+import { ensureProcessMetadata } from "@opencode-ai/core/util/opencode-process"
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 
 ensureProcessMetadata("worker")
 
@@ -93,7 +108,7 @@ export const rpc = {
   async checkUpgrade(input: { directory: string }) {
     await Instance.provide({
       directory: input.directory,
-      init: () => AppRuntime.runPromise(InstanceBootstrap),
+      init: await getBootstrapRunEffect(),
       fn: async () => {
         await upgrade().catch(() => {})
       },
@@ -105,7 +120,7 @@ export const rpc = {
   async shutdown() {
     Log.Default.info("worker shutting down")
 
-    await Instance.disposeAll()
+    await InstanceStore.disposeAllInstances()
     if (server) await server.stop(true)
     await Telemetry.shutdown() // czcode_change — flush pending telemetry events before worker exits
     // kilocode_change start - Clear the Rpc message channel so the worker's event loop can drain and

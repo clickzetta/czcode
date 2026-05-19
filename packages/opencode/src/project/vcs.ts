@@ -10,7 +10,13 @@ import { Git } from "@/git"
 import * as Log from "@opencode-ai/core/util/log"
 import { zod } from "@/util/effect-zod"
 import { makeRuntime } from "@/effect/run-service" // kilocode_change
+<<<<<<< HEAD
 import { withStatics } from "@/util/schema"
+||||||| 12f7967ca4
+import z from "zod"
+=======
+import { NonNegativeInt, withStatics } from "@/util/schema"
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 
 const log = Log.create({ service: "vcs" })
 
@@ -126,8 +132,26 @@ export type Info = Schema.Schema.Type<typeof Info>
 export const FileDiff = Schema.Struct({
   file: Schema.String,
   patch: Schema.String,
+<<<<<<< HEAD
   additions: Schema.Number,
   deletions: Schema.Number,
+||||||| 12f7967ca4
+export const FileDiff = z
+  .object({
+    file: z.string(),
+    patch: z.string(),
+    additions: z.number(),
+    deletions: z.number(),
+    status: z.enum(["added", "deleted", "modified"]).optional(),
+  })
+  .meta({
+    ref: "VcsFileDiff",
+  })
+export type FileDiff = z.infer<typeof FileDiff>
+=======
+  additions: NonNegativeInt,
+  deletions: NonNegativeInt,
+>>>>>>> yunqiqiliang/opencode-v7.3.0
   status: Schema.optional(Schema.Literals(["added", "deleted", "modified"])),
 })
   .annotate({ identifier: "VcsFileDiff" })

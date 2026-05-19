@@ -8,7 +8,14 @@ import type { Tool } from "@/tool/tool"
 import { Instance } from "../../src/project/instance"
 import { SkillTool } from "../../src/tool/skill"
 import { ToolRegistry } from "@/tool/registry"
+<<<<<<< HEAD
 import { provideTmpdirInstance } from "../fixture/fixture"
+||||||| 12f7967ca4
+import { ToolRegistry } from "../../src/tool"
+import { provideTmpdirInstance } from "../fixture/fixture"
+=======
+import { disposeAllInstances, provideTmpdirInstance } from "../fixture/fixture"
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 import { SessionID, MessageID } from "../../src/session/schema"
 import { testEffect } from "../lib/effect"
 
@@ -23,7 +30,7 @@ const baseCtx: Omit<Tool.Context, "ask"> = {
 }
 
 afterEach(async () => {
-  await Instance.disposeAll()
+  await disposeAllInstances()
 })
 
 const node = CrossSpawnSpawner.defaultLayer

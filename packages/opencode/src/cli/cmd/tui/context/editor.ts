@@ -28,15 +28,52 @@ const PositionSchema = z.object({
   character: z.number(),
 })
 
-const EditorSelectionSchema = z.object({
+const EditorSelectionRangeSchema = z.object({
   text: z.string(),
+<<<<<<< HEAD
   filePath: z.string(),
   source: z.enum(["websocket", "zed"]).optional(),
+||||||| 12f7967ca4
+  filePath: z.string(),
+=======
+>>>>>>> yunqiqiliang/opencode-v7.3.0
   selection: z.object({
     start: PositionSchema,
     end: PositionSchema,
   }),
 })
+
+const EditorSelectionSchema = z
+  .union([
+    z.object({
+      filePath: z.string(),
+      source: z.enum(["websocket", "zed"]).optional(),
+      ranges: z.array(EditorSelectionRangeSchema).min(1),
+    }),
+    z.object({
+      text: z.string(),
+      filePath: z.string(),
+      source: z.enum(["websocket", "zed"]).optional(),
+      selection: z.object({
+        start: PositionSchema,
+        end: PositionSchema,
+      }),
+    }),
+  ])
+  .transform((value) =>
+    "ranges" in value
+      ? value
+      : {
+          filePath: value.filePath,
+          source: value.source,
+          ranges: [
+            {
+              text: value.text,
+              selection: value.selection,
+            },
+          ],
+        },
+  )
 
 const EditorMentionSchema = z.object({
   filePath: z.string(),
@@ -75,8 +112,9 @@ type EditorLockFile = {
 
 export const { use: useEditorContext, provider: EditorContextProvider } = createSimpleContext({
   name: "EditorContext",
-  init: () => {
+  init: (props: { WebSocketImpl?: typeof WebSocket }) => {
     const mentionListeners = new Set<(mention: EditorMention) => void>()
+    const WebSocketImpl = props.WebSocketImpl ?? WebSocket
     const [store, setStore] = createStore<{
       status: "disabled" | "connecting" | "connected"
       selection: EditorSelection | undefined
@@ -87,6 +125,7 @@ export const { use: useEditorContext, provider: EditorContextProvider } = create
       server: undefined,
     })
 
+<<<<<<< HEAD
     onMount(() => {
       let socket: WebSocket | undefined
       let closed = false
@@ -96,18 +135,38 @@ export const { use: useEditorContext, provider: EditorContextProvider } = create
       let zedSelection: Promise<void> | undefined
       let lastZedSelectionKey: string | undefined
       const pending = new Map<number, string>()
+||||||| 12f7967ca4
+    onMount(() => {
+      let socket: WebSocket | undefined
+      let closed = false
+      let reconnect: ReturnType<typeof setTimeout> | undefined
+      let attempt = 0
+      let requestID = 0
+      const pending = new Map<number, string>()
+=======
+    let socket: WebSocket | undefined
+    let closed = false
+    let reconnect: ReturnType<typeof setTimeout> | undefined
+    let attempt = 0
+    let requestID = 0
+    let zedSelection: Promise<void> | undefined
+    let lastZedSelectionKey: string | undefined
+    let directory = process.cwd()
+    const pending = new Map<number, string>()
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 
-      const send = (payload: JsonRpcMessage) => {
-        if (!socket || socket.readyState !== WebSocket.OPEN) return
-        socket.send(JSON.stringify({ jsonrpc: "2.0", ...payload }))
-      }
+    const send = (payload: JsonRpcMessage) => {
+      if (!socket || socket.readyState !== 1) return
+      socket.send(JSON.stringify({ jsonrpc: "2.0", ...payload }))
+    }
 
-      const request = (method: string, params?: unknown) => {
-        requestID += 1
-        pending.set(requestID, method)
-        send({ id: requestID, method, params })
-      }
+    const request = (method: string, params?: unknown) => {
+      requestID += 1
+      pending.set(requestID, method)
+      send({ id: requestID, method, params })
+    }
 
+<<<<<<< HEAD
       const scheduleReconnect = () => {
         if (closed) return
         if (reconnect) clearTimeout(reconnect)
@@ -115,7 +174,18 @@ export const { use: useEditorContext, provider: EditorContextProvider } = create
         const delay = Math.min(1000 * 2 ** (attempt - 1), 10_000)
         reconnect = setTimeout(connect, delay)
       }
+||||||| 12f7967ca4
+      const scheduleReconnect = (delay: number) => {
+        if (closed) return
+        if (reconnect) clearTimeout(reconnect)
+        reconnect = setTimeout(connect, delay)
+      }
+=======
+    const connect = () => {
+      if (closed) return
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 
+<<<<<<< HEAD
       const scheduleZedPoll = () => {
         if (closed) return
         if (reconnect) clearTimeout(reconnect)
@@ -152,32 +222,129 @@ export const { use: useEditorContext, provider: EditorContextProvider } = create
               zedSelection = undefined
             })
           scheduleZedPoll()
+||||||| 12f7967ca4
+      const connect = () => {
+        if (closed) return
+
+        const connection = resolveEditorConnection()
+        if (!connection) {
+          setStore("status", "disabled")
+          scheduleReconnect(1000)
+=======
+      const connection = resolveEditorConnection(directory)
+      if (!connection) {
+        const dbPath = resolveZedDbPath()
+        if (!dbPath) {
+          setStore("status", "disabled")
+          scheduleReconnect()
+          return
+        }
+        zedSelection ??= resolveZedSelection(dbPath, directory)
+          .then((result) => {
+            if (closed || socket) return
+            if (result.type === "unavailable") return
+            const selection = result.type === "selection" ? result.selection : undefined
+            const key = editorSelectionKey(selection)
+            if (key !== lastZedSelectionKey) {
+              lastZedSelectionKey = key
+              setStore("selection", selection)
+              setStore("status", selection ? "connected" : "disabled")
+            }
+          })
+          .catch(() => {
+            // Keep the last known Zed selection for transient polling failures.
+          })
+          .finally(() => {
+            zedSelection = undefined
+          })
+        scheduleZedPoll()
+        return
+      }
+
+      setStore("status", "connecting")
+      const current = openEditorSocket(connection, WebSocketImpl)
+      socket = current
+
+      current.addEventListener("open", () => {
+        if (socket !== current) {
+          current.close()
+>>>>>>> yunqiqiliang/opencode-v7.3.0
           return
         }
 
-        setStore("status", "connecting")
-        const current = openEditorSocket(connection)
-        socket = current
-
-        current.addEventListener("open", () => {
-          if (socket !== current) {
-            current.close()
-            return
-          }
-
-          attempt = 0
-          setStore("status", "connected")
-          request("initialize", {
-            protocolVersion: MCP_PROTOCOL_VERSION,
-            capabilities: {},
-            clientInfo: { name: "opencode", version: "0.0.0" },
-          })
+        attempt = 0
+        setStore("status", "connected")
+        request("initialize", {
+          protocolVersion: MCP_PROTOCOL_VERSION,
+          capabilities: {},
+          clientInfo: { name: "opencode", version: "0.0.0" },
         })
+      })
 
-        current.addEventListener("message", (event) => {
-          const message = parseMessage(event.data)
-          if (!message) return
+      current.addEventListener("message", (event) => {
+        const message = parseMessage(event.data)
+        if (!message) return
 
+        const selection =
+          message.method === "selection_changed" ? EditorSelectionSchema.safeParse(message.params) : undefined
+        if (selection?.success) {
+          setStore("selection", { ...selection.data, source: "websocket" })
+          return
+        }
+
+        const mention = message.method === "at_mentioned" ? EditorMentionSchema.safeParse(message.params) : undefined
+        if (mention?.success) {
+          mentionListeners.forEach((listener) => listener(mention.data))
+          return
+        }
+
+        if (typeof message.id !== "number") return
+
+        const method = pending.get(message.id)
+        if (!method) return
+
+        pending.delete(message.id)
+        if (message.error) return
+
+        const initialize = method === "initialize" ? EditorServerInfoSchema.safeParse(message.result) : undefined
+        if (initialize?.success) {
+          setStore("server", initialize.data)
+          send({ method: "notifications/initialized" })
+          return
+        }
+      })
+
+      current.addEventListener("close", () => {
+        if (socket !== current) return
+
+        socket = undefined
+        pending.clear()
+        if (closed) return
+
+        setStore("status", "connecting")
+        scheduleReconnect()
+      })
+    }
+
+    const scheduleReconnect = () => {
+      if (closed) return
+      if (reconnect) clearTimeout(reconnect)
+      attempt += 1
+      const delay = Math.min(1000 * 2 ** (attempt - 1), 10_000)
+      reconnect = setTimeout(connect, delay)
+    }
+
+    const scheduleZedPoll = () => {
+      if (closed) return
+      if (reconnect) clearTimeout(reconnect)
+      reconnect = setTimeout(connect, 1000)
+    }
+
+    const reconnectWithDirectory = (nextDirectory?: string) => {
+      const resolved = nextDirectory || process.cwd()
+      if (directory === resolved) return
+
+<<<<<<< HEAD
           const selection =
             message.method === "selection_changed" ? EditorSelectionSchema.safeParse(message.params) : undefined
           if (selection?.success) {
@@ -217,8 +384,73 @@ export const { use: useEditorContext, provider: EditorContextProvider } = create
           setStore("status", "connecting")
           scheduleReconnect()
         })
-      }
+||||||| 12f7967ca4
+          const selection =
+            message.method === "selection_changed" ? EditorSelectionSchema.safeParse(message.params) : undefined
+          if (selection?.success) {
+            setStore("selection", selection.data)
+            return
+          }
 
+          const mention = message.method === "at_mentioned" ? EditorMentionSchema.safeParse(message.params) : undefined
+          if (mention?.success) {
+            mentionListeners.forEach((listener) => listener(mention.data))
+            return
+          }
+
+          if (typeof message.id !== "number") return
+
+          const method = pending.get(message.id)
+          if (!method) return
+
+          pending.delete(message.id)
+          if (message.error) return
+
+          const initialize = method === "initialize" ? EditorServerInfoSchema.safeParse(message.result) : undefined
+          if (initialize?.success) {
+            setStore("server", initialize.data)
+            send({ method: "notifications/initialized" })
+            return
+          }
+        })
+
+        current.addEventListener("close", () => {
+          if (socket !== current) return
+
+          socket = undefined
+          pending.clear()
+          if (closed) return
+
+          setStore("status", "connecting")
+          attempt += 1
+          const delay = Math.min(1000 * 2 ** (attempt - 1), 30000)
+          scheduleReconnect(delay)
+        })
+=======
+      directory = resolved
+      attempt = 0
+      pending.clear()
+      lastZedSelectionKey = undefined
+      if (reconnect) clearTimeout(reconnect)
+      reconnect = undefined
+      if (socket) {
+        const current = socket
+        socket = undefined
+        current.close()
+>>>>>>> yunqiqiliang/opencode-v7.3.0
+      }
+      setStore("status", "disabled")
+      setStore("selection", undefined)
+      setStore("server", undefined)
+      connect()
+    }
+
+<<<<<<< HEAD
+||||||| 12f7967ca4
+      scheduleReconnect(0)
+=======
+    onMount(() => {
+>>>>>>> yunqiqiliang/opencode-v7.3.0
       connect()
 
       onCleanup(() => {
@@ -230,7 +462,13 @@ export const { use: useEditorContext, provider: EditorContextProvider } = create
 
     return {
       enabled() {
+<<<<<<< HEAD
         return Boolean(resolveEditorConnection() || resolveZedDbPath())
+||||||| 12f7967ca4
+        return Boolean(resolveEditorConnection())
+=======
+        return Boolean(resolveEditorConnection(directory) || resolveZedDbPath())
+>>>>>>> yunqiqiliang/opencode-v7.3.0
       },
       connected() {
         return store.status === "connected"
@@ -239,6 +477,11 @@ export const { use: useEditorContext, provider: EditorContextProvider } = create
         return store.selection
       },
       clearSelection() {
+<<<<<<< HEAD
+||||||| 12f7967ca4
+=======
+        lastZedSelectionKey = undefined
+>>>>>>> yunqiqiliang/opencode-v7.3.0
         setStore("selection", undefined)
       },
       onMention(listener: (mention: EditorMention) => void) {
@@ -247,6 +490,10 @@ export const { use: useEditorContext, provider: EditorContextProvider } = create
       },
       server() {
         return store.server
+      },
+      reconnect(directory?: string) {
+        setStore("selection", undefined)
+        reconnectWithDirectory(directory)
       },
     }
   },
@@ -260,8 +507,16 @@ function parsePort(value: string | undefined) {
   return parsed
 }
 
-function resolveEditorConnection(): EditorConnection | undefined {
-  const lock = resolveEditorLockFile()
+function resolveEditorConnection(directory: string): EditorConnection | undefined {
+  const port = parsePort(process.env.CLAUDE_CODE_SSE_PORT || process.env.KILO_EDITOR_SSE_PORT)
+  if (port) {
+    return {
+      url: `ws://127.0.0.1:${port}`,
+      source: `env:${port}`,
+    }
+  }
+
+  const lock = resolveEditorLockFile(directory)
   if (lock) {
     return {
       url: `ws://127.0.0.1:${lock.port}`,
@@ -269,16 +524,9 @@ function resolveEditorConnection(): EditorConnection | undefined {
       source: `lock:${lock.port}`,
     }
   }
-
-  const port = parsePort(process.env.CLAUDE_CODE_SSE_PORT || process.env.KILO_EDITOR_SSE_PORT)
-  if (!port) return
-  return {
-    url: `ws://127.0.0.1:${port}`,
-    source: `env:${port}`,
-  }
 }
 
-function resolveEditorLockFile() {
+function resolveEditorLockFile(activeDirectory: string) {
   const directory = path.join(os.homedir(), ".claude", "ide")
   let entries: string[]
 
@@ -288,10 +536,18 @@ function resolveEditorLockFile() {
     return
   }
 
+<<<<<<< HEAD
   const cwd = process.cwd()
   // longest workspace folder that contains cwd; 0 if none match
   const bestMatchLength = (lock: EditorLockFile) =>
     Math.max(0, ...lock.workspaceFolders.map((folder) => pathContainsLength(folder, cwd)))
+||||||| 12f7967ca4
+  const cwd = process.cwd()
+=======
+  // longest workspace folder that contains the active session directory; 0 if none match
+  const bestMatchLength = (lock: EditorLockFile) =>
+    Math.max(0, ...lock.workspaceFolders.map((folder) => pathContainsLength(folder, activeDirectory)))
+>>>>>>> yunqiqiliang/opencode-v7.3.0
   const locks = entries
     .filter((entry) => entry.endsWith(".lock"))
     .map((entry) => readEditorLockFile(path.join(directory, entry)))
@@ -325,6 +581,7 @@ function readEditorLockFile(filePath: string): EditorLockFile | undefined {
   }
 }
 
+<<<<<<< HEAD
 function editorSelectionKey(selection: EditorSelection | undefined) {
   if (!selection) return ""
   return [
@@ -334,6 +591,23 @@ function editorSelectionKey(selection: EditorSelection | undefined) {
     selection.selection.end.line,
     selection.selection.end.character,
     selection.text,
+||||||| 12f7967ca4
+function scoreEditorLock(lock: EditorLockFile, cwd: string) {
+  const workspaceMatch = lock.workspaceFolders.some((folder) => pathContains(folder, cwd)) ? 1 : 0
+  return workspaceMatch * 1_000_000_000_000 + lock.mtimeMs
+=======
+export function editorSelectionKey(selection: EditorSelection | undefined) {
+  if (!selection) return ""
+  return [
+    selection.filePath,
+    ...selection.ranges.flatMap((range) => [
+      range.selection.start.line,
+      range.selection.start.character,
+      range.selection.end.line,
+      range.selection.end.character,
+      range.text,
+    ]),
+>>>>>>> yunqiqiliang/opencode-v7.3.0
   ].join("\0")
 }
 
@@ -343,10 +617,10 @@ function pathContainsLength(parent: string, child: string) {
   return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative)) ? resolved.length : 0
 }
 
-function openEditorSocket(connection: EditorConnection) {
-  if (!connection.authToken) return new WebSocket(connection.url)
+function openEditorSocket(connection: EditorConnection, WebSocketImpl: typeof WebSocket) {
+  if (!connection.authToken) return new WebSocketImpl(connection.url)
 
-  return new WebSocket(connection.url, {
+  return new WebSocketImpl(connection.url, {
     headers: {
       "x-claude-code-ide-authorization": connection.authToken,
     },

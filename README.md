@@ -28,7 +28,17 @@ czcode 覆盖三类场景，通过角色切换在同一个工具里完成：
 - **Tab 键** — 在输入框按 Tab 循环切换角色
 - **`czcode.jsonc`** 中设置 `default_agent` 固定默认角色
 
+<<<<<<< HEAD
 ---
+||||||| 12f7967ca4
+1. Install the Kilo Code extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=kilocode.Kilo-Code).
+2. Create your account to access 500+ cutting-edge AI models including Gemini 3.1 Pro, Claude 4.6 Sonnet & Opus, and GPT-5.4 – with transparent pricing that matches provider rates exactly.
+3. Start coding with AI that adapts to your workflow. Watch our quick-start guide to see Kilo in action:
+=======
+1. Install the Kilo Code extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=kilocode.Kilo-Code).
+2. Create your account to access 500+ cutting-edge AI models including GPT-5.5, Claude Opus 4.7, Claude Sonnet 4.6, and Gemini 3.1 Pro Preview, with transparent pricing that matches provider rates exactly.
+3. Start coding with AI that adapts to your workflow. Watch our quick-start guide to see Kilo in action:
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 
 ### 场景二：Lakehouse 应用开发（Code/Plan 角色 + Lakehouse Skills）
 
@@ -122,8 +132,18 @@ cz-cli setup
 
 ### 第四步：配置 AI 模型
 
+<<<<<<< HEAD
 czcode 默认使用阿里云 DashScope Qwen 模型。配置 API Key（二选一）：
+||||||| 12f7967ca4
+### Where did Kilo CLI come from?
+=======
+## FAQ
 
+<details>
+<summary>Where did Kilo CLI come from?</summary>
+>>>>>>> yunqiqiliang/opencode-v7.3.0
+
+<<<<<<< HEAD
 **方式 A：环境变量（推荐）**
 
 ```bash
@@ -465,3 +485,10 @@ czcode 与 [cz-cli](https://github.com/clickzetta/cz-cli) 共享连接配置，�
 MIT License
 
 czcode 是 [KiloCode](https://github.com/Kilo-Org/kilocode) 的 fork，KiloCode 是 [OpenCode](https://github.com/anomalyco/opencode) 的 fork。感谢两个上游项目的开源贡献。
+||||||| 12f7967ca4
+Kilo CLI is a fork of [OpenCode](https://github.com/anomalyco/opencode), enhanced to work within the Kilo agentic engineering platform.
+=======
+Kilo CLI is a fork of [OpenCode](https://github.com/anomalyco/opencode), enhanced to work within the Kilo agentic engineering platform.
+
+</details>
+>>>>>>> yunqiqiliang/opencode-v7.3.0

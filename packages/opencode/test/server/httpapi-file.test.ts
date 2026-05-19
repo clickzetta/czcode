@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test"
 import { Context } from "effect"
 import path from "path"
 import { ExperimentalHttpApiServer } from "../../src/server/routes/instance/httpapi/server"
+<<<<<<< HEAD
 import { FilePaths } from "../../src/server/routes/instance/httpapi/file"
 import { Instance } from "../../src/project/instance"
 import * as Log from "@opencode-ai/core/util/log"
@@ -29,6 +30,36 @@ function request(route: string, directory: string, query?: Record<string, string
 
 afterEach(async () => {
   await Instance.disposeAll()
+||||||| 12f7967ca4
+=======
+import { FilePaths } from "../../src/server/routes/instance/httpapi/groups/file"
+import { Instance } from "../../src/project/instance"
+import * as Log from "@opencode-ai/core/util/log"
+import { resetDatabase } from "../fixture/db"
+import { disposeAllInstances, tmpdir } from "../fixture/fixture"
+
+void Log.init({ print: false })
+
+const context = Context.empty() as Context.Context<unknown>
+
+function request(route: string, directory: string, query?: Record<string, string>) {
+  const url = new URL(`http://localhost${route}`)
+  for (const [key, value] of Object.entries(query ?? {})) {
+    url.searchParams.set(key, value)
+  }
+  return ExperimentalHttpApiServer.webHandler().handler(
+    new Request(url, {
+      headers: {
+        "x-kilo-directory": directory,
+      },
+    }),
+    context,
+  )
+}
+
+afterEach(async () => {
+  await disposeAllInstances()
+>>>>>>> yunqiqiliang/opencode-v7.3.0
   await resetDatabase()
 })
 

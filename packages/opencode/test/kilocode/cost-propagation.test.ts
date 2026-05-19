@@ -13,13 +13,20 @@ import { Session } from "../../src/session/session"
 import { MessageV2 } from "../../src/session/message-v2"
 import { MessageID } from "../../src/session/schema"
 import * as Log from "@opencode-ai/core/util/log"
+<<<<<<< HEAD
 import { provideTmpdirInstance } from "../fixture/fixture"
+||||||| 12f7967ca4
+import { Log } from "../../src/util"
+import { provideTmpdirInstance } from "../fixture/fixture"
+=======
+import { disposeAllInstances, provideTmpdirInstance } from "../fixture/fixture"
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 import { testEffect } from "../lib/effect"
 
 Log.init({ print: false })
 
 afterEach(async () => {
-  await Instance.disposeAll()
+  await disposeAllInstances()
 })
 
 const ref = {

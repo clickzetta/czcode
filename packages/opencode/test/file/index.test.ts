@@ -6,10 +6,17 @@ import fs from "fs/promises"
 import { File } from "../../src/file"
 import { Instance } from "../../src/project/instance"
 import { Filesystem } from "@/util/filesystem"
+<<<<<<< HEAD
 import { provideInstance, tmpdir } from "../fixture/fixture"
+||||||| 12f7967ca4
+import { Filesystem } from "../../src/util"
+import { provideInstance, tmpdir } from "../fixture/fixture"
+=======
+import { disposeAllInstances, provideInstance, tmpdir } from "../fixture/fixture"
+>>>>>>> yunqiqiliang/opencode-v7.3.0
 
 afterEach(async () => {
-  await Instance.disposeAll()
+  await disposeAllInstances()
 })
 
 const init = () => run(File.Service.use((svc) => svc.init()))
@@ -938,7 +945,7 @@ describe("file/index Filesystem patterns", () => {
         },
       })
 
-      await Instance.disposeAll()
+      await disposeAllInstances()
 
       await fs.writeFile(path.join(tmp.path, "after.ts"), "after", "utf-8")
       await fs.rm(path.join(tmp.path, "before.ts"))

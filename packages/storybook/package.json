@@ -26,7 +26,13 @@
     "typescript": "catalog:",
     "vite": "catalog:"
   },
+<<<<<<< HEAD
   "version": "7.2.34",
+||||||| 12f7967ca4
+  "version": "7.2.31",
+=======
+  "version": "7.2.49",
+>>>>>>> yunqiqiliang/opencode-v7.3.0
   "dependencies": {},
   "peerDependencies": {}
 }
