@@ -677,7 +677,10 @@ export const layer: Layer.Layer<
         slog.info("process")
         ctx.needsCompaction = false
         ctx.compactionError = undefined // kilocode_change
-        ctx.shouldBreak = (yield* config.get()).experimental?.continue_loop_on_deny !== true
+        // czcode_change start - lh-* agents always continue on deny; dismissing a dialog should not halt the session
+        const isLhAgent = ctx.assistantMessage.agent?.startsWith("lh-") ?? false
+        ctx.shouldBreak = isLhAgent ? false : (yield* config.get()).experimental?.continue_loop_on_deny !== true
+        // czcode_change end
 
         return yield* Effect.gen(function* () {
           yield* Effect.gen(function* () {
