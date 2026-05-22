@@ -1362,6 +1362,10 @@ NOTE: At any point in time through this workflow you should feel free to ask the
         const envCache: KiloSessionPrompt.EnvCache = {}
         closeReasons.delete(sessionID) // kilocode_change
         let compactionAttempts = 0 // kilocode_change - cap compaction attempts per turn to avoid infinite loops
+        // czcode_change start - track consecutive all-failure steps to break lh-* agent dead loops
+        let consecutiveFailureSteps = 0
+        const LH_FAILURE_STEP_LIMIT = 5
+        // czcode_change end
         const ctx = yield* InstanceState.context
         const slog = elog.with({ sessionID })
         let structured: unknown | undefined
@@ -1713,6 +1717,26 @@ NOTE: At any point in time through this workflow you should feel free to ask the
               yield* sessions.updateMessage(handle.message)
             }
             // kilocode_change end
+            // czcode_change start - break dead loop: if lh-* agent produces only failed tool calls
+            // for LH_FAILURE_STEP_LIMIT consecutive steps, stop the loop so the user sees the error
+            if (agent.name.startsWith("lh-")) {
+              const toolParts = MessageV2.parts(handle.message.id).filter(
+                (p): p is MessageV2.ToolPart => p.type === "tool",
+              )
+              const allFailed =
+                toolParts.length > 0 && toolParts.every((p) => p.state.status === "error")
+              if (allFailed) {
+                consecutiveFailureSteps++
+                if (consecutiveFailureSteps >= LH_FAILURE_STEP_LIMIT) {
+                  consecutiveFailureSteps = 0
+                  closeReasons.set(sessionID, "error")
+                  return "break" as const
+                }
+              } else {
+                consecutiveFailureSteps = 0
+              }
+            }
+            // czcode_change end
             return "continue" as const
           }).pipe(Effect.ensuring(instruction.clear(handle.message.id)))
           if (outcome === "break") break

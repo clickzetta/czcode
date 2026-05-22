@@ -567,13 +567,33 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
     tool: {
       read_query: tool({
         description:
-          "执行只读 SQL 查询（SELECT/SHOW/DESC/EXPLAIN），返回结果集。不接受任何写操作。" +
+          "执行只读 SQL 查询（SELECT/SHOW/DESC/EXPLAIN/USE），返回结果集。不接受任何写操作。" +
+          "支持 USE SCHEMA <name> 和 USE VCLUSTER <name> 切换当前会话上下文。" +
           "默认返回最多 200 行，可用 LIMIT 子句控制（最大 5000）。",
         args: {
-          sql: z.string().describe("只读 SQL 语句：SELECT、SHOW、DESC、EXPLAIN 等"),
+          sql: z.string().describe("只读 SQL 语句：SELECT、SHOW、DESC、EXPLAIN、USE SCHEMA、USE VCLUSTER 等"),
           limit: z.number().int().min(1).max(5000).default(200).describe("最大返回行数（默认 200）"),
         },
         async execute(args, ctx) {
+          // czcode_change start - intercept USE SCHEMA/VCLUSTER and redirect to switchContext
+          // clickzetta-js does not propagate USE SQL to per-request defaultNamespace/virtualCluster,
+          // so we must call connector.switchContext() to actually update the session.
+          const useSchemaMatch = args.sql.match(/^\s*USE\s+SCHEMA\s+(\S+?)\s*;?\s*$/i)
+          const useVclusterMatch = args.sql.match(/^\s*USE\s+VCLUSTER\s+(\S+?)\s*;?\s*$/i)
+          // bare USE <name> — treat as schema switch
+          const useBareMatch = !useSchemaMatch && !useVclusterMatch
+            ? args.sql.match(/^\s*USE\s+(\S+?)\s*;?\s*$/i)
+            : null
+          if (useSchemaMatch || useVclusterMatch || useBareMatch) {
+            const schema = useSchemaMatch?.[1] ?? useBareMatch?.[1]
+            const vcluster = useVclusterMatch?.[1]
+            await connector.switchContext(schema, vcluster)
+            const parts: string[] = []
+            if (schema) parts.push(`✓ 已切换到 Schema: ${schema}`)
+            if (vcluster) parts.push(`✓ 已切换到 VCluster: ${vcluster}`)
+            return parts.join("\n")
+          }
+          // czcode_change end
           const risk = getSqlRisk(args.sql)
           if (risk !== "safe") {
             return `[read_query] 拒绝执行写操作。请使用 write_query 工具执行 DDL/DML 操作。`
