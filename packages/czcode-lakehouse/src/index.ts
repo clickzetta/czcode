@@ -567,12 +567,13 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
     tool: {
       read_query: tool({
         description:
-          "执行只读 SQL 查询（SELECT/SHOW/DESC/EXPLAIN/USE/LIST/GET），返回结果集。不接受任何写操作。" +
+          "执行只读 SQL 查询（SELECT/SHOW/DESC/EXPLAIN/USE/LIST/GET/SET），返回结果集。不接受任何写操作。" +
           "支持 USE SCHEMA <name> 和 USE VCLUSTER <name> 切换当前会话上下文。" +
           "支持 LIST @volume/path 列出 Volume 文件，GET @volume/path 读取文件内容。" +
+          "支持 SET parameter = value 设置会话参数。" +
           "默认返回最多 200 行，可用 LIMIT 子句控制（最大 5000）。",
         args: {
-          sql: z.string().describe("只读 SQL 语句：SELECT、SHOW、DESC、EXPLAIN、USE SCHEMA、USE VCLUSTER、LIST @vol/path、GET @vol/path 等"),
+          sql: z.string().describe("只读 SQL 语句：SELECT、SHOW、DESC、EXPLAIN、USE SCHEMA、USE VCLUSTER、LIST @vol/path、GET @vol/path、SET param=value 等"),
           limit: z.number().int().min(1).max(5000).default(200).describe("最大返回行数（默认 200）"),
         },
         async execute(args, ctx) {
@@ -622,17 +623,20 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
 
       write_query: tool({
         description:
-          "执行写操作 SQL（DDL/DML/权限管理/Volume写操作），直接执行无需额外确认。" +
-          "支持：CREATE/ALTER/DROP/INSERT/UPDATE/DELETE/MERGE/GRANT/REVOKE/PUT/REMOVE 等。" +
+          "执行写操作 SQL（DDL/DML/权限管理/Volume写操作/会话参数），直接执行无需额外确认。" +
+          "支持：CREATE/ALTER/DROP/INSERT/UPDATE/DELETE/MERGE/GRANT/REVOKE/PUT/REMOVE/SET 等。" +
           "⚠️ 危险操作（DROP/TRUNCATE/DELETE 无 WHERE）请谨慎使用，执行前确认 SQL 正确。",
         args: {
           sql: z.string().describe("写操作 SQL 语句"),
         },
         async execute(args, ctx) {
           const risk = getSqlRisk(args.sql)
-          if (risk === "safe") {
+          // czcode_change start - SET is "safe" in the classifier but write_query should also accept it
+          const isSetStatement = /^\s*SET\b/i.test(args.sql.trim())
+          if (risk === "safe" && !isSetStatement) {
             return `[write_query] 此 SQL 是只读查询，请使用 read_query 工具执行。`
           }
+          // czcode_change end
 
           const label = confirmLabel(args.sql)
           const preview = risk === "destructive" ? args.sql : args.sql.slice(0, 200)
