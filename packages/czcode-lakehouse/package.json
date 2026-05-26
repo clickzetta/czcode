@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@kilocode/plugin": "workspace:*",
+    "@opencode-ai/core": "workspace:*",
     "clickzetta-js": "workspace:*",
     "effect": "catalog:",
     "zod": "catalog:"

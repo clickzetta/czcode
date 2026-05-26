@@ -1,10 +1,13 @@
 import { z } from "zod"
 import { tool } from "@kilocode/plugin"
 import type { Plugin } from "@kilocode/plugin"
+import * as Log from "@opencode-ai/core/util/log"
 import { LakehouseConnector, type LakehouseConfig } from "./connector.js"
 import { classifySql, getSqlRisk, getUndropHint, isUndropSupported } from "./sql-classifier.js"
 import { formatQueryResult, formatTableSchema } from "./format.js"
 import { Effect } from "effect"
+
+const log = Log.create({ service: "czcode-lakehouse" })
 
 // czcode_change start
 // Scan recent messages for the most recently loaded skill name.
@@ -108,8 +111,8 @@ function readConfigFromProfiles(): LakehouseConfig | null {
     // Need either password or PAT
     if (!password && !pat) return null
 
-    console.error(`[czcode-lakehouse] Using profile "${target}" from ${profilesPath}`)
     process.env.__CZCODE_LH_PROFILE = target
+    log.info(`Using profile "${target}"`, { path: profilesPath })
     globalThis.__czcode_lakehouse_profile = target
     return {
       service: service || "cn-shanghai-alicloud.api.clickzetta.com",
@@ -123,7 +126,7 @@ function readConfigFromProfiles(): LakehouseConfig | null {
       protocol: (vals.protocol?.replace("://", "") as "https" | "http") || "https",
     }
   } catch (err) {
-    console.warn(`[czcode-lakehouse] Failed to read profiles.toml:`, (err as Error).message)
+    log.warn("Failed to read profiles.toml", { err: (err as Error).message })
     return null
   }
 }
@@ -157,9 +160,7 @@ function readConfigFromEnv(): LakehouseConfig | null {
     }
   }
 
-  console.warn(`[czcode-lakehouse] 未找到 Lakehouse 连接配置。`)
-  console.warn(`[czcode-lakehouse]   请运行 cz-cli setup 配置连接（推荐）`)
-  console.warn(`[czcode-lakehouse]   或设置环境变量 CLICKZETTA_SERVICE/INSTANCE/WORKSPACE/USERNAME/PASSWORD`)
+  log.warn("未找到 Lakehouse 连接配置，请运行 cz-cli setup 或设置 CLICKZETTA_* 环境变量")
   return null
 }
 
@@ -544,7 +545,7 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
   try {
     config = LakehouseConfigSchema.parse(rawConfig)
   } catch (err) {
-    console.warn("[czcode-lakehouse] Invalid lakehouse config:", err)
+    log.warn("Invalid lakehouse config", { err })
     return {}
   }
 
@@ -555,11 +556,7 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
   } catch (err) {
     process.env.__CZCODE_LH_CONNECTED = "0"
     const msg = (err as Error).message
-    console.warn("[czcode-lakehouse] Failed to connect to Lakehouse:", msg)
-    console.warn(`[czcode-lakehouse] 请检查连接配置：`)
-    console.warn(`[czcode-lakehouse]   profiles.toml: ${join(homedir(), ".clickzetta", "profiles.toml")}`)
-    console.warn(`[czcode-lakehouse]   .env 文件: ${join(process.cwd(), ".env")}`)
-    console.warn(`[czcode-lakehouse]   提示: 运行 cz-cli setup 可快速配置连接`)
+    log.warn("Failed to connect to Lakehouse", { err: msg })
     return {}
   }
 
