@@ -109,7 +109,6 @@
     "@ai-sdk/xai": "3.0.82",
     "@aws-sdk/credential-providers": "3.1025.0",
     "@clack/prompts": "1.0.0-alpha.1",
-    "@czcode/lakehouse": "workspace:*",
     "@effect/opentelemetry": "catalog:",
     "@effect/platform-node": "catalog:",
     "@gitlab/gitlab-ai-provider": "3.6.0",

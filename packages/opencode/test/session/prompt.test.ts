@@ -1708,6 +1708,7 @@ unix(
     ),
   30_000,
 )
+// kilocode_change end
 
 unix(
   "cancel finalizes interrupted bash tool output through normal truncation",
@@ -1805,7 +1806,7 @@ unix(
   30_000,
 )
 
-unixSkip(
+unix(
   "shell rejects when another shell is already running",
   () =>
     withSh(() =>
@@ -1835,7 +1836,6 @@ unixSkip(
     ),
   30_000,
 )
-// kilocode_change end
 
 // Abort signal propagation tests for inline tool execution
 

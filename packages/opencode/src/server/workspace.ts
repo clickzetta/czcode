@@ -13,15 +13,6 @@ import * as Log from "@opencode-ai/core/util/log"
 import { ServerProxy } from "./proxy"
 import { getWorkspaceRouteSessionID, isLocalWorkspaceRoute, workspaceProxyURL } from "./shared/workspace-routing"
 
-export function workspaceProxyURL(target: string | URL, requestURL: URL) {
-  const proxyURL = new URL(target)
-  proxyURL.pathname = `${proxyURL.pathname.replace(/\/$/, "")}${requestURL.pathname}`
-  proxyURL.search = requestURL.search
-  proxyURL.hash = requestURL.hash
-  proxyURL.searchParams.delete("workspace")
-  return proxyURL
-}
-
 async function getSessionWorkspace(url: URL) {
   const id = getWorkspaceRouteSessionID(url)
   if (!id) return null
@@ -68,7 +59,6 @@ export function WorkspaceRouterMiddleware(upgrade: UpgradeWebSocket): Middleware
     const target = await adapter.target(workspace)
 
     if (target.type === "local") {
-      const init = await getBootstrapRunEffect()
       return WorkspaceContext.provide({
         workspaceID: WorkspaceID.make(workspaceID),
         fn: () =>

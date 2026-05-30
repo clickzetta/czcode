@@ -5,10 +5,6 @@ import { OpenApi } from "effect/unstable/httpapi"
 
 type Args = {
   httpapi: boolean
-}
-
-type Args = {
-  httpapi: boolean
   hono: boolean
 }
 

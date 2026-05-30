@@ -105,7 +105,7 @@ const BRANDING_REPLACEMENTS: BrandingReplacement[] = [
     description: "Environment variable",
   },
   {
-    pattern: /VITE_KILO_/g,
+    pattern: /VITE_OPENCODE_/g,
     replacement: "VITE_KILO_",
     description: "Vite env var",
   },
@@ -115,15 +115,16 @@ const BRANDING_REPLACEMENTS: BrandingReplacement[] = [
     description: "Window global",
   },
   {
-    pattern: /x-kilo-/g,
+    pattern: /x-opencode-/g,
     replacement: "x-kilo-",
     description: "HTTP header prefix",
   },
   {
-    pattern: /_EXTENSION_KILO_/g,
+    pattern: /_EXTENSION_OPENCODE_/g,
     replacement: "_EXTENSION_KILO_",
     description: "Extension env var",
   },
+]
 
 /**
  * Check if a file matches any of the patterns

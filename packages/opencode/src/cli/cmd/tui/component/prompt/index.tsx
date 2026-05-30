@@ -1010,8 +1010,8 @@ export function Prompt(props: PromptProps) {
         "that is not", "no that", "not what i",
       ]
       if (dissatisfactionPatterns.some((p) => lowerText.includes(p))) {
-        const { Telemetry } = await import("@kilocode/kilo-telemetry")
-        Telemetry.trackUserDissatisfied(sessionID, local.agent.current()?.name)
+        const { Telemetry, TelemetryEvent } = await import("@kilocode/kilo-telemetry")
+        Telemetry.track(TelemetryEvent.USER_DISSATISFIED, { sessionID, agent: local.agent.current()?.name })
       }
       // czcode_change end
       // kilocode_change end

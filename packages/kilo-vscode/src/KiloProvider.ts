@@ -143,6 +143,7 @@ import { createAutoApproveBridge } from "./kilo-provider/auto-approve"
 import type { KiloProviderOptions } from "./kilo-provider/options"
 import { fetchKiloEmbeddingModelCatalog } from "@kilocode/kilo-gateway"
 import { stopSessionProcesses } from "./kilo-provider/background-process"
+import { sendSpeechToTextSettings, watchSpeechToTextConfig } from "./speech-to-text/config" // czcode_change
 
 type MessageLoadMode = "replace" | "prepend" | "focus" | "reconcile"
 type ContextMessage = { contextDirectory?: unknown }

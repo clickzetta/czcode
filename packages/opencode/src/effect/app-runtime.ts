@@ -50,6 +50,8 @@ import { Pty } from "@/pty"
 import { PtyTicket } from "@/pty/ticket"
 import { Installation } from "@/installation"
 import { ShareNext } from "@/share/share-next"
+import { InstanceBootstrap } from "@/project/bootstrap" // czcode_change
+import { InstanceStore } from "@/project/instance-store"
 import { SessionShare } from "@/share/session"
 import { SyncEvent } from "@/sync"
 import { Npm } from "@opencode-ai/core/npm"
@@ -96,8 +98,8 @@ export const AppLayer = Layer.mergeAll(
   Truncate.defaultLayer,
   ToolRegistry.defaultLayer,
   Format.defaultLayer,
-  InstanceBootstrap.defaultLayer,
   InstanceStore.defaultLayer,
+  InstanceBootstrap.defaultLayer, // czcode_change - provides bootstrap run effect
   Project.defaultLayer,
   Vcs.defaultLayer,
   Workspace.defaultLayer,

@@ -24,10 +24,6 @@ type SDK = any
 
 type EmbeddingProvider = NonNullable<IndexingConfig["provider"]>
 
-function kiloModel(model: string | undefined): string | undefined {
-  return getKiloEmbeddingModel(model)?.id
-}
-
 const PROVIDER_LABELS: Record<EmbeddingProvider, string> = {
   kilo: "Kilo",
   openai: "OpenAI",

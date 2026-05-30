@@ -6,7 +6,7 @@ import * as Database from "@/storage/db"
 import { eq } from "drizzle-orm"
 import { Effect, Layer, Schema } from "effect"
 import { HttpApi, HttpApiBuilder, HttpApiEndpoint, HttpApiError, HttpApiGroup, OpenApi } from "effect/unstable/httpapi"
-import { nextTuiRequest, submitTuiResponse } from "../tui"
+import { nextTuiRequest, submitTuiResponse } from "@/server/shared/tui-control"
 import { Authorization } from "./auth"
 
 const root = "/tui"

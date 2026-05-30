@@ -14,13 +14,23 @@ import { AppRuntime } from "@/effect/app-runtime"
 import { ensureProcessMetadata } from "@opencode-ai/core/util/opencode-process"
 import { Effect } from "effect"
 import { disposeAllInstancesAndEmitGlobalDisposed } from "@/server/global-lifecycle"
+import { Telemetry } from "@kilocode/kilo-telemetry" // czcode_change
+// czcode_change start - init telemetry in worker process
+import { Global } from "@opencode-ai/core/global"
+import { InstallationVersion } from "@opencode-ai/core/installation/version"
+// czcode_change end
 
 ensureProcessMetadata("worker")
 
 // kilocode_change start
 // czcode_change start - init telemetry early in worker so skill/revert/abort events are captured
 ;(async () => {
-  const globalCfg = await Config.getGlobal().catch(() => null)
+  const globalCfg = await Effect.runPromise(
+    Effect.serviceOption(Config.Service).pipe(
+      Effect.map(opt => opt._tag === "Some" ? opt.value.getGlobal() : Effect.succeed(null as any)),
+      Effect.flatten,
+    )
+  ).catch(() => null as any)
   await Telemetry.init({
     dataPath: Global.Path.data,
     version: InstallationVersion,

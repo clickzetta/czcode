@@ -15,11 +15,7 @@ import { InstanceRuntime } from "../../src/project/instance-runtime"
 import { InstanceStore } from "../../src/project/instance-store"
 import { Instance } from "../../src/project/instance"
 import { TestLLMServer } from "../lib/llm-server"
-import { remove as cleanup } from "../kilocode/cleanup"
-
-// Re-export for test ergonomics. The implementation lives next to the runtime
-// it consumes; see `InstanceStore.disposeAllInstances` for the rationale.
-export { disposeAllInstances } from "../../src/project/instance-store"
+import { remove as cleanup } from "../kilocode/cleanup" // kilocode_change
 
 const noopBootstrap = Layer.succeed(InstanceBootstrap.Service, InstanceBootstrap.Service.of({ run: Effect.void }))
 const testInstanceRuntime = ManagedRuntime.make(
@@ -60,7 +56,7 @@ function exists(dir: string) {
 }
 
 function clean(dir: string) {
-  return cleanup(dir)
+  return cleanup(dir) // kilocode_change
 }
 
 async function stop(dir: string) {
@@ -142,7 +138,7 @@ export function tmpdirScoped(options?: { git?: boolean; config?: Partial<Config.
       yield* Effect.promise(() =>
         fs.writeFile(
           path.join(dir, "opencode.json"),
-          JSON.stringify({ $schema: "https://opencode.ai/config.json", ...options.config }), // kilocode_change
+          JSON.stringify({ $schema: "https://opencode.ai/config.json", ...options.config }),
         ),
       )
     }

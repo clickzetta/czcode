@@ -68,6 +68,7 @@ import * as DateTime from "effect/DateTime"
 import { eq } from "@/storage/db"
 import * as Database from "@/storage/db"
 import { SessionTable } from "./session.sql"
+import { Telemetry, TelemetryEvent } from "@kilocode/kilo-telemetry" // czcode_change
 
 // @ts-ignore
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -147,7 +148,7 @@ export const layer = Layer.effect(
       yield* KiloSessionPromptQueue.cancel(sessionID) // kilocode_change - drop queued follow-up loops on abort
       KiloSessionPrompt.abortPlanFollowup(sessionID) // kilocode_change - abort pending plan-followup handover work
       yield* state.cancel(sessionID)
-      Telemetry.trackMessageAborted(sessionID) // czcode_change — passive ALHF signal
+      Telemetry.track(TelemetryEvent.MESSAGE_ABORTED, { sessionID }) // czcode_change — passive ALHF signal
     })
 
     const resolvePromptParts = Effect.fn("SessionPrompt.resolvePromptParts")(function* (template: string) {
@@ -1513,12 +1514,6 @@ NOTE: At any point in time through this workflow you should feel free to ask the
           // kilocode_change end
 
           if (!lastUser) throw new Error("No user message found in stream. This should never happen.")
-
-          // kilocode_change start - carry local review command marker into LLM telemetry
-          const telemetry = KiloSessionProcessor.extractReviewTelemetry(
-            msgs.findLast((m) => m.info.role === "user" && m.info.id === lastUser.id)?.parts ?? [],
-          )
-          // kilocode_change end
 
           const lastAssistantMsg = msgs.findLast(
             (msg) => msg.info.role === "assistant" && msg.info.id === lastAssistant?.id,

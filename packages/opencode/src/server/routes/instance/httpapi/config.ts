@@ -67,7 +67,7 @@ export const configHandlers = Layer.unwrap(
     })
 
     const update = Effect.fn("ConfigHttpApi.update")(function* (ctx) {
-      yield* configSvc.update(ctx.payload, { dispose: false })
+      yield* configSvc.update(ctx.payload)
       yield* markInstanceForDisposal(yield* InstanceState.context)
       return ctx.payload
     })
