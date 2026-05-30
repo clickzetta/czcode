@@ -3,32 +3,18 @@
 czcode 是专为 ClickZetta Lakehouse 用户打造的终端 AI Agent，使用 Claude、Qwen 等大模型驱动。
 
 <p align="center">
-  <a href="https://kilo.ai"><img width="250" alt="kilo-code-logo" src="https://github.com/user-attachments/assets/bdb0c174-b9fd-40ad-a47b-f3aab9b54e8d" /></a>
+  <a href="https://yunqi.tech"><img width="200" alt="ClickZetta logo" src="https://github.com/user-attachments/assets/bdb0c174-b9fd-40ad-a47b-f3aab9b54e8d" /></a>
 </p>
 
 <p align="center">
-  <strong>Kilo is the all-in-one agentic engineering platform.</strong><br>
-  Build, ship, and iterate faster with the most popular open source coding agent.
+  <strong>ClickZetta czcode — 专为 Lakehouse 数据团队打造的终端 AI Agent</strong>
 </p>
 
 <p align="center">
-  <img width="100%" alt="Kilo Code running inside VS Code" src="https://kilo.ai/_next/image?url=%2Fscreenshots%2Fvs-code%2Fvs-code-home-page-screenshot.png&w=3840&q=75">
-</p>
-
-<p align="center">
-  <a href="https://kilo.ai">Website</a> ·
-  <a href="https://kilo.ai/install">Install</a> ·
-  <a href="https://kilo.ai/landing/vs-code">IDE</a> ·
-  <a href="https://kilo.ai/cli">CLI</a> ·
-  <a href="https://kilo.ai/docs">Docs</a> ·
-  <a href="https://kilo.ai/leaderboard">Models</a> ·
-  <a href="https://kilo.ai/gateway">Gateway</a> ·
-  <a href="https://kilo.ai/pricing">Pricing</a> ·
-  <a href="https://kilo.ai/pricing/kilo-pass">Kilo Pass</a>
-</p>
-
-<p align="center">
-  500+ models. One open source agent in <a href="https://kilo.ai/install">VS Code</a>, <a href="https://kilo.ai/features/jetbrains-native">JetBrains</a>, <a href="https://kilo.ai/cli">CLI</a>, <a href="https://kilo.ai/slack">Slack</a>, and <a href="https://kilo.ai/cloud">Cloud</a>.
+  <a href="https://yunqi.tech">官网</a> ·
+  <a href="https://github.com/clickzetta/czcode/releases/latest">下载</a> ·
+  <a href="https://yunqi.tech/documents">文档</a> ·
+  <a href="https://github.com/clickzetta/czcode/issues">反馈</a>
 </p>
 
 ## 你可以用 czcode 做什么
@@ -51,17 +37,7 @@ czcode 覆盖三类场景，通过角色切换在同一个工具里完成：
 - **Tab 键** — 在输入框按 Tab 循环切换角色
 - **`czcode.jsonc`** 中设置 `default_agent` 固定默认角色
 
-<<<<<<< HEAD
 ---
-||||||| 12f7967ca4
-1. Install the Kilo Code extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=kilocode.Kilo-Code).
-2. Create your account to access 500+ cutting-edge AI models including GPT-5.5, Claude Opus 4.7, Claude Sonnet 4.6, and Gemini 3.1 Pro Preview, with transparent pricing that matches provider rates exactly.
-3. Start coding with AI that adapts to your workflow. Watch our quick-start guide to see Kilo in action:
-=======
-1. Install the Kilo Code extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=kilocode.Kilo-Code).
-2. Create your account to access 500+ cutting-edge AI models including GPT-5.5, Claude Opus 4.7, Claude Sonnet 4.6, and Gemini 3.1 Pro Preview, with transparent pricing that matches provider rates exactly.
-3. Start coding with AI that adapts to your workflow. Watch our quick-start guide to see Kilo in action:
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 ### 场景二：Lakehouse 应用开发（Code/Plan 角色 + Lakehouse Skills）
 
@@ -140,31 +116,18 @@ chmod +x czcode
 
 ### 第三步：配置 Lakehouse 连接
 
-See [RELEASING.md](RELEASING.md) for the VS Code extension and CLI release process.
-
-See [packages/kilo-jetbrains/RELEASING.md](packages/kilo-jetbrains/RELEASING.md) for the JetBrains plugin release process.
-
+```bash
 # 交互式配置向导
 cz-cli setup
 ```
 
 完成后 czcode 启动时自动连接 Lakehouse。
 
-> **没有 npm？** 手动创建 `~/.clickzetta/profiles.toml`，格式参考 [cz-cli 文档](https://github.com/clickzetta/cz-cli)。
+> **没有 cz-cli？** 手动创建 `~/.clickzetta/profiles.toml`，格式参考 [cz-cli 文档](https://github.com/clickzetta/cz-cli)。
 > **多环境切换**：`CLICKZETTA_PROFILE=uat ./czcode`
 
 ### 第四步：配置 AI 模型
 
-## FAQ
-
-<details>
-<summary>Where did Kilo CLI come from?</summary>
-
-<details>
-<summary>Where did Kilo CLI come from?</summary>
->>>>>>> yunqiqiliang/opencode-v7.3.0
-
-<<<<<<< HEAD
 **方式 A：环境变量（推荐）**
 
 ```bash
@@ -233,11 +196,9 @@ czcode 有两层配置，优先级从高到低：
     }
   }
 }
-}
 ```
 
-> **macOS 路径**：`~/.config/czcode/config.json`
-> **Linux 路径**：`~/.config/czcode/config.json`（遵循 XDG 规范）
+> **macOS / Linux 路径**：`~/.config/czcode/config.json`（遵循 XDG 规范）
 
 ### 默认值
 
@@ -267,11 +228,10 @@ czcode 有两层配置，优先级从高到低：
 
 ### 自定义 Base URL（代理 / 私有部署）
 
-如果你通过代理或私有部署访问模型，可以在 `provider` 字段里覆盖 base URL 和 API Key，而不需要改变 `model` 字段的 providerID：
+如果你通过代理或私有部署访问模型，可以在 `provider` 字段里覆盖 base URL 和 API Key：
 
 ```jsonc
 {
-  // 仍然用 openai 的模型 ID，但请求打到你自己的代理
   "model": "openai/gpt-4o",
   "provider": {
     "openai": {
@@ -294,21 +254,6 @@ czcode 有两层配置，优先级从高到低：
       "options": {
         "baseURL": "http://localhost:11434/v1",  // Ollama 示例
         "apiKey": "ollama"
-      }
-    }
-  }
-}
-```
-
-阿里云 DashScope 代理同理：
-
-```jsonc
-{
-  "model": "alibaba-cn/qwen3.5-plus",
-  "provider": {
-    "alibaba-cn": {
-      "options": {
-        "baseURL": "https://your-dashscope-proxy.example.com/compatible-mode/v1"
       }
     }
   }
@@ -340,23 +285,12 @@ https://<region>.api.clickzetta.com/<workspace>/<endpoint-name>
           "provider": {
             "api": "https://cn-shanghai-alicloud-aimesh.api.clickzetta.com/k227206/aliyun-deepseek-v4-pro"
           }
-        },
-        "another-endpoint": {
-          "name": "另一个模型",
-          "provider": {
-            "api": "https://cn-shanghai-alicloud-aimesh.api.clickzetta.com/k227206/another-endpoint"
-          }
         }
       }
     }
   }
 }
 ```
-
-- `npm` 固定填 `@ai-sdk/openai-compatible`（云器 AI Gateway 兼容 OpenAI 接口）
-- `apiKey` 从云器平台"模型管理 → API KEY"页面生成
-- 每个模型的 `provider.api` 填对应 Endpoint 的访问地址（从 Endpoint 详情页复制）
-- 切换模型只需改 `"model"` 字段中的模型名，无需改 URL
 
 > 详见 [云器 AI Gateway 文档](https://yunqi.tech/documents/AI_Gateway)
 
@@ -384,7 +318,7 @@ czcode 有三个主要页面，不同页面能做的事差别很大。
 
 - **自然语言对话**：直接描述需求，AI 生成 SQL 并执行，结果以表格展示
 - **工具执行**：AI 可以查询 Lakehouse、读写文件、执行命令
-- **数据探查命令**（仅对话页可用，在欢迎页执行会提示"请先进入对话"）：
+- **数据探查命令**（仅对话页可用）：
 
 | 命令 | 说明 |
 |------|------|
@@ -506,7 +440,3 @@ czcode 与 [cz-cli](https://github.com/clickzetta/cz-cli) 共享连接配置，�
 MIT License
 
 czcode 是 [KiloCode](https://github.com/Kilo-Org/kilocode) 的 fork，KiloCode 是 [OpenCode](https://github.com/anomalyco/opencode) 的 fork。感谢两个上游项目的开源贡献。
-||||||| 12f7967ca4
-Kilo CLI is a fork of [OpenCode](https://github.com/anomalyco/opencode), enhanced to work within the Kilo agentic engineering platform.
-
-</details>
