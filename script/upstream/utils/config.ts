@@ -124,6 +124,8 @@ export const defaultConfig: MergeConfig = {
     ".github/workflows/deploy.yml",
     ".github/workflows/docs-update.yml",
     ".github/workflows/docs-locale-sync.yml",
+    // czcode_change: czcode watches kilocode releases, not opencode directly
+    ".github/workflows/watch-opencode-releases.yml",
     // Workflows deleted in Kilo (replaced or no longer needed)
     ".github/workflows/opencode.yml",
     ".github/workflows/publish-vscode.yml",

@@ -159,8 +159,10 @@ function content(file: string) {
 }
 // kilocode_change end
 
-// Matches the start of a kilocode_change marker in JS, JSX, YAML, TOML, and shell comments.
-const MARKER_PREFIX = /(?:\/\/|\{?\s*\/\*|#)\s*kilocode_change\b/
+// czcode_change start - also accept czcode_change markers
+// Matches the start of a kilocode_change or czcode_change marker in JS, JSX, YAML, TOML, and shell comments.
+const MARKER_PREFIX = /(?:\/\/|\{?\s*\/\*|#)\s*(?:kilocode_change|czcode_change)\b/
+// czcode_change end
 
 function hasMarker(line: string) {
   return MARKER_PREFIX.test(line)

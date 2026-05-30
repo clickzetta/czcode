@@ -105,7 +105,7 @@ const BRANDING_REPLACEMENTS: BrandingReplacement[] = [
     description: "Environment variable",
   },
   {
-    pattern: /VITE_OPENCODE_/g,
+    pattern: /VITE_KILO_/g,
     replacement: "VITE_KILO_",
     description: "Vite env var",
   },
@@ -115,15 +115,28 @@ const BRANDING_REPLACEMENTS: BrandingReplacement[] = [
     description: "Window global",
   },
   {
-    pattern: /x-opencode-/g,
+    pattern: /x-kilo-/g,
     replacement: "x-kilo-",
     description: "HTTP header prefix",
   },
   {
-    pattern: /_EXTENSION_OPENCODE_/g,
+    pattern: /_EXTENSION_KILO_/g,
     replacement: "_EXTENSION_KILO_",
     description: "Extension env var",
   },
+
+  // czcode_change start - use "dev" as fallback for unbuilt dev environments
+  {
+    pattern: /(\? KILO_VERSION : )"local"/g,
+    replacement: '$1"dev"',
+    description: "InstallationVersion dev fallback",
+  },
+  {
+    pattern: /(\? KILO_CHANNEL : )"local"/g,
+    replacement: '$1"dev"',
+    description: "InstallationChannel dev fallback",
+  },
+  // czcode_change end
 ]
 
 /**
