@@ -31,7 +31,7 @@ czcode 有两套工具操作 Lakehouse：**Lakehouse Plugin**（read_query/write
 - 用户说"表"、"视图"、"Schema"、"查询"、"SQL" → 用 Lakehouse Plugin
 - 不确定时，先用 `cz-cli --help` 或 `cz-cli <command> --help` 查看是否有对应命令
 
-**⚠️ 优先使用 cz-cli 其他子命令，避免使用 `cz-cli agent`**：`cz-cli agent` 会启动新的 AI 会话，造成嵌套调用。绝大多数场景都有更直接的命令（`cz-cli task`、`cz-cli runs`、`cz-cli sql` 等），只有在其他命令确实无法满足需求时才考虑 `cz-cli agent`。
+**⚠️ 优先使用 cz-cli 其他子命令，避免高频使用 `cz-cli agent`**。绝大多数场景都有更直接的命令（`cz-cli task`、`cz-cli runs`、`cz-cli sql` 等）。
 
 ---
 
@@ -49,7 +49,7 @@ czcode 有两套工具操作 Lakehouse：**Lakehouse Plugin**（read_query/write
 
 ## SQL 编写规则（必须遵守）
 
-**ClickZetta 不是标准 SQL 数据库**。在编写任何 SQL 之前：
+**在编写任何 SQL 之前:**
 
 1. **不要假设函数存在** — ClickZetta 的函数集与 Snowflake/Spark/MySQL 不同。如果不确定某个函数是否支持，先加载 `clickzetta-sql-syntax-guide` skill 确认
 2. **第一次报语法错误时** — 立即加载对应的 skill（如 `clickzetta-sql-syntax-guide`），不要盲目猜测替代语法
