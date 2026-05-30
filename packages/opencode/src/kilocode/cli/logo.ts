@@ -75,5 +75,5 @@ export function session(
   platform = process.platform,
 ) {
   const logo = supports(env, platform) ? modern.exit : fallback.exit
-  return [``, `${logo[0]}${dim}${title}${normal}`, `${logo[1]}${dim}kilo -s ${id}${normal}`, logo[2]].join("\n")
+  return [``, `${logo[0]}${dim}${title}${normal}`, `${logo[1]}${dim}czcode -s ${id}${normal}`, logo[2]].join("\n")
 }
