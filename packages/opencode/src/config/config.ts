@@ -545,7 +545,7 @@ export const layer = Layer.effect(
         },
         command: builtinCommandMap,
         default_agent: "lh-analyst",
-        model: "alibaba-cn/qwen3.5-plus",
+        model: "alibaba-coding-plan-cn/glm-5", // czcode_change - glm-5 supports implicit caching on DashScope (qwen3.x does not)
       } as Info
       // czcode_change end
       result = mergeConfig(result, yield* loadFile(path.join(Global.Path.config, "config.json")))
