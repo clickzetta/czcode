@@ -31,7 +31,7 @@ czcode 有两套工具操作 Lakehouse：**Lakehouse Plugin**（read_query/write
 - 用户说"表"、"视图"、"Schema"、"查询"、"SQL" → 用 Lakehouse Plugin
 - 不确定时，先用 `cz-cli --help` 或 `cz-cli <command> --help` 查看是否有对应命令
 
-**⚠️ 禁止使用 `cz-cli agent` 子命令**：`cz-cli agent` 会启动一个新的 AI 会话，造成嵌套调用和资源浪费。需要 AI 能力时直接在当前会话中处理，不要通过 cz-cli 再启动 agent。
+**⚠️ 优先使用 cz-cli 其他子命令，避免使用 `cz-cli agent`**：`cz-cli agent` 会启动新的 AI 会话，造成嵌套调用。绝大多数场景都有更直接的命令（`cz-cli task`、`cz-cli runs`、`cz-cli sql` 等），只有在其他命令确实无法满足需求时才考虑 `cz-cli agent`。
 
 ---
 
