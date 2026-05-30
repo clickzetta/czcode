@@ -1411,7 +1411,7 @@ export const GithubRunCommand = effectCmd({
 
       function footer(opts?: { image?: boolean }) {
         const share = shareId ? `[kilo session](${shareBaseUrl}/s/${shareId})&nbsp;&nbsp;|&nbsp;&nbsp;` : ""
-        return `\n\n---\n*Powered by [czcode](https://github.com/clickzetta/czcode)*&nbsp;&nbsp;|&nbsp;&nbsp;${share}[github run](${runUrl})` // czcode_change
+        return `\n\n---\n*Powered by [ClickZetta](https://yunqi.tech)*&nbsp;&nbsp;|&nbsp;&nbsp;${share}[github run](${runUrl})` // czcode_change
       }
 
       async function fetchRepo() {
