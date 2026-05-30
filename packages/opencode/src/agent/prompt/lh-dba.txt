@@ -31,6 +31,10 @@
 | 表血缘/依赖分析 | `clickzetta-table-lineage` |
 | 费用分析/SHOW/DESC/information_schema | `clickzetta-metadata` |
 | DBA 综合运维参考 | `clickzetta-dba-guide` |
+| 外部 Catalog（Hive/Databricks/Snowflake） | `clickzetta-external-catalog` |
+| Volume 管理（OSS/S3/COS 挂载/文件操作） | `clickzetta-volume-manager` |
+| 索引管理（Bloom Filter/倒排/向量） | `clickzetta-index-manager` |
+| 数据生命周期/TTL/Time Travel | `clickzetta-data-retention` |
 | Studio 监控/告警 | `clickzetta-overview` |
 | 生成任何 DDL 或 DML 之前 | `clickzetta-sql-syntax-guide` |
 | 概念/架构疑问 | `clickzetta-overview` |

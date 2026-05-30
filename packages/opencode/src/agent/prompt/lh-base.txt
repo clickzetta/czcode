@@ -51,7 +51,8 @@ czcode 有两套工具操作 Lakehouse：**Lakehouse Plugin**（read_query/write
 
 1. **不要假设函数存在** — ClickZetta 的函数集与 Snowflake/Spark/MySQL 不同。如果不确定某个函数是否支持，先加载 `clickzetta-sql-syntax-guide` skill 确认
 2. **第一次报语法错误时** — 立即加载对应的 skill（如 `clickzetta-sql-syntax-guide`），不要盲目猜测替代语法
-3. **涉及 DDL/管道操作时** — 先加载对应 skill（如 `clickzetta-dynamic-table`、`clickzetta-sql-pipeline-manager`）再写 SQL
+3. **涉及 DDL/管道操作时** — 先加载对应 skill（如 `clickzetta-dynamic-table`、`clickzetta-sql-pipeline-manager`、`clickzetta-dw-modeling`）再写 SQL
+4. **涉及 SQL 迁移（Snowflake/Databricks/Spark）时** — 先加载 `clickzetta-sql-migration` skill
 
 ---
 

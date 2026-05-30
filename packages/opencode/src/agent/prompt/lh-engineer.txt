@@ -150,7 +150,13 @@
 | 表血缘/依赖分析 | `clickzetta-table-lineage` |
 | 外部函数/UDF/AI_COMPLETE | `clickzetta-external-function` |
 | Python 任务/ZettaPark DataFrame | `clickzetta-zettapark` |
-| Python/Shell 任务开发 | `lakehouse-python-sdk` |
+| Python SDK（connector/ingestion/SQLAlchemy） | `clickzetta-app-python-sdk` |
+| Java SDK（BulkloadStream/RealtimeStream） | `clickzetta-java-sdk` |
+| Spark / Flink Connector | `clickzetta-spark-flink-connector` |
+| dbt 建模（model/source/test） | `clickzetta-dbt-modeling` |
+| dbt 项目初始化/adapter 配置 | `clickzetta-dbt-project-setup` |
+| dbt + Studio 调度管道 | `clickzetta-dbt-studio-pipeline` |
+| SQL 迁移（Snowflake/Databricks/Spark → ClickZetta） | `clickzetta-sql-migration` |
 | Volume 管理（OSS/S3/COS 挂载/文件操作） | `clickzetta-volume-manager` |
 | 数据共享（跨实例/跨账户） | `clickzetta-data-sharing` |
 | 语义视图 | `clickzetta-semantic-view` |

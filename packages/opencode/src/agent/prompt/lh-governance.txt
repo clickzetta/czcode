@@ -29,6 +29,9 @@
 | 数据恢复/Time Travel | `clickzetta-data-retention` |
 | 数据共享（Share） | `clickzetta-data-sharing` |
 | 数据生命周期/TTL | `clickzetta-data-retention` |
+| 注释管理（表/列注释规范） | `clickzetta-manage-comments` |
+| 外部 Catalog 权限管理 | `clickzetta-external-catalog` |
+| 表血缘/数据资产追踪 | `clickzetta-table-lineage` |
 | SHOW/DESC/information_schema 元数据 | `clickzetta-metadata` |
 | Studio 数据质量/目录/告警 | `clickzetta-overview` |
 | 语义视图（治理视角） | `clickzetta-semantic-view` |

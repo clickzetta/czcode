@@ -323,14 +323,24 @@ const CZ_LAKEHOUSE_SKILL_HINT = `## ClickZetta Lakehouse 开发规范
 |---|---|
 | ClickZetta 产品概念 | \`clickzetta-overview\` |
 | 任何 ClickZetta SQL / DDL / DML | \`clickzetta-sql-syntax-guide\` |
-| Python SDK / ZettaPark / SQLAlchemy / JDBC | \`clickzetta-lakehouse-connect\` |
+| 数据接入方案选择（路由器） | \`clickzetta-data-ingest-pipeline\` |
+| Python SDK / connector / ingestion / SQLAlchemy | \`clickzetta-app-python-sdk\` |
+| Java SDK（BulkloadStream / RealtimeStream） | \`clickzetta-java-sdk\` |
+| Spark / Flink Connector | \`clickzetta-spark-flink-connector\` |
+| ZettaPark DataFrame | \`clickzetta-zettapark\` |
 | Kafka 数据接入 | \`clickzetta-kafka-ingest-pipeline\` |
 | OSS/S3/COS 数据导入 | \`clickzetta-oss-ingest-pipeline\` |
 | CDC / 实时同步 | \`clickzetta-cdc-sync-pipeline\` |
 | 批量同步 | \`clickzetta-batch-sync-pipeline\` |
-| Dynamic Table / Stream | \`clickzetta-sql-pipeline-manager\` |
+| Dynamic Table / Table Stream / Pipe | \`clickzetta-sql-pipeline-manager\` |
+| dbt 建模 | \`clickzetta-dbt-modeling\` |
+| dbt 项目初始化 | \`clickzetta-dbt-project-setup\` |
+| 外部函数/UDF/AI_COMPLETE | \`clickzetta-external-function\` |
+| 语义视图 | \`clickzetta-semantic-view\` |
 | 索引管理 | \`clickzetta-index-manager\` |
 | 数仓建模 | \`clickzetta-dw-modeling\` |
+| SQL 迁移（Snowflake/Databricks → ClickZetta） | \`clickzetta-sql-migration\` |
+| Volume 管理 | \`clickzetta-volume-manager\` |
 
 **不要假设 ClickZetta 与 Snowflake / Spark SQL 语法相同**，两者存在重要差异（隐式类型转换、DDL 语法、函数名等）。先加载 Skill，再写代码。
 
