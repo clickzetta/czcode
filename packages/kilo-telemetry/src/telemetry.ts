@@ -285,6 +285,34 @@ export namespace Telemetry {
     track(TelemetryEvent.FEEDBACK_SUBMITTED, props)
   }
 
+  // czcode_change start — passive ALHF feedback signals
+  export function trackSessionReverted(sessionId: string, agentName?: string) {
+    track(TelemetryEvent.SESSION_REVERTED, { sessionId, agentName })
+  }
+
+  export function trackMessageAborted(sessionId: string, agentName?: string) {
+    track(TelemetryEvent.MESSAGE_ABORTED, { sessionId, agentName })
+  }
+
+  export function trackUserDissatisfied(sessionId: string, agentName?: string) {
+    track(TelemetryEvent.USER_DISSATISFIED, { sessionId, agentName })
+  }
+
+  export function trackSkillUsed(skillName: string, sessionId?: string, agentName?: string) {
+    track(TelemetryEvent.SKILL_USED, { skillName, sessionId, agentName })
+  }
+
+  export function trackSkillFeedback(properties: {
+    skillName: string
+    feedbackType: string
+    component: string
+    verified: boolean
+    sessionId?: string
+  }) {
+    track(TelemetryEvent.SKILL_FEEDBACK, properties)
+  }
+  // czcode_change end
+
   export async function shutdown(): Promise<void> {
     await Client.shutdown()
   }
