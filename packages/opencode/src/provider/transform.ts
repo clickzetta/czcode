@@ -1086,6 +1086,18 @@ export function options(input: {
     result["enable_thinking"] = true
   }
 
+  // czcode_change start - enable DashScope prefix caching for alibaba-cn and alibaba-coding-plan-cn
+  // DashScope supports automatic prefix caching via enable_prefix_caching=true.
+  // This caches the static prefix (system prompt + skills, ~74K tokens) across turns,
+  // reducing repeated input by ~66% in long sessions.
+  if (
+    (input.model.providerID === "alibaba-cn" || input.model.providerID === "alibaba-coding-plan-cn") &&
+    input.model.api.npm === "@ai-sdk/openai-compatible"
+  ) {
+    result["enable_prefix_caching"] = true
+  }
+  // czcode_change end
+
   if (input.model.api.id.includes("gpt-5") && !input.model.api.id.includes("gpt-5-chat")) {
     if (!input.model.api.id.includes("gpt-5-pro")) {
       result["reasoningEffort"] = "medium"
