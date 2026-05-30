@@ -368,7 +368,13 @@ export const getUsage = (input: {
   const reasoningTokens = safe(input.usage.outputTokenDetails?.reasoningTokens ?? input.usage.reasoningTokens ?? 0)
 
   const cacheReadInputTokens = safe(
-    input.usage.inputTokenDetails?.cacheReadTokens ?? input.usage.cachedInputTokens ?? 0,
+    input.usage.inputTokenDetails?.cacheReadTokens ??
+      input.usage.cachedInputTokens ??
+      // czcode_change start - DeepSeek returns prompt_cache_hit_tokens in openaiCompatible metadata
+      // @ts-expect-error
+      input.metadata?.["openaiCompatible"]?.["usage"]?.["prompt_cache_hit_tokens"] ??
+      // czcode_change end
+      0,
   )
   const cacheWriteInputTokens = safe(
     Number(
@@ -381,6 +387,10 @@ export const getUsage = (input: {
         input.metadata?.["bedrock"]?.["usage"]?.["cacheWriteInputTokens"] ??
         // @ts-expect-error
         input.metadata?.["venice"]?.["usage"]?.["cacheCreationInputTokens"] ??
+        // czcode_change start - DeepSeek returns prompt_cache_miss_tokens as cache write equivalent
+        // @ts-expect-error
+        input.metadata?.["openaiCompatible"]?.["usage"]?.["prompt_cache_miss_tokens"] ??
+        // czcode_change end
         0,
     ),
   )
