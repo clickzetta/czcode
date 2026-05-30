@@ -29,20 +29,6 @@ export function recentSessions<T extends RecentSession>(sessions: T[]): T[] {
     .slice(0, 3)
 }
 
-export const SNAPSHOT_PROGRESS_TEXT = "Initializing snapshot..."
-
-type SnapshotPart = {
-  type?: string
-  text?: string
-  synthetic?: boolean
-}
-
-export function snapshotProgress(part: SnapshotPart | undefined): boolean {
-  if (part?.type !== "text") return false
-  if (!part.synthetic) return false
-  return (part.text ?? "").includes("Initializing snapshot")
-}
-
 /** Minimal message shape for cost breakdown helpers. */
 export type CostMessage = { id: string; role: string; cost?: number }
 

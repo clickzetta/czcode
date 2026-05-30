@@ -98,8 +98,7 @@ export const AppLayer = Layer.mergeAll(
   Truncate.defaultLayer,
   ToolRegistry.defaultLayer,
   Format.defaultLayer,
-  InstanceStore.defaultLayer,
-  InstanceBootstrap.defaultLayer, // czcode_change - provides bootstrap run effect
+  InstanceBootstrap.defaultLayer, // czcode_change - needed by getBootstrapRunEffect
   Project.defaultLayer,
   Vcs.defaultLayer,
   Workspace.defaultLayer,

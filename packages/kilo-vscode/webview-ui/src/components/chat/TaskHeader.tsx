@@ -78,14 +78,6 @@ export const TaskHeader: Component<TaskHeaderProps> = (props) => {
     return false
   })
 
-  const hasTimeline = createMemo(() => {
-    for (const m of session.visibleMessages()) {
-      if (m.role !== "assistant") continue
-      if (session.getParts(m.id).some((p) => p.type !== "step-start")) return true
-    }
-    return false
-  })
-
   const fmtNum = (n: number): string => {
     if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
     if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
@@ -149,16 +141,6 @@ export const TaskHeader: Component<TaskHeaderProps> = (props) => {
     const info = renaming()
     if (info && session.currentSession()?.id !== info.id) setRenaming(undefined)
   })
-
-  const donePart = (idx: number): Part | undefined =>
-    todoTarget({ messages: session.messages(), parts: session.allParts() }, idx)
-
-  const revertTodo = (part: Part | undefined) => {
-    if (session.status() !== "idle") return
-    if (part?.type !== "tool") return
-    if (!part.messageID) return
-    session.revertSession(part.messageID, part.id)
-  }
 
   const donePart = (idx: number): Part | undefined =>
     todoTarget({ messages: session.messages(), parts: session.allParts() }, idx)

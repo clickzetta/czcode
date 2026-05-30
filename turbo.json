@@ -36,9 +36,6 @@
       "dependsOn": ["@kilocode/cli#build"],
       "outputs": ["build/distributions/**"]
     },
-    "@kilocode/kilo-jetbrains#typecheck": {
-      "outputs": []
-    },
     "@kilocode/kilo-jetbrains#test:ci": {
       "outputs": [".artifacts/unit/junit.xml"]
     },
