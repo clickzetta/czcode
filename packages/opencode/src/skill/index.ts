@@ -157,6 +157,18 @@ const discoverSkills = Effect.fnUntraced(function* (
 ) {
   const state: ScanState = { matches: new Set(), dirs: new Set() }
 
+  const cfg = yield* config.get()
+
+  // czcode_change start - load order (low→high priority, later overwrites earlier):
+  // urls → external(global) → external(project) → configDirs(global ~/.czcode etc) → skills.paths(bundled+custom)
+  for (const url of cfg.skills?.urls ?? []) {
+    const pulledDirs = yield* discovery.pull(url)
+    for (const dir of pulledDirs) {
+      yield* scan(state, dir, SKILL_PATTERN)
+    }
+  }
+  // czcode_change end
+
   const externalDirs: string[] = []
   if (!Flag.KILO_DISABLE_EXTERNAL_SKILLS) {
     if (!Flag.KILO_DISABLE_CLAUDE_CODE_SKILLS) externalDirs.push(CLAUDE_EXTERNAL_DIR)
@@ -182,7 +194,6 @@ const discoverSkills = Effect.fnUntraced(function* (
     yield* scan(state, dir, KILO_SKILL_PATTERN)
   }
 
-  const cfg = yield* config.get()
   for (const item of cfg.skills?.paths ?? []) {
     const expanded = item.startsWith("~/") ? path.join(global.home, item.slice(2)) : item
     const dir = path.isAbsolute(expanded) ? expanded : path.join(directory, expanded)
@@ -192,13 +203,6 @@ const discoverSkills = Effect.fnUntraced(function* (
     }
 
     yield* scan(state, dir, SKILL_PATTERN)
-  }
-
-  for (const url of cfg.skills?.urls ?? []) {
-    const pulledDirs = yield* discovery.pull(url)
-    for (const dir of pulledDirs) {
-      yield* scan(state, dir, SKILL_PATTERN)
-    }
   }
 
   return {
