@@ -180,6 +180,9 @@ export const layer: Layer.Layer<Service, never, HttpClient.HttpClient | ChildPro
           }
         }),
         method: Effect.fn("Installation.method")(function* () {
+          // czcode_change start - czcode uses .czcode/bin
+          if (process.execPath.includes(path.join(".czcode", "bin"))) return "curl" as Method
+          // czcode_change end
           if (process.execPath.includes(path.join(".kilo", "bin"))) return "curl" as Method // kilocode_change
           if (process.execPath.includes(path.join(".local", "bin"))) return "curl" as Method
           const exec = process.execPath.toLowerCase()
@@ -265,12 +268,13 @@ export const layer: Layer.Layer<Service, never, HttpClient.HttpClient | ChildPro
             return data.version
           }
 
+          // czcode_change start - check clickzetta/czcode releases instead of kilocode
           const response = yield* httpOk.execute(
-            HttpClientRequest.get("https://api.github.com/repos/Kilo-Org/kilocode/releases/latest").pipe(
-              // kilocode_change
+            HttpClientRequest.get("https://api.github.com/repos/clickzetta/czcode/releases/latest").pipe(
               HttpClientRequest.acceptJson,
             ),
           )
+          // czcode_change end
           const data = yield* HttpClientResponse.schemaBodyJson(GitHubRelease)(response)
           return data.tag_name.replace(/^v/, "")
         }, Effect.orDie),
@@ -280,14 +284,14 @@ export const layer: Layer.Layer<Service, never, HttpClient.HttpClient | ChildPro
             case "curl":
               upgradeResult = yield* upgradeCurl(target)
               break
+            // czcode_change start - npm/pnpm/bun not supported, redirect to curl
             case "npm":
-              upgradeResult = yield* run(["npm", "install", "-g", `@kilocode/cli@${target}`]) // kilocode_change
-              break
             case "pnpm":
-              upgradeResult = yield* run(["pnpm", "install", "-g", `@kilocode/cli@${target}`]) // kilocode_change
-              break
             case "bun":
-              upgradeResult = yield* run(["bun", "install", "-g", `@kilocode/cli@${target}`]) // kilocode_change
+              return yield* new UpgradeFailedError({
+                stderr: `czcode 不支持通过 ${m} 升级。\n请使用 curl 方式重新安装最新版本：\nhttps://github.com/clickzetta/czcode/releases`,
+              })
+            // czcode_change end
               break
             case "brew": {
               const formula = yield* getBrewFormula()

@@ -2,7 +2,6 @@
 import { RGBA } from "@opentui/core"
 import { For, type JSX } from "solid-js"
 import { useTheme, tint } from "@tui/context/theme"
-import { tui } from "../../../../kilocode/cli/logo"
 
 // Shadow markers (rendered chars in parens):
 // _ = full shadow cell (space with bg=shadow)
@@ -10,10 +9,18 @@ import { tui } from "../../../../kilocode/cli/logo"
 // ~ = shadow top only (▀ with fg=shadow)
 const SHADOW_MARKER = /[_^~]/
 
+// czcode_change start - ClickZetta CLI ASCII logo
+const ASCII_LOGO = [
+  `▄███ ██   ██ ▄███ ██▄█ ████ ████ ████ ████ ▄██▄   ▄███ ██   ██`,
+  `██   ██   ██ ██   █     ▄██ ███   ██   ██  ████   ██   ██   ██`,
+  `▀███ ████ ██ ▀███ ██▀█ ████ ████  ██   ██  ██ █   ▀███ ████ ██`,
+  `~~~~  ~~~~ ~~ ~~~~  ~~  ~~~~ ~~~~  ~~   ~~  ~~ ~   ~~~~  ~~~~ ~~`,
+]
+// czcode_change end
+
 export function KiloLogo() {
   const { theme } = useTheme()
   const yellow = RGBA.fromHex("#F8F675")
-  const logo = tui()
 
   const renderLine = (line: string): JSX.Element[] => {
     const shadow = tint(theme.background, yellow, 0.25)
@@ -74,7 +81,7 @@ export function KiloLogo() {
 
   return (
     <box>
-      <For each={logo}>{(line) => <box flexDirection="row">{renderLine(line)}</box>}</For>
+      <For each={ASCII_LOGO}>{(line) => <box flexDirection="row">{renderLine(line)}</box>}</For>
     </box>
   )
 }

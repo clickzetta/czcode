@@ -53,6 +53,12 @@ import {
   IndexingConfig as KiloIndexingConfig,
   IndexingSchema as KiloIndexingSchema,
 } from "@kilocode/kilo-indexing/config"
+// czcode_change start — builtin commands (skill-fix, skill-update)
+import { BUILTIN_COMMANDS } from "@/kilocode/commands/builtin"
+const builtinCommandMap = Object.fromEntries(
+  BUILTIN_COMMANDS.map((c) => [c.name, { template: c.template, description: c.description, subtask: c.subtask }])
+)
+// czcode_change end
 import { unique } from "remeda"
 // kilocode_change end
 
@@ -528,7 +534,20 @@ export const layer = Layer.effect(
 
     const loadGlobal = Effect.fnUntraced(function* () {
       yield* Effect.promise(() => KilocodeConfig.migrateBashPermission()) // kilocode_change
-      let result: Info = {}
+      // czcode_change start — seed default skills URL and builtin commands
+      // Add bundled skills path (next to the binary) for offline use
+      const bundledSkillsPath = path.join(path.dirname(process.execPath), "clickzetta-skills")
+      const skillsPaths = existsSync(bundledSkillsPath) ? [bundledSkillsPath] : []
+      let result: Info = {
+        skills: {
+          urls: ["https://clickzetta.github.io/clickzetta-skills/.well-known/skills/"],
+          paths: skillsPaths,
+        },
+        command: builtinCommandMap,
+        default_agent: "lh-analyst",
+        model: "alibaba-cn/qwen3.5-plus",
+      } as Info
+      // czcode_change end
       result = mergeConfig(result, yield* loadFile(path.join(Global.Path.config, "config.json")))
       // kilocode_change start
       result = mergeConfig(result, yield* loadFile(path.join(Global.Path.config, "kilo.json")))

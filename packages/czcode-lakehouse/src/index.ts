@@ -113,7 +113,7 @@ function readConfigFromProfiles(): LakehouseConfig | null {
 
     process.env.__CZCODE_LH_PROFILE = target
     log.info(`Using profile "${target}"`, { path: profilesPath })
-    globalThis.__czcode_lakehouse_profile = target
+    ;(globalThis as any).__czcode_lakehouse_profile = target
     return {
       service: service || "cn-shanghai-alicloud.api.clickzetta.com",
       instance,

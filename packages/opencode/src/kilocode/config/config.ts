@@ -49,7 +49,9 @@ export namespace KilocodeConfig {
   export const KILO_DIR_SUFFIXES = [".czcode", ".kilo", ".kilocode"] as const
 
   /** All config directory suffixes Kilo can update, including upstream .opencode. */
-  export const ALL_CONFIG_DIR_SUFFIXES = [".kilo", ".kilocode", ".opencode"] as const
+  // czcode_change start - include .czcode in config dir suffixes
+  export const ALL_CONFIG_DIR_SUFFIXES = [".czcode", ".kilo", ".kilocode", ".opencode"] as const
+  // czcode_change end
 
   // czcode_change start - include .czcode agent path patterns
   /** Path patterns for resolving czcode agent names from file paths. */

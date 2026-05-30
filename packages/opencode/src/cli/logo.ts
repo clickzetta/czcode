@@ -1,9 +1,11 @@
-// kilocode_change start
-import { plain } from "../kilocode/cli/logo"
-
+// czcode_change start
 export const logo = {
   left: ["", "", ""],
-  right: plain(),
+  right: [
+    " ████  █████   ████   ███   ████   █████  ",
+    "██       ██   ██     ██ ██  ██ ██  ███    ",
+    " ████  █████   ████   ███   ████   █████  ",
+  ],
 }
 // czcode_change end
 

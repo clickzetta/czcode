@@ -1,5 +1,4 @@
 import path from "path"
-import fs from "fs/promises"
 import { xdgData, xdgCache, xdgConfig, xdgState } from "xdg-basedir"
 import os from "os"
 import { Context, Effect, Layer } from "effect"
@@ -8,7 +7,7 @@ import { markNoIndex } from "./kilocode/spotlight" // kilocode_change
 import { ensureRealDir } from "./kilocode/global" // kilocode_change
 import { Flag } from "./flag/flag"
 
-const app = "kilo" // kilocode_change
+const app = "czcode" // czcode_change
 // kilocode_change start
 // Defensively strip newline characters from the resolved XDG paths.
 // If `$HOME` (or any `$XDG_*_HOME` override) has a trailing newline in
@@ -26,8 +25,9 @@ const state = path.join(clean(xdgState)!, app)
 const tmp = path.join(os.tmpdir(), app)
 
 const paths = {
+  // Allow override via CZCODE_TEST_HOME for test isolation
   get home() {
-    return (process.env.KILO_TEST_HOME ?? os.homedir()).trim() // kilocode_change — defensive trim, see above
+    return (process.env.CZCODE_TEST_HOME || process.env.KILO_TEST_HOME || os.homedir()).trim() // czcode_change — defensive trim, see above
   },
   data,
   bin: path.join(cache, "bin"),

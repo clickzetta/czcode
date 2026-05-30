@@ -395,6 +395,9 @@ export function patchAgents(
         user,
         Permission.fromConfig({ semantic_search: "allow" }),
       ),
+      // czcode_change start - add Lakehouse skill guidance for code agent
+      prompt: (agents.build.prompt ? agents.build.prompt + "\n\n" : "") + CZ_LAKEHOUSE_SKILL_HINT,
+      // czcode_change end
     }
     delete agents.build
   }

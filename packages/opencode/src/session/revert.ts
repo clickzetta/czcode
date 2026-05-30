@@ -11,7 +11,7 @@ import { MessageV2 } from "./message-v2"
 import { SessionID, MessageID, PartID } from "./schema"
 import { SessionRunState } from "./run-state"
 import { SessionSummary } from "./summary"
-import { Telemetry } from "@kilocode/kilo-telemetry" // czcode_change // kilocode_change
+import { Telemetry, TelemetryEvent } from "@kilocode/kilo-telemetry" // czcode_change // kilocode_change
 
 const log = Log.create({ service: "session.revert" })
 
@@ -100,6 +100,9 @@ export const layer = Layer.effect(
           diffs: summaryDiffs,
         },
       })
+      // czcode_change start — passive ALHF signal: user reverted AI output
+      Telemetry.track(TelemetryEvent.SESSION_REVERTED, { sessionID: input.sessionID })
+      // czcode_change end
       return yield* sessions.get(input.sessionID).pipe(Effect.orDie)
     })
 

@@ -27,6 +27,7 @@ import { errorMessage } from "@/util/error"
 import { PluginLoader } from "./loader"
 import { parsePluginSpecifier, readPluginId, readV1Plugin, resolvePluginId } from "./shared"
 import { KiloAuthPlugin } from "@kilocode/kilo-gateway" // kilocode_change
+import { CzCodeLakehousePlugin } from "@czcode/lakehouse" // czcode_change
 import { registerAdapter } from "@/control-plane/adapters"
 import type { WorkspaceAdapter } from "@/control-plane/types"
 
@@ -70,6 +71,7 @@ const INTERNAL_PLUGINS: PluginInstance[] = [
   CloudflareAIGatewayAuthPlugin,
   AzureAuthPlugin,
   XaiAuthPlugin,
+  CzCodeLakehousePlugin as unknown as PluginInstance, // czcode_change
 ]
 // kilocode_change end
 
