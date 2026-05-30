@@ -2,6 +2,7 @@ import type { Hooks, PluginInput } from "@kilocode/plugin"
 
 export async function AzureAuthPlugin(_input: PluginInput): Promise<Hooks> {
   const prompts = []
+  // kilocode_change start - allow configuring either Azure resource name or full endpoint URL from the UI
   const hasResource = process.env.AZURE_RESOURCE_NAME || process.env.AZURE_OPENAI_RESOURCE_NAME
   const hasEndpoint = process.env.AZURE_OPENAI_ENDPOINT
   if (!hasResource && !hasEndpoint) {
@@ -37,6 +38,7 @@ export async function AzureAuthPlugin(_input: PluginInput): Promise<Hooks> {
       when: { key: "endpointType", op: "eq" as const, value: "baseURL" },
     })
   }
+  // kilocode_change end
 
   return {
     auth: {

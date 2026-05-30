@@ -1,11 +1,6 @@
 ---
 title: "Using OpenAI-Compatible Providers with Kilo Code"
-<<<<<<< HEAD
-description: "Connect any OpenAI-compatible API endpoint to Kilo Code, including Azure OpenAI, Together AI, and self-hosted servers."
-||||||| 12f7967ca4
-=======
 description: "Connect OpenAI-compatible API endpoints like Together AI, Perplexity, and self-hosted servers."
->>>>>>> yunqiqiliang/opencode-v7.3.0
 sidebar_label: OpenAI Compatible
 ---
 

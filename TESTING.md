@@ -1,12 +1,6 @@
 # TESTING.md
 
-<<<<<<< HEAD
-How to spin up the **local main-branch** czcode backend and test it with `curl` / `fetch`. Aimed at a running czcode agent iterating on backend fixes without rebuilding the TUI.
-||||||| 12f7967ca4
-How to spin up the **local main-branch** Kilo backend and test it with `curl` / `fetch`. Aimed at a running Kilo CLI agent iterating on backend fixes without rebuilding the VS Code extension, TUI, or desktop app.
-=======
 How to spin up the **local main-branch** Kilo backend and test it with `curl` / `fetch`. Aimed at a running Kilo CLI agent iterating on backend fixes without rebuilding the VS Code extension or TUI.
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 All examples use plain shell + `curl`. Writing TypeScript files is a last resort (see Section 8).
 

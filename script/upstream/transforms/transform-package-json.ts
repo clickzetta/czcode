@@ -201,7 +201,6 @@ const KILO_DEPENDENCIES: Record<string, Record<string, string>> = {
   "packages/opencode/package.json": {
     "@kilocode/kilo-gateway": "workspace:*",
     "@kilocode/kilo-telemetry": "workspace:*",
-    "@czcode/lakehouse": "workspace:*", // czcode_change
   },
 }
 
@@ -247,7 +246,12 @@ const DELETE_UPSTREAM_CATALOG: Record<string, string[]> = {
  * Re-apply Kilo-specific scripts on top of the upstream-shaped scripts block,
  * and prune upstream-only scripts that target packages Kilo doesn't ship.
  */
-export function fixScripts(pkg: Record<string, unknown>, path: string, ours: Record<string, unknown> | null, changes: string[]): void {
+export function fixScripts(
+  pkg: Record<string, unknown>,
+  path: string,
+  ours: Record<string, unknown> | null,
+  changes: string[],
+): void {
   const theirs = (pkg.scripts as Record<string, string> | undefined) || {}
   const oursScripts = (ours?.scripts as Record<string, string> | undefined) || {}
 

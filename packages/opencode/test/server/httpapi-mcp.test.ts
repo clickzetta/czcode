@@ -5,7 +5,8 @@ import { Flag } from "@opencode-ai/core/flag/flag"
 import { ExperimentalHttpApiServer } from "../../src/server/routes/instance/httpapi/server"
 import { McpPaths } from "../../src/server/routes/instance/httpapi/groups/mcp"
 import { Instance } from "../../src/project/instance"
-import { InstanceStore } from "../../src/project/instance-store"
+import { WithInstance } from "../../src/project/with-instance"
+import { InstanceRuntime } from "../../src/project/instance-runtime"
 import { Server } from "../../src/server/server"
 import * as Log from "@opencode-ai/core/util/log"
 import { resetDatabase } from "../fixture/db"
@@ -45,7 +46,7 @@ function withMcpProject<A, E, R>(self: (dir: string) => Effect.Effect<A, E, R>) 
     yield* fs.writeFileString(
       path.join(dir, "opencode.json"),
       JSON.stringify({
-        $schema: "https://opencode.ai/config.json", // kilocode_change
+        $schema: "https://opencode.ai/config.json",
         formatter: false,
         lsp: false,
         mcp: {
@@ -59,7 +60,7 @@ function withMcpProject<A, E, R>(self: (dir: string) => Effect.Effect<A, E, R>) 
     )
     yield* Effect.addFinalizer(() =>
       Effect.promise(() =>
-        Instance.provide({ directory: dir, fn: () => InstanceStore.disposeInstance(Instance.current) }),
+        WithInstance.provide({ directory: dir, fn: () => InstanceRuntime.disposeInstance(Instance.current) }),
       ).pipe(Effect.ignore),
     )
 

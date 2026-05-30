@@ -19,21 +19,6 @@ function has(value: Record<string, unknown>) {
   return Object.keys(value).length > 0
 }
 
-// Top-level config keys that persist to the project's kilo.json rather than the
-// global one. Settings that are inherently per-repository (e.g. commit message
-// conventions) belong here so they don't leak across workspaces.
-const PROJECT_SCOPED_KEYS: ReadonlySet<string> = new Set(["commit_message"])
-
-function splitByScope(draft: Partial<Config>) {
-  const global: Record<string, unknown> = {}
-  const project: Record<string, unknown> = {}
-  for (const [key, value] of Object.entries(draft)) {
-    if (PROJECT_SCOPED_KEYS.has(key)) project[key] = value
-    else global[key] = value
-  }
-  return { global: global as Partial<Config>, project: project as Partial<Config> }
-}
-
 export interface SaveError {
   message: string
   details?: string
@@ -91,14 +76,8 @@ export const ConfigProvider: ParentComponent = (props) => {
         "autocomplete.enableAutoTrigger": message.settings.enableAutoTrigger,
         "autocomplete.enableSmartInlineTaskKeybinding": message.settings.enableSmartInlineTaskKeybinding,
         "autocomplete.enableChatAutocomplete": message.settings.enableChatAutocomplete,
+        "autocomplete.provider": message.settings.provider,
         "autocomplete.model": message.settings.model,
-      })
-      return
-    }
-    if (message.type === "speechToTextSettingsLoaded") {
-      mergeSettings({
-        "speechToText.enabled": message.settings.enabled,
-        "speechToText.model": message.settings.model,
       })
       return
     }
@@ -170,7 +149,6 @@ export const ConfigProvider: ParentComponent = (props) => {
   const requestInitialData = () => {
     vscode.postMessage({ type: "requestConfig" })
     vscode.postMessage({ type: "requestAutocompleteSettings" })
-    vscode.postMessage({ type: "requestSpeechToTextSettings" })
   }
 
   // Request config immediately; if the extension's httpClient is not yet ready,

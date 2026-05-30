@@ -50,7 +50,8 @@
     "tree-sitter-wasms": "0.1.13",
     "uuid": "14.0.0",
     "web-tree-sitter": "0.25.10",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "effect": "catalog:"
   },
   "devDependencies": {
     "@tsconfig/node22": "catalog:",

@@ -124,8 +124,6 @@ export const defaultConfig: MergeConfig = {
     ".github/workflows/deploy.yml",
     ".github/workflows/docs-update.yml",
     ".github/workflows/docs-locale-sync.yml",
-    // czcode_change: czcode watches kilocode releases, not opencode directly
-    ".github/workflows/watch-opencode-releases.yml",
     // Workflows deleted in Kilo (replaced or no longer needed)
     ".github/workflows/opencode.yml",
     ".github/workflows/publish-vscode.yml",
@@ -161,6 +159,7 @@ export const defaultConfig: MergeConfig = {
     "packages/app/**",
     "packages/desktop/**",
     "packages/desktop-electron/**",
+    "sdks/vscode/**",
     // GitHub Action - Kilo version is fully ported and complete
     "github/index.ts",
     "github/package.json",
@@ -210,6 +209,7 @@ export const defaultConfig: MergeConfig = {
     "packages/kilo-gateway",
     "packages/kilo-telemetry",
     "packages/kilo-vscode",
+    "packages/kilo-jetbrains",
     "packages/kilo-ui",
     "packages/kilo-docs",
     "packages/kilo-i18n",

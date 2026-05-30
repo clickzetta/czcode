@@ -7,7 +7,7 @@ import { Flag } from "@opencode-ai/core/flag/flag"
 import { AppFileSystem } from "@opencode-ai/core/filesystem"
 import { withTransientReadRetry } from "@/util/effect-http-client"
 import { Global } from "@opencode-ai/core/global"
-import { KilocodeInstruction } from "@/kilocode/session/instruction"
+import { KilocodeInstruction } from "@/kilocode/session/instruction" // kilocode_change
 import type { MessageV2 } from "./message-v2"
 import type { MessageID } from "./schema"
 
@@ -60,7 +60,9 @@ export const layer: Layer.Layer<
     const global = yield* Global.Service
     const http = HttpClient.filterStatusOk(withTransientReadRetry(yield* HttpClient.HttpClient))
     const globalFiles = [
+      // kilocode_change start - prefer KILO_CONFIG_DIR profile when set
       ...(Flag.KILO_CONFIG_DIR ? [path.join(Flag.KILO_CONFIG_DIR, "AGENTS.md")] : []),
+      // kilocode_change end
       path.join(global.config, "AGENTS.md"),
       ...(!Flag.KILO_DISABLE_CLAUDE_CODE_PROMPT ? [path.join(global.home, ".claude", "CLAUDE.md")] : []),
     ]
@@ -81,13 +83,14 @@ export const layer: Layer.Layer<
           .globUp(instruction, ctx.directory, ctx.worktree)
           .pipe(Effect.catch(() => Effect.succeed([] as string[])))
       }
+      // kilocode_change - prefer KILO_CONFIG_DIR profile when set, else fall back to global.config
       const root = Flag.KILO_CONFIG_DIR ?? global.config
-      return yield* fs.globUp(instruction, root, root).pipe(Effect.catch(() => Effect.succeed([] as string[])))
+      return yield* fs.globUp(instruction, root, root).pipe(Effect.catch(() => Effect.succeed([] as string[]))) // kilocode_change
     })
 
     const read = Effect.fnUntraced(function* (filepath: string) {
-      const content = yield* fs.readFileString(filepath).pipe(Effect.catch(() => Effect.succeed("")))
-      return yield* Effect.promise(() => KilocodeInstruction.content(content, filepath))
+      const content = yield* fs.readFileString(filepath).pipe(Effect.catch(() => Effect.succeed(""))) // kilocode_change
+      return yield* Effect.promise(() => KilocodeInstruction.content(content, filepath)) // kilocode_change
     })
 
     const fetch = Effect.fnUntraced(function* (url: string) {

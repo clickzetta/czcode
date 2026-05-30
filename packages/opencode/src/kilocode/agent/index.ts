@@ -395,9 +395,6 @@ export function patchAgents(
         user,
         Permission.fromConfig({ semantic_search: "allow" }),
       ),
-      // czcode_change start - add Lakehouse skill guidance for code agent
-      prompt: (agents.build.prompt ? agents.build.prompt + "\n\n" : "") + CZ_LAKEHOUSE_SKILL_HINT,
-      // czcode_change end
     }
     delete agents.build
   }
@@ -712,8 +709,8 @@ export async function remove(name: string) {
   let found = false
 
   // 1. Delete .md files from config directories
-  const { Config } = await import("../../config/config")
-  const dirs = await Config.directories()
+  const { AppRuntime } = await import("@/effect/app-runtime")
+  const dirs = await AppRuntime.runPromise(Config.Service.use((svc) => svc.directories()))
   const patterns = ["{agent,agents}/**/" + name + ".md", "{mode,modes}/" + name + ".md"]
   for (const dir of dirs) {
     for (const pattern of patterns) {
@@ -758,5 +755,6 @@ export async function remove(name: string) {
 
   if (!found) throw new RemoveError({ name, message: "no agent file found on disk" })
 
-  await InstanceStore.disposeInstance(Instance.current)
+  const runtime = await import("../../project/instance-runtime")
+  await runtime.InstanceRuntime.disposeInstance(Instance.current)
 }

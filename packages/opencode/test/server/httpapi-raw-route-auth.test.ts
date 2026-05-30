@@ -64,7 +64,7 @@ describe("HttpApi raw route authorization", () => {
     expect(missing.status).toBe(401)
 
     const authed = await server.request(EventPaths.event, {
-      headers: { ...headers, authorization: basic("kilo", "secret") },
+      headers: { ...headers, authorization: basic("kilo", "secret") }, // kilocode_change - Kilo username default
     })
     await cancelBody(authed)
     expect(authed.status).toBe(200)
@@ -81,7 +81,7 @@ describe("HttpApi raw route authorization", () => {
     expect(missing.status).toBe(401)
 
     const authed = await server.request(route, {
-      headers: { ...headers, authorization: basic("kilo", "secret") },
+      headers: { ...headers, authorization: basic("kilo", "secret") }, // kilocode_change - Kilo username default
     })
     await cancelBody(authed)
     expect(authed.status).toBe(404)

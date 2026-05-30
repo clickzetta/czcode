@@ -29,6 +29,7 @@ const DIR = path.join(ROOT, ".github", "workflows")
 const active = new Set([
   "auto-docs.yml",
   "beta.yml",
+  "check-forbidden-strings.yml",
   "check-kilo-generated-artifacts.yml",
   "check-md-table-padding.yml",
   "check-opencode-annotations.yml",
@@ -42,9 +43,9 @@ const active = new Set([
   "generate.yml",
   "nix-eval.yml",
   "nix-hashes.yml",
+  "prepare-jetbrains-release.yml",
   "publish-jetbrains.yml",
   "publish.yml",
-  "release.yml", // czcode_change - added in v7.3.0 upstream merge (replaces watch-opencode-releases.yml)
   "smoke-test.yml",
   "source-check-links.yml",
   "test-vscode.yml",
@@ -52,7 +53,7 @@ const active = new Set([
   "triage.yml",
   "typecheck.yml",
   "visual-regression.yml",
-  // "watch-opencode-releases.yml", // czcode_change - removed in v7.3.0 upstream merge
+  "watch-opencode-releases.yml",
 ])
 
 // GitHub picks up both .yml and .yaml in .github/workflows/. We accept both so

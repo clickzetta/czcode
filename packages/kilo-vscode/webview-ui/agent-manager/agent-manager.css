@@ -1968,27 +1968,6 @@ body.am-wt-dragging-active * {
 }
 
 .am-markdown-pane {
-<<<<<<< HEAD
-  min-width: 0;
-  padding: 16px 20px 24px;
-  background: var(--vscode-editor-background, var(--surface-base));
-  color: var(--vscode-editor-foreground, var(--text-base));
-  overflow-x: auto;
-}
-
-.am-markdown-pane-title {
-  margin: -4px 0 12px;
-  color: var(--text-weak);
-  font-size: var(--font-size-small);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.am-markdown-pane [data-component="markdown"] {
-  max-width: 900px;
-||||||| 12f7967ca4
-=======
   position: relative;
   min-width: 0;
   padding: 16px 20px 24px;
@@ -2098,7 +2077,6 @@ body.am-wt-dragging-active * {
 .am-markdown-table-annotation td {
   padding: 0;
   border: none;
->>>>>>> yunqiqiliang/opencode-v7.3.0
 }
 
 @media (max-width: 840px) {
@@ -2166,6 +2144,11 @@ body.am-wt-dragging-active * {
   display: flex;
   justify-content: flex-end;
   gap: 6px;
+}
+
+.am-annotation-speech {
+  display: flex;
+  align-items: center;
 }
 
 .am-annotation-btn {
@@ -2575,10 +2558,23 @@ body.am-wt-dragging-active * {
 .am-nv-dialog .am-prompt-input-wrapper {
   flex: 1;
   min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.am-nv-dialog .am-prompt-input-container:has([class~="model-selector-popover"][data-component="popover-content"]),
+.am-nv-dialog-content:has([class~="model-selector-popover"][data-component="popover-content"]),
+[data-component="dialog"]:has(.am-nv-dialog [class~="model-selector-popover"][data-component="popover-content"])
+  [data-slot="dialog-body"] {
+  overflow: visible;
 }
 
 .am-nv-dialog .am-prompt-input-ghost-wrapper {
   height: 100%;
+}
+
+.am-nv-dialog [class~="prompt-input-hint"] {
+  flex-shrink: 0;
 }
 
 .am-nv-dialog .am-prompt-input {

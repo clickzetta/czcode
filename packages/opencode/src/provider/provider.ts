@@ -7,7 +7,6 @@ import * as Log from "@opencode-ai/core/util/log"
 import { Npm } from "@opencode-ai/core/npm"
 import { Hash } from "@opencode-ai/core/util/hash"
 import { Plugin } from "../plugin"
-import { makeRuntime } from "@/effect/run-service"
 import { type LanguageModelV3 } from "@ai-sdk/provider"
 import * as ModelsDev from "./models"
 import { Auth } from "../auth"
@@ -151,6 +150,14 @@ function useLanguageModel(sdk: any) {
   return sdk.responses === undefined && sdk.chat === undefined
 }
 
+function selectAzureLanguageModel(sdk: any, modelID: string, useChat: boolean) {
+  if (useChat && sdk.chat) return sdk.chat(modelID)
+  if (sdk.responses) return sdk.responses(modelID)
+  if (sdk.messages) return sdk.messages(modelID)
+  if (sdk.chat) return sdk.chat(modelID)
+  return sdk.languageModel(modelID)
+}
+
 function custom(dep: CustomDep): Record<string, CustomLoader> {
   return {
     anthropic: () =>
@@ -213,6 +220,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
     azure: Effect.fnUntraced(function* (provider: Info) {
       const env = yield* dep.env()
       const auth = yield* dep.auth(provider.id)
+      // kilocode_change start - prefer explicit Azure endpoint over resource name to avoid conflicting SDK options
       const endpoint = iife(() => {
         return [
           provider.options?.baseURL,
@@ -230,13 +238,15 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
               env["AZURE_OPENAI_RESOURCE_NAME"],
             ].find((name) => typeof name === "string" && name.trim() !== "")
           })
+      // kilocode_change end
 
       if (!resource && !endpoint) {
+        // kilocode_change
         return {
           autoload: false,
           async getModel() {
             throw new Error(
-              "Azure resource name or endpoint is missing. Set AZURE_RESOURCE_NAME, AZURE_OPENAI_RESOURCE_NAME, AZURE_OPENAI_ENDPOINT, or reconnect the azure provider.",
+              "Azure resource name or endpoint is missing. Set AZURE_RESOURCE_NAME, AZURE_OPENAI_RESOURCE_NAME, AZURE_OPENAI_ENDPOINT, or reconnect the azure provider.", // kilocode_change
             )
           },
         }
@@ -245,15 +255,10 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
       return {
         autoload: false,
         async getModel(sdk: any, modelID: string, options?: Record<string, any>) {
-          if (useLanguageModel(sdk)) return sdk.languageModel(modelID)
-          if (options?.["useCompletionUrls"]) {
-            return sdk.chat(modelID)
-          } else {
-            return sdk.responses(modelID)
-          }
+          return selectAzureLanguageModel(sdk, modelID, Boolean(options?.["useCompletionUrls"]))
         },
         options: {
-          ...(endpoint ? { baseURL: endpoint } : { resourceName: resource }),
+          ...(endpoint ? { baseURL: endpoint } : { resourceName: resource }), // kilocode_change
         },
         vars(_options): Record<string, string> {
           if (resource) {
@@ -270,12 +275,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
       return {
         autoload: false,
         async getModel(sdk: any, modelID: string, options?: Record<string, any>) {
-          if (useLanguageModel(sdk)) return sdk.languageModel(modelID)
-          if (options?.["useCompletionUrls"]) {
-            return sdk.chat(modelID)
-          } else {
-            return sdk.responses(modelID)
-          }
+          return selectAzureLanguageModel(sdk, modelID, Boolean(options?.["useCompletionUrls"]))
         },
         options: {
           baseURL: resourceName ? `https://${resourceName}.cognitiveservices.azure.com/openai` : undefined,
@@ -436,9 +436,9 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/", // kilocode_change
-            "X-Title": "opencode",
-            "X-Source": "opencode",
+            "HTTP-Referer": "https://kilo.ai/", // kilocode_change
+            "X-Title": "Kilo Code", // kilocode_change
+            "X-Source": "kilo", // kilocode_change
           },
         },
       }),
@@ -447,8 +447,8 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/", // kilocode_change
-            "X-Title": "opencode",
+            "HTTP-Referer": "https://kilo.ai/", // kilocode_change
+            "X-Title": "Kilo Code", // kilocode_change
           },
         },
       }),
@@ -457,8 +457,9 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/", // kilocode_change
-            "X-Title": "opencode",
+            "HTTP-Referer": "https://kilo.ai/", // kilocode_change
+            "X-Title": "Kilo Code", // kilocode_change
+            "X-BILLING-INVOKE-ORIGIN": "KiloCode", // kilocode_change
           },
         },
       }),
@@ -467,8 +468,8 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "http-referer": "https://opencode.ai/", // kilocode_change
-            "x-title": "opencode",
+            "http-referer": "https://kilo.ai/", // kilocode_change
+            "x-title": "Kilo Code", // kilocode_change
           },
         },
       }),
@@ -565,8 +566,8 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/", // kilocode_change
-            "X-Title": "opencode",
+            "HTTP-Referer": "https://kilo.ai/", // kilocode_change
+            "X-Title": "Kilo Code", // kilocode_change
           },
         },
       }),
@@ -841,7 +842,7 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "X-Cerebras-3rd-Party-Integration": "opencode",
+            "X-Cerebras-3rd-Party-Integration": "Kilo Code", // kilocode_change
           },
         },
       }),
@@ -850,8 +851,8 @@ function custom(dep: CustomDep): Record<string, CustomLoader> {
         autoload: false,
         options: {
           headers: {
-            "HTTP-Referer": "https://opencode.ai/", // kilocode_change
-            "X-Title": "opencode",
+            "HTTP-Referer": "https://kilo.ai/", // kilocode_change
+            "X-Title": "Kilo Code", // kilocode_change
           },
         },
       }),
@@ -927,7 +928,7 @@ export const Model = Schema.Struct({
   headers: Schema.Record(Schema.String, Schema.String),
   release_date: Schema.String,
   variants: optionalOmitUndefined(Schema.Record(Schema.String, Schema.Record(Schema.String, Schema.Any))),
-  ...KILO_MODEL_SCHEMA_EXTENSIONS,
+  ...KILO_MODEL_SCHEMA_EXTENSIONS, // kilocode_change
 })
   .annotate({ identifier: "Model" })
   .pipe(withStatics((s) => ({ zod: zod(s) })))
@@ -952,7 +953,7 @@ export const ListResult = Schema.Struct({
   all: Schema.Array(Info),
   default: DefaultModelIDs,
   connected: Schema.Array(Schema.String),
-  failed: Schema.Array(Schema.String),
+  failed: Schema.Array(Schema.String), // kilocode_change
 }).pipe(withStatics((s) => ({ zod: zod(s) })))
 export type ListResult = Types.DeepMutable<Schema.Schema.Type<typeof ListResult>>
 
@@ -1196,7 +1197,7 @@ const layer: Layer.Layer<
 
         // extend database from config
         for (const [providerID, provider] of configProviders) {
-          if (!provider) continue
+          if (!provider) continue // kilocode_change - null entries are transient delete sentinels
           const existing = database[providerID]
           const parsed: Info = {
             id: ProviderID.make(providerID),
@@ -1367,7 +1368,7 @@ const layer: Layer.Layer<
 
         // load config - re-apply with updated data
         for (const [id, provider] of configProviders) {
-          if (!provider) continue
+          if (!provider) continue // kilocode_change - null entries are transient delete sentinels
           const providerID = ProviderID.make(id)
           const oauth =
             auths[providerID]?.type === "oauth" && plugins.some((x) => x.auth?.provider === providerID && x.auth.loader)
@@ -1788,15 +1789,6 @@ export function sort<T extends { id: string }>(models: T[]) {
     [(model) => model.id, "desc"],
   )
 }
-
-const { runPromise: runProviderPromise } = makeRuntime(Service, defaultLayer)
-export const list = () => runProviderPromise((svc) => svc.list())
-export const getModel = (providerID: ProviderID, modelID: ModelID) =>
-  runProviderPromise((svc) => svc.getModel(providerID, modelID))
-export const getProvider = (providerID: ProviderID) => runProviderPromise((svc) => svc.getProvider(providerID))
-export const getLanguage = (model: Model) => runProviderPromise((svc) => svc.getLanguage(model))
-export const getSmallModel = (providerID: ProviderID) => runProviderPromise((svc) => svc.getSmallModel(providerID))
-export const defaultModel = () => runProviderPromise((svc) => svc.defaultModel())
 
 export function parseModel(model: string) {
   const [providerID, ...rest] = model.split("/")

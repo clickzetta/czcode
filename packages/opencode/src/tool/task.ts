@@ -6,13 +6,16 @@ import { MessageV2 } from "../session/message-v2"
 import { Agent } from "../agent/agent"
 import type { SessionPrompt } from "../session/prompt"
 import { Config } from "@/config/config"
-import { KiloTask } from "../kilocode/tool/task"
-import { KiloCostPropagation } from "../kilocode/session/cost-propagation"
-import { KiloSessionProcessor } from "../kilocode/session/processor"
-import { Effect, Schema } from "effect"
+import { Provider } from "@/provider/provider" // kilocode_change
+import { KiloTask } from "../kilocode/tool/task" // kilocode_change
+import { KiloCostPropagation } from "../kilocode/session/cost-propagation" // kilocode_change
+import { KiloSessionProcessor } from "../kilocode/session/processor" // kilocode_change
+import { errorMessage } from "@/util/error" // kilocode_change
+import { Effect, Exit, Schema } from "effect"
+import { EffectBridge } from "@/effect/bridge"
 
 export interface TaskPromptOps {
-  cancel(sessionID: SessionID): void
+  cancel(sessionID: SessionID): Effect.Effect<void>
   resolvePromptParts(template: string): Effect.Effect<SessionPrompt.PromptInput["parts"]>
   prompt(input: SessionPrompt.PromptInput): Effect.Effect<MessageV2.WithParts>
 }
@@ -36,6 +39,7 @@ export const TaskTool = Tool.define(
     const agent = yield* Agent.Service
     const config = yield* Config.Service
     const sessions = yield* Session.Service
+    const provider = yield* Provider.Service // kilocode_change
 
     const run = Effect.fn("TaskTool.execute")(function* (
       params: Schema.Schema.Type<typeof Parameters>,
@@ -61,10 +65,11 @@ export const TaskTool = Tool.define(
       }
       KiloTask.validate(next, params.subagent_type)
 
-      const canTask = KiloTask.nestedTask()
+      const canTask = KiloTask.nestedTask() // kilocode_change - Kilo disallows subagents spawning subagents
       const canTodo = next.permission.some((rule) => rule.permission === "todowrite")
 
       const parent = yield* sessions.get(ctx.sessionID)
+      // kilocode_change start — inherit edit/bash/MCP restrictions from calling agent
       const caller = yield* agent.get(ctx.agent)
       const rules = KiloTask.inherited({ caller, session: parent, mcp: cfg.mcp })
 
@@ -111,13 +116,20 @@ export const TaskTool = Tool.define(
       const msg = yield* Effect.sync(() => MessageV2.get({ sessionID: ctx.sessionID, messageID: ctx.messageID }))
       if (msg.info.role !== "assistant") return yield* Effect.fail(new Error("Not an assistant message"))
 
-      const saved = yield* KiloTask.resolveModel(next.name)
-      const model = saved ??
-        next.model ?? {
+      // kilocode_change start — prefer valid subagent overrides, safely inheriting when overrides go stale
+      const selected = yield* KiloTask.resolveModel({
+        name: next.name,
+        agent: next,
+        config: cfg,
+        parent: {
           modelID: msg.info.modelID,
           providerID: msg.info.providerID,
-        }
-      const variant = saved?.variant ?? (saved ? undefined : next.variant)
+        },
+        provider,
+      })
+      const model = selected.model
+      const variant = selected.variant
+      // kilocode_change end
 
       yield* ctx.metadata({
         title: params.description,
@@ -130,22 +142,24 @@ export const TaskTool = Tool.define(
 
       const ops = ctx.extra?.promptOps as TaskPromptOps
       if (!ops) return yield* Effect.fail(new Error("TaskTool requires promptOps in ctx.extra"))
+      const runCancel = yield* EffectBridge.make()
 
       const messageID = MessageID.ascending()
+      const cancel = ops.cancel(nextSession.id)
 
-      function cancel() {
-        ops.cancel(nextSession.id)
+      function onAbort() {
+        runCancel.fork(cancel)
       }
 
       return yield* Effect.acquireUseRelease(
         Effect.gen(function* () {
-          ctx.abort.addEventListener("abort", cancel)
+          ctx.abort.addEventListener("abort", onAbort)
           return yield* KiloCostPropagation.childCost(sessions, nextSession.id)
         }),
         () =>
           Effect.gen(function* () {
             const parts = yield* ops.resolvePromptParts(params.prompt)
-            KiloSessionProcessor.markReviewTelemetry(parts, params.command)
+            KiloSessionProcessor.markReviewTelemetry(parts, params.command) // kilocode_change - carry review command into child session telemetry
             const result = yield* ops.prompt({
               messageID,
               sessionID: nextSession.id,
@@ -163,6 +177,12 @@ export const TaskTool = Tool.define(
               parts,
             })
 
+            // kilocode_change start - expose terminal child assistant errors through the task tool boundary
+            if (result.info.role === "assistant" && result.info.error) {
+              return yield* Effect.fail(new Error(errorMessage(result.info.error)))
+            }
+            // kilocode_change end
+
             return {
               title: params.description,
               metadata: {
@@ -179,12 +199,20 @@ export const TaskTool = Tool.define(
               ].join("\n"),
             }
           }),
-        (costBefore) =>
+        // kilocode_change start - propagate subagent cost delta to parent on every exit path (#6321)
+        (costBefore, exit) =>
           Effect.gen(function* () {
-            ctx.abort.removeEventListener("abort", cancel)
-            const costAfter = yield* KiloCostPropagation.childCost(sessions, nextSession.id)
-            yield* KiloCostPropagation.propagate(sessions, ctx.sessionID, ctx.messageID, costAfter - costBefore)
-          }),
+            if (Exit.hasInterrupts(exit)) yield* cancel
+          }).pipe(
+            Effect.ensuring(
+              Effect.gen(function* () {
+                ctx.abort.removeEventListener("abort", onAbort)
+                const costAfter = yield* KiloCostPropagation.childCost(sessions, nextSession.id)
+                yield* KiloCostPropagation.propagate(sessions, ctx.sessionID, ctx.messageID, costAfter - costBefore)
+              }),
+            ),
+          ),
+        // kilocode_change end
       )
     })
 

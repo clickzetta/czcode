@@ -2,7 +2,7 @@ import { useDialog } from "@tui/ui/dialog"
 import { DialogSelect } from "@tui/ui/dialog-select"
 import { useRoute } from "@tui/context/route"
 import { useSync } from "@tui/context/sync"
-import { createMemo, createResource, createSignal, onMount } from "solid-js"
+import { createMemo, createResource, createSignal, onMount, type JSX } from "solid-js"
 import { Locale } from "@/util/locale"
 import { useProject } from "@tui/context/project"
 import { useKeybind } from "../context/keybind"
@@ -10,16 +10,14 @@ import { useTheme } from "../context/theme"
 import { useSDK } from "../context/sdk"
 import { Flag } from "@opencode-ai/core/flag/flag"
 import { DialogSessionRename } from "./dialog-session-rename"
-import { Keybind } from "@/util/keybind"
 import { createDebouncedSignal } from "../util/signal"
 import { useToast } from "../ui/toast"
-import { DialogWorkspaceCreate, openWorkspaceSession, restoreWorkspaceSession } from "./dialog-workspace-create"
+import { openWorkspaceSelect, type WorkspaceSelection, warpWorkspaceSession } from "./dialog-workspace-create"
 import { Spinner } from "./spinner"
 import path from "path"
 import { errorMessage } from "@/util/error"
 import { DialogSessionDeleteFailed } from "./dialog-session-delete-failed"
-
-type WorkspaceStatus = "connected" | "connecting" | "disconnected" | "error"
+import { WorkspaceLabel } from "./workspace-label"
 
 export function DialogSessionList() {
   const dialog = useDialog()
@@ -34,6 +32,7 @@ export function DialogSessionList() {
   const [search, setSearch] = createDebouncedSignal("", 150)
   const [global, setGlobal] = createSignal(true)
 
+  // kilocode_change start - always fetch from experimental endpoint (returns GlobalSession with worktree info)
   // TODO: extend /experimental/session to accept `scope`/`path` so this dialog can respect the
   // upstream `session_directory_filter_enabled` KV toggle (via sync.session.query()) while
   // keeping worktree grouping. Currently the toggle has no effect here.
@@ -63,26 +62,41 @@ export function DialogSessionList() {
     return all.filter((s) => s.directory === root || s.directory.startsWith(root + path.sep))
   })
 
-  function createWorkspace() {
-    dialog.replace(() => (
-      <DialogWorkspaceCreate
-        onSelect={(workspaceID) =>
-          openWorkspaceSession({
-            dialog,
-            route,
-            sdk,
-            sync,
-            toast,
-            workspaceID,
-          })
-        }
-      />
-    ))
-  }
-
   function recover(session: NonNullable<ReturnType<typeof sessions>[number]>) {
     const workspace = project.workspace.get(session.workspaceID!)
     const list = () => dialog.replace(() => <DialogSessionList />)
+    const warp = async (selection: WorkspaceSelection) => {
+      const workspaceID = await (async () => {
+        if (selection.type === "none") return null
+        if (selection.type === "existing") return selection.workspaceID
+        const result = await sdk.client.experimental.workspace
+          .create({ type: selection.workspaceType, branch: null })
+          .catch(() => undefined)
+        const workspace = result?.data
+        if (!workspace) {
+          toast.show({
+            message: `Failed to create workspace: ${errorMessage(result?.error ?? "no response")}`,
+            variant: "error",
+          })
+          return
+        }
+        await project.workspace.sync()
+        return workspace.id
+      })()
+      if (workspaceID === undefined) return
+      await warpWorkspaceSession({
+        dialog,
+        sdk,
+        sync,
+        project,
+        toast,
+        sourceWorkspaceID: session.workspaceID,
+        workspaceID,
+        sessionID: session.id,
+        copyChanges: false,
+        done: list,
+      })
+    }
     dialog.replace(() => (
       <DialogSessionDeleteFailed
         session={session.title}
@@ -109,22 +123,15 @@ export function DialogSessionList() {
           return true
         }}
         onRestore={() => {
-          dialog.replace(() => (
-            <DialogWorkspaceCreate
-              onSelect={(workspaceID) =>
-                restoreWorkspaceSession({
-                  dialog,
-                  sdk,
-                  sync,
-                  project,
-                  toast,
-                  workspaceID,
-                  sessionID: session.id,
-                  done: list,
-                })
-              }
-            />
-          ))
+          void openWorkspaceSelect({
+            dialog,
+            sdk,
+            sync,
+            toast,
+            onSelect: (selection) => {
+              void warp(selection)
+            },
+          })
           return false
         }}
       />
@@ -144,30 +151,17 @@ export function DialogSessionList() {
       .map((x) => {
         const workspace = x.workspaceID ? project.workspace.get(x.workspaceID) : undefined
 
-        let workspaceStatus: WorkspaceStatus | null = null
-        if (x.workspaceID) {
-          workspaceStatus = project.workspace.status(x.workspaceID) || "error"
-        }
-
-        let footer = ""
+        let footer: JSX.Element | string = ""
         if (Flag.KILO_EXPERIMENTAL_WORKSPACES) {
           if (x.workspaceID) {
-            let desc = "unknown"
-            if (workspace) {
-              desc = `${workspace.type}: ${workspace.name}`
-            }
-
-            footer = (
-              <>
-                {desc}{" "}
-                <span
-                  style={{
-                    fg: workspaceStatus === "connected" ? theme.success : theme.error,
-                  }}
-                >
-                  ●
-                </span>
-              </>
+            footer = workspace ? (
+              <WorkspaceLabel
+                type={workspace.type}
+                name={workspace.name}
+                status={project.workspace.status(x.workspaceID) ?? "error"}
+              />
+            ) : (
+              <WorkspaceLabel type="unknown" name={x.workspaceID} status="error" />
             )
           }
         } else {
@@ -288,15 +282,7 @@ export function DialogSessionList() {
             setGlobal((v) => !v)
           },
         },
-        {
-          keybind: Keybind.parse("ctrl+w")[0],
-          title: "new workspace",
-          side: "right",
-          disabled: !Flag.KILO_EXPERIMENTAL_WORKSPACES,
-          onTrigger: () => {
-            createWorkspace()
-          },
-        },
+        // kilocode_change end
       ]}
     />
   )

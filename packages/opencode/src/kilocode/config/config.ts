@@ -1,4 +1,3 @@
-// kilocode_change - new file
 import path from "path"
 import { pathToFileURL } from "url"
 import { existsSync } from "fs"
@@ -49,10 +48,11 @@ export namespace KilocodeConfig {
   /** Directory suffixes that czcode recognizes in addition to .opencode. */
   export const KILO_DIR_SUFFIXES = [".czcode", ".kilo", ".kilocode"] as const
 
-  // czcode_change start - include .czcode in config dir suffixes
   /** All config directory suffixes Kilo can update, including upstream .opencode. */
-  export const ALL_CONFIG_DIR_SUFFIXES = [".czcode", ".kilo", ".kilocode", ".opencode"] as const
-  // czcode_change end
+  export const ALL_CONFIG_DIR_SUFFIXES = [".kilo", ".kilocode", ".opencode"] as const
+
+  /** Path patterns for resolving kilo agent names from file paths. */
+  export const AGENT_PATTERNS = ["/.kilo/agent/", "/.kilo/agents/", "/.kilocode/agent/", "/.kilocode/agents/"] as const
 
   // czcode_change start - include .czcode agent path patterns
   /** Path patterns for resolving czcode agent names from file paths. */
@@ -122,6 +122,78 @@ export namespace KilocodeConfig {
   export function scopeIndexing(info: Config.Info, scope: "global" | "local"): Config.Info {
     if (scope !== "global") return info
     return stripGlobalIndexing(info)
+  }
+
+  function stripGlobalIndexing(info: Config.Info): Config.Info {
+    // Indexing provider/storage settings can be global, but enablement is exposed separately from project enablement.
+    if (info.indexing?.enabled === undefined) return info
+    const indexing = Object.fromEntries(Object.entries(info.indexing).filter(([key]) => key !== "enabled"))
+    if (Object.keys(indexing).length > 0) return { ...info, indexing }
+    const copy = { ...info }
+    delete copy.indexing
+    return copy
+  }
+
+  /**
+   * Choose the project config file that Config.update should patch.
+   *
+   * This mirrors the Kilo project-config load chain: prefer existing config files
+   * in ancestor config directories, then existing root config files, and create
+   * `.kilo/kilo.json` when no project config exists yet.
+   */
+  export const projectConfigUpdateTarget = Effect.fn("KilocodeConfig.projectConfigUpdateTarget")(function* (input: {
+    fs: AppFileSystem.Interface
+    directory: string
+    worktree?: string
+  }) {
+    const dirs = yield* input.fs
+      .up({ targets: [...ALL_CONFIG_DIR_SUFFIXES], start: input.directory, stop: input.worktree })
+      .pipe(Effect.orDie)
+    const roots = yield* input.fs
+      .up({ targets: [...ALL_CONFIG_FILES], start: input.directory, stop: input.worktree })
+      .pipe(Effect.orDie)
+    const files = [...dirs.flatMap((dir) => ALL_CONFIG_FILES.map((file) => path.join(dir, file))), ...roots]
+    return files.find((file) => existsSync(file)) ?? path.join(input.directory, ".kilo", "kilo.json")
+  })
+
+  export const updateProjectConfig = Effect.fn("KilocodeConfig.updateProjectConfig")(function* (input: {
+    fs: AppFileSystem.Interface
+    directory: string
+    worktree?: string
+    config: Config.Info
+    read: (file: string) => Effect.Effect<string | undefined>
+    parse: (input: string, file: string) => Config.Info
+    patch: (input: string, config: Config.Info) => string
+    writable: (config: Config.Info) => Config.Info
+  }) {
+    const file = yield* projectConfigUpdateTarget(input)
+    const source = yield* input.read(file)
+    const before = source ?? "{}"
+    const patch = input.writable(input.config)
+
+    if (file.endsWith(".jsonc")) {
+      const updated = input.patch(before, patch)
+      yield* input.fs.writeWithDirs(file, updated).pipe(Effect.orDie)
+      return
+    }
+
+    const existing = input.parse(before, file)
+    const merged = mergeConfig(input.writable(existing), patch)
+    if (source === undefined && Object.keys(merged).length === 0) return
+    yield* input.fs.writeWithDirs(file, JSON.stringify(merged, null, 2)).pipe(Effect.orDie)
+  })
+
+  export function scopeIndexing(info: Config.Info, scope: "global" | "local"): Config.Info {
+    if (scope !== "global") return info
+    return stripGlobalIndexing(info)
+  }
+
+  export function retireIndexingFlag(info: Record<string, unknown>, source: string) {
+    if (!isRecord(info.experimental) || !("semantic_indexing" in info.experimental)) return info
+    const experimental = { ...info.experimental }
+    delete experimental.semantic_indexing
+    log.warn("ignored retired experimental.semantic_indexing config; use indexing.enabled instead", { path: source })
+    return { ...info, experimental }
   }
 
   function stripGlobalIndexing(info: Config.Info): Config.Info {

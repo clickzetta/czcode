@@ -20,7 +20,7 @@ void mock.module("open", () => ({
       // lost and BrowserOpenFailed was never published.
       const err = new Error("spawn xdg-open ENOENT")
       const originalOn = subprocess.on.bind(subprocess)
-      subprocess.on = function (event: string, listener: (...args: unknown[]) => void) {
+      subprocess.on = function (event, listener) {
         const ret = originalOn(event, listener)
         if (event === "error") queueMicrotask(() => (listener as (e: Error) => void).call(subprocess, err))
         return ret
@@ -123,6 +123,7 @@ const { AppRuntime } = await import("../../src/effect/app-runtime")
 const { Bus } = await import("../../src/bus")
 const { McpOAuthCallback } = await import("../../src/mcp/oauth-callback")
 const { Instance } = await import("../../src/project/instance")
+const { WithInstance } = await import("../../src/project/with-instance")
 const { tmpdir } = await import("../fixture/fixture")
 const service = MCP.Service as unknown as Effect.Effect<MCPNS.Interface, never, never>
 
@@ -144,7 +145,7 @@ test("BrowserOpenFailed event is published when open() throws", async () => {
     },
   })
 
-  await Instance.provide({
+  await WithInstance.provide({
     directory: tmp.path,
     fn: async () => {
       openShouldFail = true
@@ -201,7 +202,7 @@ test("BrowserOpenFailed event is NOT published when open() succeeds", async () =
     },
   })
 
-  await Instance.provide({
+  await WithInstance.provide({
     directory: tmp.path,
     fn: async () => {
       // kilocode_change
@@ -258,7 +259,7 @@ test("open() is called with the authorization URL", async () => {
     },
   })
 
-  await Instance.provide({
+  await WithInstance.provide({
     directory: tmp.path,
     fn: async () => {
       // kilocode_change

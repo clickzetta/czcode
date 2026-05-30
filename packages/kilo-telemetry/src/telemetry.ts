@@ -10,6 +10,8 @@ export interface TelemetryProperties {
   vscodeVersion?: string
 }
 
+export type ReviewCommand = "review" | "local-review" | "local-review-uncommitted"
+
 export interface IndexingTelemetryProperties extends Record<string, unknown> {
   source: "scan" | "watcher"
   provider: string
@@ -156,7 +158,8 @@ export namespace Telemetry {
     taskId?: string
     mode?: "review"
     feature?: "code_reviews"
-    command?: "review" | "local-review" | "local-review-uncommitted"
+    command?: ReviewCommand
+    tool?: "suggest"
     apiProvider: string
     modelId: string
     inputTokens?: number
@@ -187,33 +190,27 @@ export namespace Telemetry {
     track(TelemetryEvent.PLAN_FOLLOWUP, { sessionId, choice })
   }
 
-  // czcode_change start — passive ALHF feedback signals
-  export function trackSessionReverted(sessionId: string, agentName?: string) {
-    track(TelemetryEvent.SESSION_REVERTED, { sessionId, agentName })
-  }
-
-  export function trackMessageAborted(sessionId: string, agentName?: string) {
-    track(TelemetryEvent.MESSAGE_ABORTED, { sessionId, agentName })
-  }
-
-  export function trackUserDissatisfied(sessionId: string, agentName?: string) {
-    track(TelemetryEvent.USER_DISSATISFIED, { sessionId, agentName })
-  }
-
-  export function trackSkillUsed(skillName: string, sessionId?: string, agentName?: string) {
-    track(TelemetryEvent.SKILL_USED, { skillName, sessionId, agentName })
-  }
-
-  export function trackSkillFeedback(properties: {
-    skillName: string
-    feedbackType: string
-    component: string
-    verified: boolean
-    sessionId?: string
+  export function trackSuggestionAccepted(properties: {
+    sessionId: string
+    requestId: string
+    index: number
+    tool: "suggest"
+    command: ReviewCommand
+    actionCount?: number
   }) {
-    track(TelemetryEvent.SKILL_FEEDBACK, properties)
+    track(TelemetryEvent.SUGGESTION_ACCEPTED, properties)
   }
-  // czcode_change end
+
+  export function trackSuggestionShown(properties: {
+    sessionId: string
+    requestId: string
+    index: number
+    tool: "suggest"
+    command: ReviewCommand
+    actionCount?: number
+  }) {
+    track(TelemetryEvent.SUGGESTION_SHOWN, properties)
+  }
 
   export function trackIndexingStarted(properties: IndexingTelemetryProperties) {
     track(TelemetryEvent.INDEXING_STARTED, properties)

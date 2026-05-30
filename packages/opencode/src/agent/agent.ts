@@ -8,7 +8,6 @@ import { Auth } from "../auth"
 import { ProviderTransform } from "@/provider/transform"
 
 import PROMPT_GENERATE from "./generate.txt"
-import { makeRuntime } from "@/effect/run-service"
 import PROMPT_COMPACTION from "./prompt/compaction.txt"
 import PROMPT_EXPLORE from "./prompt/explore.txt"
 import PROMPT_SUMMARY from "./prompt/summary.txt"
@@ -16,7 +15,7 @@ import PROMPT_TITLE from "./prompt/title.txt"
 import { Permission } from "@/permission"
 import { mergeDeep, pipe, sortBy, values } from "remeda"
 import { Global } from "@opencode-ai/core/global"
-import { KilocodePaths } from "@/kilocode/paths"
+import { KilocodePaths } from "@/kilocode/paths" // kilocode_change
 import path from "path"
 import { Plugin } from "@/plugin"
 import { Skill } from "../skill"
@@ -24,13 +23,13 @@ import { Effect, Context, Layer, Schema } from "effect"
 import { InstanceState } from "@/effect/instance-state"
 import { zod } from "@/util/effect-zod"
 import { withStatics, type DeepMutable } from "@/util/schema"
-import * as KiloAgent from "@/kilocode/agent"
+import * as KiloAgent from "@/kilocode/agent" // kilocode_change
 
 export const Info = Schema.Struct({
   name: Schema.String,
-  displayName: Schema.optional(Schema.String),
+  displayName: Schema.optional(Schema.String), // kilocode_change - human-readable name for org modes
   description: Schema.optional(Schema.String),
-  deprecated: Schema.optional(Schema.Boolean),
+  deprecated: Schema.optional(Schema.Boolean), // kilocode_change
   mode: Schema.Literals(["subagent", "primary", "all"]),
   native: Schema.optional(Schema.Boolean),
   hidden: Schema.optional(Schema.Boolean),
@@ -245,7 +244,9 @@ export const layer = Layer.effect(
           },
         }
 
+        // kilocode_change start - rename build→code, add debug/orchestrator/ask, patch plan/explore
         KiloAgent.patchAgents(agents, defaults, user, cfg, kilo, ctx.worktree, whitelistedDirs)
+        // kilocode_change end
 
         const agentConfigs = KiloAgent.preprocessConfig(cfg.agent ?? {})
         for (const [key, value] of Object.entries(agentConfigs)) {
@@ -418,15 +419,5 @@ export const defaultLayer = layer.pipe(
   Layer.provide(Config.defaultLayer),
   Layer.provide(Skill.defaultLayer),
 )
-
-export const RemoveError = KiloAgent.RemoveError
-export async function remove(name: string) {
-  return KiloAgent.remove(name)
-}
-
-const { runPromise } = makeRuntime(Service, defaultLayer)
-export const get = (agent: string) => runPromise((svc) => svc.get(agent))
-export const list = () => runPromise((svc) => svc.list())
-export const defaultAgent = () => runPromise((svc) => svc.defaultAgent())
 
 export * as Agent from "./agent"

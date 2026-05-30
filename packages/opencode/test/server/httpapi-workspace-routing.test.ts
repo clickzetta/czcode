@@ -20,6 +20,8 @@ import { WorkspaceID } from "../../src/control-plane/schema"
 import type { WorkspaceAdapter } from "../../src/control-plane/types"
 import { Workspace } from "../../src/control-plane/workspace"
 import { WorkspaceTable } from "../../src/control-plane/workspace.sql"
+import { InstanceBootstrap } from "../../src/project/bootstrap"
+import { InstanceStore } from "../../src/project/instance-store"
 import { Project } from "../../src/project/project"
 import { WorkspacePaths } from "../../src/server/routes/instance/httpapi/groups/workspace"
 import {
@@ -45,13 +47,18 @@ const testStateLayer = Layer.effectDiscard(
   }),
 )
 
+const workspaceLayer = Workspace.defaultLayer.pipe(
+  Layer.provide(InstanceStore.defaultLayer),
+  Layer.provide(InstanceBootstrap.defaultLayer),
+)
+
 const it = testEffect(
   Layer.mergeAll(
     testStateLayer,
     NodeHttpServer.layerTest,
     NodeServices.layer,
     Project.defaultLayer,
-    Workspace.defaultLayer,
+    workspaceLayer,
     Socket.layerWebSocketConstructorGlobal,
   ),
 )
@@ -221,7 +228,7 @@ describe("HttpApi workspace routing middleware", () => {
       const project = yield* Project.use.fromDirectory(dir)
       let forwarded: ProxiedRequest | undefined
 
-      // This starts a second HTTP server that stands in for the opencode server // kilocode_change
+      // This starts a second HTTP server that stands in for the opencode server
       // backing a remote workspace. The client below still calls the local test
       // server; only the middleware should call this server.
       const remoteUrl = yield* startRemoteWorkspaceHttpServer((request) => {

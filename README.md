@@ -3,10 +3,33 @@
 czcode 是专为 ClickZetta Lakehouse 用户打造的终端 AI Agent，使用 Claude、Qwen 等大模型驱动。
 
 <p align="center">
-  <img src="docs/czcode-overview.svg" alt="czcode overview" width="900"/>
+  <a href="https://kilo.ai"><img width="250" alt="kilo-code-logo" src="https://github.com/user-attachments/assets/bdb0c174-b9fd-40ad-a47b-f3aab9b54e8d" /></a>
 </p>
 
----
+<p align="center">
+  <strong>Kilo is the all-in-one agentic engineering platform.</strong><br>
+  Build, ship, and iterate faster with the most popular open source coding agent.
+</p>
+
+<p align="center">
+  <img width="100%" alt="Kilo Code running inside VS Code" src="https://kilo.ai/_next/image?url=%2Fscreenshots%2Fvs-code%2Fvs-code-home-page-screenshot.png&w=3840&q=75">
+</p>
+
+<p align="center">
+  <a href="https://kilo.ai">Website</a> ·
+  <a href="https://kilo.ai/install">Install</a> ·
+  <a href="https://kilo.ai/landing/vs-code">IDE</a> ·
+  <a href="https://kilo.ai/cli">CLI</a> ·
+  <a href="https://kilo.ai/docs">Docs</a> ·
+  <a href="https://kilo.ai/leaderboard">Models</a> ·
+  <a href="https://kilo.ai/gateway">Gateway</a> ·
+  <a href="https://kilo.ai/pricing">Pricing</a> ·
+  <a href="https://kilo.ai/pricing/kilo-pass">Kilo Pass</a>
+</p>
+
+<p align="center">
+  500+ models. One open source agent in <a href="https://kilo.ai/install">VS Code</a>, <a href="https://kilo.ai/features/jetbrains-native">JetBrains</a>, <a href="https://kilo.ai/cli">CLI</a>, <a href="https://kilo.ai/slack">Slack</a>, and <a href="https://kilo.ai/cloud">Cloud</a>.
+</p>
 
 ## 你可以用 czcode 做什么
 
@@ -32,7 +55,7 @@ czcode 覆盖三类场景，通过角色切换在同一个工具里完成：
 ---
 ||||||| 12f7967ca4
 1. Install the Kilo Code extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=kilocode.Kilo-Code).
-2. Create your account to access 500+ cutting-edge AI models including Gemini 3.1 Pro, Claude 4.6 Sonnet & Opus, and GPT-5.4 – with transparent pricing that matches provider rates exactly.
+2. Create your account to access 500+ cutting-edge AI models including GPT-5.5, Claude Opus 4.7, Claude Sonnet 4.6, and Gemini 3.1 Pro Preview, with transparent pricing that matches provider rates exactly.
 3. Start coding with AI that adapts to your workflow. Watch our quick-start guide to see Kilo in action:
 =======
 1. Install the Kilo Code extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=kilocode.Kilo-Code).
@@ -117,9 +140,9 @@ chmod +x czcode
 
 ### 第三步：配置 Lakehouse 连接
 
-```bash
-# 安装 cz-cli（如果还没有）
-npm install -g @clickzetta/cz-cli
+See [RELEASING.md](RELEASING.md) for the VS Code extension and CLI release process.
+
+See [packages/kilo-jetbrains/RELEASING.md](packages/kilo-jetbrains/RELEASING.md) for the JetBrains plugin release process.
 
 # 交互式配置向导
 cz-cli setup
@@ -132,12 +155,10 @@ cz-cli setup
 
 ### 第四步：配置 AI 模型
 
-<<<<<<< HEAD
-czcode 默认使用阿里云 DashScope Qwen 模型。配置 API Key（二选一）：
-||||||| 12f7967ca4
-### Where did Kilo CLI come from?
-=======
 ## FAQ
+
+<details>
+<summary>Where did Kilo CLI come from?</summary>
 
 <details>
 <summary>Where did Kilo CLI come from?</summary>
@@ -487,8 +508,5 @@ MIT License
 czcode 是 [KiloCode](https://github.com/Kilo-Org/kilocode) 的 fork，KiloCode 是 [OpenCode](https://github.com/anomalyco/opencode) 的 fork。感谢两个上游项目的开源贡献。
 ||||||| 12f7967ca4
 Kilo CLI is a fork of [OpenCode](https://github.com/anomalyco/opencode), enhanced to work within the Kilo agentic engineering platform.
-=======
-Kilo CLI is a fork of [OpenCode](https://github.com/anomalyco/opencode), enhanced to work within the Kilo agentic engineering platform.
 
 </details>
->>>>>>> yunqiqiliang/opencode-v7.3.0

@@ -221,21 +221,23 @@ describe("HttpApi server", () => {
     expect(Server.backend()).toEqual({ backend: "effect-httpapi", reason: "env" })
   })
 
-  // These tests verify every Hono route has an Effect HttpApi contract. Kilo-specific routes
-  // (/config/warnings, /indexing/status, /kilo/claw/*, /kilo/cloud-sessions, /experimental/worktree/diff*)
-  // aren't yet wired into PublicApi. The Effect HttpApi bridge is gated behind KILO_EXPERIMENTAL_HTTPAPI
-  // and is not enabled in any production client (VS Code extension, JetBrains, TUI, desktop all use Hono).
-  // Follow-up: migrate Kilo overlay routes onto the Effect HttpApi bridge.
-  test.skip("covers every generated OpenAPI route with Effect HttpApi contracts", async () => {
-    const honoRoutes = openApiRouteKeys(await Server.openapi())
+  test("covers every generated OpenAPI route with Effect HttpApi contracts", async () => {
+    const honoRoutes = openApiRouteKeys(await Server.openapiHono())
     const effectRoutes = openApiRouteKeys(effectOpenApi())
 
     expect(honoRoutes.filter((route) => !effectRoutes.includes(route))).toEqual([])
-    expect(effectRoutes.filter((route) => !honoRoutes.includes(route))).toEqual([])
+    expect(effectRoutes.filter((route) => !honoRoutes.includes(route))).toEqual([
+      "GET /api/session",
+      "GET /api/session/{sessionID}/context",
+      "GET /api/session/{sessionID}/message",
+      "POST /api/session/{sessionID}/compact",
+      "POST /api/session/{sessionID}/prompt",
+      "POST /api/session/{sessionID}/wait",
+    ])
   })
 
-  test.skip("matches generated OpenAPI route parameters", async () => {
-    const hono = openApiParameters(await Server.openapi())
+  test("matches generated OpenAPI route parameters", async () => {
+    const hono = openApiParameters(await Server.openapiHono())
     const effect = openApiParameters(effectOpenApi())
 
     expect(
@@ -245,8 +247,8 @@ describe("HttpApi server", () => {
     ).toEqual([])
   })
 
-  test.skip("matches generated OpenAPI request body shape", async () => {
-    const hono = openApiRequestBodies(await Server.openapi())
+  test("matches generated OpenAPI request body shape", async () => {
+    const hono = openApiRequestBodies(await Server.openapiHono())
     const effect = openApiRequestBodies(effectOpenApi())
 
     expect(
@@ -339,13 +341,13 @@ describe("HttpApi server", () => {
       }),
       app({ password: "secret" }).request(fileUrl(), {
         headers: {
-          authorization: authorization("kilo", "wrong"),
+          authorization: authorization("kilo", "wrong"), // kilocode_change - match Hono username default
           "x-kilo-directory": tmp.path,
         },
       }),
       app({ password: "secret" }).request(fileUrl(), {
         headers: {
-          authorization: authorization("kilo", "secret"),
+          authorization: authorization("kilo", "secret"), // kilocode_change - match Hono username default
           "x-kilo-directory": tmp.path,
         },
       }),
@@ -361,7 +363,7 @@ describe("HttpApi server", () => {
     await Bun.write(`${tmp.path}/hello.txt`, "hello")
 
     const response = await app({ password: "secret" }).request(
-      fileUrl({ token: Buffer.from("kilo:secret").toString("base64") }),
+      fileUrl({ token: Buffer.from("kilo:secret").toString("base64") }), // kilocode_change - match Hono username default
       {
         headers: {
           "x-kilo-directory": tmp.path,

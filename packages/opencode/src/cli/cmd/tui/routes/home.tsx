@@ -1,5 +1,5 @@
 import { Prompt, type PromptRef } from "@tui/component/prompt"
-import { createEffect, createMemo, createSignal } from "solid-js"
+import { createEffect, createSignal, onMount } from "solid-js"
 import { Logo } from "../component/logo"
 import { useProject } from "../context/project"
 import { useSync } from "../context/sync"
@@ -9,7 +9,7 @@ import { useRouteData } from "@tui/context/route"
 import { usePromptRef } from "../context/prompt"
 import { useLocal } from "../context/local"
 import { TuiPluginRuntime } from "@/cli/cmd/tui/plugin/runtime"
-import { t } from "@/kilocode/plugins/czcode-i18n" // czcode_change
+import { useEditorContext } from "@tui/context/editor"
 
 let once = false
 // czcode_change start - per-agent placeholder prompts
@@ -61,18 +61,12 @@ export function Home() {
   const [ref, setRef] = createSignal<PromptRef | undefined>()
   const args = useArgs()
   const local = useLocal()
+  const editor = useEditorContext()
   let sent = false
 
-  // czcode_change start - dynamic placeholders based on current agent
-  const placeholder = createMemo(() => {
-    const agentName = local.agent.current()?.name ?? ""
-    // Only override placeholders for Lakehouse data agents (lh-* prefix)
-    const normals = agentName.startsWith("lh-")
-      ? (placeholdersByAgent[agentName] ?? defaultPlaceholders)
-      : defaultPlaceholders
-    return { normal: normals, shell: ["ls -la", "git status", "pwd"] }
+  onMount(() => {
+    editor.clearSelection()
   })
-  // czcode_change end
 
   const bind = (r: PromptRef | undefined) => {
     setRef(r)

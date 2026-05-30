@@ -23,7 +23,7 @@ Fork chain: **opencode → kilocode → czcode**
 - **Dev**: `bun run dev` (runs from root) or `bun run --cwd packages/opencode --conditions=browser src/index.ts`
 - **Dev with params**: `bun dev -- help`
 - **Extension**: `bun run extension` (build + launch VS Code with the extension in dev mode). Pass `--no-build` to skip the build.
-- **Typecheck**: `bun turbo typecheck` (uses `tsgo`, not `tsc`)
+- **Typecheck**: `bun turbo typecheck` (uses `tsgo`, not `tsc`). Includes the JetBrains plugin — requires Java 21. Check with `java -version` before running. If missing, install via SDKMAN: `sdk install java 21-tem && sdk use java 21-tem`. If SDKMAN is not installed, see https://sdkman.io/install.
 - **Test**: `bun test` from `packages/opencode/` (NOT from root -- root blocks tests)
 - **Single test**: `bun test ./test/tool/tool-define.test.ts` from `packages/opencode/`
 - **CLI build artifact size check**: after `bun run script/build.ts --single --skip-install` in `packages/opencode/`, use `du -h dist/*/*/bin/kilo` (scoped package output lives under `dist/@kilocode/`)
@@ -32,6 +32,8 @@ Fork chain: **opencode → kilocode → czcode**
 - **Source links**: After adding or changing URLs in `packages/kilo-vscode/`, `packages/kilo-vscode/webview-ui/`, or `packages/opencode/src/`, run `bun run script/extract-source-links.ts` from the repo root and commit the updated `packages/kilo-docs/source-links.md`. CI runs this check — the build fails if the file is stale.
 - **kilocode_change check**: `bun run check-kilocode-change` from `packages/kilo-vscode/`. CI runs this — `kilocode_change` is a marker for upstream merge conflicts and must not appear in `packages/kilo-vscode/` or `packages/kilo-ui/` (these are entirely Kilo Code additions). Remove the markers before pushing.
 - **opencode annotation check**: `bun run script/check-opencode-annotations.ts` from repo root. CI runs this on PRs touching `packages/opencode/` — every Kilo-specific change in shared opencode files must be annotated with `kilocode_change` markers. Exempt paths (no markers needed): `packages/opencode/src/kilocode/`, `packages/opencode/test/kilocode/`, and any path containing `kilocode` in the name.
+- **Effect facade ratchet**: Do not add runtime-backed Promise facades to shared `packages/opencode/src` Effect services; use service dependencies, `AppRuntime`, or Kilo-owned boundaries. Run `bun run script/check-opencode-promise-facades.ts` when touching service adapters.
+- **workflow allowlist**: `bun run script/check-workflows.ts` from repo root. CI runs this as part of the annotations workflow — any `.yml` / `.yaml` file added to or removed from `.github/workflows/` must be reflected in the hardcoded list in `script/check-workflows.ts`. Prevents upstream-merged workflows from silently starting to run in our CI.
 - **Backend/SDK programmatic testing**: see [TESTING.md](./TESTING.md) for spawning the local main-branch backend (`bun dev serve`) and driving it via `curl` — use this instead of `kilo serve` (prod binary) when testing backend fixes.
 =======
 - **Dev**: `bun run dev` (runs from root) or `bun run --cwd packages/opencode --conditions=browser src/index.ts`
@@ -56,9 +58,12 @@ Before saying an implementation is ready, run the smallest relevant checks that 
 
 | Area | Checks |
 |---|---|
-| Root / cross-package | `~/.bun/bin/bun run lint`, `~/.bun/bin/bun run typecheck` |
-| CLI | From `packages/opencode/`: `~/.bun/bin/bun run typecheck`, `~/.bun/bin/bun test` |
-| CI-only guards | `~/.bun/bin/bun run script/check-opencode-annotations.ts` |
+| Root / cross-package | `bun run lint`, `bun run typecheck` |
+| CLI | From `packages/opencode/`: `bun run typecheck`, `bun test` or targeted `bun test ./path/to/file.test.ts` |
+| VS Code extension | From `packages/kilo-vscode/`: `bun run typecheck`, `bun run lint`, `bun run test:unit` or `bun run test` |
+| Extension build/package | From `packages/kilo-vscode/`: `bun run compile` or `bun run package` when touching build, packaging, SDK, or webview integration paths |
+| JetBrains plugin | From `packages/kilo-jetbrains/`: `./gradlew typecheck`, `./gradlew test`. Requires Java 21 — check first with `java -version`. Install via SDKMAN if missing: `sdk install java 21-tem && sdk use java 21-tem`. |
+| CI-only guards | Run affected guards documented above, such as `bun run knip`, `bun run check-kilocode-change`, `bun run script/check-opencode-annotations.ts`, or source link extraction |
 
 Never run root `bun test`; the root script prints `do not run tests from root` and exits with code 1.
 
@@ -68,55 +73,18 @@ All products are clients of the **CLI** (`packages/opencode/`), which contains t
 
 | Product | Package | Description |
 |---|---|---|
-<<<<<<< HEAD
-| czcode CLI | `packages/opencode/` | Core engine. TUI, `czcode run`, `czcode serve`. Fork of kilocode. |
-| czcode Lakehouse Plugin | `packages/czcode-lakehouse/` | ClickZetta Lakehouse tools: read_query, write_query, list_objects, describe_object, explain_query, get_context, switch_context. |
-| czcode TUI Plugins | `packages/opencode/src/kilocode/plugins/czcode-*.tsx` | 10 TUI plugins: connection status, schema browser, VCluster dashboard, role switch, SQL history, sample, count, profile, SingClaw, dotenv loader. |
-| SingClaw Integration | `packages/opencode/src/kilocode/singclaw/` | Full-screen SingClaw chat via WebSocket RPC. |
-||||||| 12f7967ca4
-| Kilo CLI | `packages/opencode/` | Core engine. TUI, `kilo run`, `kilo serve`, `kilo web`. Fork of upstream OpenCode. |
-| Kilo VS Code Extension | `packages/kilo-vscode/` | VS Code extension. Bundles the CLI binary, spawns `kilo serve` as a child process. Includes the **Agent Manager** — a multi-session orchestration panel with git worktree isolation. |
-| OpenCode Desktop | `packages/desktop/` | Standalone Tauri native app. Bundles CLI as sidecar. Single-session UI. Unrelated to the VS Code extension. Not actively maintained — synced from upstream fork. |
-| OpenCode Web | `packages/app/` | Shared SolidJS frontend used by both the desktop app and `kilo web` CLI command. Not actively maintained — synced from upstream fork. |
-=======
 | Kilo CLI | `packages/opencode/` | Core engine. TUI, `kilo run`, `kilo serve`. Fork of upstream OpenCode. |
 | Kilo VS Code Extension | `packages/kilo-vscode/` | VS Code extension. Bundles the CLI binary, spawns `kilo serve` as a child process. Includes the **Agent Manager** — a multi-session orchestration panel with git worktree isolation. |
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 ## Data Agent Roles
 
-czcode has 5 data-specific agent roles (switch via Tab or `/cz_role`):
+In each VS Code extension host, one `KiloConnectionService` is created for the sidebar, every Kilo editor tab, and Agent Manager; it lazily starts and reuses one current `kilo serve` backend at a time. Agent Manager worktree sessions pass a directory context to this shared backend rather than starting one per worktree. State captured by the active service layer, such as Snapshot `trackState`, is shared across those requests; only directory-keyed `InstanceState` data is isolated.
 
-| Role | Agent ID | Permissions |
-|------|----------|-------------|
-| 数据分析师 (default) | `lh-analyst` | SELECT only (read_query, no write_query/bash) |
-| 数据工程师 | `lh-engineer` | DDL + DML + SELECT (write_query with confirmation) |
-| 数据科学家 | `lh-data-scientist` | DDL + DML + SELECT + bash (with confirmation) |
-| 数据运维 | `lh-dba` | VCluster ops + DDL (with confirmation) |
-| 数据治理 | `lh-governance` | GRANT/REVOKE/POLICY (with confirmation) |
-
-Agent prompts: `packages/opencode/src/agent/prompt/lh-*.txt`
-Shared base: `packages/opencode/src/agent/prompt/lh-base.txt`
-Agent definitions: `packages/opencode/src/kilocode/agent/index.ts`
-
-## czcode Commands
-
-| Command | Alias | Description |
-|---------|-------|-------------|
-| `/cz_role` | `/cz_r` | Switch data agent role |
-| `/cz_sample` | `/cz_s` | Quick table sampling |
-| `/cz_count` | `/cz_c` | Table row count |
-| `/cz_profile` | `/cz_p` | Data quality profiling |
-| `/cz_vcluster` | `/cz_vc` | VCluster status |
-| `/cz_sql_history` | `/cz_sh` | Browse/copy past SQL |
-| `/cz_singclaw` | `/singclaw` | Open SingClaw chat |
-| `/cz_skill-update` | — | Update skills |
-| `/cz_skill-fix` | — | Fix skill locally |
+Extension-specific settings should live in the Kilo extension settings, not default VS Code settings, unless they are intentionally VS Code-wide.
 
 ## Package Instructions
 
-- When a task primarily touches `packages/kilo-jetbrains/`, read `packages/kilo-jetbrains/AGENTS.md` before planning or editing.
-- For JetBrains Kotlin/Swing UI work, also apply `packages/kilo-jetbrains/.kilo/skills/jetbrains-ui-style/SKILL.md`.
+- When a task primarily touches `packages/kilo-jetbrains/`, read `packages/kilo-jetbrains/AGENTS.md` before planning or editing. It covers split-mode architecture, IntelliJ source lookup, threading fundamentals, UI guidelines, and session component architecture.
 
 ## Monorepo Structure
 
@@ -137,9 +105,7 @@ Turborepo + Bun workspaces. The packages you'll work with most:
 | `packages/kilo-gateway/` | `@kilocode/kilo-gateway` | Kilo auth, provider routing, API integration |
 | `packages/kilo-telemetry/` | `@kilocode/kilo-telemetry` | PostHog analytics + OpenTelemetry |
 | `packages/kilo-i18n/` | `@kilocode/kilo-i18n` | Internationalization / translations |
-| `packages/kilo-ui/` | `@kilocode/kilo-ui` | SolidJS component library shared by the extension webview and `packages/app/` |
-| `packages/app/` | `@opencode-ai/app` | Shared SolidJS web UI for desktop app and `kilo web` |
-| `packages/desktop/` | `@opencode-ai/desktop` | Tauri desktop app shell |
+| `packages/kilo-ui/` | `@kilocode/kilo-ui` | SolidJS component library shared by the extension webview and docs screenshot stories |
 | `packages/util/` | `@opencode-ai/util` | Shared utilities (error, path, retry, slug, etc.) |
 | `packages/plugin/` | `@kilocode/plugin` | Plugin/tool interface definitions |
 =======
@@ -166,7 +132,7 @@ Turborepo + Bun workspaces. The packages you'll work with most:
 
 ### Avoid let statements
 
-Prefer `const`. Good: `const foo = condition ? 1 : 2`. Bad: `let foo; if (condition) foo = 1; else foo = 2`.
+Prefer `const`. Replace `let` + if/else assignment with a ternary or an IIFE. Reassignment is the only legitimate reason to reach for `let`.
 
 ### Naming Enforcement (Read This)
 
@@ -175,14 +141,23 @@ THIS RULE IS MANDATORY FOR AGENT WRITTEN CODE.
 - Use single word names by default for new locals, params, and helper functions.
 - Multi-word names are allowed only when a single word would be unclear or ambiguous.
 - Good short names to prefer: `pid`, `cfg`, `err`, `opts`, `dir`, `root`, `child`, `state`, `timeout`.
+- Examples to avoid unless truly required: `inputPID`, `existingClient`, `connectTimeout`, `workerPath`.
 
 ### Avoid else statements
 
-Prefer early returns. Good: `if (condition) return 1; return 2`. Bad: `if (condition) return 1; else return 2`.
+Prefer early returns (or an IIFE) over `else`. After an `if` that returns/throws, the `else` is redundant.
 
 ### No empty catch blocks
 
-Never leave a `catch` block empty. Log it or rethrow.
+Never leave a `catch` block empty. An empty `catch` silently swallows errors and hides bugs. If you're tempted to write one, ask yourself:
+
+1. Is the `try`/`catch` even needed? (prefer removing it)
+2. Should the error be handled explicitly? (recover, retry, rethrow)
+3. At minimum, log it via `log.error("...", { err })` so failures are visible — never `catch {}` or `catch (e) {}` with no body.
+
+### Prefer single word naming
+
+Default to a single-word name for variables, parameters, and helper functions. Reach for a multi-word name only when a single word would be genuinely ambiguous in context — not just because the longer name "reads nicer". The rule is about meaning, not character count: don't introduce camelCase compounds like `inputPID`, `existingClient`, `connectTimeout`, or `workerPath` when `pid`, `client`, `timeout`, or `path` is already clear from the surrounding code. See the "Naming Enforcement" section above for the preferred vocabulary.
 
 ## Testing
 
@@ -223,16 +198,11 @@ Changeset descriptions appear directly in release notes and are read by end user
 
 ## Pull Requests
 
-PR descriptions should be 2-3 lines covering **what** changed and **why**. Focus on intent and context a reviewer can't get from the diff — skip file-by-file inventories, test result summaries, and anything obvious from the code itself.
+PR descriptions should explain **what** changed, **why** the change is needed, and the intent or constraints a reviewer cannot infer from the diff alone. Keep simple PRs brief, but give non-trivial changes enough context to stand on their own. Skip file-by-file inventories, test result summaries, and anything obvious from the code itself.
 
 ## GitHub Issues
 
-- When creating a GitHub issue for the VS Code extension or JetBrains plugin, use the repo's existing issue templates in `.github/ISSUE_TEMPLATE/`. Pick the matching template (`Bug report`, `Feature Request`, or `Question`) instead of opening a blank issue.
-- Do not add platform-specific title prefixes such as `[JetBrains]`, `[Jetbrains]`, `[JB]`, `[VS Code]`, `[VSCode]`, or similar. Use a plain, descriptive title.
-- Always add VS Code extension issues to the GitHub project `VS Code Extension`: https://github.com/orgs/Kilo-Org/projects/25
-- Always add JetBrains plugin issues to the GitHub project `Jetbrains Plugin`: https://github.com/orgs/Kilo-Org/projects/39
-- When using `gh`, prefer `gh issue create --template "..." --project "..."` with the matching project title.
-- If project assignment fails because `gh` is missing the required scope, run `gh auth refresh -s project` and retry.
+When creating or managing GitHub issues for the VS Code extension or JetBrains plugin via `gh`, load `.kilo/skills/gh-issues/SKILL.md`. It covers templates, project boards (`VS Code Extension`, `Jetbrains Plugin`), title conventions, and the `gh auth refresh -s project` recovery path.
 
 =======
 ## Markdown Tables
@@ -310,143 +280,20 @@ czcode uses **two layers** of change markers corresponding to the fork chain:
 
 `bun install` sets `merge.conflictStyle=zdiff3` repo-locally via `script/setup-git.ts` (wired into `postinstall`). Conflicts include the common ancestor between `|||||||` and `=======`, which is what `script/upstream/` and `mergiraf` rely on for structural resolution and what makes manual resolution on shared opencode files tractable. If you've overridden it in your user config, the repo-local setting takes precedence — don't override it back.
 
+### Git conflict style
+
+`bun install` sets `merge.conflictStyle=zdiff3` repo-locally via `script/setup-git.ts` (wired into `postinstall`). Conflicts include the common ancestor between `|||||||` and `=======`, which is what `script/upstream/` and `mergiraf` rely on for structural resolution and what makes manual resolution on shared opencode files tractable. If you've overridden it in your user config, the repo-local setting takes precedence — don't override it back.
+
 ### Kilocode Change Markers
 >>>>>>> yunqiqiliang/opencode-v7.3.0
 
-<<<<<<< HEAD
-**Rule: any code czcode modifies or adds that kilocode might also change needs a `czcode_change` marker.** This includes files inside `packages/opencode/src/kilocode/` — that directory is shared with kilocode upstream and will be overwritten during merges.
-
-Mark czcode-specific changes with `czcode_change` comments.
-||||||| 12f7967ca4
-To minimize merge conflicts when syncing with upstream, mark Kilo Code-specific changes in shared code with `kilocode_change` comments.
-=======
 When editing shared upstream files, mark Kilo-specific lines with `kilocode_change` comments so future merges can find them. The basic forms are:
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 - Single line: `const value = 42 // kilocode_change`
 - Multi-line block: wrap with `// kilocode_change start` / `// kilocode_change end`
 - New file in a shared path: `// kilocode_change - new file` at the top
 - JSX/TSX: use `{/* kilocode_change */}` (and `{/* kilocode_change start */}` / `end`)
 
-<<<<<<< HEAD
-```typescript
-const value = 42 // czcode_change
-```
-||||||| 12f7967ca4
-```typescript
-const value = 42 // kilocode_change
-```
-=======
 Markers are NOT needed in paths that contain `kilocode` in the name (e.g. `packages/opencode/src/kilocode/`, `packages/opencode/test/kilocode/`) — these are entirely Kilo Code additions and won't conflict with upstream.
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
-<<<<<<< HEAD
-**Multi-line:**
-
-```typescript
-// czcode_change start
-const foo = 1
-const bar = 2
-// czcode_change end
-```
-
-**New files:**
-
-```typescript
-// czcode_change - new file
-```
-
-**JSX/TSX:**
-
-```tsx
-{/* czcode_change start */}
-<MyComponent />
-{/* czcode_change end */}
-```
-
-#### When markers are NOT needed
-
-Files in these paths are **entirely czcode additions** that do not exist in kilocode upstream, so they will never conflict during merges:
-
-- `packages/czcode-lakehouse/` — czcode Lakehouse plugin (czcode-only package)
-- `packages/opencode/src/kilocode/plugins/czcode-*.tsx` — czcode TUI plugins (czcode-only files)
-- `packages/opencode/src/kilocode/singclaw/` — SingClaw integration (czcode-only directory)
-- `packages/opencode/src/agent/prompt/lh-*.txt` — Lakehouse agent prompts (czcode-only files)
-- Any file with `czcode` in its filename
-
-#### When markers ARE needed (even in kilocode directories)
-
-- `packages/opencode/src/kilocode/agent/index.ts` — shared with kilocode, czcode adds lh-* agents
-- `packages/opencode/src/kilocode/config/config.ts` — shared with kilocode, czcode adds .czcode paths
-- Any other file in `packages/opencode/src/kilocode/` that **already exists in kilocode upstream**
-- `script/upstream/` files that czcode modifies (e.g. `transform-package-json.ts`)
-
-## Commit Conventions
-
-[Conventional Commits](https://www.conventionalcommits.org/) with scopes matching packages: `cli`, `lakehouse`, `sdk`, `upstream`, `tui`, `agents`, `config`, `singclaw`. Omit scope when spanning multiple packages.
-
-## Release Process
-
-```bash
-git push origin main
-gh workflow run "Release" --ref main -f bump=patch  # or minor/major
-```
-
-Use the **"Release"** workflow, NOT "publish" (that's kilocode's upstream workflow).
-
-## Post-Merge Smoke Test Checklist
-
-After merging upstream kilocode changes, test these before releasing:
-
-- [ ] `bun dev` starts without errors
-- [ ] `bun test:local` builds and runs the compiled binary
-- [ ] Default agent is `lh-analyst`, default model is `qwen3.5-plus`
-- [ ] Basic conversation works (ask a question, get SQL response)
-- [ ] `/cz_role` opens role picker, Tab cycles agents
-- [ ] `/cz_sample` prompts for table name
-- [ ] Copy to clipboard toast auto-dismisses (2 seconds)
-- [ ] Sidebar shows Lakehouse connection info
-- [ ] `czcode_change` annotation check passes
-||||||| 12f7967ca4
-**Multi-line:**
-
-```typescript
-// kilocode_change start
-const foo = 1
-const bar = 2
-// kilocode_change end
-```
-
-**New files:**
-
-```typescript
-// kilocode_change - new file
-```
-
-<!-- prettier-ignore -->
-**JSX/TSX (inside JSX templates):**
-
-<!-- prettier-ignore -->
-```tsx
-{/* kilocode_change */}
-```
-
-<!-- prettier-ignore -->
-```tsx
-{/* kilocode_change start */}
-<MyComponent />
-{/* kilocode_change end */}
-```
-
-#### When markers are NOT needed
-
-Code in these paths is Kilo Code-specific and does NOT need `kilocode_change` markers:
-
-- `packages/opencode/src/kilocode/` - All files in this directory
-- `packages/opencode/test/kilocode/` - All test files for kilocode
-- Any other path containing `kilocode` in filename or directory name
-
-These paths are entirely Kilo Code additions and won't conflict with upstream.
-=======
 For decision rules on when to keep changes inline vs. extract Kilo logic, marker placement guidance, and verification commands, load `.kilo/skills/kilocode-merge-minimizer/SKILL.md`.
->>>>>>> yunqiqiliang/opencode-v7.3.0

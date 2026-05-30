@@ -1,11 +1,6 @@
 ---
 title: "Using ChatGPT Plus/Pro with Kilo Code"
-<<<<<<< HEAD
-description: "Use your ChatGPT Plus or Pro subscription with Kilo Code. Setup guide for authenticating without a separate API key."
-||||||| 12f7967ca4
-=======
 description: "Use your ChatGPT Plus or Pro subscription with Kilo Code. Flat-rate access to OpenAI Codex models with OAuth login — no separate API key required."
->>>>>>> yunqiqiliang/opencode-v7.3.0
 sidebar_label: ChatGPT Plus/Pro
 ---
 
@@ -69,15 +64,9 @@ Then set your default model to one of the OpenAI Codex models available in Kilo 
 
 - **Subscription Required:** You need an active ChatGPT Plus or Pro subscription. This provider won't work with free ChatGPT accounts. [Codex is included](https://developers.openai.com/codex/pricing/) in ChatGPT Plus, Pro, Business, Edu, and Enterprise plans. See [OpenAI's ChatGPT plans](https://chatgpt.com/pricing/) for more information.
 - **No API Costs:** Usage through this provider counts against your ChatGPT subscription, not separately billed API usage.
-<<<<<<< HEAD
-- **Sign Out:** To disconnect in VS Code, use the "Disconnect" button in the provider settings. In the CLI, run `kilo auth logout` and choose OpenAI.
-||||||| 12f7967ca4
-- **Sign Out:** To disconnect, use the "Sign Out" button in the provider settings.
-=======
 - **Authentication Errors:** If you receive a CSRF or other error when completing OAuth authentication, ensure you do not have another application already listening on port 1455. You can check on Linux and Mac by using `lsof -i :1455`.
 - **Sign Out:** To disconnect in VS Code, use the "Disconnect" button in the provider settings. In the CLI, run `kilo auth logout` and choose OpenAI.
 - **Switching providers:** You can switch to Claude, Gemini, or local models at any time — this provider is optional.
->>>>>>> yunqiqiliang/opencode-v7.3.0
 
 ## Limitations
 

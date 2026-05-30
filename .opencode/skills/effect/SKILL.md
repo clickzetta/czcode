@@ -28,12 +28,6 @@ Use the current Effect v4 / effect-smol source, not memory or older Effect v2/v3
 - In tests, prefer the repo's existing Effect test helpers and live tests for filesystem, git, child process, locks, or timing behavior.
 - Do not introduce `any`, non-null assertions, unchecked casts, or older Effect APIs just to satisfy types.
 - Do not answer from memory. Verify against `.opencode/references/effect-smol` or nearby code first.
-<<<<<<< HEAD
-||||||| 12f7967ca4
-- Always use the explore agent with the cloned repository when answering Effect-related questions
-- Reference specific files and patterns found in the Effect codebase
-- Do not answer from memory - always verify against the source
-=======
 
 ## Testing Patterns
 
@@ -42,4 +36,3 @@ Use the current Effect v4 / effect-smol source, not memory or older Effect v2/v3
 - Run tests from package directories such as `packages/opencode`; never run package tests from the repo root.
 - Prefer explicit test layers over ad hoc managed runtimes. Keep dependency provisioning visible in the test file.
 - Use scoped fixtures and finalizers for resources that must be cleaned up, including temporary directories, flags, databases, fibers, servers, and global state.
->>>>>>> yunqiqiliang/opencode-v7.3.0
