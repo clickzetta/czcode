@@ -5,6 +5,7 @@ package ai.kilocode.client.app
 import ai.kilocode.rpc.KiloWorkspaceRpcApi
 import ai.kilocode.rpc.dto.KiloWorkspaceStateDto
 import ai.kilocode.rpc.dto.KiloWorkspaceStatusDto
+import ai.kilocode.rpc.dto.WorkspaceFileDto
 import com.intellij.openapi.components.Service
 import ai.kilocode.log.KiloLog
 import fleet.rpc.client.durable
@@ -66,7 +67,7 @@ class KiloWorkspaceService internal constructor(
             LOG.info("Creating workspace for $directory")
             val state = stream { state(directory) }
                 .stateIn(cs, SharingStarted.Eagerly, INIT)
-            Workspace(directory, state)
+            Workspace(directory, state) { reload(directory) }
         }
     }
 
@@ -96,6 +97,25 @@ class KiloWorkspaceService internal constructor(
             } catch (e: Exception) {
                 LOG.warn("workspace reload failed for $directory", e)
             }
+        }
+    }
+
+    suspend fun files(directory: String, path: String): List<WorkspaceFileDto> {
+        return try {
+            call { files(directory, path) }
+        } catch (e: Exception) {
+            LOG.warn("workspace file lookup failed for directory=$directory path=$path", e)
+            emptyList()
+        }
+    }
+
+    suspend fun openPath(directory: String, path: String): Boolean {
+        val match = files(directory, path).firstOrNull() ?: return false
+        return try {
+            call { openFile(match.path) }
+        } catch (e: Exception) {
+            LOG.warn("workspace file open failed for path=${match.path}", e)
+            false
         }
     }
 }

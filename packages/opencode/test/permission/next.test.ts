@@ -4,22 +4,36 @@ import os from "os"
 import path from "path" // kilocode_change
 import { Cause, Effect, Exit, Fiber, Layer } from "effect"
 import { Bus } from "../../src/bus"
-import { Config } from "../../src/config" // kilocode_change
-import { Global } from "../../src/global" // kilocode_change
-import * as CrossSpawnSpawner from "../../src/effect/cross-spawn-spawner"
+import { Config } from "../../src/config/config" // kilocode_change
+import { Global } from "@opencode-ai/core/global" // kilocode_change
+import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
 import { Permission } from "../../src/permission"
 import { PermissionID } from "../../src/permission/schema"
 import { Instance } from "../../src/project/instance"
-import { provideInstance, provideTmpdirInstance, tmpdirScoped } from "../fixture/fixture"
+import { WithInstance } from "../../src/project/with-instance"
+import { InstanceRuntime } from "../../src/project/instance-runtime"
+import {
+  disposeAllInstances,
+  provideInstance,
+  provideTmpdirInstance,
+  reloadTestInstance,
+  tmpdirScoped,
+} from "../fixture/fixture"
 import { testEffect } from "../lib/effect"
 import { MessageID, SessionID } from "../../src/session/schema"
 
 const bus = Bus.layer
-const env = Layer.mergeAll(Permission.layer.pipe(Layer.provide(bus)), bus, CrossSpawnSpawner.defaultLayer)
+// kilocode_change start
+const env = Layer.mergeAll(
+  Permission.layer.pipe(Layer.provide(bus), Layer.provide(Config.defaultLayer)),
+  bus,
+  CrossSpawnSpawner.defaultLayer,
+)
+// kilocode_change end
 const it = testEffect(env)
 
 afterEach(async () => {
-  await Instance.disposeAll()
+  await disposeAllInstances()
 })
 
 // kilocode_change start
@@ -28,7 +42,10 @@ afterAll(async () => {
   for (const file of ["kilo.jsonc", "kilo.json", "config.json", "opencode.json", "opencode.jsonc"]) {
     await fs.rm(path.join(dir, file), { force: true }).catch(() => {})
   }
-  await Config.invalidate(true)
+  await Effect.runPromise(
+    Config.Service.use((svc) => svc.invalidate()).pipe(Effect.scoped, Effect.provide(Config.defaultLayer)),
+  )
+  await InstanceRuntime.disposeAllInstances()
 })
 // kilocode_change end
 
@@ -142,61 +159,45 @@ test("fromConfig - does not expand tilde in middle of path", () => {
   expect(result).toEqual([{ permission: "external_directory", pattern: "/some/~/path", action: "allow" }])
 })
 
-// Top-level wildcard-vs-specific precedence semantics.
-//
-// fromConfig sorts top-level keys so wildcard permissions (containing "*")
-// come before specific permissions. Combined with `findLast` in evaluate(),
-// this gives the intuitive semantic "specific tool rules override the `*`
-// fallback", regardless of the order the user wrote the keys in their JSON.
-//
-// Sub-pattern order inside a single permission key (e.g. `bash: { "*": "allow", "rm": "deny" }`)
-// still depends on insertion order — only top-level keys are sorted.
+// Permission precedence follows config insertion order. `evaluate()` uses the
+// last matching rule, so later config entries intentionally override earlier
+// entries even when a wildcard appears after a specific permission.
 
-test("fromConfig - specific key beats wildcard regardless of JSON key order", () => {
+test("fromConfig - preserves top-level config key order", () => {
   const wildcardFirst = Permission.fromConfig({ "*": "deny", bash: "allow" })
   const specificFirst = Permission.fromConfig({ bash: "allow", "*": "deny" })
 
-  // Both orderings produce the same ruleset
-  expect(wildcardFirst).toEqual(specificFirst)
+  expect(wildcardFirst.map((r) => r.permission)).toEqual(["*", "bash"])
+  expect(specificFirst.map((r) => r.permission)).toEqual(["bash", "*"])
 
-  // And both evaluate bash → allow (bash rule wins over * fallback)
   expect(Permission.evaluate("bash", "ls", wildcardFirst).action).toBe("allow")
-  expect(Permission.evaluate("bash", "ls", specificFirst).action).toBe("allow")
+  expect(Permission.evaluate("bash", "ls", specificFirst).action).toBe("deny")
 })
 
-test("fromConfig - wildcard acts as fallback for permissions with no specific rule", () => {
-  const ruleset = Permission.fromConfig({ bash: "allow", "*": "ask" })
+test("fromConfig - wildcard acts as fallback when it appears before specifics", () => {
+  const ruleset = Permission.fromConfig({ "*": "ask", bash: "allow" })
   expect(Permission.evaluate("edit", "foo.ts", ruleset).action).toBe("ask")
   expect(Permission.evaluate("bash", "ls", ruleset).action).toBe("allow")
 })
 
-test("fromConfig - top-level ordering: wildcards first, specifics after", () => {
+test("fromConfig - top-level ordering is not sorted by wildcard specificity", () => {
   const ruleset = Permission.fromConfig({
     bash: "allow",
     "*": "ask",
     edit: "deny",
     "mcp_*": "allow",
   })
-  // wildcards (* and mcp_*) come before specifics (bash, edit)
-  const permissions = ruleset.map((r) => r.permission)
-  expect(permissions.slice(0, 2).sort()).toEqual(["*", "mcp_*"])
-  expect(permissions.slice(2)).toEqual(["bash", "edit"])
+  expect(ruleset.map((r) => r.permission)).toEqual(["bash", "*", "edit", "mcp_*"])
 })
 
-test("fromConfig - sub-pattern insertion order inside a tool key is preserved (only top-level sorts)", () => {
-  // Sub-patterns within a single tool key use the documented "`*` first,
-  // specific patterns after" convention (findLast picks specifics). The
-  // top-level sort must not touch sub-pattern ordering.
+test("fromConfig - sub-pattern insertion order inside a tool key is preserved", () => {
   const ruleset = Permission.fromConfig({ bash: { "*": "deny", "git *": "allow" } })
   expect(ruleset.map((r) => r.pattern)).toEqual(["*", "git *"])
-  // * fallback for unknown commands
   expect(Permission.evaluate("bash", "rm foo", ruleset).action).toBe("deny")
-  // specific pattern wins for git commands (it's last, findLast picks it)
   expect(Permission.evaluate("bash", "git status", ruleset).action).toBe("allow")
 })
 
-test("fromConfig - canonical documented example unchanged", () => {
-  // Regression guard for the example in docs/permissions.mdx
+test("fromConfig - documented fallback-first example", () => {
   const ruleset = Permission.fromConfig({ "*": "ask", bash: "allow", edit: "deny" })
   expect(Permission.evaluate("bash", "ls", ruleset).action).toBe("allow")
   expect(Permission.evaluate("edit", "foo.ts", ruleset).action).toBe("deny")
@@ -462,7 +463,7 @@ test("evaluate - wildcard permission fallback for unknown tool", () => {
   expect(result.action).toBe("ask")
 })
 
-test("evaluate - permission patterns sorted by length regardless of object order", () => {
+test("evaluate - later wildcard permission can override earlier specific permission", () => {
   const result = Permission.evaluate("bash", "rm", [
     { permission: "bash", pattern: "*", action: "allow" },
     { permission: "*", pattern: "*", action: "deny" },
@@ -949,7 +950,8 @@ it.live("reply - always resolves matching pending requests in same session", () 
   ),
 )
 
-it.live("reply - always keeps other session pending", () =>
+// kilocode_change start
+it.live("reply - always resolves matching pending requests from other sessions", () =>
   withDir({ git: true }, () =>
     Effect.gen(function* () {
       const a = yield* ask({
@@ -976,13 +978,47 @@ it.live("reply - always keeps other session pending", () =>
       yield* reply({ requestID: PermissionID.make("per_test6a"), reply: "always" })
 
       yield* Fiber.join(a)
-      expect((yield* list()).map((item) => item.id)).toEqual([PermissionID.make("per_test6b")])
+      yield* Fiber.join(b)
+      expect(yield* list()).toHaveLength(0)
+    }),
+  ),
+)
+
+it.live("reply - always does not resolve dangerous variants from other sessions", () =>
+  withDir({ git: true }, () =>
+    Effect.gen(function* () {
+      const a = yield* ask({
+        id: PermissionID.make("per_test_safe_a"),
+        sessionID: SessionID.make("session_a"),
+        permission: "bash",
+        patterns: ["npm test"],
+        metadata: {},
+        always: ["npm test"],
+        ruleset: [],
+      }).pipe(Effect.forkScoped)
+
+      const b = yield* ask({
+        id: PermissionID.make("per_test_safe_b"),
+        sessionID: SessionID.make("session_b"),
+        permission: "bash",
+        patterns: ["npm test > ~/.ssh/authorized_keys"],
+        metadata: {},
+        always: [],
+        ruleset: [],
+      }).pipe(Effect.forkScoped)
+
+      yield* waitForPending(2)
+      yield* reply({ requestID: PermissionID.make("per_test_safe_a"), reply: "always" })
+
+      yield* Fiber.join(a)
+      expect((yield* list()).map((item) => item.id)).toEqual([PermissionID.make("per_test_safe_b")])
 
       yield* rejectAll()
       yield* Fiber.await(b)
     }),
   ),
 )
+// kilocode_change end
 
 it.live("reply - publishes replied event", () =>
   withDir({ git: true }, () =>
@@ -1091,7 +1127,9 @@ it.live("pending permission rejects on instance dispose", () =>
     }).pipe(run, Effect.forkScoped)
 
     expect(yield* waitForPending(1).pipe(run)).toHaveLength(1)
-    yield* Effect.promise(() => Instance.provide({ directory: dir, fn: () => void Instance.dispose() }))
+    yield* Effect.promise(() =>
+      WithInstance.provide({ directory: dir, fn: () => void InstanceRuntime.disposeInstance(Instance.current) }),
+    )
 
     const exit = yield* Fiber.await(fiber)
     expect(Exit.isFailure(exit)).toBe(true)
@@ -1114,7 +1152,7 @@ it.live("pending permission rejects on instance reload", () =>
     }).pipe(run, Effect.forkScoped)
 
     expect(yield* waitForPending(1).pipe(run)).toHaveLength(1)
-    yield* Effect.promise(() => Instance.reload({ directory: dir }))
+    yield* Effect.promise(() => reloadTestInstance({ directory: dir }))
 
     const exit = yield* Fiber.await(fiber)
     expect(Exit.isFailure(exit)).toBe(true)
@@ -1211,7 +1249,7 @@ it.live("ask - abort should clear pending request", () =>
 
     const pending = yield* waitForPending(1).pipe(run)
     expect(pending).toHaveLength(1)
-    yield* Effect.promise(() => Instance.reload({ directory: dir }))
+    yield* Effect.promise(() => reloadTestInstance({ directory: dir }))
 
     const exit = yield* Fiber.await(fiber)
     expect(Exit.isFailure(exit)).toBe(true)

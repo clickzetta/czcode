@@ -1,6 +1,7 @@
 package ai.kilocode.client.session.views
 
 import ai.kilocode.client.session.model.Text
+import ai.kilocode.client.session.ui.style.SessionEditorStyle
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 
 /**
@@ -76,6 +77,29 @@ class TextViewTest : BasePlatformTestCase() {
         assertNotNull(view.md.component)
     }
 
+    fun `test markdown uses editor font settings`() {
+        val style = SessionEditorStyle.current()
+        val view = TextView(Text("p1"))
+        val sheet = view.md.overrideSheet()
+
+        assertTrue(sheet.contains(style.editorFamily))
+        assertTrue(sheet.contains("${style.editorSize}pt"))
+    }
+
+    fun `test applyStyle updates markdown in place`() {
+        val view = TextView(Text("p1"))
+        val component = view.md.component
+        val style = SessionEditorStyle.create(family = "Courier New", size = 23)
+
+        view.applyStyle(style)
+        val sheet = view.md.overrideSheet()
+
+        assertSame(component, view.md.component)
+        assertTrue(sheet.contains("Courier New"))
+        assertTrue(sheet.contains("23pt"))
+        assertEquals(style.editorForeground, view.md.foreground)
+    }
+
     // ---- markdown is rendered ------
 
     fun `test update with bold text produces html with strong tag`() {
@@ -89,5 +113,14 @@ class TextViewTest : BasePlatformTestCase() {
         view.appendDelta("**bold")
         view.appendDelta("**")
         assertTrue(view.md.html().contains("<strong>"))
+    }
+
+    fun `test link opens url callback`() {
+        val urls = mutableListOf<String>()
+        val view = TextView(Text("p1"), openUrl = { urls.add(it) })
+
+        view.md.simulateLink("https://kilocode.ai/docs")
+
+        assertEquals(listOf("https://kilocode.ai/docs"), urls)
     }
 }

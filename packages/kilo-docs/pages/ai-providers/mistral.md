@@ -1,4 +1,6 @@
 ---
+title: "Using Mistral AI with Kilo Code"
+description: "Configure Mistral AI models, including Codestral, in Kilo Code. Guide to getting an API key and setup for VS Code and the CLI."
 sidebar_label: Mistral AI
 ---
 
@@ -74,7 +76,7 @@ Other Mistral models do not get automatic reasoning variants, even if they appea
 
 ## Using Codestral
 
-[Codestral](https://docs.mistral.ai/capabilities/code_generation/) is a model specifically designed for code generation and interaction.
+[Codestral](https://docs.mistral.ai/vibe/code/overview) is a model specifically designed for code generation and interaction.
 Only for Codestral you could use different endpoints (Default: codestral.mistral.ai).
 For the La Platforme API Key change the **Codestral Base Url** to: https://api.mistral.ai
 
