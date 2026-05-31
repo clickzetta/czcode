@@ -126,6 +126,5 @@ const TIPS = [
   "The {highlight}数据分析师{/highlight} role is read-only — safe for exploring production data",
   "Switch to {highlight}数据工程师{/highlight} for DDL/DML operations (requires confirmation)",
   "Use {highlight}/cz_skill-update{/highlight} to get the latest ClickZetta skills",
-  "Say {highlight}我想基于 dbt 构建新的数据仓库{/highlight} to get a full dbt + ClickZetta setup guide",
   // czcode_change end
 ]

@@ -30,6 +30,7 @@ const placeholdersByAgent: Record<string, string[]> = {
     t("placeholder.engineer.6"),
     t("placeholder.engineer.7"),
     t("placeholder.engineer.8"),
+    t("placeholder.engineer.9"),
   ],
   "lh-dba": [
     t("placeholder.dba.1"),
