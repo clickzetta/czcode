@@ -117,28 +117,28 @@ const zh: Record<string, string> = {
   "agent.scientist.desc": "云器 Lakehouse 数据科学家 — 数据科学项目/Jupyter/EDA/特征工程/模型推理",
 
   // Home placeholders - analyst
-  "placeholder.analyst.1": "我有哪些数据？",
-  "placeholder.analyst.2": "统计过去 7 天每天的订单量和销售额",
-  "placeholder.analyst.3": "分析 orders 表的数据质量",
-  "placeholder.analyst.4": "帮我做一个销售趋势分析",
+  "placeholder.analyst.1": "帮我看看当前 Schema 下有哪些表，数据量大概多少",
+  "placeholder.analyst.2": "统计过去 7 天每天的订单量和销售额趋势",
+  "placeholder.analyst.3": "检查一下最近入库的数据有没有异常，比如空值或重复",
+  "placeholder.analyst.4": "帮我找出销售额最高的前 10 个产品",
   // Home placeholders - engineer
-  "placeholder.engineer.1": "帮我设计数仓分层方案",
-  "placeholder.engineer.2": "创建一个用户维度表",
-  "placeholder.engineer.3": "帮我写一个从 MySQL 导入数据的 Pipeline",
-  "placeholder.engineer.4": "查看当前有哪些 Dynamic Table",
-  "placeholder.engineer.5": "帮我建一个语义视图统一指标口径",
+  "placeholder.engineer.1": "帮我设计一套 ODS/DWD/DWS 分层方案",
+  "placeholder.engineer.2": "帮我创建一张用户维度表，包含常用字段",
+  "placeholder.engineer.3": "我想把 MySQL 的数据同步到 Lakehouse，有哪些方式？",
+  "placeholder.engineer.4": "查看当前有哪些 Dynamic Table，刷新状态是否正常",
+  "placeholder.engineer.5": "帮我建一个语义视图，统一各业务线的订单指标口径",
   // Home placeholders - dba
-  "placeholder.dba.1": "查看 VCluster 资源使用情况",
-  "placeholder.dba.2": "优化这条慢查询的执行计划",
-  "placeholder.dba.3": "本月的计算和存储费用是多少？",
+  "placeholder.dba.1": "查看各 VCluster 当前的资源使用和排队情况",
+  "placeholder.dba.2": "帮我分析这条慢查询的执行计划，找出瓶颈",
+  "placeholder.dba.3": "统计本月各 VCluster 的计算消耗，找出费用最高的任务",
   // Home placeholders - governance
-  "placeholder.governance.1": "查看当前用户的权限",
-  "placeholder.governance.2": "哪些表没有设置数据生命周期？",
-  "placeholder.governance.3": "创建一个动态脱敏策略",
+  "placeholder.governance.1": "列出当前用户对哪些 Schema 有写权限",
+  "placeholder.governance.2": "哪些表没有设置数据生命周期策略，存在存储浪费风险？",
+  "placeholder.governance.3": "帮我对手机号字段创建一个动态脱敏策略",
   // Home placeholders - scientist
-  "placeholder.scientist.1": "帮我对 orders 表做 EDA 探索性分析",
-  "placeholder.scientist.2": "分析各产品类目的销售分布",
-  "placeholder.scientist.3": "帮我构建一个用户流失预测的特征表",
+  "placeholder.scientist.1": "帮我探索一下当前 Schema 下有哪些可用数据集",
+  "placeholder.scientist.2": "对用户行为表做基础 EDA，看看数据分布和缺失情况",
+  "placeholder.scientist.3": "帮我构建一个用户流失预测的特征表，写回 Lakehouse",
 
   // Skill bug report
   "skillReport.tuiLink": "⚠️ 此 SQL 语法错误可能是 Skill 内容有误导致的，点击向 Skill 仓库提交 Issue",
@@ -252,28 +252,28 @@ const en: Record<string, string> = {
   "agent.scientist.desc": "ClickZetta Lakehouse Data Scientist — Jupyter/EDA/Feature Engineering/ML",
 
   // Home placeholders - analyst
-  "placeholder.analyst.1": "What data do I have?",
-  "placeholder.analyst.2": "Daily order count and revenue for the past 7 days",
-  "placeholder.analyst.3": "Check data quality of the orders table",
-  "placeholder.analyst.4": "Help me analyze sales trends",
+  "placeholder.analyst.1": "Show me what tables are in the current schema and their approximate row counts",
+  "placeholder.analyst.2": "Daily order count and revenue trend for the past 7 days",
+  "placeholder.analyst.3": "Check recent ingested data for anomalies like nulls or duplicates",
+  "placeholder.analyst.4": "Find the top 10 products by revenue",
   // Home placeholders - engineer
-  "placeholder.engineer.1": "Help me design a data warehouse layering plan",
-  "placeholder.engineer.2": "Create a user dimension table",
-  "placeholder.engineer.3": "Write a pipeline to import data from MySQL",
-  "placeholder.engineer.4": "Show current Dynamic Tables",
-  "placeholder.engineer.5": "Create a semantic view for unified metrics",
+  "placeholder.engineer.1": "Help me design an ODS/DWD/DWS layered data warehouse",
+  "placeholder.engineer.2": "Create a user dimension table with common fields",
+  "placeholder.engineer.3": "I want to sync MySQL data into Lakehouse — what are my options?",
+  "placeholder.engineer.4": "Show current Dynamic Tables and check if their refresh status is healthy",
+  "placeholder.engineer.5": "Create a semantic view to unify order metrics across business lines",
   // Home placeholders - dba
-  "placeholder.dba.1": "Check VCluster resource usage",
-  "placeholder.dba.2": "Optimize this slow query execution plan",
-  "placeholder.dba.3": "What are this month's compute and storage costs?",
+  "placeholder.dba.1": "Show resource usage and queue status for each VCluster",
+  "placeholder.dba.2": "Analyze this slow query's execution plan and find the bottleneck",
+  "placeholder.dba.3": "Break down this month's compute cost by VCluster and find the most expensive jobs",
   // Home placeholders - governance
-  "placeholder.governance.1": "Check current user permissions",
-  "placeholder.governance.2": "Which tables have no data lifecycle policy?",
-  "placeholder.governance.3": "Create a dynamic masking policy",
+  "placeholder.governance.1": "List which schemas the current user has write access to",
+  "placeholder.governance.2": "Which tables have no data lifecycle policy and may be wasting storage?",
+  "placeholder.governance.3": "Create a dynamic masking policy for phone number fields",
   // Home placeholders - scientist
-  "placeholder.scientist.1": "Run EDA on the orders table",
-  "placeholder.scientist.2": "Analyze sales distribution by product category",
-  "placeholder.scientist.3": "Build a feature table for churn prediction",
+  "placeholder.scientist.1": "Explore what datasets are available in the current schema",
+  "placeholder.scientist.2": "Run basic EDA on the user behavior table — check distributions and missing values",
+  "placeholder.scientist.3": "Build a churn prediction feature table and write it back to Lakehouse",
 
   // Skill bug report
   "skillReport.tuiLink": "⚠️ This SQL syntax error may be caused by incorrect content in the Skill. Click to file an issue on the Skill repository.",
