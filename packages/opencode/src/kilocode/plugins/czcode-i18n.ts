@@ -127,6 +127,9 @@ const zh: Record<string, string> = {
   "placeholder.engineer.3": "查看当前有哪些 Studio 任务，哪些在运行，哪些失败了",
   "placeholder.engineer.4": "帮我创建一个 Dynamic Table，每小时刷新一次汇总数据",
   "placeholder.engineer.5": "帮我把 Snowflake 的 SQL 迁移到 ClickZetta，有哪些语法差异？",
+  "placeholder.engineer.6": "帮我初始化一个 dbt 项目，配置 ClickZetta adapter",
+  "placeholder.engineer.7": "帮我写一个 dbt model，实现用户订单宽表的增量构建",
+  "placeholder.engineer.8": "帮我把 dbt 任务接入 Studio 调度，配置依赖和触发规则",
   // Home placeholders - dba
   "placeholder.dba.1": "查看各 VCluster 当前的资源使用和排队情况",
   "placeholder.dba.2": "帮我分析这条慢查询的执行计划，找出性能瓶颈",
@@ -262,6 +265,9 @@ const en: Record<string, string> = {
   "placeholder.engineer.3": "Show current Studio tasks — which are running and which have failed?",
   "placeholder.engineer.4": "Create a Dynamic Table that refreshes hourly to aggregate summary data",
   "placeholder.engineer.5": "Help me migrate Snowflake SQL to ClickZetta — what are the syntax differences?",
+  "placeholder.engineer.6": "Help me initialize a dbt project and configure the ClickZetta adapter",
+  "placeholder.engineer.7": "Write a dbt model for an incremental user order wide table",
+  "placeholder.engineer.8": "Integrate my dbt jobs into Studio scheduling with dependency and trigger rules",
   // Home placeholders - dba
   "placeholder.dba.1": "Show resource usage and queue status for each VCluster",
   "placeholder.dba.2": "Analyze this slow query's execution plan and find the performance bottleneck",
