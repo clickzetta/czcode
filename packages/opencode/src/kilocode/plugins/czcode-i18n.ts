@@ -119,26 +119,26 @@ const zh: Record<string, string> = {
   // Home placeholders - analyst
   "placeholder.analyst.1": "帮我看看当前 Schema 下有哪些表，数据量大概多少",
   "placeholder.analyst.2": "统计过去 7 天每天的订单量和销售额趋势",
-  "placeholder.analyst.3": "检查一下最近入库的数据有没有异常，比如空值或重复",
-  "placeholder.analyst.4": "帮我找出销售额最高的前 10 个产品",
+  "placeholder.analyst.3": "检查最近入库的数据有没有空值、重复或异常值",
+  "placeholder.analyst.4": "帮我查一下这张表的字段含义和数据分布",
   // Home placeholders - engineer
-  "placeholder.engineer.1": "帮我设计一套 ODS/DWD/DWS 分层方案",
-  "placeholder.engineer.2": "帮我创建一张用户维度表，包含常用字段",
-  "placeholder.engineer.3": "我想把 MySQL 的数据同步到 Lakehouse，有哪些方式？",
-  "placeholder.engineer.4": "查看当前有哪些 Dynamic Table，刷新状态是否正常",
-  "placeholder.engineer.5": "帮我建一个语义视图，统一各业务线的订单指标口径",
+  "placeholder.engineer.1": "帮我设计一套 ODS/DWD/DWS 分层方案，说明各层职责",
+  "placeholder.engineer.2": "我想把 MySQL 的数据实时同步到 Lakehouse，怎么配置？",
+  "placeholder.engineer.3": "查看当前有哪些 Studio 任务，哪些在运行，哪些失败了",
+  "placeholder.engineer.4": "帮我创建一个 Dynamic Table，每小时刷新一次汇总数据",
+  "placeholder.engineer.5": "帮我把 Snowflake 的 SQL 迁移到 ClickZetta，有哪些语法差异？",
   // Home placeholders - dba
   "placeholder.dba.1": "查看各 VCluster 当前的资源使用和排队情况",
-  "placeholder.dba.2": "帮我分析这条慢查询的执行计划，找出瓶颈",
+  "placeholder.dba.2": "帮我分析这条慢查询的执行计划，找出性能瓶颈",
   "placeholder.dba.3": "统计本月各 VCluster 的计算消耗，找出费用最高的任务",
   // Home placeholders - governance
   "placeholder.governance.1": "列出当前用户对哪些 Schema 有写权限",
   "placeholder.governance.2": "哪些表没有设置数据生命周期策略，存在存储浪费风险？",
   "placeholder.governance.3": "帮我对手机号字段创建一个动态脱敏策略",
   // Home placeholders - scientist
-  "placeholder.scientist.1": "帮我探索一下当前 Schema 下有哪些可用数据集",
-  "placeholder.scientist.2": "对用户行为表做基础 EDA，看看数据分布和缺失情况",
-  "placeholder.scientist.3": "帮我构建一个用户流失预测的特征表，写回 Lakehouse",
+  "placeholder.scientist.1": "帮我用 ZettaPark 对当前数据集做 EDA，看看分布和缺失情况",
+  "placeholder.scientist.2": "帮我用 AI_COMPLETE 对评论表做情感分析，结果写回 Lakehouse",
+  "placeholder.scientist.3": "帮我构建一个用户流失预测的特征表，用 ZettaPark 写回",
 
   // Skill bug report
   "skillReport.tuiLink": "⚠️ 此 SQL 语法错误可能是 Skill 内容有误导致的，点击向 Skill 仓库提交 Issue",
@@ -254,26 +254,26 @@ const en: Record<string, string> = {
   // Home placeholders - analyst
   "placeholder.analyst.1": "Show me what tables are in the current schema and their approximate row counts",
   "placeholder.analyst.2": "Daily order count and revenue trend for the past 7 days",
-  "placeholder.analyst.3": "Check recent ingested data for anomalies like nulls or duplicates",
-  "placeholder.analyst.4": "Find the top 10 products by revenue",
+  "placeholder.analyst.3": "Check recent ingested data for nulls, duplicates, or anomalies",
+  "placeholder.analyst.4": "Help me understand the columns and data distribution of this table",
   // Home placeholders - engineer
-  "placeholder.engineer.1": "Help me design an ODS/DWD/DWS layered data warehouse",
-  "placeholder.engineer.2": "Create a user dimension table with common fields",
-  "placeholder.engineer.3": "I want to sync MySQL data into Lakehouse — what are my options?",
-  "placeholder.engineer.4": "Show current Dynamic Tables and check if their refresh status is healthy",
-  "placeholder.engineer.5": "Create a semantic view to unify order metrics across business lines",
+  "placeholder.engineer.1": "Help me design an ODS/DWD/DWS layered warehouse — explain each layer's role",
+  "placeholder.engineer.2": "I want to sync MySQL data to Lakehouse in real time — how do I set that up?",
+  "placeholder.engineer.3": "Show current Studio tasks — which are running and which have failed?",
+  "placeholder.engineer.4": "Create a Dynamic Table that refreshes hourly to aggregate summary data",
+  "placeholder.engineer.5": "Help me migrate Snowflake SQL to ClickZetta — what are the syntax differences?",
   // Home placeholders - dba
   "placeholder.dba.1": "Show resource usage and queue status for each VCluster",
-  "placeholder.dba.2": "Analyze this slow query's execution plan and find the bottleneck",
+  "placeholder.dba.2": "Analyze this slow query's execution plan and find the performance bottleneck",
   "placeholder.dba.3": "Break down this month's compute cost by VCluster and find the most expensive jobs",
   // Home placeholders - governance
   "placeholder.governance.1": "List which schemas the current user has write access to",
   "placeholder.governance.2": "Which tables have no data lifecycle policy and may be wasting storage?",
   "placeholder.governance.3": "Create a dynamic masking policy for phone number fields",
   // Home placeholders - scientist
-  "placeholder.scientist.1": "Explore what datasets are available in the current schema",
-  "placeholder.scientist.2": "Run basic EDA on the user behavior table — check distributions and missing values",
-  "placeholder.scientist.3": "Build a churn prediction feature table and write it back to Lakehouse",
+  "placeholder.scientist.1": "Use ZettaPark to run EDA on the current dataset — check distributions and missing values",
+  "placeholder.scientist.2": "Use AI_COMPLETE to run sentiment analysis on the reviews table and write results back",
+  "placeholder.scientist.3": "Build a churn prediction feature table using ZettaPark and write it back to Lakehouse",
 
   // Skill bug report
   "skillReport.tuiLink": "⚠️ This SQL syntax error may be caused by incorrect content in the Skill. Click to file an issue on the Skill repository.",
