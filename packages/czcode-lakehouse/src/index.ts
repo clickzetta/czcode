@@ -568,7 +568,8 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
           "支持 USE SCHEMA <name> 和 USE VCLUSTER <name> 切换当前会话上下文。" +
           "支持 LIST @volume/path 列出 Volume 文件，GET @volume/path 读取文件内容。" +
           "支持 SET parameter = value 设置会话参数。" +
-          "默认返回最多 200 行，可用 LIMIT 子句控制（最大 5000）。",
+          "默认返回最多 200 行，可用 LIMIT 子句控制（最大 5000）。" +
+          "⚠️ 多条 SQL（用 ; 分隔）时，所有语句都会执行，但结果会合并返回，无法区分来源——验证关键结论请单独调用。",
         args: {
           sql: z.string().describe("只读 SQL 语句：SELECT、SHOW、DESC、EXPLAIN、USE SCHEMA、USE VCLUSTER、LIST @vol/path、GET @vol/path、SET param=value 等"),
           limit: z.number().int().min(1).max(5000).default(200).describe("最大返回行数（默认 200）"),
@@ -622,7 +623,8 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
         description:
           "执行写操作 SQL（DDL/DML/权限管理/Volume写操作/会话参数），直接执行无需额外确认。" +
           "支持：CREATE/ALTER/DROP/INSERT/UPDATE/DELETE/MERGE/GRANT/REVOKE/PUT/REMOVE/SET 等。" +
-          "⚠️ 危险操作（DROP/TRUNCATE/DELETE 无 WHERE）请谨慎使用，执行前确认 SQL 正确。",
+          "⚠️ 危险操作（DROP/TRUNCATE/DELETE 无 WHERE）请谨慎使用，执行前确认 SQL 正确。" +
+          "⚠️ DDL 不支持多条语句（; 分隔）：DROP+CREATE、TRUNCATE+INSERT 等需分开调用，否则只有最后一条生效。DML（INSERT/UPDATE）可与 SELECT 合并但结果只返回 SELECT 部分。",
         args: {
           sql: z.string().describe("写操作 SQL 语句"),
         },
