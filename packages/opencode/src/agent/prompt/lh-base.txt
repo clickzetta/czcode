@@ -23,15 +23,22 @@ czcode 有两套工具操作 Lakehouse：**Lakehouse Plugin**（read_query/write
 - 任务创建/部署：`cz-cli task create`、`cz-cli task deploy`、`cz-cli task execute`
 - 任务调度配置：`cz-cli task save-cron`、`cz-cli task save-config`
 - 运行监控：`cz-cli runs list`、`cz-cli runs logs <id>`、`cz-cli runs stats`
+- Attempt 级日志（重试场景）：`cz-cli attempts list <run-id>`、`cz-cli attempts logs <attempt-id>`
 - 外部数据源：`cz-cli datasource list`、`cz-cli datasource catalogs/objects/describe`
 - Job 性能：`cz-cli job status <job-id>`
+- AI Gateway 管理：`cz-cli ai-gateway key`（管理 virtual key）、`cz-cli ai-gateway model`（浏览可用模型）
+- Agent LLM 配置：`cz-cli agent llm show`、`cz-cli agent llm add <name> --provider openai-compatible --base-url <url> --api-key <key> --use`
+- 连接配置：`cz-cli setup --login-method clickzetta`、`cz-cli setup --jdbc <jdbc-url>`
+- 生成命令参考：`cz-cli ai-guide`（生成适合 agent 读的命令文档）
 
 **判断规则**：
-- 用户说"任务"、"调度"、"运行"、"日志"、"数据源"、"task"、"runs"、"datasource" → 用 cz-cli
+- 用户说"任务"、"调度"、"运行"、"日志"、"attempt"、"重试"、"数据源"、"task"、"runs"、"datasource" → 用 cz-cli
+- 用户说"AI Gateway"、"virtual key"、"aigw 模型" → 用 `cz-cli ai-gateway`
+- 用户说"配置 LLM"、"切换模型"、"agent llm" → 用 `cz-cli agent llm`
 - 用户说"表"、"视图"、"Schema"、"查询"、"SQL" → 用 Lakehouse Plugin
 - 不确定时，先用 `cz-cli --help` 或 `cz-cli <command> --help` 查看是否有对应命令
 
-**⚠️ 优先使用 cz-cli 其他子命令，避免高频使用 `cz-cli agent`**。绝大多数场景都有更直接的命令（`cz-cli task`、`cz-cli runs`、`cz-cli sql` 等）。
+**⚠️ 优先使用 cz-cli 其他子命令，避免高频使用 `cz-cli agent run`**。绝大多数场景都有更直接的命令（`cz-cli task`、`cz-cli runs`、`cz-cli sql` 等）。
 
 ---
 
