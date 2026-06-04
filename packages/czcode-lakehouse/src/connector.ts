@@ -112,6 +112,14 @@ export class LakehouseConnector {
     await this.connect()
   }
 
+  // czcode_change start - reconnect with a completely new config (e.g. switching cz-cli profile)
+  async reconnectWithConfig(newConfig: LakehouseConfig): Promise<void> {
+    this.conn?.destroy()
+    this.config = newConfig
+    await this.connect()
+  }
+  // czcode_change end
+
   currentSchema(): string {
     return this.config.schema ?? "public"
   }

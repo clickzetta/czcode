@@ -560,6 +560,7 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
     return {}
   }
 
+
   return {
     tool: {
       read_query: tool({
@@ -839,15 +840,47 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
 
       switch_context: tool({
         description:
-          "切换当前会话的 Schema 和/或 VCluster。切换前会验证目标对象存在，不存在则报错。" +
-          "schema 和 vcluster 参数至少提供一个。",
+          "切换当前会话的 Schema 和/或 VCluster，或切换到不同的 cz-cli 连接 profile（同步更新 read_query/write_query 的连接）。" +
+          "切换 profile 时会重新建立连接，后续所有工具调用都使用新 profile 的实例。" +
+          "schema 和 vcluster 参数至少提供一个（profile 除外）。",
         args: {
           schema: z.string().optional().describe("要切换到的 Schema 名称"),
           vcluster: z.string().optional().describe("要切换到的 VCluster 名称"),
+          // czcode_change start - profile switching
+          profile: z.string().optional().describe("切换到指定的 cz-cli profile（~/.clickzetta/profiles.toml），同步更新所有 Lakehouse 工具的连接实例"),
+          // czcode_change end
         },
         async execute(args) {
+          // czcode_change start - profile switching reconnects all tools
+          if (args.profile) {
+            const prevProfile = process.env.CLICKZETTA_PROFILE
+            process.env.CLICKZETTA_PROFILE = args.profile
+            const newConfig = readConfigFromProfiles()
+            if (!newConfig) {
+              process.env.CLICKZETTA_PROFILE = prevProfile ?? ""
+              return `Profile "${args.profile}" 不存在或配置不完整。请先运行 cz-cli profile list 确认可用的 profile 名称。`
+            }
+            try {
+              await connector.reconnectWithConfig(newConfig)
+              const results = [`✓ 已切换到 Profile: ${args.profile} (${newConfig.instance}/${newConfig.workspace})`]
+              if (args.schema) {
+                await connector.switchContext(args.schema, undefined)
+                results.push(`✓ 已切换到 Schema: ${args.schema}`)
+              }
+              if (args.vcluster) {
+                await connector.switchContext(undefined, args.vcluster)
+                results.push(`✓ 已切换到 VCluster: ${args.vcluster}`)
+              }
+              return results.join("\n")
+            } catch (err) {
+              process.env.CLICKZETTA_PROFILE = prevProfile ?? ""
+              return `切换 Profile "${args.profile}" 失败: ${(err as Error).message}`
+            }
+          }
+          // czcode_change end
+
           if (!args.schema && !args.vcluster) {
-            return "请至少提供 schema 或 vcluster 参数之一。"
+            return "请至少提供 schema、vcluster 或 profile 参数之一。"
           }
 
           const results: string[] = []

@@ -16,9 +16,9 @@ czcode 有两套工具操作 Lakehouse：**Lakehouse Plugin**（read_query/write
 **用 Lakehouse Plugin（read_query/write_query/list_objects/describe_object）：**
 - SQL 查询和执行（SELECT/DDL/DML）
 - 查看 Lakehouse 内部对象（表/视图/Schema/VCluster/Volume/Connection 等）
-- 切换 Schema/VCluster
+- 切换 Schema/VCluster，或切换到不同实例（`switch_context` 支持 `profile` 参数）
 
-**⚠️ 多实例/多 profile 限制**：Lakehouse Plugin（read_query/write_query 等）始终连接 czcode 启动时配置的实例，**切换 cz-cli profile 不会影响 Plugin 的连接**。如果用户需要操作非默认实例（如从上海切到 AWS 新加坡），必须用 `cz-cli -p <profile> sql "<sql>" --sync` 代替 write_query/read_query。不要在切换 profile 后仍用 Lakehouse Plugin 执行 SQL，否则操作的是错误的实例。
+**切换实例**：用 `switch_context(profile="<profile_name>")` 即可同步切换 read_query/write_query 的连接实例。切换后所有 Plugin 工具都使用新实例，无需改用 cz-cli。
 
 **用 cz-cli（通过 bash 执行）：**
 - Studio 任务管理：`cz-cli task list`、`cz-cli task list-folders`、`cz-cli task content <task>`
@@ -32,14 +32,13 @@ czcode 有两套工具操作 Lakehouse：**Lakehouse Plugin**（read_query/write
 - Agent LLM 配置：`cz-cli agent llm show`、`cz-cli agent llm add <name> --provider openai-compatible --base-url <url> --api-key <key> --use`
 - 连接配置：`cz-cli setup --login-method clickzetta`、`cz-cli setup --jdbc <jdbc-url>`
 - 生成命令参考：`cz-cli ai-guide`（生成适合 agent 读的命令文档）
-- **跨实例 SQL**：`cz-cli -p <profile> sql "<sql>" --sync`（当需要操作非默认实例时）
 
 **判断规则**：
 - 用户说"任务"、"调度"、"运行"、"日志"、"attempt"、"重试"、"数据源"、"task"、"runs"、"datasource" → 用 cz-cli
 - 用户说"AI Gateway"、"virtual key"、"aigw 模型" → 用 `cz-cli ai-gateway`
 - 用户说"配置 LLM"、"切换模型"、"agent llm" → 用 `cz-cli agent llm`
-- 用户说"切换到 XX 实例"、"用 XX profile"、"AWS SG"、"新加坡" → 后续所有 SQL 改用 `cz-cli -p <profile> sql --sync`，停止使用 Lakehouse Plugin
-- 用户说"表"、"视图"、"Schema"、"查询"、"SQL"（默认实例） → 用 Lakehouse Plugin
+- 用户说"切换到 XX 实例"、"用 XX profile"、"AWS SG"、"新加坡" → 先调用 `switch_context(profile="<name>")` 切换连接，再正常使用 Lakehouse Plugin
+- 用户说"表"、"视图"、"Schema"、"查询"、"SQL" → 用 Lakehouse Plugin
 - 不确定时，先用 `cz-cli --help` 或 `cz-cli <command> --help` 查看是否有对应命令
 
 **⚠️ 优先使用 cz-cli 其他子命令，避免高频使用 `cz-cli agent run`**。绝大多数场景都有更直接的命令（`cz-cli task`、`cz-cli runs`、`cz-cli sql` 等）。
