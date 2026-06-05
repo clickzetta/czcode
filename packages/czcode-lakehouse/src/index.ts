@@ -59,6 +59,24 @@ const LakehouseConfigSchema = z.object({
 import { readFileSync, existsSync } from "node:fs"
 import { join } from "node:path"
 import { homedir } from "node:os"
+import { execSync } from "node:child_process"
+
+// czcode_change start - track active profile for session-level cz-cli sync
+let _activeProfile: string | null = null
+
+function getActiveProfile(): string | null {
+  return _activeProfile
+}
+
+function detectCzCli(): { installed: boolean; path?: string } {
+  try {
+    const p = execSync("which cz-cli 2>/dev/null || command -v cz-cli 2>/dev/null", { encoding: "utf8" }).trim()
+    return p ? { installed: true, path: p } : { installed: false }
+  } catch {
+    return { installed: false }
+  }
+}
+// czcode_change end
 
 // Read config from ~/.clickzetta/profiles.toml (shared with cz-cli)
 function readConfigFromProfiles(): LakehouseConfig | null {
@@ -831,7 +849,19 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
                 current_session_id()   AS session_id`,
               1,
             )
-            return formatQueryResult(result)
+            // czcode_change start - append active profile and cz-cli hint
+            const lines = [formatQueryResult(result)]
+            const ap = getActiveProfile()
+            if (ap) {
+              const czCli = detectCzCli()
+              if (czCli.installed) {
+                lines.push(`\n当前 active profile: ${ap}（cz-cli 命令请加 -p ${ap}）`)
+              } else {
+                lines.push(`\n当前 active profile: ${ap}（cz-cli 未安装）`)
+              }
+            }
+            return lines.join("")
+            // czcode_change end
           } catch (err) {
             return `获取上下文失败: ${(err as Error).message}`
           }
@@ -862,6 +892,9 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
             }
             try {
               await connector.reconnectWithConfig(newConfig)
+              // czcode_change start - store active profile for cz-cli sync
+              _activeProfile = args.profile
+              // czcode_change end
               const results = [`✓ 已切换到 Profile: ${args.profile} (${newConfig.instance}/${newConfig.workspace})`]
               if (args.schema) {
                 await connector.switchContext(args.schema, undefined)
@@ -871,6 +904,14 @@ export const CzCodeLakehousePlugin: Plugin = async (_input, options) => {
                 await connector.switchContext(undefined, args.vcluster)
                 results.push(`✓ 已切换到 VCluster: ${args.vcluster}`)
               }
+              // czcode_change start - cz-cli sync hint
+              const czCli = detectCzCli()
+              if (czCli.installed) {
+                results.push(`ℹ️ cz-cli 已安装。后续 cz-cli 命令请加 -p ${args.profile} 保持一致，例如：cz-cli -p ${args.profile} task list`)
+              } else {
+                results.push(`ℹ️ cz-cli 未安装，跳过 cz-cli 同步提示。`)
+              }
+              // czcode_change end
               return results.join("\n")
             } catch (err) {
               process.env.CLICKZETTA_PROFILE = prevProfile ?? ""
