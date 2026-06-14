@@ -9,45 +9,57 @@ import javax.swing.border.Border
 
 /** Static style tokens owned by the chat session UI. */
 object SessionUiStyle {
-    /** Geometry for the transcript list and its scroll behavior. */
-    object SessionLayout {
-        const val GAP = 4
-        const val TRANSCRIPT_PADDING = 12
-        const val USER_PROMPT_INDENT = 100
-        const val SCROLL_INCREMENT = 16
+    object Transcript {
+        fun bgColor(): Color = UiStyle.Colors.bg()
     }
 
-    /** Shared tokens for individual transcript views and cards. */
-    object View {
-        const val CARD_LAYOUT_GAP = 6
-        const val CARD_VERTICAL_PADDING = 8
-        const val CARD_HORIZONTAL_PADDING = 12
-        const val CARD_BODY_EXTRA_HEIGHT = 16
+    /** Geometry for the transcript list and its scroll behavior. */
+    object SessionLayout {
+        const val GAP = 3
+        const val TRANSCRIPT_PADDING = 12
+        const val TRANSCRIPT_SCROLLBAR_PADDING = 10
+        const val USER_PROMPT_INDENT = 100
+        const val SCROLL_INCREMENT = 48
+    }
 
-        internal const val BORDER_DELTA = 64
+    /** Shared tokens for individual transcript views and session views. */
+    object View {
+        object Layout {
+            const val GAP = 5
+            const val VERTICAL_PADDING = 7
+            const val HORIZONTAL_PADDING = 12
+            const val BODY_EXTRA_HEIGHT = 16
+        }
+
+        internal const val BORDER_DELTA = 80
         internal const val HOVER_BORDER_ALPHA = 0.18f
         internal const val HOVER_FILL_ALPHA = 0.10f
 
-        /** Creates a visible separator against editor-derived transcript surfaces. */
-        fun line(): Color = JBColor.lazy { UiStyle.Colors.contrast(UiStyle.Colors.editorBackground(), BORDER_DELTA) }
+        object Surface {
+            fun bgColor(): Color = UiStyle.Colors.editorBackground()
 
-        fun surface(): Color = UiStyle.Colors.editorBackground()
+            fun headerBgColor(): Color = UiStyle.Colors.editorBackground()
 
-        fun header(): Color = UiStyle.Colors.editorBackground()
-
-        /** Subtle hover fill, softer than the card outline. */
-        fun headerHover(): Color = JBColor.lazy { UiStyle.Colors.blend(header(), hoverLine(), HOVER_FILL_ALPHA) }
-
-        /** Subtle hover outline, stronger than the hover fill. */
-        fun hoverLine(): Color = JBColor.lazy {
-            UiStyle.Colors.blend(line(), JBUI.CurrentTheme.ActionButton.hoverBackground(), HOVER_BORDER_ALPHA)
+            /** Subtle hover fill, softer than the session-view outline. */
+            fun headerHoverBgColor(): Color = JBColor.lazy {
+                UiStyle.Colors.blend(headerBgColor(), Outline.hoverColor(), HOVER_FILL_ALPHA)
+            }
         }
 
-        fun card(color: Color = line()): Border = cardBorder(color)
+        object Outline {
+            fun color(): Color = UiStyle.Colors.contentBorder()
 
-        fun cardBorder(color: Color = line()): Border = JBUI.Borders.customLine(color, 1)
+            fun brightColor(): Color = JBColor.lazy {
+                UiStyle.Colors.contrast(UiStyle.Colors.editorBackground(), BORDER_DELTA)
+            }
 
-        fun cardTop(): Border = JBUI.Borders.customLineTop(line())
+            /** Subtle hover outline, stronger than the hover fill. */
+            fun hoverColor(): Color = JBColor.lazy {
+                UiStyle.Colors.blend(brightColor(), JBUI.CurrentTheme.ActionButton.hoverBackground(), HOVER_BORDER_ALPHA)
+            }
+
+            fun width(): Int = JBUI.scale(1)
+        }
 
         /** Prompt input dimensions and chrome inside the session view. */
         object Prompt {
@@ -68,6 +80,9 @@ object SessionUiStyle {
         /** Reasoning block preview sizing. */
         object Reasoning {
             const val BODY_LINES = 5
+            const val HEADER_VERTICAL_PADDING = 5
+            const val BODY_VERTICAL_PADDING = 4
+            const val BODY_HORIZONTAL_PADDING = 8
         }
 
         /** Message container roles and user bubble geometry. */
@@ -79,12 +94,26 @@ object SessionUiStyle {
             const val USER_BORDER_HORIZONTAL_PADDING = 12
         }
 
-        /** Permission card command preview limits. */
+        /** Markdown code block geometry inside assistant messages. */
+        object Code {
+            const val BLOCK_GAP = 6
+            const val MIN_ROWS = 1
+            const val BORDER_WIDTH = 1
+            const val VIEWPORT_TOP_PADDING = 6
+            const val VIEWPORT_HORIZONTAL_PADDING = 8
+            const val VIEWPORT_BOTTOM_PADDING = 0
+            const val SCROLLBAR_HEIGHT = 12
+            const val WIDTH_PADDING = 16
+
+            fun topPadding(): Int = VIEWPORT_TOP_PADDING + SCROLLBAR_HEIGHT
+        }
+
+        /** Permission session-view command preview limits. */
         object Permission {
             const val COMMAND_LINES = 3
         }
 
-        /** Tool card preview limits and state colors. */
+        /** Tool session-view preview limits and state colors. */
         object Tool {
             const val BODY_LINES = 15
             const val PREVIEW_LIMIT = 20_000
@@ -99,6 +128,12 @@ object SessionUiStyle {
         }
     }
 
+    object AccountPopup {
+        fun bgColor(): Color = UiStyle.Colors.contentBackground()
+
+        fun outlineColor(): Color = UiStyle.Colors.contentBorder()
+    }
+
     /** Limits for the empty-state recent sessions list. */
     object RecentSessions {
         const val LIMIT = 5
@@ -107,20 +142,26 @@ object SessionUiStyle {
 
     /** Colors for timeline/activity indicators in the session header. */
     object Timeline {
-        val READ: Color = JBColor(Color(0x37, 0x94, 0xff), Color(0x37, 0x94, 0xff))
-        val WRITE: Color = JBColor(Color(0x00, 0x7f, 0xd4), Color(0x00, 0x7f, 0xd4))
-        val TOOL: Color = JBColor(Color(0x00, 0x7a, 0xcc), Color(0x00, 0x7a, 0xcc))
+        val READ: Color = JBColor.namedColor("Kilo.Session.Timeline.Read", Color(0x37, 0x94, 0xff))
+        val WRITE: Color = JBColor.namedColor("Kilo.Session.Timeline.Write", Color(0x00, 0x7f, 0xd4))
+        val TOOL: Color = JBColor.namedColor("Kilo.Session.Timeline.Tool", Color(0x00, 0x7a, 0xcc))
         val SUCCESS: Color = JBColor.namedColor("Label.successForeground", UIUtil.getLabelSuccessForeground())
-        val ERROR: Color = JBColor(Color(0xf4, 0x87, 0x71), Color(0xf4, 0x87, 0x71))
-        val TEXT: Color = JBColor(Color(0x9d, 0x9d, 0x9d), Color(0x9d, 0x9d, 0x9d))
-        val STEP: Color = JBColor(Color(0x4d, 0x4d, 0x4d), Color(0x4d, 0x4d, 0x4d))
+        val ERROR: Color = JBColor.namedColor("Kilo.Session.Timeline.Error", UIUtil.getErrorForeground())
+        val TEXT: Color = JBColor.namedColor("Kilo.Session.Timeline.Text", UIUtil.getContextHelpForeground())
+        val STEP: Color = JBColor.namedColor("Kilo.Session.Timeline.Step", JBColor.border())
     }
 }
 
 /** Border presets for connection dock panel. */
 object Dock {
     fun banner(): Border = JBUI.Borders.compound(
-        JBUI.Borders.customLineTop(SessionUiStyle.View.line()),
+        JBUI.Borders.customLine(
+            SessionUiStyle.View.Outline.color(),
+            SessionUiStyle.View.Outline.width(),
+            0,
+            0,
+            0,
+        ),
         JBUI.Borders.empty(UiStyle.Gap.sm(), UiStyle.Gap.lg(), 0, UiStyle.Gap.lg()),
     )!!
 }

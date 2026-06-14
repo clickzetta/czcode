@@ -134,7 +134,7 @@ const tui: TuiPlugin = async (api) => {
   })
 
   // Command: /cz_vcluster triggers agent to query VCluster status
-  api.command.register(() => [
+  api.command?.register(() => [
     {
       title: t("cmd.vcluster.title"),
       value: "czcode-vcluster",

@@ -3,8 +3,7 @@ export * as ConfigAgent from "./agent"
 import path from "path" // kilocode_change
 import { Exit, Schema, SchemaGetter } from "effect"
 import { Bus } from "@/bus"
-import { zod } from "@/util/effect-zod"
-import { PositiveInt, withStatics } from "@/util/schema"
+import { PositiveInt } from "@opencode-ai/core/schema"
 import * as Log from "@opencode-ai/core/util/log"
 import { NamedError } from "@opencode-ai/core/util/error"
 import { Glob } from "@opencode-ai/core/util/glob"
@@ -30,9 +29,11 @@ const Color = Schema.Union([
 const AgentSchema = Schema.StructWithRest(
   Schema.Struct({
     model: Schema.optional(Schema.NullOr(ConfigModelID)), // kilocode_change - nullable for delete sentinel
-    variant: Schema.optional(Schema.String).annotate({
+    // kilocode_change start - nullable for delete sentinel
+    variant: Schema.optional(Schema.NullOr(Schema.String)).annotate({
       description: "Default model variant for this agent (applies only when using the agent's configured model).",
     }),
+    // kilocode_change end
     temperature: Schema.optional(Schema.NullOr(Schema.Finite)), // kilocode_change - nullable for delete sentinel
     top_p: Schema.optional(Schema.NullOr(Schema.Finite)), // kilocode_change - nullable for delete sentinel
     prompt: Schema.optional(Schema.NullOr(Schema.String)), // kilocode_change - nullable for delete sentinel
@@ -117,9 +118,7 @@ export const Info = AgentSchema.pipe(
     decode: SchemaGetter.transform(normalize),
     encode: SchemaGetter.passthrough({ strict: false }),
   }),
-)
-  .annotate({ identifier: "AgentConfig" })
-  .pipe(withStatics((s) => ({ zod: zod(s) })))
+).annotate({ identifier: "AgentConfig" })
 export type Info = Schema.Schema.Type<typeof Info>
 
 // kilocode_change start
@@ -181,7 +180,7 @@ export async function load(dir: string, warnings?: Warning[]) {
     // kilocode_change end
     // kilocode_change start - use Effect schema (propertyOrder: original) + non-fatal handleInvalid
     try {
-      result[config.name] = ConfigParse.effectSchema(Info, config, item) as Info
+      result[config.name] = ConfigParse.schema(Info, config, item) as Info
     } catch (err) {
       if (ConfigError.InvalidError.isInstance(err)) {
         await KilocodeConfig.handleInvalid("agent", item, err.data.issues ?? [], err, warnings)
@@ -230,7 +229,7 @@ export async function loadMode(dir: string, warnings?: Warning[]) {
     // kilocode_change start - use Effect schema (propertyOrder: original) + non-fatal handleInvalid
     try {
       result[config.name] = {
-        ...(ConfigParse.effectSchema(Info, config, item) as Info),
+        ...(ConfigParse.schema(Info, config, item) as Info),
         mode: "primary" as const,
       }
     } catch (err) {

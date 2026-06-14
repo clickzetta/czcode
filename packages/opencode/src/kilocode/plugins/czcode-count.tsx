@@ -8,7 +8,7 @@ import type { TuiPlugin, TuiPluginModule } from "@kilocode/plugin/tui"
 const id = "internal:czcode-count"
 
 const tui: TuiPlugin = async (api) => {
-  api.command.register(() => [
+  api.command?.register(() => [
     {
       title: t("cmd.count.title"),
       value: "czcode-count",

@@ -11,7 +11,7 @@ const id = "internal:czcode-profile"
 const PROFILE_PROMPT = (table: string) => t("profile.prompt", { table })
 
 const tui: TuiPlugin = async (api) => {
-  api.command.register(() => [
+  api.command?.register(() => [
     {
       title: t("cmd.profile.title"),
       value: "czcode-profile",

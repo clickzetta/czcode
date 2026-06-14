@@ -48,7 +48,7 @@ function RoleSwitchDialog(props: { toast: (input: TuiToast) => void }) {
 }
 
 const tui: TuiPlugin = async (api) => {
-  api.command.register(() => [
+  api.command?.register(() => [
     {
       title: t("role.switchTitle"),
       value: "czcode-role",

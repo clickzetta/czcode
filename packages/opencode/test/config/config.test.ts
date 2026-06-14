@@ -145,6 +145,55 @@ test("loads config with defaults when no files exist", async () => {
   })
 })
 
+test("creates global jsonc config with schema when no global configs exist", async () => {
+  await using tmp = await tmpdir()
+  const prev = Global.Path.config
+  ;(Global.Path as { config: string }).config = tmp.path
+  await clear(true)
+
+  try {
+    await WithInstance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        await load()
+      },
+    })
+
+    const content = await Filesystem.readText(path.join(tmp.path, "kilo.jsonc"))
+    expect(content).toContain('"$schema": "https://app.kilo.ai/config.json"')
+  } finally {
+    ;(Global.Path as { config: string }).config = prev
+    await clear(true)
+  }
+})
+
+test("does not create global config when KILO_CONFIG_DIR is set", async () => {
+  await using tmp = await tmpdir()
+  await using custom = await tmpdir()
+  const prevConfig = Global.Path.config
+  const prevEnv = process.env.KILO_CONFIG_DIR
+  ;(Global.Path as { config: string }).config = tmp.path
+  process.env.KILO_CONFIG_DIR = custom.path
+  await clear(true)
+
+  try {
+    await WithInstance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        await load()
+      },
+    })
+
+    expect(await Filesystem.exists(path.join(tmp.path, "opencode.jsonc"))).toBe(false)
+  } finally {
+    ;(Global.Path as { config: string }).config = prevConfig
+    if (prevEnv === undefined) delete process.env.KILO_CONFIG_DIR
+    else process.env.KILO_CONFIG_DIR = prevEnv
+    await clear(true)
+  }
+})
+
+// kilocode_change start
 test("loads JSON config file", async () => {
   await using tmp = await tmpdir({
     init: async (dir) => {
@@ -164,6 +213,40 @@ test("loads JSON config file", async () => {
     },
   })
 })
+// kilocode_change end
+
+// kilocode_change start
+test("preserves Kilo provider free model metadata", async () => {
+  await using tmp = await tmpdir({
+    init: async (dir) => {
+      await writeConfig(dir, {
+        $schema: "https://app.kilo.ai/config.json",
+        model: "kilo/free-e2e",
+        provider: {
+          kilo: {
+            models: {
+              "free-e2e": {
+                id: "free-e2e",
+                isFree: true,
+                ai_sdk_provider: "openai-compatible",
+              },
+            },
+          },
+        },
+      })
+    },
+  })
+  await WithInstance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const config = await load()
+      const model = config.provider?.kilo?.models?.["free-e2e"]
+      expect(model?.isFree).toBe(true)
+      expect(model?.ai_sdk_provider).toBe("openai-compatible")
+    },
+  })
+})
+// kilocode_change end
 
 test("loads shell config field", async () => {
   await using tmp = await tmpdir({
@@ -253,7 +336,7 @@ test("updates global config and omits empty shell key in jsonc", async () => {
 
     const file = path.join(tmp.path, "opencode.jsonc")
     const writtenConfig = await Filesystem.readText(file)
-    const parsed = ConfigParse.schema(Config.Info.zod, ConfigParse.jsonc(writtenConfig, file), file)
+    const parsed = ConfigParse.schema(Config.Info, ConfigParse.jsonc(writtenConfig, file), file)
     expect(writtenConfig).not.toContain('"shell"')
     expect(parsed.shell).toBeUndefined()
     expect(parsed.model).toBe("test/model")
@@ -1762,8 +1845,8 @@ test("permission config preserves user key order", async () => {
   }
 })
 
-test("Effect config parser preserves permission order while rejecting unknown top-level keys", () => {
-  const config = ConfigParse.effectSchema(
+test("config parser preserves permission order while rejecting unknown top-level keys", () => {
+  const config = ConfigParse.schema(
     Config.Info,
     {
       permission: {
@@ -1777,30 +1860,7 @@ test("Effect config parser preserves permission order while rejecting unknown to
 
   expect(Object.keys(config.permission!)).toEqual(["bash", "*", "edit"])
   try {
-    ConfigParse.effectSchema(Config.Info, { invalid_field: true }, "test")
-    throw new Error("expected config parse to fail")
-  } catch (err) {
-    const error = err as { data?: { issues?: Array<{ code?: string; keys?: string[]; path?: string[] }> } }
-    expect(error.data?.issues?.[0]).toMatchObject({ code: "unrecognized_keys", keys: ["invalid_field"], path: [] })
-  }
-})
-
-test("Effect config parser preserves permission order while rejecting unknown top-level keys", () => {
-  const config = ConfigParse.effectSchema(
-    Config.Info,
-    {
-      permission: {
-        bash: "allow",
-        "*": "deny",
-        edit: "ask",
-      },
-    },
-    "test",
-  )
-
-  expect(Object.keys(config.permission!)).toEqual(["bash", "*", "edit"])
-  try {
-    ConfigParse.effectSchema(Config.Info, { invalid_field: true }, "test")
+    ConfigParse.schema(Config.Info, { invalid_field: true }, "test")
     throw new Error("expected config parse to fail")
   } catch (err) {
     const error = err as { data?: { issues?: Array<{ code?: string; keys?: string[]; path?: string[] }> } }
@@ -2634,7 +2694,7 @@ describe("KILO_CONFIG_CONTENT token substitution", () => {
 // parseManagedPlist unit tests — pure function, no OS interaction
 
 test("parseManagedPlist strips MDM metadata keys", async () => {
-  const config = ConfigParse.effectSchema(
+  const config = ConfigParse.schema(
     Config.Info,
     ConfigParse.jsonc(
       await ConfigManaged.parseManagedPlist(
@@ -2662,7 +2722,7 @@ test("parseManagedPlist strips MDM metadata keys", async () => {
 })
 
 test("parseManagedPlist parses server settings", async () => {
-  const config = ConfigParse.effectSchema(
+  const config = ConfigParse.schema(
     Config.Info,
     ConfigParse.jsonc(
       await ConfigManaged.parseManagedPlist(
@@ -2682,7 +2742,7 @@ test("parseManagedPlist parses server settings", async () => {
 })
 
 test("parseManagedPlist parses permission rules", async () => {
-  const config = ConfigParse.effectSchema(
+  const config = ConfigParse.schema(
     Config.Info,
     ConfigParse.jsonc(
       await ConfigManaged.parseManagedPlist(
@@ -2712,7 +2772,7 @@ test("parseManagedPlist parses permission rules", async () => {
 })
 
 test("parseManagedPlist parses enabled_providers", async () => {
-  const config = ConfigParse.effectSchema(
+  const config = ConfigParse.schema(
     Config.Info,
     ConfigParse.jsonc(
       await ConfigManaged.parseManagedPlist(
@@ -2729,7 +2789,7 @@ test("parseManagedPlist parses enabled_providers", async () => {
 })
 
 test("parseManagedPlist handles empty config", async () => {
-  const config = ConfigParse.effectSchema(
+  const config = ConfigParse.schema(
     Config.Info,
     ConfigParse.jsonc(
       await ConfigManaged.parseManagedPlist(JSON.stringify({ $schema: "https://opencode.ai/config.json" })), // kilocode_change

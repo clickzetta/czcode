@@ -162,7 +162,7 @@ function DialogSingClawLaunching(props: { onReady: () => void }) {
 // ── Plugin ────────────────────────────────────────────────────────
 
 const tui: TuiPlugin = async (api) => {
-  api.command.register(() => [
+  api.command?.register(() => [
     {
       title: "SingClaw",
       value: "czcode-singclaw",

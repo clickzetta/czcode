@@ -49,10 +49,13 @@
     "sonnet",
     "anthropic",
     "openai",
-    "zoo code"
+    "zoo code",
+    "opencode",
+    "open code"
   ],
   "activationEvents": [
-    "onStartupFinished"
+    "onStartupFinished",
+    "onUri"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -99,36 +102,43 @@
       {
         "command": "kilo-code.new.plusButtonClicked",
         "title": "New Task",
+        "category": "Kilo Code",
         "icon": "$(add)"
       },
       {
         "command": "kilo-code.new.agentManagerOpen",
         "title": "Agent Manager",
+        "category": "Kilo Code",
         "icon": "$(organization)"
       },
       {
         "command": "kilo-code.new.kiloClawOpen",
         "title": "KiloClaw",
+        "category": "Kilo Code",
         "icon": "$(comment-discussion)"
       },
       {
         "command": "kilo-code.new.marketplaceButtonClicked",
         "title": "Marketplace",
+        "category": "Kilo Code",
         "icon": "$(extensions)"
       },
       {
         "command": "kilo-code.new.historyButtonClicked",
         "title": "History",
+        "category": "Kilo Code",
         "icon": "$(history)"
       },
       {
         "command": "kilo-code.new.profileButtonClicked",
         "title": "Profile",
+        "category": "Kilo Code",
         "icon": "$(account)"
       },
       {
         "command": "kilo-code.new.settingsButtonClicked",
         "title": "Settings",
+        "category": "Kilo Code",
         "icon": "$(settings-gear)"
       },
       {
@@ -168,7 +178,8 @@
       },
       {
         "command": "kilo-code.new.openInTab",
-        "title": "Kilo Code",
+        "title": "Open in Tab",
+        "category": "Kilo Code",
         "icon": {
           "light": "assets/icons/kilo-light.svg",
           "dark": "assets/icons/kilo-dark.svg"
@@ -854,11 +865,11 @@
           ],
           "enumDescriptions": [
             "Codestral via Kilo Gateway",
-            "Mercury Edit 2 via Kilo Gateway",
-            "Mercury Next Edit (multi-line edit predictions with jump-to-edit UX) via Kilo Gateway",
+            "Mercury Edit 2 (FIM) via Kilo Gateway",
+            "Mercury Edit 2 (Next Edit), multi-line edit predictions with jump-to-edit UX, via Kilo Gateway",
             "Codestral via your connected Mistral provider API key",
             "Mercury Edit 2 (FIM) via your connected Inception provider API key",
-            "Mercury Next Edit (multi-line edit predictions with jump-to-edit UX) via your connected Inception provider API key"
+            "Mercury Edit 2 (Next Edit), multi-line edit predictions with jump-to-edit UX, via your connected Inception provider API key"
           ],
           "description": "Model to use for inline autocomplete suggestions. If unset, the recommended default is used."
         },
@@ -890,11 +901,6 @@
           "type": "boolean",
           "default": false,
           "description": "Enable chat textarea autocomplete"
-        },
-        "kilo-code.new.speechToText.enabled": {
-          "type": "boolean",
-          "default": false,
-          "description": "Enable experimental speech-to-text voice input in prompt fields. Uses your Kilo account through the Kilo Gateway."
         },
         "kilo-code.new.speechToText.model": {
           "type": "string",
@@ -983,6 +989,24 @@
           "type": "boolean",
           "default": true,
           "description": "Show the task timeline graph in the chat header"
+        },
+        "kilo-code.new.agentWorkStyle": {
+          "type": "string",
+          "scope": "application",
+          "default": "unset",
+          "enum": [
+            "unset",
+            "human-in-the-loop",
+            "autonomous",
+            "skipped"
+          ],
+          "enumDescriptions": [
+            "Show work style onboarding so you can choose again",
+            "Human in the Loop: review agent actions as they happen",
+            "High autonomy: let Kilo take most actions with fewer interruptions",
+            "Onboarding was skipped without changing work style settings"
+          ],
+          "description": "Preferred agent work style. Set to Unset to show the onboarding flow again."
         },
         "kilo-code.new.diff.renderMarkdown": {
           "type": "boolean",
@@ -1084,7 +1108,8 @@
     "web-tree-sitter": "^0.24.7",
     "yaml": "2.8.3",
     "zod": "^3.24.2",
-    "stream-chat": "9.38.0"
+    "stream-chat": "9.38.0",
+    "@pierre/diffs": "catalog:"
   },
   "peerDependencies": {}
 }

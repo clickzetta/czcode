@@ -4,7 +4,7 @@
   "scripts": {
     "build": "bun script/build.ts",
     "build:production": "bun script/build.ts --production",
-    "typecheck": "echo 'kilo-jetbrains typecheck skipped (requires Gradle/JDK)'",
+    "typecheck": "./gradlew typecheck",
     "test": "./gradlew test",
     "test:ci": "bun script/test-ci.ts"
   },

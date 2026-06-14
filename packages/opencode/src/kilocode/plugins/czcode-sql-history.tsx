@@ -35,7 +35,7 @@ function extractSql(messages: readonly Message[], parts: (id: string) => readonl
 }
 
 const tui: TuiPlugin = async (api) => {
-  api.command.register(() => [
+  api.command?.register(() => [
     {
       title: t("cmd.history.title"),
       value: "czcode-sql-history",

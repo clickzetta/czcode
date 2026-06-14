@@ -9,7 +9,7 @@ import type { TuiPlugin, TuiPluginModule } from "@kilocode/plugin/tui"
 const id = "internal:czcode-sample"
 
 const tui: TuiPlugin = async (api) => {
-  api.command.register(() => [
+  api.command?.register(() => [
     {
       title: t("cmd.sample.title"),
       value: "czcode-sample",

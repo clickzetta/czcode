@@ -136,8 +136,14 @@ export const dict = {
   "provider.connect.status.failed": "Autorizacija nije uspjela: {{error}}",
   "provider.connect.apiKey.description":
     "Unesi svoj {{provider}} API ključ da povežeš račun i koristiš {{provider}} modele u Kilo-u.",
+  "provider.connect.apiKey.description.local":
+    "Connect to your local {{provider}} server. Leave the API key empty if the server does not require one (default for localhost).",
+  "provider.connect.atomicChat.description":
+    "Connect to Atomic Chat on your machine (default http://127.0.0.1:1337). No API key is required for the local server — start Atomic Chat, load a model, then connect.",
   "provider.connect.apiKey.label": "{{provider}} API ključ",
+  "provider.connect.apiKey.label.optional": "{{provider}} API key (optional)",
   "provider.connect.apiKey.placeholder": "API ključ",
+  "provider.connect.apiKey.placeholder.optional": "Leave empty for local server",
   "provider.connect.apiKey.required": "API ključ je obavezan",
   "provider.connect.prompt.required": "{{field}} je obavezno",
   "provider.connect.azure.endpointType.label": "Odaberite konfiguraciju krajnje tačke za Azure",
@@ -176,6 +182,7 @@ export const dict = {
   "provider.disconnect.toast.disconnected.description": "{{provider}} modeli više nisu dostupni.",
 
   "model.tag.free": "Besplatno",
+  "model.tag.dataCollected": "Podaci se mogu koristiti za obuku",
   "model.tag.latest": "Najnovije",
   "model.group.recommended": "Preporučeno",
   "model.group.favorites": "Favoriti",
@@ -203,6 +210,9 @@ export const dict = {
   "model.preview.label.cached": "Keširano",
   "model.preview.label.average": "Procj. prosječni trošak",
   "model.preview.label.context": "Kontekst",
+  "model.preview.group.terminalBench": "Terminal Bench 2.0",
+  "model.preview.label.completion": "Završetak",
+  "model.preview.label.costAttempt": "Trošak / pokušaj",
   "model.preview.value.notSupported": "Nije podržano",
   "model.preview.tooltip.average":
     "Procijenjeni prosječni trošak zasniva se na tipičnom omjeru ulaznih i izlaznih tokena, te tokena pročitanih iz keša.",
@@ -1045,6 +1055,31 @@ export const dict = {
   "feedback.dialog.github": "Prijavite problem na GitHubu",
   "feedback.dialog.discord": "Pridružite se našoj Discord zajednici",
   "feedback.dialog.support": "Korisnička podrška",
+  "workStyle.onboarding.welcome": "Dobro došli u Kilo",
+  "workStyle.onboarding.title": "Odaberite kako želite raditi",
+  "workStyle.onboarding.settingsNote": "Ove opcije možete promijeniti bilo kada u",
+  "workStyle.onboarding.settings": "Postavkama.",
+  "workStyle.onboarding.description":
+    "Postavlja početne zadane vrijednosti za dozvole, blokove zaključivanja, izlaz terminala i vremensku liniju konteksta. Primjenjuje se samo jednom i preskače postavke koje ste već prilagodili.",
+  "workStyle.onboarding.skip": "Preskoči za sada",
+  "workStyle.toast.saved.title": "Režim je uspješno sačuvan",
+  "workStyle.toast.saved.description": "Svoje postavke možete ažurirati bilo kada u Postavkama.",
+  "workStyle.toast.saved.action": "Idi na Postavke",
+  "workStyle.choice.permissions": "Dozvole",
+  "workStyle.choice.bash": "Bash",
+  "workStyle.choice.visibility": "Vidljivost",
+  "workStyle.choice.human-in-the-loop.eyebrow": "Čovjek nadzire proces",
+  "workStyle.choice.human-in-the-loop.title": "Prvo pregledajte",
+  "workStyle.choice.human-in-the-loop.description": "Kilo zastaje i prikazuje vam svoj plan tokom rada.",
+  "workStyle.choice.human-in-the-loop.permissions": "Traži dozvolu prije uređivanja datoteka ili pokretanja komandi.",
+  "workStyle.choice.human-in-the-loop.bash": "Traži dozvolu za svaku terminalsku komandu.",
+  "workStyle.choice.human-in-the-loop.visibility": "Prikazuje sve detalje razgovora, uključujući zaključivanje.",
+  "workStyle.choice.autonomous.eyebrow": "Manje prekida",
+  "workStyle.choice.autonomous.title": "Visoka autonomija",
+  "workStyle.choice.autonomous.description": "Manje prekida i pojednostavljen interfejs.",
+  "workStyle.choice.autonomous.permissions": "Uređuje datoteke i pokreće komande u radnom prostoru bez pitanja.",
+  "workStyle.choice.autonomous.bash": "Može pokretati terminalske komande u radnom prostoru bez odobrenja.",
+  "workStyle.choice.autonomous.visibility": "Detalji ostaju sažeti dok ih ne proširite.",
   "session.cloud.import.title": "Uvezi iz oblaka",
   "session.cloud.import.placeholder": "ID sesije, URL ili kilo import naredba",
   "session.cloud.import.button": "Uvezi",
@@ -1261,8 +1296,6 @@ export const dict = {
   "settings.experimental.formatter.description": "Omogući automatsko formatiranje koda",
   "settings.experimental.lsp.title": "LSP",
   "settings.experimental.lsp.description": "Omogući integraciju jezičkog servera",
-  "settings.experimental.pasteSummary.title": "Onemogući sažetak lijepljenja",
-  "settings.experimental.pasteSummary.description": "Ne sažimaj veliki zalijepljeni sadržaj",
   "settings.experimental.batch.title": "Batch alat",
   "settings.experimental.batch.description": "Omogući batch obradu poziva alata",
   "settings.experimental.codebaseSearch.title": "Pretraga koda",
@@ -1443,8 +1476,7 @@ export const dict = {
   "settings.autoApprove.tool.todoreadwrite":
     "Upravljanje listom zadataka. Dozvoljava čitanje i ažuriranje interne liste zadataka.",
   "settings.autoApprove.tool.webfetch": "Preuzimanje URL-a. Omogućava preuzimanje sadržaja sa određenog URL-a.",
-  "settings.autoApprove.tool.websearchcodesearch":
-    "Pretraga weba ili koda. Dozvoljava izvršavanje eksternih pretraga weba ili koda.",
+  "settings.autoApprove.tool.websearch": "Pretražuj web. Dozvoljava izvršavanje eksternih pretraga weba.",
   "settings.autoApprove.tool.external_directory":
     "Pristup datotekama izvan radnog prostora. Pokreće se prilikom pristupa datotekama izvan trenutnog direktorija projekta.",
   "settings.autoApprove.tool.doom_loop":

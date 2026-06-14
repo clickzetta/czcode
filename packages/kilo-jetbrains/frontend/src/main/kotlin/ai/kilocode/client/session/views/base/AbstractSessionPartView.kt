@@ -1,7 +1,7 @@
 package ai.kilocode.client.session.views.base
 
 import ai.kilocode.client.session.ui.style.SessionUiStyle
-import com.intellij.icons.AllIcons
+import ai.kilocode.client.session.views.SessionViewIcons
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
@@ -16,14 +16,22 @@ import javax.swing.SwingUtilities
 
 abstract class AbstractSessionPartView(
     header: JComponent,
-    protected val body: JComponent,
+    private val makeBody: () -> JComponent,
     expanded: Boolean = false,
     private val expandable: Boolean = true,
 ) : PartView() {
 
+    constructor(
+        header: JComponent,
+        body: JComponent,
+        expanded: Boolean = false,
+        expandable: Boolean = true,
+    ) : this(header, { body }, expanded, expandable)
+
     protected val arrow = JBLabel()
-    protected val row = JPanel(BorderLayout(JBUI.scale(SessionUiStyle.View.CARD_LAYOUT_GAP), 0))
+    protected val row = JPanel(BorderLayout(JBUI.scale(SessionUiStyle.View.Layout.GAP), 0))
     private val bound = linkedSetOf<Component>()
+    private var body: JComponent? = null
 
     private val click = object : MouseAdapter() {
         override fun mouseClicked(e: MouseEvent) {
@@ -33,12 +41,12 @@ abstract class AbstractSessionPartView(
     }
     private val mouse = object : MouseAdapter() {
         override fun mouseEntered(e: MouseEvent) {
-            setHover(true)
+            setHovered(true)
         }
 
         override fun mouseExited(e: MouseEvent) {
             if (inside(e)) return
-            setHover(false)
+            setHovered(false)
         }
     }
 
@@ -49,32 +57,46 @@ abstract class AbstractSessionPartView(
         row.add(arrow, BorderLayout.EAST)
         add(row, BorderLayout.NORTH)
         bindHeader(row, header, arrow)
-        if (expanded && expandable) add(body, BorderLayout.CENTER)
+        if (expanded && expandable) add(body(), BorderLayout.CENTER)
         if (!expandable) syncExpandable(false) else syncArrow()
     }
 
-    fun isExpanded(): Boolean = body.parent === this
+    fun isExpanded(): Boolean = body?.parent === this
 
     fun toggle() {
         if (!expandable || !arrow.isVisible) return
-        val changed = if (isExpanded()) collapse() else expand()
+        val changed = toggleLocal()
         if (!changed) return
         syncArrow()
         refresh()
     }
 
-    fun expand(): Boolean {
+    open fun expand(): Boolean {
         if (!expandable) return false
         if (isExpanded()) return false
-        add(body, BorderLayout.CENTER)
+        add(body(), BorderLayout.CENTER)
         return true
     }
 
-    fun collapse(): Boolean {
-        if (!isExpanded()) return false
-        remove(body)
+    open fun collapse(): Boolean {
+        val item = body ?: return false
+        if (item.parent !== this) return false
+        remove(item)
         return true
     }
+
+    protected fun hasBody(): Boolean = body != null
+
+    protected fun bodyComponent(): JComponent = body()
+
+    private fun toggleLocal(): Boolean {
+        val fn = resize ?: return toggleBody()
+        val expanded = isExpanded()
+        fn(this) { toggleBody() }
+        return expanded != isExpanded()
+    }
+
+    private fun toggleBody(): Boolean = if (isExpanded()) collapse() else expand()
 
     fun syncExpandable(expandable: Boolean): Boolean {
         val active = this.expandable && expandable
@@ -97,13 +119,11 @@ abstract class AbstractSessionPartView(
 
     protected open fun hoverColor(value: Boolean): Color? = null
 
-    protected open fun applyHover(value: Boolean, color: Color) {}
-
-    private fun setHover(value: Boolean) {
+    override fun setHovered(value: Boolean) {
+        hover?.invoke(this, value)
         val color = hoverColor(value) ?: return
         if (row.background?.rgb == color.rgb) return
         row.background = color
-        applyHover(value, color)
         row.repaint()
     }
 
@@ -119,6 +139,12 @@ abstract class AbstractSessionPartView(
         component.addMouseListener(mouse)
     }
 
+    private fun body(): JComponent {
+        val item = body
+        if (item != null) return item
+        return makeBody().also { body = it }
+    }
+
     private fun syncCursor(cursor: Cursor): Boolean {
         var changed = false
         bound.forEach {
@@ -131,7 +157,7 @@ abstract class AbstractSessionPartView(
     }
 
     private fun syncArrow(): Boolean {
-        val icon = if (isExpanded()) AllIcons.General.ArrowDown else AllIcons.General.ArrowRight
+        val icon = if (isExpanded()) SessionViewIcons.chevronDown else SessionViewIcons.chevronRight
         if (arrow.icon === icon) return false
         arrow.icon = icon
         return true

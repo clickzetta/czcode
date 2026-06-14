@@ -11,7 +11,10 @@ Before installing the Kilo Code plugin, ensure you have:
 
 2. **Node.js:**
    - Download LTS version from [https://nodejs.org/](https://nodejs.org/)
-   - Required for the extension's backend services
+
+{% callout type="tip" %}
+Try the [v7 Early Access Program plugin](#jetbrains-early-access) for a JetBrains-native experience that does not require Node.js or manual API key configuration.
+{% /callout %}
 
 ### Install directly
 
@@ -28,12 +31,14 @@ Before installing the Kilo Code plugin, ensure you have:
 4. Search for "Kilo Code"
 5. Click **Install** and restart your IDE
 
-### Try the v7 Early Access Program plugin
+### Try the v7 Early Access Program plugin {% #jetbrains-early-access %}
 
 The v7 EAP plugin is available for users who want to try the newest JetBrains experience before it reaches the default Marketplace channel. It uses a JetBrains-native UI and is designed to work well with JetBrains remote development.
 
+Follow the [v7 roadmap and release milestone](https://github.com/Kilo-Org/kilocode/milestone/1) for planned work and release progress.
+
 {% callout type="info" %}
-EAP builds may update more frequently than the default Marketplace release. Share feedback in the JetBrains channel on the [Kilo Discord](https://kilo.ai/discord).
+The v7 EAP plugin is compatible with JetBrains IDE builds 261 and later. EAP builds update frequently, so we recommend enabling automatic plugin updates in your JetBrains IDE from **Settings/Preferences → System Settings → Updates → Update plugins automatically**. Share feedback in the JetBrains channel on the [Kilo Discord](https://kilo.ai/discord).
 {% /callout %}
 
 To install the EAP build and receive updates:

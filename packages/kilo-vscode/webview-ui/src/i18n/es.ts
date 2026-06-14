@@ -136,8 +136,14 @@ export const dict = {
   "provider.connect.status.failed": "Autorización fallida: {{error}}",
   "provider.connect.apiKey.description":
     "Introduce tu clave API de {{provider}} para conectar tu cuenta y usar modelos de {{provider}} en Kilo.",
+  "provider.connect.apiKey.description.local":
+    "Connect to your local {{provider}} server. Leave the API key empty if the server does not require one (default for localhost).",
+  "provider.connect.atomicChat.description":
+    "Connect to Atomic Chat on your machine (default http://127.0.0.1:1337). No API key is required for the local server — start Atomic Chat, load a model, then connect.",
   "provider.connect.apiKey.label": "Clave API de {{provider}}",
+  "provider.connect.apiKey.label.optional": "{{provider}} API key (optional)",
   "provider.connect.apiKey.placeholder": "Clave API",
+  "provider.connect.apiKey.placeholder.optional": "Leave empty for local server",
   "provider.connect.apiKey.required": "La clave API es obligatoria",
   "provider.connect.prompt.required": "{{field}} es obligatorio",
   "provider.connect.azure.endpointType.label": "Seleccionar configuración de endpoint de Azure",
@@ -176,6 +182,7 @@ export const dict = {
   "provider.disconnect.toast.disconnected.title": "{{provider}} desconectado",
   "provider.disconnect.toast.disconnected.description": "Los modelos de {{provider}} ya no están disponibles.",
   "model.tag.free": "Gratis",
+  "model.tag.dataCollected": "Los datos pueden utilizarse para entrenamiento",
   "model.tag.latest": "Último",
   "model.group.recommended": "Recomendado",
   "model.group.favorites": "Favoritos",
@@ -204,6 +211,9 @@ export const dict = {
   "model.preview.label.cached": "En caché",
   "model.preview.label.average": "Costo prom. est.",
   "model.preview.label.context": "Contexto",
+  "model.preview.group.terminalBench": "Terminal Bench 2.0",
+  "model.preview.label.completion": "Finalización",
+  "model.preview.label.costAttempt": "Costo / intento",
   "model.preview.value.notSupported": "No admitido",
   "model.preview.tooltip.average":
     "El costo promedio estimado se basa en una proporción típica de tokens de entrada, salida y lectura en caché.",
@@ -1048,6 +1058,33 @@ export const dict = {
   "feedback.dialog.github": "Reportar un problema en GitHub",
   "feedback.dialog.discord": "Unirse a nuestra comunidad de Discord",
   "feedback.dialog.support": "Atención al cliente",
+  "workStyle.onboarding.welcome": "Te damos la bienvenida a Kilo",
+  "workStyle.onboarding.title": "Elige cómo quieres trabajar",
+  "workStyle.onboarding.settingsNote": "Puedes cambiar estas opciones en cualquier momento en",
+  "workStyle.onboarding.settings": "Configuración.",
+  "workStyle.onboarding.description":
+    "Esto establece los valores iniciales de permisos, bloques de razonamiento, salida del terminal y cronología de contexto. Solo se aplica una vez y omite los ajustes que ya hayas personalizado.",
+  "workStyle.onboarding.skip": "Omitir por ahora",
+  "workStyle.toast.saved.title": "Modo guardado correctamente",
+  "workStyle.toast.saved.description": "Actualiza tus preferencias cuando quieras en Configuración.",
+  "workStyle.toast.saved.action": "Ir a Configuración",
+  "workStyle.choice.permissions": "Permisos",
+  "workStyle.choice.bash": "Bash",
+  "workStyle.choice.visibility": "Visibilidad",
+  "workStyle.choice.human-in-the-loop.eyebrow": "Supervisión humana",
+  "workStyle.choice.human-in-the-loop.title": "Revisar primero",
+  "workStyle.choice.human-in-the-loop.description": "Kilo se detiene y te muestra su plan mientras trabaja.",
+  "workStyle.choice.human-in-the-loop.permissions": "Pide permiso antes de editar archivos o ejecutar comandos.",
+  "workStyle.choice.human-in-the-loop.bash": "Pide permiso para ejecutar todos los comandos del terminal.",
+  "workStyle.choice.human-in-the-loop.visibility":
+    "Muestra todos los detalles de la conversación, incluido el razonamiento.",
+  "workStyle.choice.autonomous.eyebrow": "Menos interrupciones",
+  "workStyle.choice.autonomous.title": "Alta autonomía",
+  "workStyle.choice.autonomous.description": "Menos interrupciones y una interfaz optimizada.",
+  "workStyle.choice.autonomous.permissions":
+    "Edita archivos y ejecuta comandos en el espacio de trabajo sin preguntar.",
+  "workStyle.choice.autonomous.bash": "Puede ejecutar comandos en el terminal del espacio de trabajo sin aprobación.",
+  "workStyle.choice.autonomous.visibility": "Los detalles permanecen contraídos hasta que los despliegues.",
   "session.cloud.import.title": "Importar desde la nube",
   "session.cloud.import.placeholder": "ID de sesión, URL o comando kilo import",
   "session.cloud.import.button": "Importar",
@@ -1267,8 +1304,6 @@ export const dict = {
   "settings.experimental.formatter.description": "Habilitar el formateador automático de código",
   "settings.experimental.lsp.title": "LSP",
   "settings.experimental.lsp.description": "Habilitar integración del protocolo de servidor de lenguaje",
-  "settings.experimental.pasteSummary.title": "Deshabilitar resumen de pegado",
-  "settings.experimental.pasteSummary.description": "No resumir contenido pegado grande",
   "settings.experimental.batch.title": "Herramienta por lotes",
   "settings.experimental.batch.description": "Habilitar procesamiento por lotes de llamadas a herramientas",
   "settings.experimental.codebaseSearch.title": "Búsqueda de código",
@@ -1453,8 +1488,7 @@ export const dict = {
   "settings.autoApprove.tool.todoreadwrite":
     "Administrar lista de tareas. Permite leer y actualizar la lista de tareas interna.",
   "settings.autoApprove.tool.webfetch": "Obtener una URL. Permite recuperar contenido de una URL específica.",
-  "settings.autoApprove.tool.websearchcodesearch":
-    "Buscar en la web o en el código. Permite realizar búsquedas externas en la web o en el código.",
+  "settings.autoApprove.tool.websearch": "Buscar en la web. Permite realizar búsquedas externas en la web.",
   "settings.autoApprove.tool.external_directory":
     "Acceder a archivos fuera del espacio de trabajo. Se activa al acceder a archivos fuera del directorio del proyecto actual.",
   "settings.autoApprove.tool.doom_loop":
