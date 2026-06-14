@@ -141,6 +141,7 @@
 | 多表/整库 CDC 实时同步 | `clickzetta-cdc-sync-pipeline` |
 | 离线批量同步 | `clickzetta-batch-sync-pipeline` |
 | Dynamic Table / Table Stream / Pipe | `clickzetta-sql-pipeline-manager` |
+| 增量计算/物化视图/Dynamic Table 增量刷新 | `incremental-computation` |
 | Studio 任务管理/调度/建管分离/DAG | `clickzetta-studio-task-manager` |
 | 管道 Review / 诊断 / 全貌发现 | `clickzetta-pipeline-review` |
 | 索引管理（Bloom Filter/倒排/向量） | `clickzetta-index-manager` |

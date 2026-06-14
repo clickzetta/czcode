@@ -542,7 +542,8 @@ export const layer = Layer.effect(
       // czcode_change start — seed default skills URL and builtin commands
       // Add bundled skills path (next to the binary) for offline use
       const bundledSkillsPath = path.join(path.dirname(process.execPath), "clickzetta-skills")
-      const skillsPaths = existsSync(bundledSkillsPath) ? [bundledSkillsPath] : []
+      const bundledIncSkillsPath = path.join(path.dirname(process.execPath), "incremental-skills")
+      const skillsPaths = [bundledSkillsPath, bundledIncSkillsPath].filter((p) => existsSync(p))
       let result: Info = {
         skills: {
           urls: ["https://clickzetta.github.io/clickzetta-skills/.well-known/skills/"],

@@ -25,6 +25,7 @@
 |---|---|
 | VCluster 管理 | `clickzetta-vcluster-manager` |
 | 查询性能调优 | `clickzetta-query-optimizer` |
+| 增量计算/物化视图刷新优化 | `incremental-computation` |
 | 作业监控 | `clickzetta-monitoring` |
 | Studio 任务运维（补数据/重跑/监控） | `clickzetta-studio-task-manager` |
 | 管道 Review / 诊断 / 全貌发现 | `clickzetta-pipeline-review` |

@@ -430,6 +430,21 @@ if (Script.release) {
   await $`rm -rf ${skillsTmp}`
   console.log("Bundled clickzetta-skills into all platform archives")
   // czcode_change end
+
+  // czcode_change start — bundle incremental-skills into release archives
+  console.log("Downloading incremental-skills for bundling...")
+  const incSkillsTmp = path.resolve("dist", "_inc_skills_tmp")
+  await $`rm -rf ${incSkillsTmp}`
+  await $`git clone --depth 1 --branch main https://github.com/clickzetta/incremental-skills.git ${incSkillsTmp}`.quiet().nothrow()
+  await $`rm -rf ${incSkillsTmp}/.git`
+
+  for (const key of Object.keys(binaries)) {
+    const binDir = `dist/${key}/bin`
+    await $`cp -r ${incSkillsTmp} ${binDir}/incremental-skills`.quiet().nothrow()
+  }
+  await $`rm -rf ${incSkillsTmp}`
+  console.log("Bundled incremental-skills into all platform archives")
+  // czcode_change end
   // kilocode_change end
 
   const archives: string[] = []
