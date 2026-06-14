@@ -2,9 +2,9 @@
 export const logo = {
   left: ["", "", ""],
   right: [
-    " ████  █████   ████   ███   ████   █████  ",
-    "██       ██   ██     ██ ██  ██ ██  ███    ",
-    " ████  █████   ████   ███   ████   █████  ",
+    "  ClickZetta — AI-Powered Lakehouse  ",
+    "                                     ",
+    "                                     ",
   ],
 }
 // czcode_change end

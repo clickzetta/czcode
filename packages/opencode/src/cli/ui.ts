@@ -4,9 +4,7 @@ import { logo as glyphs } from "./logo"
 
 const wordmark = [
   // czcode_change start
-  ` ████  █████   ████   ███   ████   █████  `,
-  `██       ██   ██     ██ ██  ██ ██  ███    `,
-  ` ████  █████   ████   ███   ████   █████  `,
+  "  ClickZetta — AI-Powered Lakehouse",
   // czcode_change end
 ]
 
