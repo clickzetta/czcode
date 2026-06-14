@@ -437,10 +437,13 @@ if (Script.release) {
   await $`rm -rf ${incSkillsTmp}`
   await $`git clone --depth 1 --branch main https://github.com/clickzetta/incremental-skills.git ${incSkillsTmp}`.quiet().nothrow()
   await $`rm -rf ${incSkillsTmp}/.git`
+  // Only keep the skills/ directory — examples/ pollutes the skill registry
+  await $`rm -rf ${incSkillsTmp}/examples`
 
   for (const key of Object.keys(binaries)) {
     const binDir = `dist/${key}/bin`
-    await $`cp -r ${incSkillsTmp} ${binDir}/incremental-skills`.quiet().nothrow()
+    await $`mkdir -p ${binDir}/incremental-skills`.quiet().nothrow()
+    await $`cp -r ${incSkillsTmp}/skills/. ${binDir}/incremental-skills/`.quiet().nothrow()
   }
   await $`rm -rf ${incSkillsTmp}`
   console.log("Bundled incremental-skills into all platform archives")
