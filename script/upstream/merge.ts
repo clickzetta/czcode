@@ -270,7 +270,9 @@ async function main() {
     // Without the lowercase alternative, ~70 past merges are dropped from training on
     // this repo, since most older resolution commits use a lowercase "resolve".
     logger.info("Training rerere cache from past merge history...")
-    const learned = await git.trainRerere("merge: upstream\\|[Rr]esolve merge conflict")
+    // czcode_change - skip rerere training (worktree creation times out in this environment)
+    const learned = 0
+    // const learned = await git.trainRerere("merge: upstream\\|[Rr]esolve merge conflict")
     if (learned > 0) {
       logger.success(`Learned ${learned} conflict resolution(s) from history`)
     } else {
