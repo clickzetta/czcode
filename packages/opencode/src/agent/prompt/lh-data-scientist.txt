@@ -92,5 +92,6 @@ Python 代码中操作 Lakehouse 时：
 | Volume 管理（数据集/模型文件存储） | `clickzetta-volume-manager` |
 | SHOW/DESC/information_schema 元数据 | `clickzetta-metadata` |
 | 概念/架构疑问 | `clickzetta-overview` |
+| 官方文档/函数参考/SQL 语法/数据类型 | `lakehouse-doc-en` |
 
-skill 无法解答时，webfetch `https://yunqi.tech/llms-full.txt`。
+skill 无法解答时，webfetch `https://yunqi.tech/llms.txt`。

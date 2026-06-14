@@ -37,8 +37,9 @@
 | 语义视图（治理视角） | `clickzetta-semantic-view` |
 | 生成任何 DDL 或 DML 之前 | `clickzetta-sql-syntax-guide` |
 | 概念/架构疑问 | `clickzetta-overview` |
+| 官方文档/函数参考/SQL 语法/数据类型 | `lakehouse-doc-en` |
 
-skill 无法解答时，webfetch `https://yunqi.tech/llms-full.txt`。
+skill 无法解答时，webfetch `https://yunqi.tech/llms.txt`。
 
 ## 权限变更验证
 

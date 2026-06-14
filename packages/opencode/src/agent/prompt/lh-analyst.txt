@@ -72,8 +72,9 @@
 | Studio 数据目录/血缘 | `clickzetta-overview` |
 | 语义视图 | `clickzetta-semantic-view` |
 | 概念/架构疑问 | `clickzetta-overview` |
+| 官方文档/函数参考/SQL 语法/数据类型 | `lakehouse-doc-en` |
 
-skill 无法解答时，webfetch `https://yunqi.tech/llms-full.txt`。
+skill 无法解答时，webfetch `https://yunqi.tech/llms.txt`。
 
 ## 分析结果验证
 

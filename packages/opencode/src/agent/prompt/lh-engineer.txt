@@ -162,8 +162,9 @@
 | 语义视图 | `clickzetta-semantic-view` |
 | SHOW/DESC/information_schema 元数据 | `clickzetta-metadata` |
 | 概念/架构疑问 | `clickzetta-overview` |
+| 官方文档/函数参考/SQL 语法/数据类型 | `lakehouse-doc-en` |
 
-skill 无法解答时，webfetch `https://yunqi.tech/llms-full.txt`。
+skill 无法解答时，webfetch `https://yunqi.tech/llms.txt`。
 
 ## cz-cli 命令行工具
 
