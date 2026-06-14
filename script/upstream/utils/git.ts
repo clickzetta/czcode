@@ -501,6 +501,33 @@ export async function trainRerere(grep: string): Promise<number> {
 }
 
 /**
+ * Find files changed by both branches relative to the merge base.
+ * These are high-risk — both sides modified the same file, so "keeping ours"
+ * discards upstream changes. Git reports these as "UU" in merge status.
+ */
+export async function getBothModifiedFiles(baseBranch: string, upstreamBranch: string): Promise<string[]> {
+  // diff-filter=M: files modified on both sides relative to merge base
+  const base = (await $`git merge-base ${baseBranch} ${upstreamBranch}`.quiet().text()).trim()
+  const oursResult = await $`git diff --name-only ${base}...${baseBranch}`.quiet().nothrow()
+  const theirsResult = await $`git diff --name-only ${base}...${upstreamBranch}`.quiet().nothrow()
+  const ours = new Set(
+    oursResult.stdout
+      .toString()
+      .trim()
+      .split("\n")
+      .filter(Boolean),
+  )
+  const theirs = new Set(
+    theirsResult.stdout
+      .toString()
+      .trim()
+      .split("\n")
+      .filter(Boolean),
+  )
+  return [...ours].filter((f) => theirs.has(f))
+}
+
+/**
  * Return files that git rerere has already auto-resolved.
  * These files no longer have conflict markers but haven't been staged yet
  * (unless rerere.autoupdate is true, in which case they're already staged).

@@ -99,6 +99,26 @@ bun run script/upstream/fix-kilocode-markers.ts packages/opencode/src/some/file.
 bun run script/upstream/fix-kilocode-markers.ts packages/opencode/src/some/file.ts --dry-run
 ```
 
+### ⚠️ Merge Conflict Resolution Rules
+
+When the merge script reports remaining conflicts, follow these rules:
+
+1. **"Both modified" files (HIGH-RISK)**: The merge script now detects files changed by BOTH branches since the merge base. These are the most dangerous — picking "our side" silently discards upstream code.
+
+2. **Correct resolution for `czcode_change` files**:
+   - ✅ **Start with upstream version**: `git checkout --theirs <file>`
+   - ✅ **Then re-apply czcode changes**: pick the `czcode_change start/end` blocks from the old version (see `git diff <old-commit> <file>`)
+   - ❌ **NEVER simply "keep ours"** — this discards all upstream changes to that file
+   - This is the opposite of what feels natural. Our `czcode_change` blocks are small; upstream changes are large. It's easier to re-apply small blocks onto the new code than to manually merge large upstream refactors into old code.
+
+3. **Verify with typecheck BEFORE committing**:
+   ```bash
+   bun run typecheck
+   ```
+   If typecheck fails, you accidentally discarded upstream code. Re-examine the conflicted files.
+
+4. **After pushing the merge branch, CI will also run typecheck** — branches matching `**/kilo-opencode-*` now trigger the typecheck workflow automatically.
+
 ---
 
 ## Project Structure

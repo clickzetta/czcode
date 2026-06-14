@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - "**/kilo-opencode-*" # czcode_change: run typecheck on upstream merge branches
   pull_request:
   workflow_dispatch:
 

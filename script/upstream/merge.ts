@@ -785,10 +785,26 @@ async function main() {
     // Combine git-reported conflicts with files flagged due to kilocode_change markers
     const allManual = [...new Set([...remaining, ...flaggedFiles])]
     if (allManual.length > 0) {
+      // Detect files modified by BOTH branches since merge base.
+      // These are the highest-risk conflicts: picking one side loses the other's changes.
+      const bothModified = await git.getBothModifiedFiles(baseSha, opencodeBranch)
+      const highRiskFiles = allManual.filter((f: string) => bothModified.includes(f))
+      if (highRiskFiles.length > 0) {
+        logger.warn("")
+        logger.warn(`⚠️  ${highRiskFiles.length} HIGH-RISK file(s) — changed by BOTH branches since merge base:`)
+        logger.list(highRiskFiles)
+        logger.info("")
+        logger.info("  CORRECT RESOLUTION: take the *upstream* version, then re-apply czcode changes on top.")
+        logger.info("  ❌  DO NOT simply 'keep ours' — this discards upstream changes entirely.")
+        logger.info("  ✅  git checkout --theirs <file>   # start with upstream")
+        logger.info("  ✅  then re-apply czcode_change blocks from the old version")
+        logger.info("  ✅  verify with: git diff <old-commit> <file>")
+        logger.info("")
+      }
       if (flaggedFiles.length > 0) {
         logger.warn(`${flaggedFiles.length} file(s) were flagged because they contain kilocode_change markers:`)
         logger.list(flaggedFiles)
-        logger.info("  These files have intentional Kilo-specific changes. Keep our version or merge carefully.")
+        logger.info("  These files have intentional Kilo-specific changes. Take upstream version, re-apply our changes.")
         logger.info("")
       }
       if (remaining.length > 0) {
@@ -821,12 +837,12 @@ async function main() {
       logger.info("Next steps:")
       logger.info("  1. Resolve remaining conflicts manually")
       logger.info("  2. git add -A && git commit -m 'resolve merge conflicts'")
-      logger.info(`  3. git push ${config.originRemote} ${kiloBranch}`)
-      logger.info("  4. Create PR from " + kiloBranch + " to " + config.baseBranch)
+      logger.info("  3. Run typecheck on merge branch:")
+      logger.info("     bun run typecheck")
+      logger.info("     ⚠️  If typecheck fails, missing upstream code was discarded by accident.")
+      logger.info(`  4. git push ${config.originRemote} ${kiloBranch}`)
+      logger.info("  5. Create PR from " + kiloBranch + " to " + config.baseBranch)
       logger.info("")
-      logger.info("To rollback:")
-      logger.info(`  git checkout ${config.baseBranch}`)
-      logger.info(`  git reset --hard ${backupBranch}`)
 
       // Exit early - don't continue to finalization steps
       process.exit(1)
