@@ -9,8 +9,8 @@ import type {
   Command,
   PermissionRequest,
   QuestionRequest,
-  SuggestionRequest,
-  SessionNetworkWait,
+  SuggestionRequest, // kilocode_change
+  SessionNetworkWait, // kilocode_change
   LspStatus,
   McpStatus,
   McpResource,
@@ -58,12 +58,14 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
       question: {
         [sessionID: string]: QuestionRequest[]
       }
+      // kilocode_change start
       suggestion: {
         [sessionID: string]: SuggestionRequest[]
       }
       network: {
         [sessionID: string]: SessionNetworkWait[]
       }
+      // kilocode_change end
       config: Config
       globalConfig: Config // kilocode_change
       session: Session[]
@@ -71,7 +73,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
         [sessionID: string]: SessionStatus
       }
       session_diff: {
-        [sessionID: string]: Omit<Snapshot.FileDiff, "before" | "after">[]
+        [sessionID: string]: Omit<Snapshot.FileDiff, "before" | "after">[] // kilocode_change
       }
       todo: {
         [sessionID: string]: Todo[]
@@ -96,7 +98,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
       }
       formatter: FormatterStatus[]
       vcs: VcsInfo | undefined
-      indexing: IndexingStatus
+      indexing: IndexingStatus // kilocode_change
     }>({
       provider_next: {
         all: [],
@@ -112,8 +114,10 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
       agent: [],
       permission: {},
       question: {},
+      // kilocode_change start
       suggestion: {},
       network: {},
+      // kilocode_change end
       command: [],
       provider: [],
       provider_default: {},
@@ -129,7 +133,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
       mcp_resource: {},
       formatter: [],
       vcs: undefined,
-      indexing: { state: "Disabled", message: "Indexing disabled.", processedFiles: 0, totalFiles: 0, percent: 0 },
+      indexing: { state: "Disabled", message: "Indexing disabled.", processedFiles: 0, totalFiles: 0, percent: 0 }, // kilocode_change
     })
 
     const event = useEvent()
@@ -138,6 +142,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
     const toast = useToast() // kilocode_change
     const kv = useKV()
 
+    // kilocode_change start
     function evict(sessionID: string) {
       // Collect child session IDs so we can evict them too.
       const children = store.session.filter((s) => s.parentID === sessionID).map((s) => s.id)
@@ -168,6 +173,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
       if (msg.role !== "user" || !msg.summary?.diffs) return msg
       return { ...msg, summary: { ...msg.summary, diffs: [] } } as Message
     }
+    // kilocode_change end
 
     const fullSyncedSessions = new Set<string>()
     const deleted = new Set<string>() // kilocode_change
@@ -272,8 +278,9 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
             }),
           )
           break
-        }
+        } // kilocode_change
 
+        // kilocode_change start
         case "session.network.replied":
         case "session.network.rejected": {
           const requests = store.network[event.properties.sessionID]
@@ -329,6 +336,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           )
           break
         }
+        // kilocode_change end
         case "todo.updated":
           setStore("todo", event.properties.sessionID, event.properties.todos)
           break
@@ -417,6 +425,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           break
         }
 
+        // kilocode_change start
         case "global.config.updated": {
           sdk.client.global.config.get().then((x) => {
             if (x.data) setStore("globalConfig", reconcile(x.data))
@@ -430,6 +439,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           setStore("indexing", reconcile(event.properties.status))
           break
         }
+        // kilocode_change end
       }
     })
 
@@ -710,6 +720,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
               }
             }),
             project.workspace.sync(),
+            // kilocode_change start - show config warnings as persistent toast
             sdk.client.config
               .warnings()
               .then((x) => {
@@ -728,6 +739,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
             sdk.client.indexing
               .status({ workspace })
               .then((x) => setStore("indexing", reconcile(x.data ?? store.indexing))),
+            // kilocode_change end
           ]).then(() => {
             setStore("status", "complete")
           })
@@ -750,6 +762,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
       void bootstrap()
     })
 
+    // kilocode_change start - re-bootstrap when workspace changes (Agent Manager)
     createEffect(
       on(
         () => project.workspace.current(),
@@ -760,6 +773,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
         { defer: true },
       ),
     )
+    // kilocode_change end
 
     const result = {
       data: store,
@@ -768,7 +782,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
         return store.status
       },
       get ready() {
-        // return true
+        // return true // kilocode_change - upstream #23037 left this debug path enabled; keep it commented so future merges do not restore eager ready state.
         if (process.env.KILO_FAST_BOOT) return true
         return store.status !== "loading"
       },
@@ -823,7 +837,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           )
           fullSyncedSessions.add(sessionID)
         },
-        evict,
+        evict, // kilocode_change
       },
       bootstrap,
     }

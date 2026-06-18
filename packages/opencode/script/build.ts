@@ -150,6 +150,65 @@ async function smokeModels(binaryPath: string) {
 }
 // kilocode_change end
 
+// kilocode_change start - embed Kilo Console static assets
+async function buildKiloConsole() {
+  const app = path.resolve(dir, "../kilo-console")
+  const out = path.join(app, "dist")
+  console.log("building Kilo Console")
+  const proc = Bun.spawn([process.execPath, "run", "build"], {
+    cwd: app,
+    env: { ...process.env, KILO_CONSOLE_BASE: "/console/" },
+    stdout: "inherit",
+    stderr: "inherit",
+    windowsHide: true,
+  })
+  const code = await proc.exited
+  if (code !== 0) throw new Error(`Kilo Console build failed with exit code ${code}`)
+  return out
+}
+
+async function copyKiloConsole(input: string, outputDir: string) {
+  const target = path.join(outputDir, "console")
+  await fs.promises.rm(target, { recursive: true, force: true })
+  await fs.promises.cp(input, target, { recursive: true })
+  console.log(`copied Kilo Console assets to ${target}`)
+}
+// kilocode_change end
+
+// kilocode_change start - validate compiled binaries load the sidecar models snapshot
+function smokeEnv(root: string) {
+  const env = { ...process.env }
+  delete env.KILO_MODELS_PATH
+  delete env.KILO_MODELS_URL
+  delete env.KILO_CONFIG
+  delete env.KILO_CONFIG_DIR
+  return {
+    ...env,
+    XDG_DATA_HOME: path.join(root, "data"),
+    XDG_CACHE_HOME: path.join(root, "cache"),
+    XDG_CONFIG_HOME: path.join(root, "config"),
+    XDG_STATE_HOME: path.join(root, "state"),
+    KILO_DISABLE_MODELS_FETCH: "1",
+    KILO_DISABLE_PROJECT_CONFIG: "1",
+    KILO_CONFIG_CONTENT: JSON.stringify({ enabled_providers: ["anthropic"] }),
+    ANTHROPIC_API_KEY: "dummy",
+  }
+}
+
+async function smokeModels(binaryPath: string) {
+  const root = await fs.promises.mkdtemp(path.join(os.tmpdir(), "kilo-models-"))
+  try {
+    const out = await $`${binaryPath} --pure models anthropic`.env(smokeEnv(root)).text()
+    if (out.split(/\r?\n/).some((line) => line.startsWith("anthropic/"))) return
+    throw new Error("Compiled binary did not list Anthropic models from the sidecar snapshot")
+  } finally {
+    await fs.promises
+      .rm(root, { recursive: true, force: true })
+      .catch((err) => console.warn(`Failed to remove smoke test directory ${root}`, err))
+  }
+}
+// kilocode_change end
+
 // kilocode_change start - upstream's createEmbeddedWebUIBundle is intentionally removed because
 // Kilo dropped the packages/app web UI. Kept here as a commented reference so future upstream merges
 // can see the deliberate divergence rather than treating a re-add as a clean re-introduction.
@@ -396,6 +455,7 @@ for (const item of targets) {
       {
         name,
         version: Script.version,
+        preferUnplugged: true,
         os: [item.os],
         cpu: [item.arch],
         keywords: pkg.keywords, // kilocode_change

@@ -137,7 +137,7 @@ export const layer: Layer.Layer<Service, never, HttpClient.HttpClient | AppProce
     })
 
     const upgradeCurl = Effect.fnUntraced(function* (target: string) {
-      const response = yield* httpOk.execute(HttpClientRequest.get("https://opencode.ai/install"))
+      const response = yield* httpOk.execute(HttpClientRequest.get("https://opencode.ai/install")) // kilocode_change
       const body = yield* response.text
       const bodyBytes = new TextEncoder().encode(body)
       const result = yield* appProcess.run(
@@ -276,12 +276,12 @@ export const layer: Layer.Layer<Service, never, HttpClient.HttpClient | AppProce
             const formula = yield* getBrewFormula()
             const env = { HOMEBREW_NO_AUTO_UPDATE: "1" }
             if (formula.includes("/")) {
-              const tap = yield* run(["brew", "tap", "Kilo-Org/tap"], { env }) // kilocode_change
+              const tap = yield* run(["brew", "tap", "anomalyco/tap"], { env })
               if (tap.code !== 0) {
                 upgradeResult = tap
                 break
               }
-              const repo = yield* text(["brew", "--repo", "Kilo-Org/tap"]) // kilocode_change
+              const repo = yield* text(["brew", "--repo", "anomalyco/tap"])
               const dir = repo.trim()
               if (dir) {
                 const pull = yield* run(["git", "pull", "--ff-only"], { cwd: dir, env })

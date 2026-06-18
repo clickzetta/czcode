@@ -1,9 +1,9 @@
-import { render, TimeToFirstDraw, useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/solid" // kilocode_change
+import { render, TimeToFirstDraw, useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/solid"
 import { createDefaultOpenTuiKeymap } from "@opentui/keymap/opentui"
 import * as Clipboard from "@tui/util/clipboard"
 import * as Selection from "@tui/util/selection"
 import * as TuiAudio from "@tui/util/audio"
-import { createCliRenderer, MouseButton, TextAttributes, type CliRendererConfig } from "@opentui/core" // kilocode_change
+import { createCliRenderer, MouseButton, TextAttributes, type CliRendererConfig } from "@opentui/core"
 import { RouteProvider, useRoute } from "@tui/context/route"
 import {
   Switch,
@@ -18,12 +18,12 @@ import {
   Show,
   on,
 } from "solid-js"
-import { win32DisableProcessedInput, win32FlushInputBuffer, win32InstallCtrlCGuard } from "./win32" // kilocode_change
+import { win32DisableProcessedInput, win32FlushInputBuffer, win32InstallCtrlCGuard } from "./win32"
 import { Flag } from "@opencode-ai/core/flag/flag"
 import semver from "semver"
 import { DialogProvider, useDialog } from "@tui/ui/dialog"
 import { DialogProvider as DialogProviderList } from "@tui/component/dialog-provider"
-import { InstallationVersion } from "@opencode-ai/core/installation/version" // kilocode_change
+import { InstallationVersion } from "@opencode-ai/core/installation/version"
 import { PluginRouteMissing } from "@tui/component/plugin-route-missing"
 import { ProjectProvider } from "@tui/context/project"
 import { EditorContextProvider } from "@tui/context/editor"
@@ -53,10 +53,8 @@ import { DialogConfirm } from "./ui/dialog-confirm"
 import { ToastProvider, useToast } from "./ui/toast"
 import { ExitProvider, useExit } from "./context/exit"
 import { Session as SessionApi } from "@/session/session"
-// kilocode_change start
 import { DialogSelect } from "./ui/dialog-select"
 import { Link } from "./ui/link"
-// kilocode_change end
 import { TuiEvent } from "./event"
 import { KVProvider, useKV } from "./context/kv"
 import { Provider } from "@/provider/provider"
@@ -71,8 +69,8 @@ import { createTuiApi } from "@/cli/cmd/tui/plugin/api"
 import type { RouteMap } from "@/cli/cmd/tui/plugin/api"
 import { createTuiAttention } from "@/cli/cmd/tui/attention"
 import { FormatError, FormatUnknownError } from "@/cli/error"
-import { kitty, resetTerminalState } from "@/kilocode/cli/cmd/tui/util/terminal" // kilocode_change
-import * as AppExit from "@/kilocode/tui/app-exit" // kilocode_change
+import { kitty, resetTerminalState } from "@/kilocode/cli/cmd/tui/util/terminal"
+import * as AppExit from "@/kilocode/tui/app-exit"
 import { CommandPaletteProvider, useCommandPalette } from "./context/command-palette"
 import { OpencodeKeymapProvider, registerOpencodeKeymap, useBindings, useOpencodeKeymap } from "./keymap"
 
@@ -83,8 +81,6 @@ const appBindingCommands = [
   "command.palette.show",
   "session.list",
   "session.new",
-  "session.cycle_recent",
-  "session.cycle_recent_reverse",
   "session.quick_switch.1",
   "session.quick_switch.2",
   "session.quick_switch.3",
@@ -127,14 +123,14 @@ const appBindingCommands = [
 
 function rendererConfig(_config: TuiConfig.Resolved): CliRendererConfig {
   const mouseEnabled = !Flag.KILO_DISABLE_MOUSE && (_config.mouse ?? true)
-  const keyboard = kitty() // kilocode_change
+  const keyboard = kitty()
 
   return {
     externalOutputMode: "passthrough",
     targetFps: 60,
     gatherStats: false,
     exitOnCtrlC: false,
-    ...(keyboard ? { useKittyKeyboard: {} } : {}), // kilocode_change
+    ...(keyboard ? { useKittyKeyboard: {} } : {}),
     autoFocus: false,
     openConsoleOnError: false,
     useMouse: mouseEnabled,
@@ -345,7 +341,7 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
     if (!text || text.length === 0) return
 
     await Clipboard.copy(text)
-      .then(() => toast.show({ message: "Copied to clipboard", variant: "info", duration: 2000 })) // czcode_change - auto-dismiss // kilocode_change
+      .then(() => toast.show({ message: "Copied to clipboard", variant: "info", duration: 2000 })) // czcode_change - auto-dismiss
       .catch(toast.error)
 
     renderer.clearSelection()
@@ -355,10 +351,8 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
     kv.get("paste_summary_enabled", !sync.data.config.experimental?.disable_paste_summary),
   )
 
-  // kilocode_change start
   KiloApp.useSessionEffects({ route, sdk, sync })
   KiloApp.useTuiConfigHotReload()
-  // kilocode_change end
 
   // Update terminal window title based on current route and session
   createEffect(() => {
@@ -367,24 +361,24 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
     const titleDefault = KiloApp.APP_TITLE
 
     if (route.data.type === "home") {
-      renderer.setTerminalTitle(titleDefault) // kilocode_change
+      renderer.setTerminalTitle(titleDefault)
       return
     }
 
     if (route.data.type === "session") {
       const session = sync.session.get(route.data.sessionID)
       if (!session || SessionApi.isDefaultTitle(session.title)) {
-        renderer.setTerminalTitle(titleDefault) // kilocode_change
+        renderer.setTerminalTitle(titleDefault)
         return
       }
 
       const title = session.title.length > 40 ? session.title.slice(0, 37) + "..." : session.title
-      renderer.setTerminalTitle(`${titleDefault} | ${title}`) // kilocode_change
+      renderer.setTerminalTitle(`${titleDefault} | ${title}`)
       return
     }
 
     if (route.data.type === "plugin") {
-      renderer.setTerminalTitle(`${titleDefault} | ${route.data.id}`) // kilocode_change
+      renderer.setTerminalTitle(`${titleDefault} | ${route.data.id}`)
     }
 
     const kiloTitle = KiloApp.getTerminalTitle(route, titleDefault)
@@ -466,7 +460,7 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
 
   const connected = useConnected()
   const appCommands = createMemo(() =>
-     [
+    [
       {
         name: "command.palette.show",
         title: "Show command palette",
@@ -501,37 +495,15 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
           dialog.clear()
         },
       },
-      ...(Flag.KILO_EXPERIMENTAL_SESSION_SWITCHING
-        ? [
-            {
-              name: "session.cycle_recent",
-              title: "Cycle to previous recent session",
-              category: "Session",
-              hidden: true,
-              run: () => {
-                local.session.cycleRecent(1)
-              },
-            },
-            {
-              name: "session.cycle_recent_reverse",
-              title: "Cycle to next recent session",
-              category: "Session",
-              hidden: true,
-              run: () => {
-                local.session.cycleRecent(-1)
-              },
-            },
-            ...Array.from({ length: 9 }, (_, i) => ({
-              name: `session.quick_switch.${i + 1}`,
-              title: `Switch to session in quick slot ${i + 1}`,
-              category: "Session",
-              hidden: true,
-              run: () => {
-                local.session.quickSwitch(i + 1)
-              },
-            })),
-          ]
-        : []),
+      ...Array.from({ length: 9 }, (_, i) => ({
+        name: `session.quick_switch.${i + 1}`,
+        title: `Switch to session in quick slot ${i + 1}`,
+        category: "Session",
+        hidden: true,
+        run: () => {
+          local.session.quickSwitch(i + 1)
+        },
+      })),
       {
         name: "model.list",
         title: "Switch model",
@@ -712,7 +684,7 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
         },
         category: "System",
       },
-      AppExit.command(exit), // kilocode_change
+      AppExit.command(exit),
       {
         name: "app.debug",
         title: "Toggle debug panel",
@@ -839,18 +811,11 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
 
   useBindings(() => ({
     enabled: command.matcher,
-    bindings: tuiConfig.keybinds.gather(
-      "app",
-      Flag.KILO_EXPERIMENTAL_SESSION_SWITCHING
-        ? appBindingCommands
-        : appBindingCommands.filter(
-            (c) => !c.startsWith("session.cycle_recent") && !c.startsWith("session.quick_switch"),
-          ),
-    ),
+    bindings: tuiConfig.keybinds.gather("app", appBindingCommands),
   }))
 
   useBindings(() => ({
-    enabled: () => AppExit.enabled(command.matcher.get(), promptRef.current), // kilocode_change
+    enabled: () => AppExit.enabled(command.matcher.get(), promptRef.current),
     bindings: tuiConfig.keybinds.gather("app_exit", ["app.exit"]),
   }))
 
@@ -986,13 +951,11 @@ function App(props: { onSnapshot?: () => Promise<string[]> }) {
             <Match when={route.data.type === "kiloclaw"}>
               <KiloApp.KiloClawView />
             </Match>
-            {/* kilocode_change start */}
             {/* czcode_change start */}
             <Match when={route.data.type === "singclaw"}>
               <KiloApp.SingClawView context={(route.data as any).context} returnTo={(route.data as any).returnTo} />
             </Match>
             {/* czcode_change end */}
-            {/* kilocode_change end */}
           </Switch>
           {plugin()}
         </box>

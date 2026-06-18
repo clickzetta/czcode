@@ -18,7 +18,7 @@ import { gitlabAuthPlugin as GitlabAuthPlugin } from "opencode-gitlab-auth"
 import { PoeAuthPlugin } from "opencode-poe-auth"
 import { CloudflareAIGatewayAuthPlugin, CloudflareWorkersAuthPlugin } from "./cloudflare"
 import { AzureAuthPlugin } from "./azure"
-import { XaiAuthPlugin } from "./xai" // kilocode_change
+import { XaiAuthPlugin } from "./xai"
 import { DigitalOceanAuthPlugin } from "./digitalocean"
 import { Effect, Layer, Context, Stream } from "effect"
 import { EffectBridge } from "@/effect/bridge"
@@ -26,7 +26,7 @@ import { InstanceState } from "@/effect/instance-state"
 import { errorMessage } from "@/util/error"
 import { PluginLoader } from "./loader"
 import { parsePluginSpecifier, readPluginId, readV1Plugin, resolvePluginId } from "./shared"
-import { KiloAuthPlugin } from "@kilocode/kilo-gateway" // kilocode_change
+import { KiloAuthPlugin } from "@kilocode/kilo-gateway"
 import { CzCodeLakehousePlugin } from "@czcode/lakehouse" // czcode_change
 import { registerAdapter } from "@/control-plane/adapters"
 import type { WorkspaceAdapter } from "@/control-plane/types"
@@ -60,12 +60,10 @@ export interface Interface {
 export class Service extends Context.Service<Service, Interface>()("@opencode/Plugin") {}
 
 // Built-in plugins that are directly imported (not installed from npm)
-// kilocode_change start
 const INTERNAL_PLUGINS: PluginInstance[] = [
   KiloAuthPlugin,
   CodexAuthPlugin,
   CopilotAuthPlugin,
-  // kilocode_change - external auth plugins ship against @opencode-ai/plugin; bridge to our @kilocode/plugin types
   GitlabAuthPlugin as unknown as PluginInstance,
   PoeAuthPlugin as unknown as PluginInstance,
   CloudflareWorkersAuthPlugin,
@@ -75,7 +73,6 @@ const INTERNAL_PLUGINS: PluginInstance[] = [
   DigitalOceanAuthPlugin, // czcode_change
   CzCodeLakehousePlugin as unknown as PluginInstance, // czcode_change
 ]
-// kilocode_change end
 
 function isServerPlugin(value: unknown): value is PluginInstance {
   return typeof value === "function"
@@ -96,8 +93,7 @@ function getLegacyPlugins(mod: Record<string, unknown>) {
     if (seen.has(entry)) continue
     seen.add(entry)
     const plugin = getServerPlugin(entry)
-    // kilocode_change: skip named exports (e.g. constants from @kilocode/plugin-atomic-chat)
-    if (!plugin) continue // kilocode_change
+    if (!plugin) continue
     result.push(plugin)
   }
 

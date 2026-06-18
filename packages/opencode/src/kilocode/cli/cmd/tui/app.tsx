@@ -33,6 +33,10 @@ export { SingClawView } from "@/kilocode/singclaw/view" // czcode_change
 // Called from the App body (below SDKProvider and the TuiConfig provider).
 export { useTuiConfigHotReload } from "@/kilocode/cli/cmd/tui/context/tui-config-hot-reload"
 
+// Hot reload TUI-local settings (keybinds/theme/ui) when changed from the Kilo Console.
+// Called from the App body (below SDKProvider and the TuiConfig provider).
+export { useTuiConfigHotReload } from "@/kilocode/cli/cmd/tui/context/tui-config-hot-reload"
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------

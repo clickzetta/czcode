@@ -19,6 +19,7 @@ import { Instance } from "../../src/project/instance"
 import { InstanceStore } from "../../src/project/instance-store"
 import { Project } from "../../src/project/project"
 import { Vcs } from "../../src/project/vcs"
+import { InstanceState } from "../../src/effect/instance-state"
 import { Session } from "../../src/session/session"
 import { SessionPrompt } from "../../src/session/prompt"
 import { SyncEvent } from "../../src/sync"
@@ -116,11 +117,12 @@ describe("plugin.workspace", () => {
         const plugin = yield* Plugin.Service
         yield* plugin.init()
         const workspace = yield* Workspace.Service
+        const ctx = yield* InstanceState.context
         const info = yield* workspace.create({
           type,
           branch: null,
           extra: { key: "value" },
-          projectID: Instance.project.id,
+          projectID: ctx.project.id,
         })
 
         expect(info.type).toBe(type)

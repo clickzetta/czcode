@@ -127,8 +127,11 @@ export const defaultConfig: MergeConfig = {
     // czcode_change: czcode watches kilocode releases, not opencode directly
     ".github/workflows/watch-opencode-releases.yml",
     // Workflows deleted in Kilo (replaced or no longer needed)
+    ".github/workflows/close-prs.yml",
     ".github/workflows/opencode.yml",
     ".github/workflows/publish-vscode.yml",
+    // Upstream PR cleanup is replaced by .github/workflows/kilo-auto-close.yml
+    "script/github/close-prs.ts",
     // VS Code example configs (Kilo ships real .vscode/* files)
     ".vscode/launch.example.json",
     ".vscode/settings.example.json",

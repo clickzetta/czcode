@@ -327,6 +327,7 @@ const messageBase = {
   sessionID: SessionID,
 }
 
+// kilocode_change start - shared editor context schema (used by MessageV2.User and SessionPrompt.PromptInput)
 export const EditorContext = Schema.Struct({
   visibleFiles: Schema.optional(Schema.Array(Schema.String)),
   openTabs: Schema.optional(Schema.Array(Schema.String)),
@@ -334,6 +335,7 @@ export const EditorContext = Schema.Struct({
   shell: Schema.optional(Schema.String),
 })
 export type EditorContext = Types.DeepMutable<Schema.Schema.Type<typeof EditorContext>>
+// kilocode_change end
 
 export const User = Schema.Struct({
   ...messageBase,
@@ -357,7 +359,9 @@ export const User = Schema.Struct({
   }),
   system: Schema.optional(Schema.String),
   tools: Schema.optional(Schema.Record(Schema.String, Schema.Boolean)),
+  // kilocode_change start
   editorContext: Schema.optional(EditorContext),
+  // kilocode_change end
 }).annotate({ identifier: "UserMessage" })
 export type User = Types.DeepMutable<Schema.Schema.Type<typeof User>>
 
@@ -589,6 +593,7 @@ export const cursor = {
   },
 }
 
+// kilocode_change start - strip bloated metadata fields from stored parts to prevent multi-MB payloads
 // This handles both legacy data that was stored with full file contents and keeps the API response lean.
 function stripPatch(value: unknown) {
   if (typeof value !== "string") return undefined
@@ -602,6 +607,7 @@ function withPatch(value: unknown) {
 }
 
 export function stripPartMetadata(part: Part): Part {
+  // kilocode_change - exported for testing
   if (part.type !== "tool") return part
   const { state } = part
   if (state.status !== "completed" && state.status !== "running") return part
@@ -656,6 +662,7 @@ export function stripPartMetadata(part: Part): Part {
 }
 
 export function stripMessageMetadata(info: Info): Info {
+  // kilocode_change - exported for testing
   // Strip oversized summary.diffs patches from user messages to limit SSE payload.
   // Small patches are preserved so the UI can render inline diffs.
   if (info.role !== "user") return info
@@ -671,7 +678,9 @@ export function stripMessageMetadata(info: Info): Info {
     },
   } as Info
 }
+// kilocode_change end
 
+// kilocode_change - apply stripping inside helpers so all read paths are covered
 const info = (row: typeof MessageTable.$inferSelect) =>
   stripMessageMetadata({
     ...row.data,
@@ -686,6 +695,7 @@ const part = (row: typeof PartTable.$inferSelect) =>
     sessionID: row.session_id,
     messageID: row.message_id,
   } as Part)
+// kilocode_change end
 
 const older = (row: Cursor) =>
   or(lt(MessageTable.time_created, row.time), and(eq(MessageTable.time_created, row.time), lt(MessageTable.id, row.id)))
@@ -1082,12 +1092,14 @@ export function parts(message_id: MessageID) {
   )
   return rows.map(
     (row) =>
+      // kilocode_change - apply stripping to parts fetched individually as well to cover all read paths
       stripPartMetadata({
         ...row.data,
         id: row.id,
         sessionID: row.session_id,
         messageID: row.message_id,
       } as Part),
+    // kilocode_change end
   )
 }
 
@@ -1222,7 +1234,7 @@ export function fromError(
     case SessionNetwork.disconnected(e): // kilocode_change start
       return new APIError(
         {
-          message: SessionNetwork.message(e),
+          message: SessionNetwork.message(e), // kilocode_change end
           isRetryable: true,
           metadata: {
             code: (e as SystemError).code ?? "",

@@ -41,6 +41,14 @@ export class Service extends ConfigService.Service<Service>()("@opencode/Runtime
   experimentalEventSystem: enabledByExperimental("KILO_EXPERIMENTAL_EVENT_SYSTEM"),
   experimentalWorkspaces: enabledByExperimental("KILO_EXPERIMENTAL_WORKSPACES"),
   experimentalIconDiscovery: enabledByExperimental("KILO_EXPERIMENTAL_ICON_DISCOVERY"),
+  disableExternalSkills: bool("KILO_DISABLE_EXTERNAL_SKILLS"),
+  disableLspDownload: bool("KILO_DISABLE_LSP_DOWNLOAD"),
+  skipMigrations: bool("KILO_SKIP_MIGRATIONS"),
+  disableClaudeCodePrompt: Config.all({
+    broad: bool("KILO_DISABLE_CLAUDE_CODE"),
+    direct: bool("KILO_DISABLE_CLAUDE_CODE_PROMPT"),
+  }).pipe(Config.map((flags) => flags.broad || flags.direct)),
+  outputTokenMax: positiveInteger("KILO_EXPERIMENTAL_OUTPUT_TOKEN_MAX"),
   bashDefaultTimeoutMs: positiveInteger("KILO_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS"),
   client: Config.string("KILO_CLIENT").pipe(Config.withDefault("cli")),
 }) {}
