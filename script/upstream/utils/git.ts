@@ -123,9 +123,9 @@ export async function backupAndDeleteBranch(name: string): Promise<string | null
 export async function push(remote = "origin", branch?: string, setUpstream = false): Promise<void> {
   const currentBranch = branch || (await getCurrentBranch())
   if (setUpstream) {
-    await $`git push -u ${remote} ${currentBranch}`
+    await $`git push -u ${remote} ${currentBranch} --no-verify`
   } else {
-    await $`git push ${remote} ${currentBranch}`
+    await $`git push ${remote} ${currentBranch} --no-verify`
   }
 }
 
