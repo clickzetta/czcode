@@ -136,8 +136,14 @@ export const dict = {
   "provider.connect.status.failed": "Autorisatie mislukt: {{error}}",
   "provider.connect.apiKey.description":
     "Voer uw {{provider}} API-sleutel in om uw account te verbinden en {{provider}} modellen te gebruiken in Kilo.",
+  "provider.connect.apiKey.description.local":
+    "Connect to your local {{provider}} server. Leave the API key empty if the server does not require one (default for localhost).",
+  "provider.connect.atomicChat.description":
+    "Connect to Atomic Chat on your machine (default http://127.0.0.1:1337). No API key is required for the local server — start Atomic Chat, load a model, then connect.",
   "provider.connect.apiKey.label": "{{provider}} API-sleutel",
+  "provider.connect.apiKey.label.optional": "{{provider}} API key (optional)",
   "provider.connect.apiKey.placeholder": "API-sleutel",
+  "provider.connect.apiKey.placeholder.optional": "Leave empty for local server",
   "provider.connect.apiKey.required": "API-sleutel is vereist",
   "provider.connect.prompt.required": "{{field}} is verplicht",
   "provider.connect.azure.endpointType.label": "Selecteer Azure-eindpuntconfiguratie",
@@ -176,6 +182,7 @@ export const dict = {
   "provider.disconnect.toast.disconnected.description": "{{provider}} modellen zijn niet langer beschikbaar.",
 
   "model.tag.free": "Gratis",
+  "model.tag.dataCollected": "Gegevens kunnen worden gebruikt voor training",
   "model.tag.latest": "Nieuwste",
   "model.group.recommended": "Aanbevolen",
   "model.group.favorites": "Favorieten",
@@ -203,6 +210,9 @@ export const dict = {
   "model.preview.label.cached": "Gecachet",
   "model.preview.label.average": "Gesch. gem. kosten",
   "model.preview.label.context": "Context",
+  "model.preview.group.terminalBench": "Terminal Bench 2.0",
+  "model.preview.label.completion": "Voltooiing",
+  "model.preview.label.costAttempt": "Kosten / poging",
   "model.preview.value.notSupported": "Niet ondersteund",
   "model.preview.tooltip.average":
     "De geschatte gemiddelde kosten zijn gebaseerd op een typische verhouding van input-, output- en cache-leestokens.",
@@ -520,6 +530,8 @@ export const dict = {
   "notification.permission.titleSubagent": "Toestemming vereist (subagent)",
   "notification.permission.description": "{{sessionTitle}} in {{projectName}} heeft toestemming nodig",
   "ui.permission.manageAutoApprove": "Beheer automatisch goedkeuren regels",
+  "ui.permission.doomLoop.prompt": "Mogelijke lus gedetecteerd voor het hulpmiddel {{tool}}. Doorgaan met uitvoeren?",
+  "ui.permission.doomLoop.rule": "Doorgaan met {{tool}}-aanroepen",
   "ui.permission.rule.addToAllowed": "Toevoegen aan toegestane lijst",
   "ui.permission.rule.removeFromAllowed": "Verwijderen van toegestane lijst",
   "ui.permission.rule.addToDenied": "Toevoegen aan geweigerde lijst",
@@ -1000,6 +1012,33 @@ export const dict = {
   "feedback.dialog.github": "Meld een probleem op GitHub",
   "feedback.dialog.discord": "Word lid van onze Discord community",
   "feedback.dialog.support": "Klantenservice",
+  "workStyle.onboarding.welcome": "Welkom bij Kilo",
+  "workStyle.onboarding.title": "Kies hoe je wilt werken",
+  "workStyle.onboarding.description":
+    "Hiermee stel je de beginwaarden in voor machtigingen, redeneerblokken, terminaluitvoer en de contexttijdlijn. Dit wordt slechts één keer toegepast en slaat instellingen over die je al hebt aangepast.",
+  "workStyle.onboarding.settingsNote": "Je kunt deze opties op elk moment wijzigen in",
+  "workStyle.onboarding.settings": "Instellingen.",
+  "workStyle.onboarding.skip": "Voorlopig overslaan",
+  "workStyle.toast.saved.title": "Modus succesvol opgeslagen",
+  "workStyle.toast.saved.description": "Werk je voorkeuren op elk moment bij in Instellingen.",
+  "workStyle.toast.saved.action": "Naar Instellingen",
+  "workStyle.choice.permissions": "Machtigingen",
+  "workStyle.choice.bash": "Bash",
+  "workStyle.choice.visibility": "Zichtbaarheid",
+  "workStyle.choice.human-in-the-loop.eyebrow": "Menselijke controle",
+  "workStyle.choice.human-in-the-loop.title": "Eerst controleren",
+  "workStyle.choice.human-in-the-loop.description": "Kilo pauzeert en toont tijdens het werk zijn plan.",
+  "workStyle.choice.human-in-the-loop.permissions":
+    "Vraagt toestemming voordat bestanden worden bewerkt of opdrachten worden uitgevoerd.",
+  "workStyle.choice.human-in-the-loop.bash": "Vraagt toestemming voor elke terminalopdracht.",
+  "workStyle.choice.human-in-the-loop.visibility": "Toont alle gespreksdetails, inclusief de redenering.",
+  "workStyle.choice.autonomous.eyebrow": "Minder onderbrekingen",
+  "workStyle.choice.autonomous.title": "Hoge autonomie",
+  "workStyle.choice.autonomous.description": "Minder onderbrekingen, gestroomlijnde interface.",
+  "workStyle.choice.autonomous.permissions":
+    "Bewerkt bestanden en voert opdrachten in de werkruimte uit zonder toestemming te vragen.",
+  "workStyle.choice.autonomous.bash": "Kan terminalopdrachten in de werkruimte zonder goedkeuring uitvoeren.",
+  "workStyle.choice.autonomous.visibility": "Details blijven ingeklapt totdat je ze uitvouwt.",
   "session.cloud.import.title": "Importeer uit de cloud",
   "session.cloud.import.placeholder": "Sessie-ID, URL, of kilo import commando",
   "session.cloud.import.button": "Importeren",
@@ -1256,8 +1295,6 @@ export const dict = {
   "settings.experimental.formatter.description": "Schakel de automatische code formatter in",
   "settings.experimental.lsp.title": "LSP",
   "settings.experimental.lsp.description": "Schakel language server protocol integratie in",
-  "settings.experimental.pasteSummary.title": "Plak-samenvatting uitschakelen",
-  "settings.experimental.pasteSummary.description": "Vat grote geplakte inhoud niet samen",
   "settings.experimental.batch.title": "Batch Tool",
   "settings.experimental.batch.description": "Schakel batching van meerdere tool calls in",
   "settings.experimental.codebaseSearch.title": "Codebase Zoeken",
@@ -1407,8 +1444,7 @@ export const dict = {
   "settings.autoApprove.tool.todoreadwrite":
     "Takenlijst beheren. Staat het lezen en bijwerken van de interne takenlijst toe.",
   "settings.autoApprove.tool.webfetch": "Een URL ophalen. Staat het ophalen van inhoud van een specifieke URL toe.",
-  "settings.autoApprove.tool.websearchcodesearch":
-    "Zoek op web of in code. Staat het uitvoeren van externe web- of code-zoekopdrachten toe.",
+  "settings.autoApprove.tool.websearch": "Zoek op het web. Staat het uitvoeren van externe web-zoekopdrachten toe.",
   "settings.autoApprove.tool.doom_loop":
     "Voorkom herhaalde identieke acties. Geactiveerd wanneer dezelfde tool call herhaald wordt met identieke invoer.",
 

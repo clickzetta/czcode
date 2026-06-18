@@ -3,10 +3,8 @@ import { Bus } from "@/bus"
 import { InstanceState } from "@/effect/instance-state"
 import { SessionID } from "./schema"
 import { QuestionID } from "@/question/schema" // kilocode_change
-import { zod } from "@/util/effect-zod"
-import { NonNegativeInt, withStatics } from "@/util/schema"
+import { NonNegativeInt } from "@opencode-ai/core/schema"
 import { Effect, Layer, Context, Schema } from "effect"
-import z from "zod"
 
 export const Info = Schema.Union([
   Schema.Struct({
@@ -16,6 +14,16 @@ export const Info = Schema.Union([
     type: Schema.Literal("retry"),
     attempt: NonNegativeInt,
     message: Schema.String,
+    action: Schema.optional(
+      Schema.Struct({
+        reason: Schema.String,
+        provider: Schema.String,
+        title: Schema.String,
+        message: Schema.String,
+        label: Schema.String,
+        link: Schema.optional(Schema.String),
+      }),
+    ),
     next: NonNegativeInt,
   }),
   Schema.Struct({
@@ -28,9 +36,7 @@ export const Info = Schema.Union([
     message: Schema.String,
   }),
   // kilocode_change end
-])
-  .annotate({ identifier: "SessionStatus" })
-  .pipe(withStatics((s) => ({ zod: zod(s) })))
+]).annotate({ identifier: "SessionStatus" })
 export type Info = Schema.Schema.Type<typeof Info>
 
 export const Event = {

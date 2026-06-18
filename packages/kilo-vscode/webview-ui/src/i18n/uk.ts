@@ -136,8 +136,14 @@ export const dict = {
   "provider.connect.status.failed": "Авторизація не вдалася: {{error}}",
   "provider.connect.apiKey.description":
     "Введіть свій API-ключ {{provider}}, щоб підключити акаунт {{provider}} і використовувати моделі {{provider}} в Kilo.",
+  "provider.connect.apiKey.description.local":
+    "Connect to your local {{provider}} server. Leave the API key empty if the server does not require one (default for localhost).",
+  "provider.connect.atomicChat.description":
+    "Connect to Atomic Chat on your machine (default http://127.0.0.1:1337). No API key is required for the local server — start Atomic Chat, load a model, then connect.",
   "provider.connect.apiKey.label": "API-ключ {{provider}}",
+  "provider.connect.apiKey.label.optional": "{{provider}} API key (optional)",
   "provider.connect.apiKey.placeholder": "API-ключ",
+  "provider.connect.apiKey.placeholder.optional": "Leave empty for local server",
   "provider.connect.apiKey.required": "API-ключ обов'язковий",
   "provider.connect.prompt.required": "{{field}} є обов'язковим",
   "provider.connect.azure.endpointType.label": "Виберіть конфігурацію кінцевої точки Azure",
@@ -176,6 +182,7 @@ export const dict = {
   "provider.disconnect.toast.disconnected.description": "Моделі {{provider}} більше недоступні.",
 
   "model.tag.free": "Безкоштовно",
+  "model.tag.dataCollected": "Дані можуть використовуватися для навчання",
   "model.tag.latest": "Остання",
   "model.group.recommended": "Рекомендовані",
   "model.group.favorites": "Обране",
@@ -203,6 +210,9 @@ export const dict = {
   "model.preview.label.cached": "Кешовані",
   "model.preview.label.average": "Орієнт. сер. вартість",
   "model.preview.label.context": "Контекст",
+  "model.preview.group.terminalBench": "Terminal Bench 2.0",
+  "model.preview.label.completion": "Виконання",
+  "model.preview.label.costAttempt": "Вартість / спроба",
   "model.preview.value.notSupported": "Не підтримується",
   "model.preview.tooltip.average":
     "Орієнтовна середня вартість базується на типовому співвідношенні вхідних, вихідних токенів та читання кешу.",
@@ -521,6 +531,9 @@ export const dict = {
   "notification.permission.titleSubagent": "Потрібен дозвіл (підагент)",
   "notification.permission.description": "{{sessionTitle}} у {{projectName}} потребує дозволу",
   "ui.permission.manageAutoApprove": "Керувати правилами автоматичного схвалення",
+  "ui.permission.doomLoop.prompt":
+    "Виявлено потенційний цикл під час роботи інструмента {{tool}}. Продовжити виконання?",
+  "ui.permission.doomLoop.rule": "Продовжувати виклики {{tool}}",
   "ui.permission.rule.addToAllowed": "Додати до дозволених",
   "ui.permission.rule.removeFromAllowed": "Видалити з дозволених",
   "ui.permission.rule.addToDenied": "Додати до заблокованих",
@@ -999,6 +1012,31 @@ export const dict = {
   "feedback.dialog.github": "Повідомити про проблему на GitHub",
   "feedback.dialog.discord": "Приєднатися до нашої спільноти Discord",
   "feedback.dialog.support": "Служба підтримки клієнтів",
+  "workStyle.onboarding.welcome": "Ласкаво просимо до Kilo",
+  "workStyle.onboarding.title": "Виберіть, як ви хочете працювати",
+  "workStyle.onboarding.description":
+    "Встановлює початкові значення дозволів, блоків міркувань, виводу термінала та часової шкали контексту. Застосовується лише один раз і не змінює вже налаштовані вами параметри.",
+  "workStyle.onboarding.skip": "Поки пропустити",
+  "workStyle.onboarding.settingsNote": "Ці параметри можна будь-коли змінити в розділі",
+  "workStyle.onboarding.settings": "«Налаштування».",
+  "workStyle.toast.saved.title": "Режим успішно збережено",
+  "workStyle.toast.saved.description": "Змінити їх можна будь-коли в налаштуваннях.",
+  "workStyle.toast.saved.action": "Перейти до налаштувань",
+  "workStyle.choice.permissions": "Дозволи",
+  "workStyle.choice.bash": "Bash",
+  "workStyle.choice.visibility": "Видимість",
+  "workStyle.choice.human-in-the-loop.eyebrow": "Людина контролює процес",
+  "workStyle.choice.human-in-the-loop.title": "Спочатку перевірка",
+  "workStyle.choice.human-in-the-loop.description": "Kilo призупиняється та показує свій план у процесі роботи.",
+  "workStyle.choice.human-in-the-loop.permissions": "Запитує дозвіл перед редагуванням файлів або виконанням команд.",
+  "workStyle.choice.human-in-the-loop.bash": "Запитує дозвіл на кожну команду термінала.",
+  "workStyle.choice.human-in-the-loop.visibility": "Показує всі деталі розмови, зокрема хід міркувань.",
+  "workStyle.choice.autonomous.eyebrow": "Менше переривань",
+  "workStyle.choice.autonomous.title": "Висока автономність",
+  "workStyle.choice.autonomous.description": "Менше переривань, спрощений інтерфейс.",
+  "workStyle.choice.autonomous.permissions": "Редагує файли та виконує команди в робочому просторі без дозволу.",
+  "workStyle.choice.autonomous.bash": "Може виконувати команди термінала в робочому просторі без схвалення.",
+  "workStyle.choice.autonomous.visibility": "Деталі залишаються згорнутими, доки ви їх не розгорнете.",
   "session.cloud.import.title": "Імпортувати з хмари",
   "session.cloud.import.placeholder": "Ідентифікатор сесії, URL або команда kilo import",
   "session.cloud.import.button": "Імпортувати",
@@ -1249,8 +1287,6 @@ export const dict = {
   "settings.experimental.formatter.description": "Увімкнути автоматичне форматування коду",
   "settings.experimental.lsp.title": "LSP",
   "settings.experimental.lsp.description": "Увімкнути інтеграцію з мовним сервером",
-  "settings.experimental.pasteSummary.title": "Вимкнути підсумовування вставки",
-  "settings.experimental.pasteSummary.description": "Підсумовувати великий вставлений вміст",
   "settings.experimental.batch.title": "Пакетний інструмент",
   "settings.experimental.batch.description": "Увімкнути пакетну обробку кількох викликів інструментів",
   "settings.experimental.codebaseSearch.title": "Пошук по кодовій базі",
@@ -1396,8 +1432,7 @@ export const dict = {
   "settings.autoApprove.tool.todoreadwrite":
     "Керувати списком завдань. Дозволяє читання та оновлення внутрішнього списку завдань.",
   "settings.autoApprove.tool.webfetch": "Отримати URL. Дозволяє отримання вмісту з вказаного URL.",
-  "settings.autoApprove.tool.websearchcodesearch":
-    "Шукати в мережі або коді. Дозволяє зовнішній веб-пошук або пошук коду.",
+  "settings.autoApprove.tool.websearch": "Шукати в інтернеті. Дозволяє зовнішній веб-пошук.",
   "settings.autoApprove.tool.doom_loop":
     "Запобігати повторюваним діям. Спрацьовує, коли той самий виклик інструменту повторюється з однаковими вхідними даними.",
 

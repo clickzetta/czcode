@@ -136,8 +136,14 @@ export const dict = {
   "provider.connect.status.failed": "Ошибка авторизации: {{error}}",
   "provider.connect.apiKey.description":
     "Введите ваш API ключ {{provider}} для подключения аккаунта и использования моделей {{provider}} в Kilo.",
+  "provider.connect.apiKey.description.local":
+    "Подключение к локальному серверу {{provider}}. Оставьте ключ пустым, если сервер его не требует (обычно для localhost).",
+  "provider.connect.atomicChat.description":
+    "Подключение к Atomic Chat на этом компьютере (по умолчанию http://127.0.0.1:1337). Для локального API ключ не нужен — запустите Atomic Chat, загрузите модель и нажмите Connect.",
   "provider.connect.apiKey.label": "{{provider}} API ключ",
+  "provider.connect.apiKey.label.optional": "{{provider}} API ключ (необязательно)",
   "provider.connect.apiKey.placeholder": "API ключ",
+  "provider.connect.apiKey.placeholder.optional": "Пусто для локального сервера",
   "provider.connect.apiKey.required": "API ключ обязателен",
   "provider.connect.prompt.required": "{{field}} обязательно",
   "provider.connect.azure.endpointType.label": "Выберите конфигурацию конечной точки Azure",
@@ -175,6 +181,7 @@ export const dict = {
   "provider.disconnect.toast.disconnected.title": "{{provider}} отключён",
   "provider.disconnect.toast.disconnected.description": "Модели {{provider}} больше недоступны.",
   "model.tag.free": "Бесплатно",
+  "model.tag.dataCollected": "Данные могут использоваться для обучения",
   "model.tag.latest": "Последняя",
   "model.group.recommended": "Рекомендуемые",
   "model.group.favorites": "Избранное",
@@ -202,6 +209,9 @@ export const dict = {
   "model.preview.label.cached": "В кэше",
   "model.preview.label.average": "Средняя стоимость",
   "model.preview.label.context": "Контекст",
+  "model.preview.group.terminalBench": "Terminal Bench 2.0",
+  "model.preview.label.completion": "Выполнение",
+  "model.preview.label.costAttempt": "Стоимость / попытка",
   "model.preview.value.notSupported": "Не поддерживается",
   "model.preview.tooltip.average":
     "Примерная средняя стоимость основана на типичном соотношении токенов ввода, вывода и чтения из кэша.",
@@ -519,6 +529,9 @@ export const dict = {
   "notification.permission.titleSubagent": "Требуется разрешение (субагент)",
   "notification.permission.description": "{{sessionTitle}} в {{projectName}} требуется разрешение",
   "ui.permission.manageAutoApprove": "Управление правилами автоодобрения",
+  "ui.permission.doomLoop.prompt":
+    "Обнаружен потенциальный цикл при работе инструмента {{tool}}. Продолжить выполнение?",
+  "ui.permission.doomLoop.rule": "Продолжать вызовы {{tool}}",
   "ui.permission.rule.addToAllowed": "Добавить в список разрешённых",
   "ui.permission.rule.removeFromAllowed": "Убрать из списка разрешённых",
   "ui.permission.rule.addToDenied": "Добавить в список запрещённых",
@@ -1042,6 +1055,33 @@ export const dict = {
   "feedback.dialog.github": "Сообщить о проблеме на GitHub",
   "feedback.dialog.discord": "Присоединиться к нашему Discord",
   "feedback.dialog.support": "Служба поддержки",
+  "workStyle.onboarding.welcome": "Добро пожаловать в Kilo",
+  "workStyle.onboarding.title": "Выберите, как вы хотите работать",
+  "workStyle.onboarding.description":
+    "Задаёт начальные значения разрешений, блоков рассуждений, вывода терминала и временной шкалы контекста. Применяется только один раз и не затрагивает уже изменённые вами настройки.",
+  "workStyle.onboarding.skip": "Пока пропустить",
+  "workStyle.onboarding.settingsNote": "Эти параметры можно изменить в любое время в разделе",
+  "workStyle.onboarding.settings": "«Настройки».",
+  "workStyle.toast.saved.title": "Режим успешно сохранён",
+  "workStyle.toast.saved.description": "Изменить их можно в любое время в настройках.",
+  "workStyle.toast.saved.action": "Перейти в настройки",
+  "workStyle.choice.permissions": "Разрешения",
+  "workStyle.choice.bash": "Bash",
+  "workStyle.choice.visibility": "Видимость",
+  "workStyle.choice.human-in-the-loop.eyebrow": "Человек контролирует процесс",
+  "workStyle.choice.human-in-the-loop.title": "Сначала проверка",
+  "workStyle.choice.human-in-the-loop.description": "Kilo приостанавливается и показывает свой план по ходу работы.",
+  "workStyle.choice.human-in-the-loop.permissions":
+    "Запрашивает разрешение перед редактированием файлов или выполнением команд.",
+  "workStyle.choice.human-in-the-loop.bash": "Запрашивает разрешение на каждую команду терминала.",
+  "workStyle.choice.human-in-the-loop.visibility": "Показывает все детали разговора, включая ход рассуждений.",
+  "workStyle.choice.autonomous.eyebrow": "Меньше прерываний",
+  "workStyle.choice.autonomous.title": "Высокая автономность",
+  "workStyle.choice.autonomous.description": "Меньше прерываний, упрощённый интерфейс.",
+  "workStyle.choice.autonomous.permissions":
+    "Редактирует файлы и выполняет команды в рабочем пространстве без разрешения.",
+  "workStyle.choice.autonomous.bash": "Может выполнять команды терминала в рабочем пространстве без подтверждения.",
+  "workStyle.choice.autonomous.visibility": "Детали остаются свёрнутыми, пока вы их не развернёте.",
   "session.cloud.import.title": "Импорт из облака",
   "session.cloud.import.placeholder": "ID сессии, URL или команда kilo import",
   "session.cloud.import.button": "Импортировать",
@@ -1257,8 +1297,6 @@ export const dict = {
   "settings.experimental.formatter.description": "Включить автоматическое форматирование кода",
   "settings.experimental.lsp.title": "LSP",
   "settings.experimental.lsp.description": "Включить интеграцию протокола языкового сервера",
-  "settings.experimental.pasteSummary.title": "Отключить сводку вставки",
-  "settings.experimental.pasteSummary.description": "Не суммировать большой вставленный контент",
   "settings.experimental.batch.title": "Пакетный инструмент",
   "settings.experimental.batch.description": "Включить пакетную обработку вызовов инструментов",
   "settings.experimental.codebaseSearch.title": "Поиск по коду",
@@ -1437,8 +1475,8 @@ export const dict = {
   "settings.autoApprove.tool.todoreadwrite":
     "Управление списком задач. Разрешает чтение и обновление внутреннего списка задач.",
   "settings.autoApprove.tool.webfetch": "Получение URL. Разрешает извлечение содержимого по указанному URL-адресу.",
-  "settings.autoApprove.tool.websearchcodesearch":
-    "Поиск в интернете или коде. Разрешает выполнение внешних поисковых запросов в интернете или коде.",
+  "settings.autoApprove.tool.websearch":
+    "Поиск в интернете. Разрешает выполнение внешних поисковых запросов в интернете.",
   "settings.autoApprove.tool.external_directory":
     "Доступ к файлам вне рабочей области. Срабатывает при доступе к файлам за пределами текущего каталога проекта.",
   "settings.autoApprove.tool.doom_loop":

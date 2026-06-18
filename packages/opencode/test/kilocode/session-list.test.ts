@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test"
 import { Effect } from "effect"
-import { WithInstance } from "../../src/project/with-instance"
+import { provideTestInstance } from "../fixture/fixture"
 import { ProjectTable } from "../../src/project/project.sql"
 import { ProjectID } from "../../src/project/schema"
 import { Session } from "../../src/session/session"
@@ -18,11 +18,13 @@ afterEach(async () => {
 describe("Kilo Session.list", () => {
   test("includes directory matches from legacy project ids", async () => {
     await using tmp = await tmpdir({ git: true })
-    await WithInstance.provide({
+    await provideTestInstance({
       directory: tmp.path,
       fn: async () => {
         const session = await Effect.runPromise(
-          Session.Service.use((svc) => svc.create({ title: "legacy-session" })).pipe(Effect.provide(Session.defaultLayer)),
+          Session.Service.use((svc) => svc.create({ title: "legacy-session" })).pipe(
+            Effect.provide(Session.defaultLayer),
+          ),
         )
         const project = ProjectID.make("legacy-project")
         Database.use((db) => {

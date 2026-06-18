@@ -36,6 +36,8 @@ import {
   isSmall,
   providerSortKey,
   isFree,
+  isDataCollectedModel,
+  freeDataLabel,
   buildTriggerLabel,
   sanitizeName,
 } from "./model-selector-utils"
@@ -584,6 +586,13 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
   const controlLabel = () => `${label()}: ${triggerLabel()}`
   const searchLabel = () => `${controlLabel()}. ${language.t("dialog.model.search.placeholder")}`
   const describedBy = () => (props.description ? descriptionID : undefined)
+  const freeLabel = () => language.t("model.tag.free")
+  const dataLabel = () => freeDataLabel(language.t("model.tag.free"), language.t("model.tag.dataCollected"))
+  const activeCollectsData = () => {
+    const model = activeModel()
+    if (!model) return false
+    return isDataCollectedModel(model)
+  }
 
   return (
     <>
@@ -624,6 +633,13 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
         trigger={
           <>
             <span class="model-selector-trigger-label">{triggerLabel()}</span>
+            <Show when={activeCollectsData()}>
+              <Tooltip value={dataLabel()} placement="top">
+                <span class="model-selector-trigger-free-data" aria-label={dataLabel()}>
+                  <Icon name="book-open-check" size="small" />
+                </span>
+              </Tooltip>
+            </Show>
             <svg class="model-selector-trigger-chevron" width="10" height="10" viewBox="0 0 16 16" fill="currentColor">
               <path d="M8 4l4 5H4l4-5z" />
             </svg>
@@ -812,8 +828,21 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
                                           )
                                         })()}
                                       </span>
-                                      <Show when={isFree(model)}>
-                                        <Tag data-variant="member">{language.t("model.tag.free")}</Tag>
+                                      <Show when={isFree(model) || isDataCollectedModel(model)}>
+                                        <span class="model-selector-free-data">
+                                          <Show when={isFree(model)}>
+                                            <span class="model-selector-data-badge">
+                                              <Tag data-variant="member">{freeLabel()}</Tag>
+                                            </span>
+                                          </Show>
+                                          <Show when={isDataCollectedModel(model)}>
+                                            <Tooltip value={dataLabel()} placement="top">
+                                              <span class="model-selector-free-data-icon" aria-label={dataLabel()}>
+                                                <Icon name="book-open-check" size="small" />
+                                              </span>
+                                            </Tooltip>
+                                          </Show>
+                                        </span>
                                       </Show>
                                       <Show when={showProvider()}>
                                         <span class="model-selector-item-provider-tag">{model.providerName}</span>

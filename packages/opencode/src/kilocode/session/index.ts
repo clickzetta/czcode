@@ -1,12 +1,10 @@
-// kilocode_change - new file
-import { remapChildren as _remapChildren } from "./fork"
+import { writer as _writer } from "./fork"
 import z from "zod"
 import { Cause, Effect, Schema } from "effect"
 import { BusEvent } from "@/bus/bus-event"
 import { EffectBridge } from "@/effect/bridge"
 import { Session } from "@/session/session"
 import { MessageID, SessionID } from "@/session/schema"
-import { fn } from "@/util/fn"
 import { Database, eq, and, gte, isNull, desc, like, inArray, lt, or } from "@/storage/db"
 import type { SQL } from "@/storage/db"
 import { ProjectTable } from "@/project/project.sql"
@@ -16,7 +14,9 @@ import { SessionTable } from "@/session/session.sql"
 import * as Log from "@opencode-ai/core/util/log"
 import type { LanguageModelUsage, ProviderMetadata } from "ai"
 import type { Provider } from "@/provider/provider"
+import { zod as toZod } from "@opencode-ai/core/effect-zod"
 import { ENV_FEATURE } from "@kilocode/kilo-gateway"
+import { fn } from "@/kilocode/fn"
 
 export namespace KiloSession {
   const log = Log.create({ service: "session.kilo" })
@@ -80,6 +80,10 @@ export namespace KiloSession {
 
   export function resolveRoot(id: string): string {
     return roots.get(id) ?? id
+  }
+
+  export function resolveParent(id: string): string | undefined {
+    return parents.get(id)
   }
 
   export function featureForPlatform(platform: string | undefined): string | undefined {
@@ -169,7 +173,7 @@ export namespace KiloSession {
    * Returns `undefined` when no provider cost is available, so the caller
    * should fall back to the standard token-based calculation.
    *
-   * Reference: https://openrouter.ai/docs/use-cases/usage-accounting
+   * Reference: https://openrouter.ai/docs/cookbook/administration/usage-accounting
    */
   export function providerCost(input: {
     metadata?: ProviderMetadata
@@ -266,16 +270,24 @@ export namespace KiloSession {
   // These helpers catch that specific error and log a warning instead.
   // ---------------------------------------------------------------------------
 
-  export function runSyncSafe(run: () => void, context: { type: string; id: string; sessionID: string }): void {
-    try {
-      run()
-    } catch (e: any) {
-      if (e?.code === "SQLITE_CONSTRAINT_FOREIGNKEY") {
-        log.warn(`skipping ${context.type} for deleted session`, { id: context.id, sessionID: context.sessionID })
-        return
-      }
-      throw e
-    }
+  export function runSyncSafe<E, R>(
+    run: Effect.Effect<void, E, R>,
+    context: { type: string; id: string; sessionID: string },
+  ) {
+    return run.pipe(
+      Effect.catchCause((cause) => {
+        const err = Cause.squash(cause)
+        if (typeof err === "object" && err !== null && "code" in err && err.code === "SQLITE_CONSTRAINT_FOREIGNKEY") {
+          return Effect.sync(() =>
+            log.warn(`skipping ${context.type} for deleted session`, {
+              id: context.id,
+              sessionID: context.sessionID,
+            }),
+          )
+        }
+        return Effect.failCause(cause)
+      }),
+    )
   }
 
   // ---------------------------------------------------------------------------
@@ -285,7 +297,7 @@ export namespace KiloSession {
   /** Schema for project summary returned by listGlobal. */
   export const ProjectInfo = z
     .object({
-      id: ProjectID.zod,
+      id: z.custom<ProjectID>(Schema.is(ProjectID)),
       name: z.string().optional(),
       worktree: z.string(),
     })
@@ -395,20 +407,13 @@ export namespace KiloSession {
     }
   }
 
-  export const remapChildren = _remapChildren
+  export const writer = _writer
 }
 
 export const kiloSessionFork = fn(
-  z.object({ sessionID: SessionID.zod, messageID: MessageID.zod.optional() }),
+  z.object({ sessionID: toZod(SessionID), messageID: toZod(MessageID).optional() }),
   async (input) => {
     const { AppRuntime } = await import("@/effect/app-runtime")
-    return AppRuntime.runPromise(
-      Effect.gen(function* () {
-        const sessions = yield* Session.Service
-        const session = yield* sessions.fork(input)
-        yield* KiloSession.remapChildren(session.id)
-        return session
-      }),
-    )
+    return AppRuntime.runPromise(Session.Service.use((sessions) => sessions.fork(input)))
   },
 )

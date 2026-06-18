@@ -4,6 +4,12 @@ JetBrains releases are locked by an immediate `jetbrains/v<version>` tag, then g
 
 The published code comes from `jetbrains/v<version>`. Marketplace and GitHub release notes come from the reviewed changelog merged in the release PR.
 
+## Skill-Assisted Release
+
+Maintainers can use the Kilo `release-jetbrains` skill to drive this process from a version request such as `next rc` or an explicit version. The skill resolves and confirms the version, dispatches and watches the prepare workflow, helps produce a filtered human-readable JetBrains/CLI changelog draft, commits the reviewed changelog to the release PR, and watches publishing after the PR is merged.
+
+The skill lives at `.kilo/skills/release-jetbrains/SKILL.md`. It does not move or recreate release tags, and merge permission is only required if the user explicitly asks the skill to merge the release PR automatically.
+
 ## Create Release Tag And PR
 
 1. Open the GitHub Actions workflow:
@@ -58,12 +64,12 @@ The PR updates:
 
 | File | Purpose |
 |---|---|
-| `packages/kilo-jetbrains/package.json` | JetBrains plugin package version. |
+| `packages/kilo-jetbrains/gradle.properties` | JetBrains plugin version in `kilo.jetbrains.version`. |
 | `packages/kilo-jetbrains/CHANGELOG.md` | Release notes packaged into the plugin. |
 
-Review and edit `packages/kilo-jetbrains/CHANGELOG.md` before merging. This changelog entry is rendered into JetBrains `<change-notes>`, so it appears on the Marketplace and inside IntelliJ plugin UI.
+Review `packages/kilo-jetbrains/gradle.properties` and edit `packages/kilo-jetbrains/CHANGELOG.md` before merging. This changelog entry is rendered into JetBrains `<change-notes>`, so it appears on the Marketplace and inside IntelliJ plugin UI.
 
-The PR can change release metadata such as `packages/kilo-jetbrains/package.json` and `packages/kilo-jetbrains/CHANGELOG.md`, but it does not change the tagged source code that will be built.
+The PR can change release metadata such as `packages/kilo-jetbrains/gradle.properties` and `packages/kilo-jetbrains/CHANGELOG.md`, but it does not change the tagged source code that will be built.
 
 ## Merge and Publish
 
@@ -84,7 +90,7 @@ Publishing behavior:
 | `x.y.z-rc.n` | `eap` | Prerelease |
 | `x.y.z` | default | Stable release |
 
-The workflow checks out `jetbrains/v<version>` for verification, signing, and Marketplace publishing. It overlays the reviewed `packages/kilo-jetbrains/CHANGELOG.md` from the merged PR before rendering release notes and before `publishPlugin`, so Marketplace metadata and the GitHub Release use the reviewed changelog.
+The workflow checks out `jetbrains/v<version>` for verification, signing, and Marketplace publishing. It overlays the reviewed `packages/kilo-jetbrains/gradle.properties` and `packages/kilo-jetbrains/CHANGELOG.md` from the merged PR before rendering release notes and before `publishPlugin`, so the Marketplace plugin version, Marketplace notes, and GitHub Release use the reviewed metadata.
 
 ## Installing RC Builds
 
