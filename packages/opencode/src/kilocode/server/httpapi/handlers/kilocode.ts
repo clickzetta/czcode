@@ -40,11 +40,8 @@ export const kilocodeHandlers = HttpApiBuilder.group(InstanceHttpApi, "kilocode"
       payload: typeof RemoveAgentPayload.Type
     }) {
       const instance = yield* InstanceState.context
-      const agent = yield* agents.get(ctx.payload.name)
-      const dirs = yield* config.directories()
-      yield* EffectBridge.fromPromise(() =>
-        KiloAgent.remove({ name: ctx.payload.name, agent, dirs, directory: instance.directory }),
-      )
+      // czcode_change - KiloAgent.remove now resolves the agent + config dirs internally
+      yield* EffectBridge.fromPromise(() => KiloAgent.remove(ctx.payload.name))
       yield* store.dispose(instance)
       return true
     })

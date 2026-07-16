@@ -172,6 +172,10 @@ export const defaultConfig: MergeConfig = {
     "github/bun.lock",
     "github/sst-env.d.ts",
     "github/.gitignore",
+    // czcode_change: VSCode visual-regression screenshots (Git LFS objects). czcode
+    // does not run VSCode visual regression tests, and these LFS blobs live only in
+    // upstream's LFS store — pulling them into czcode fails push with GH008. Skip them.
+    "packages/kilo-docs/public/img/screenshot-tests/**",
   ],
 
   // Files that should take upstream version and apply Kilo branding transforms

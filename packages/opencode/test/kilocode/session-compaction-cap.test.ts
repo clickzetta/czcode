@@ -47,6 +47,7 @@ import { Todo } from "../../src/session/todo"
 import { Skill } from "../../src/skill"
 import { Snapshot } from "../../src/snapshot"
 import { SyncEvent } from "../../src/sync"
+import { EventV2Bridge } from "@/event-v2-bridge"
 import { ToolRegistry } from "../../src/tool/registry"
 import { Truncate } from "../../src/tool/truncate"
 import * as Log from "@opencode-ai/core/util/log"
@@ -145,6 +146,7 @@ function makeHttp() {
     mcp,
     AppFileSystem.defaultLayer,
     SyncEvent.defaultLayer,
+    EventV2Bridge.defaultLayer,
     Reference.defaultLayer,
     status,
   ).pipe(Layer.provideMerge(infra))

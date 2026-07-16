@@ -21,6 +21,7 @@ import { SessionStatus } from "../../src/session/status"
 import { SessionSummary } from "../../src/session/summary"
 import { Snapshot } from "../../src/snapshot"
 import { SyncEvent } from "../../src/sync"
+import { EventV2Bridge } from "@/event-v2-bridge"
 import { KiloSessionProcessor } from "../../src/kilocode/session/processor"
 import * as Log from "@opencode-ai/core/util/log"
 import * as CrossSpawnSpawner from "@opencode-ai/core/cross-spawn-spawner"
@@ -107,6 +108,7 @@ const deps = Layer.mergeAll(
   SessionSummary.defaultLayer,
   Image.defaultLayer,
   SyncEvent.defaultLayer,
+  EventV2Bridge.defaultLayer,
   status,
   llm,
 ).pipe(Layer.provideMerge(infra))

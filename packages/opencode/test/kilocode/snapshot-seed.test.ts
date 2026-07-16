@@ -6,7 +6,7 @@ import { Effect } from "effect"
 import { Global } from "@opencode-ai/core/global"
 import { Hash } from "@opencode-ai/core/util/hash"
 import { Snapshot } from "../../src/snapshot"
-import { Instance } from "../../src/project/instance"
+import { Instance } from "../../src/kilocode/instance"
 import { Filesystem } from "../../src/util/filesystem"
 import { disposeAllInstances, provideInstance, tmpdir } from "../fixture/fixture"
 
