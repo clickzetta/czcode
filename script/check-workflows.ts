@@ -29,6 +29,7 @@ const DIR = path.join(ROOT, ".github", "workflows")
 const active = new Set([
   "auto-docs.yml",
   "beta.yml",
+  "check-forbidden-strings.yml", // czcode_change - added in v7.3.46 upstream merge (gated to Kilo-Org repo, inert here)
   "check-kilo-generated-artifacts.yml",
   "check-md-table-padding.yml",
   "check-opencode-annotations.yml",
@@ -45,6 +46,7 @@ const active = new Set([
   "kilo-auto-close.yml",
   "nix-eval.yml",
   "nix-hashes.yml",
+  "prepare-jetbrains-release.yml", // czcode_change - added in v7.3.46 upstream merge (gated to Kilo-Org repo, inert here)
   "publish-jetbrains.yml",
   "publish.yml",
   "release.yml", // czcode_change - added in v7.3.0 upstream merge (replaces watch-opencode-releases.yml)
