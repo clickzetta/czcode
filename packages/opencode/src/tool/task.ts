@@ -30,6 +30,14 @@ export interface TaskPromptOps {
 }
 
 const id = "task"
+const BACKGROUND_DESCRIPTION = [
+  "",
+  "",
+  [
+    "Background mode: background=true launches the subagent asynchronously.",
+    "Use task_status(task_id=..., wait=false) to poll, or wait=true to block until done.",
+  ].join(" "),
+].join("\n")
 
 const BaseParameters = Schema.Struct({
   description: Schema.String.annotate({ description: "A short (3-5 words) description of the task" }),
@@ -137,7 +145,9 @@ export const TaskTool = Tool.define(
       if (!next) {
         return yield* Effect.fail(new Error(`Unknown agent type: ${params.subagent_type} is not a valid agent type`))
       }
+      // kilocode_change start — reject primary agents; only subagent/all modes allowed
       KiloTask.validate(next, params.subagent_type)
+      // kilocode_change end
 
       const canTask = KiloTask.nestedTask() // kilocode_change - Kilo disallows subagents spawning subagents
       const canTodo = next.permission.some((rule) => rule.permission === "todowrite")
@@ -370,10 +380,12 @@ export const TaskTool = Tool.define(
       }
 
       return yield* Effect.acquireUseRelease(
+        // kilocode_change start - snapshot child cost so we propagate only the delta on resume (#6321)
         Effect.gen(function* () {
           ctx.abort.addEventListener("abort", onAbort)
           return yield* KiloCostPropagation.childCost(sessions, nextSession.id)
         }),
+        // kilocode_change end
         () =>
           Effect.gen(function* () {
             const text = yield* runTask()
@@ -394,9 +406,12 @@ export const TaskTool = Tool.define(
                 const costAfter = yield* KiloCostPropagation.childCost(sessions, nextSession.id).pipe(
                   Effect.catchTag("NotFoundError", () => Effect.succeed(costBefore)),
                 )
-                yield* KiloCostPropagation.propagate(sessions, ctx.sessionID, ctx.messageID, costAfter - costBefore).pipe(
-                  Effect.catchTag("NotFoundError", () => Effect.void),
-                )
+                yield* KiloCostPropagation.propagate(
+                  sessions,
+                  ctx.sessionID,
+                  ctx.messageID,
+                  costAfter - costBefore,
+                ).pipe(Effect.catchTag("NotFoundError", () => Effect.void))
               }),
             ),
           ),
@@ -405,7 +420,7 @@ export const TaskTool = Tool.define(
     })
 
     return {
-      description: DESCRIPTION,
+      description: flags.experimentalBackgroundSubagents ? DESCRIPTION + BACKGROUND_DESCRIPTION : DESCRIPTION,
       parameters: Parameters,
       jsonSchema: flags.experimentalBackgroundSubagents ? undefined : ToolJsonSchema.fromSchema(BaseParameters),
       execute: (params: Schema.Schema.Type<typeof Parameters>, ctx: Tool.Context) =>

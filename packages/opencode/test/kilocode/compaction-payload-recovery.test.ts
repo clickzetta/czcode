@@ -11,7 +11,7 @@ import { KiloCompactionPayloadRecovery } from "../../src/kilocode/session/compac
 import { KiloSessionCompaction } from "../../src/kilocode/session/compaction"
 import { Permission } from "../../src/permission"
 import { Plugin } from "../../src/plugin"
-import { WithInstance } from "../../src/project/with-instance"
+import { provide as withInstanceProvide } from "../../src/kilocode/instance"
 import { ModelID, ProviderID } from "../../src/provider/schema"
 import { Snapshot } from "../../src/snapshot"
 import { LLM } from "../../src/session/llm"
@@ -23,6 +23,7 @@ import { SessionCompaction } from "../../src/session/compaction"
 import { SessionStatus } from "../../src/session/status"
 import { SessionSummary } from "../../src/session/summary"
 import { SyncEvent } from "../../src/sync"
+import { EventV2Bridge } from "@/event-v2-bridge"
 import { ProviderTest } from "../fake/provider"
 import { tmpdir } from "../fixture/fixture"
 
@@ -182,6 +183,7 @@ function runtime(layer: Layer.Layer<LLM.Service>, config = Config.defaultLayer) 
     Layer.provide(summary),
     Layer.provide(Image.defaultLayer),
     Layer.provide(SyncEvent.defaultLayer),
+    Layer.provide(EventV2Bridge.defaultLayer),
   )
   const model = ProviderTest.model({ providerID, id: modelID, limit: { context: 100_000, output: 32_000 } })
   return ManagedRuntime.make(
@@ -198,6 +200,7 @@ function runtime(layer: Layer.Layer<LLM.Service>, config = Config.defaultLayer) 
       Layer.provide(config),
       Layer.provide(RuntimeFlags.layer()),
       Layer.provide(SyncEvent.defaultLayer),
+      Layer.provide(EventV2Bridge.defaultLayer),
     ),
   )
 }
@@ -315,7 +318,7 @@ describe("KiloCompactionPayloadRecovery", () => {
       }),
     )
 
-    await WithInstance.provide({
+    await withInstanceProvide({
       directory: tmp.path,
       fn: async () => {
         const session = await svc.create({})

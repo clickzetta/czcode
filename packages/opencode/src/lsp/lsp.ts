@@ -238,6 +238,7 @@ export const layer = Layer.effect(
             server: handle,
             root,
             directory: ctx.directory,
+            instance: ctx,
           }).catch(async (err) => {
             s.broken.add(key)
             await Process.stop(handle.process)
@@ -264,6 +265,7 @@ export const layer = Layer.effect(
           if (!root) continue
           if (s.broken.has(root + server.id)) continue
 
+          // kilocode_change start - use lightweight tsgo-based client when persistent LSP is not enabled
           if (server.id === "typescript" && !flags.experimentalLspTool) {
             const existing = s.clients.find((x) => x.root === root && x.serverID === server.id)
             if (existing) {
@@ -273,9 +275,10 @@ export const layer = Layer.effect(
             const client = TsClient.create({ root })
             s.clients.push(client)
             result.push(client)
-            Bus.publish(Event.Updated, {})
+            await Bus.publish(ctx, Event.Updated, {})
             continue
           }
+          // kilocode_change end
 
           const match = s.clients.find((x) => x.root === root && x.serverID === server.id)
           if (match) {
@@ -304,7 +307,7 @@ export const layer = Layer.effect(
           if (!client) continue
 
           result.push(client)
-          Bus.publish(Event.Updated, {})
+          await Bus.publish(ctx, Event.Updated, {})
         }
 
         return result

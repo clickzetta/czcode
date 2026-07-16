@@ -5,7 +5,7 @@ import { TuiEvent } from "@/cli/cmd/tui/event"
 import { Flag } from "@opencode-ai/core/flag/flag"
 import { Global } from "@opencode-ai/core/global"
 import { Identifier } from "@/id/id"
-import { Instance } from "@/project/instance"
+import { Instance, provide } from "@/kilocode/instance"
 import { Provider } from "@/provider/provider"
 import { ProviderID, ModelID } from "@/provider/schema"
 import { Question } from "@/question"
@@ -356,9 +356,8 @@ export namespace PlanFollowup {
       model: input.model,
     })
     const session = await PlanFollowupRuntime.session((svc) => svc.get(input.sessionID))
-    const { WithInstance } = await import("@/project/with-instance")
 
-    await WithInstance.provide({
+    await provide({
       directory: session.directory,
       fn: async () => {
         // Create the session FIRST so session.created fires immediately while the
@@ -370,7 +369,7 @@ export namespace PlanFollowup {
         pending.set(next.id, ctl)
         const { AppRuntime } = await import("@/effect/app-runtime")
         await AppRuntime.runPromise(SessionStatus.Service.use((svc) => svc.set(next.id, { type: "busy" })))
-        await Bus.publish(TuiEvent.SessionSelect, { sessionID: next.id })
+        await Bus.publish(Instance.current, TuiEvent.SessionSelect, { sessionID: next.id })
 
         const idle = () =>
           AppRuntime.runPromise(SessionStatus.Service.use((svc) => svc.set(next.id, { type: "idle" }))).catch((err) => {
@@ -451,7 +450,7 @@ export namespace PlanFollowup {
             return
           }
 
-          const queue = WithInstance.provide({
+          const queue = provide({
             directory: next.directory,
             fn: async () => {
               if (ctl.signal.aborted) {

@@ -5,7 +5,6 @@ import { NamedError } from "@opencode-ai/core/util/error"
 import type { Agent } from "@/agent/agent"
 import { Bus } from "@/bus"
 import { InstanceState } from "@/effect/instance-state"
-import { Flag } from "@opencode-ai/core/flag/flag"
 import { Global } from "@opencode-ai/core/global"
 import { Permission } from "@/permission"
 import { AppFileSystem } from "@opencode-ai/core/filesystem"
@@ -15,7 +14,6 @@ import { RuntimeFlags } from "@/effect/runtime-flags"
 import { Glob } from "@opencode-ai/core/util/glob"
 import * as Log from "@opencode-ai/core/util/log"
 import { Discovery } from "./discovery"
-import { rm } from "fs/promises"
 import { BUILTIN_SKILLS } from "../kilocode/skills/builtin"
 import CUSTOMIZE_OPENCODE_SKILL_BODY from "./prompt/customize-opencode.md" with { type: "text" }
 import { isRecord } from "@/util/record"
@@ -23,7 +21,6 @@ import { isRecord } from "@/util/record"
 const log = Log.create({ service: "skill" })
 const CLAUDE_EXTERNAL_DIR = ".claude"
 const AGENTS_EXTERNAL_DIR = ".agents"
-// kilocode_change start
 export const BUILTIN_LOCATION = "builtin"
 const EXTERNAL_SKILL_PATTERN = "skills/**/SKILL.md"
 const KILO_SKILL_PATTERN = "{skill,skills}/**/SKILL.md"
@@ -170,26 +167,15 @@ const discoverSkills = Effect.fnUntraced(function* (
   discovery: Discovery.Interface,
   fsys: AppFileSystem.Interface,
   global: Global.Interface,
+  disableExternalSkills: boolean,
   disableClaudeCodeSkills: boolean,
   directory: string,
   worktree: string,
 ) {
   const state: ScanState = { matches: new Set(), dirs: new Set() }
 
-  const cfg = yield* config.get()
-
-  // czcode_change start - load order (low→high priority, later overwrites earlier):
-  // urls → external(global) → external(project) → configDirs(global ~/.czcode etc) → skills.paths(bundled+custom)
-  for (const url of cfg.skills?.urls ?? []) {
-    const pulledDirs = yield* discovery.pull(url)
-    for (const dir of pulledDirs) {
-      yield* scan(state, dir, SKILL_PATTERN)
-    }
-  }
-  // czcode_change end
-
   const externalDirs: string[] = []
-  if (!Flag.KILO_DISABLE_EXTERNAL_SKILLS) {
+  if (!disableExternalSkills) {
     if (!disableClaudeCodeSkills) externalDirs.push(CLAUDE_EXTERNAL_DIR)
     externalDirs.push(AGENTS_EXTERNAL_DIR)
 
@@ -212,6 +198,17 @@ const discoverSkills = Effect.fnUntraced(function* (
   for (const dir of configDirs) {
     yield* scan(state, dir, KILO_SKILL_PATTERN)
   }
+
+  const cfg = yield* config.get()
+  // czcode_change start - load order (low→high priority, later overwrites earlier):
+  // urls → external(global) → external(project) → configDirs(global ~/.czcode etc) → skills.paths(bundled+custom)
+  for (const url of cfg.skills?.urls ?? []) {
+    const pulledDirs = yield* discovery.pull(url)
+    for (const dir of pulledDirs) {
+      yield* scan(state, dir, SKILL_PATTERN)
+    }
+  }
+  // czcode_change end
 
   for (const item of cfg.skills?.paths ?? []) {
     const expanded = item.startsWith("~/") ? path.join(global.home, item.slice(2)) : item
@@ -266,10 +263,11 @@ export const layer = Layer.effect(
           discovery,
           fsys,
           global,
+          flags.disableExternalSkills,
           flags.disableClaudeCodeSkills,
           ctx.directory,
           ctx.project.worktree,
-        ) // kilocode_change
+        )
       }),
     )
     const state = yield* InstanceState.make(
@@ -347,15 +345,6 @@ export function fmt(list: Info[], opts: { verbose: boolean }) {
       .toSorted((a, b) => a.name.localeCompare(b.name))
       .map((skill) => `- **${skill.name}**: ${skill.description}`),
   ].join("\n")
-}
-
-export async function remove(location: string) {
-  if (location === BUILTIN_LOCATION) {
-    throw new Error("cannot remove built-in skill")
-  }
-  const resolved = path.resolve(location)
-  const dir = path.dirname(resolved)
-  await rm(dir, { recursive: true, force: true })
 }
 
 export * as Skill from "."

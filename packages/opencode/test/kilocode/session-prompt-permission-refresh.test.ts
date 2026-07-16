@@ -38,6 +38,7 @@ import { Todo } from "../../src/session/todo"
 import { Skill } from "../../src/skill"
 import { Snapshot } from "../../src/snapshot"
 import { SyncEvent } from "../../src/sync"
+import { EventV2Bridge } from "@/event-v2-bridge"
 import { Ripgrep } from "../../src/file/ripgrep"
 import { ToolRegistry } from "../../src/tool/registry"
 import { Truncate } from "../../src/tool/truncate"
@@ -133,6 +134,7 @@ function makeHttp() {
     AppFileSystem.defaultLayer,
     Reference.defaultLayer,
     SyncEvent.defaultLayer,
+    EventV2Bridge.defaultLayer,
     status,
   ).pipe(Layer.provideMerge(infra))
   const question = Question.layer.pipe(Layer.provideMerge(deps))

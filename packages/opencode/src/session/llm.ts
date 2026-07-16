@@ -134,7 +134,9 @@ const live: Layer.Layer<
       const system: string[] = []
       system.push(
         [
+          // kilocode_change start - soul defines core identity and personality
           ...(isOpenaiOauth ? [] : [SystemPrompt.soul()]),
+          // kilocode_change end
           // use agent prompt otherwise provider prompt
           ...(input.agent.prompt ? [input.agent.prompt] : SystemPrompt.provider(input.model)),
           // any custom prompt passed into this call
@@ -172,7 +174,9 @@ const live: Layer.Layer<
           })
       const options = mergeOptions(mergeOptions(mergeOptions(base, input.model.options), input.agent.options), variant)
       if (isOpenaiOauth) {
+        // kilocode_change start - prepend soul to instructions
         options.instructions = SystemPrompt.soul() + "\n" + system.join("\n")
+        // kilocode_change end
       }
 
       const isWorkflow = language instanceof GitLabWorkflowLanguageModel
@@ -211,7 +215,7 @@ const live: Layer.Layer<
           maxOutputTokens:
             input.model.api.npm === "@ai-sdk/openai-compatible" && input.model.api.id.toLowerCase().includes("gpt-5")
               ? undefined
-              : ProviderTransform.maxOutputTokens(input.model),
+              : ProviderTransform.maxOutputTokens(input.model, flags.outputTokenMax),
           // kilocode_change end
           options,
         },
@@ -231,6 +235,7 @@ const live: Layer.Layer<
         },
       )
 
+      // kilocode_change start - resolve project ID and machine ID for kilo provider
       const isKilo = input.model.api.npm === "@kilocode/kilo-gateway"
       const kiloProjectId = yield* isKilo
         ? Effect.promise(() => getKiloProjectId().catch(() => undefined))
@@ -238,6 +243,7 @@ const live: Layer.Layer<
       const machineId = yield* isKilo
         ? Effect.promise(() => Identity.getMachineId().catch(() => undefined))
         : Effect.succeed(undefined)
+      // kilocode_change end
 
       const tools = resolveTools(input)
 
@@ -290,7 +296,7 @@ const live: Layer.Layer<
         KiloSessionOverflow.shouldCompact({
           cfg,
           model: input.model,
-          usable: usable({ cfg, model: input.model }),
+          usable: usable({ cfg, model: input.model, outputTokenMax: flags.outputTokenMax }), // kilocode_change
           tokens: usage.normalized,
           continuation: usage.continuation,
         })
@@ -340,7 +346,7 @@ const live: Layer.Layer<
 
         const bridge = yield* EffectBridge.make()
         const approvedToolsForSession = new Set<string>()
-        workflowModel.approvalHandler = InstanceState.bind(async (approvalTools) => {
+        workflowModel.approvalHandler = bridge.bind(async (approvalTools) => {
           const uniqueNames = [...new Set(approvalTools.map((t: { name: string }) => t.name))] as string[]
           // Auto-approve tools that were already approved in this session
           // (prevents infinite approval loops for server-side MCP tools)
@@ -479,7 +485,7 @@ const live: Layer.Layer<
         maxOutputTokens: params.maxOutputTokens,
         abortSignal: input.abort,
         headers: {
-          ...(input.model.providerID.startsWith("kilo")
+          ...(input.model.providerID.startsWith("kilo") // kilocode_change
             ? {
                 "x-kilo-project": opencodeProjectID,
                 "x-kilo-session": input.sessionID,
@@ -491,8 +497,9 @@ const live: Layer.Layer<
                 "x-session-affinity": input.sessionID,
                 ...(input.parentSessionID ? { "x-parent-session-id": input.parentSessionID } : {}),
                 "User-Agent": `opencode/${InstallationVersion}`,
-                ...(input.model.providerID !== "anthropic" ? DEFAULT_HEADERS : undefined),
+                ...(input.model.providerID !== "anthropic" ? DEFAULT_HEADERS : undefined), // kilocode_change
               }),
+          // kilocode_change start - headers for kilo provider
           ...(isKilo && input.agent.name ? { "x-kilocode-mode": input.agent.name.toLowerCase() } : {}),
           ...(isKilo && kiloProjectId ? { [HEADER_PROJECTID]: kiloProjectId } : {}),
           ...(isKilo && machineId ? { [HEADER_MACHINEID]: machineId } : {}),

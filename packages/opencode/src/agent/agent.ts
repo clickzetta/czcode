@@ -93,6 +93,7 @@ export const layer = Layer.effect(
       Effect.fn("Agent.state")(function* (ctx) {
         const cfg = yield* config.get()
         const skillDirs = yield* skill.dirs()
+        // kilocode_change start - include global config dirs so agents can read them without prompting
         const whitelistedDirs = [
           Truncate.GLOB,
           path.join(Global.Path.tmp, "*"),
@@ -114,7 +115,7 @@ export const layer = Layer.effect(
             "*": "ask",
             ...Object.fromEntries(whitelistedDirs.map((dir) => [dir, "allow"])),
           },
-          suggest: "deny",
+          suggest: "deny", // kilocode_change
           question: "deny",
           plan_enter: "deny",
           plan_exit: "deny",
@@ -129,8 +130,10 @@ export const layer = Layer.effect(
           },
         })
 
+        // kilocode_change start - patch defaults with bash allowlist and recall permission
         const kilo = KiloAgent.prepare(cfg)
         const defaults = Permission.merge(baseDefaults, kilo.defaultsPatch)
+        // kilocode_change end
 
         const user = Permission.fromConfig(cfg.permission ?? {})
 
@@ -143,7 +146,7 @@ export const layer = Layer.effect(
               defaults,
               Permission.fromConfig({
                 question: "allow",
-                suggest: "allow",
+                suggest: "allow", // kilocode_change
                 plan_enter: "allow",
               }),
               user,
@@ -294,6 +297,7 @@ export const layer = Layer.effect(
 
         const agentConfigs = KiloAgent.preprocessConfig(cfg.agent ?? {})
         for (const [key, value] of Object.entries(agentConfigs)) {
+          // kilocode_change end
           if (value.disable) {
             delete agents[key]
             continue
@@ -320,7 +324,7 @@ export const layer = Layer.effect(
           item.steps = value.steps ?? item.steps
           item.options = mergeDeep(item.options, value.options ?? {})
           item.permission = Permission.merge(item.permission, Permission.fromConfig(value.permission ?? {}))
-          KiloAgent.processConfigItem(item)
+          KiloAgent.processConfigItem(item) // kilocode_change - populate displayName from options
         }
 
         function referencePrompt(reference: Reference.Resolved) {
@@ -410,7 +414,7 @@ export const layer = Layer.effect(
         }
 
         const get = Effect.fnUntraced(function* (agent: string) {
-          return agents[KiloAgent.resolveKey(agent)]
+          return agents[KiloAgent.resolveKey(agent)] // kilocode_change - treat "build" as "code"
         })
 
         const list = Effect.fnUntraced(function* () {
@@ -419,7 +423,7 @@ export const layer = Layer.effect(
             agents,
             values(),
             sortBy(
-              [(x) => (cfg.default_agent ? x.name === cfg.default_agent : x.name === "code"), "desc"],
+              [(x) => (cfg.default_agent ? x.name === cfg.default_agent : x.name === "code"), "desc"], // kilocode_change - renamed from "build" to "code"
               [(x) => x.name.startsWith("lh-"), "desc"], // czcode_change - data agents before coding agents // kilocode_change
               [(x) => x.name, "asc"],
             ),
@@ -438,6 +442,7 @@ export const layer = Layer.effect(
             if (agent.hidden === true) throw new Error(`default agent "${c.default_agent}" is hidden`)
             return agent
           }
+          // kilocode_change start - prefer "code" as default agent (key order changes after rename from "build")
           const code = agents.code
           if (code && code.mode !== "subagent" && code.hidden !== true) return code
           // kilocode_change end
@@ -501,7 +506,9 @@ export const layer = Layer.effect(
         const isOpenaiOauth = model.providerID === "openai" && authInfo?.type === "oauth"
 
         const params = {
+          // kilocode_change start - enable telemetry with custom PostHog tracer
           experimental_telemetry: KiloAgent.telemetryOptions(cfg),
+          // kilocode_change end
           temperature: 0.3,
           messages: [
             ...(isOpenaiOauth

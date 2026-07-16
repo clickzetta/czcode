@@ -127,8 +127,11 @@ export const defaultConfig: MergeConfig = {
     // czcode_change: czcode watches kilocode releases, not opencode directly
     ".github/workflows/watch-opencode-releases.yml",
     // Workflows deleted in Kilo (replaced or no longer needed)
+    ".github/workflows/close-prs.yml",
     ".github/workflows/opencode.yml",
     ".github/workflows/publish-vscode.yml",
+    // Upstream PR cleanup is replaced by .github/workflows/kilo-auto-close.yml
+    "script/github/close-prs.ts",
     // VS Code example configs (Kilo ships real .vscode/* files)
     ".vscode/launch.example.json",
     ".vscode/settings.example.json",
@@ -169,6 +172,10 @@ export const defaultConfig: MergeConfig = {
     "github/bun.lock",
     "github/sst-env.d.ts",
     "github/.gitignore",
+    // czcode_change: VSCode visual-regression screenshots (Git LFS objects). czcode
+    // does not run VSCode visual regression tests, and these LFS blobs live only in
+    // upstream's LFS store — pulling them into czcode fails push with GH008. Skip them.
+    "packages/kilo-docs/public/img/screenshot-tests/**",
   ],
 
   // Files that should take upstream version and apply Kilo branding transforms

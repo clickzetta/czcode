@@ -32,7 +32,7 @@ import { Auth } from "@/auth"
 import { EffectBridge } from "@/effect/bridge"
 import { Bus } from "@/bus"
 import { Identifier } from "@/id/id"
-import { Instance } from "@/project/instance"
+import { Instance } from "@/kilocode/instance"
 import { InstanceStore } from "@/project/instance-store"
 import { ModelCache } from "@/provider/model-cache"
 import { InstanceHttpApi } from "@/server/routes/instance/httpapi/api"
@@ -471,7 +471,9 @@ export const kiloGatewayHandlers = HttpApiBuilder.group(InstanceHttpApi, "kilo",
                   MessageTable,
                   PartTable,
                   SessionToRow: Session.toRow,
-                  Bus,
+                  // czcode_change - bridge kilo-gateway's 2-arg publish contract onto the
+                  // 3-arg Bus.publish(ctx, def, props) signature using the active instance
+                  Bus: { publish: (event, payload) => Bus.publish(Instance.current, event as any, payload as any) },
                   SessionCreatedEvent: Session.Event.Created,
                   Identifier,
                 }),

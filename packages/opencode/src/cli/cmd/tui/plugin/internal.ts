@@ -1,6 +1,5 @@
 import HomeFooter from "../feature-plugins/home/footer"
 import HomeTips from "../feature-plugins/home/tips"
-// kilocode_change start
 import HomeNews from "@/kilocode/plugins/home-news"
 import HomeOnboarding from "@/kilocode/plugins/home-onboarding"
 import KiloAttention from "@/kilocode/plugins/attention"
@@ -10,7 +9,6 @@ import KiloSidebarBackgroundProcesses from "@/kilocode/plugins/sidebar-backgroun
 import KiloSidebarIndexing from "@/kilocode/plugins/sidebar-indexing"
 import KiloSidebarPr from "@/kilocode/plugins/sidebar-pr"
 import KiloSidebarUsage from "@/kilocode/plugins/sidebar-usage"
-// kilocode_change end
 // czcode_change start
 import CzCodeConnectionStatus from "@/kilocode/plugins/czcode-connection-status"
 import CzCodeRoleSwitch from "@/kilocode/plugins/czcode-role-switch"
@@ -43,15 +41,15 @@ export type InternalTuiPlugin = Omit<TuiPluginModule, "id"> & {
 
 export function internalTuiPlugins(flags: Pick<RuntimeFlags.Info, "experimentalEventSystem">): InternalTuiPlugin[] {
   return [
-    HomeNews, // kilocode_change
-    HomeOnboarding, // kilocode_change
-    KiloAttention, // kilocode_change
-    KiloHomeFooter, // kilocode_change
-    KiloSidebarFooter, // kilocode_change
-    KiloSidebarBackgroundProcesses, // kilocode_change
-    KiloSidebarIndexing, // kilocode_change
-    KiloSidebarPr, // kilocode_change
-    KiloSidebarUsage, // kilocode_change
+    HomeNews,
+    HomeOnboarding,
+    KiloAttention,
+    KiloHomeFooter,
+    KiloSidebarFooter,
+    KiloSidebarBackgroundProcesses,
+    KiloSidebarIndexing,
+    KiloSidebarPr,
+    KiloSidebarUsage,
     CzCodeConnectionStatus, // czcode_change
     CzCodeRoleSwitch, // czcode_change
     CzCodeSchemaBrowser, // czcode_change
