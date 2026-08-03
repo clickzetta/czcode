@@ -1,23 +1,30 @@
 import { expect, describe, afterAll } from "bun:test"
 import fs from "fs/promises"
 import path from "path"
-import { Effect, Fiber, Layer } from "effect"
+import { Cause, Effect, Exit, Fiber, Layer } from "effect"
 import { Bus } from "../../../src/bus"
 import { Permission } from "../../../src/permission"
-import { PermissionID } from "../../../src/permission/schema"
+import { EventV2Bridge } from "../../../src/event-v2-bridge"
+import { PermissionV1 } from "@opencode-ai/core/v1/permission"
+import { Database } from "@opencode-ai/core/database/database"
 import { SessionID } from "../../../src/session/schema"
 import * as Config from "../../../src/config/config"
 import { InstanceRuntime } from "../../../src/project/instance-runtime"
 import { Global } from "@opencode-ai/core/global"
 import * as CrossSpawnSpawner from "@opencode-ai/core/cross-spawn-spawner"
-import { provideInstance, provideTmpdirInstance, tmpdirScoped } from "../../fixture/fixture"
+import { provideInstance, provideTmpdirInstance, testInstanceStoreLayer, tmpdirScoped } from "../../fixture/fixture"
 import { testEffect } from "../../lib/effect"
 
 const bus = Bus.layer
 const env = Layer.mergeAll(
-  Permission.layer.pipe(Layer.provide(bus), Layer.provide(Config.defaultLayer)),
+  Permission.layer.pipe(
+    Layer.provide(EventV2Bridge.defaultLayer),
+    Layer.provide(Config.defaultLayer),
+    Layer.provide(Database.defaultLayer),
+  ),
   bus,
   CrossSpawnSpawner.defaultLayer,
+  testInstanceStoreLayer,
 )
 const it = testEffect(env)
 
@@ -66,27 +73,35 @@ const withProvided =
   <A, E, R>(self: Effect.Effect<A, E, R>) =>
     self.pipe(provideInstance(dir))
 
+const expectNotFound = (exit: Exit.Exit<void, Permission.NotFoundError>, requestID: PermissionV1.ID) => {
+  expect(Exit.isFailure(exit)).toBe(true)
+  if (Exit.isFailure(exit)) {
+    expect(Cause.squash(exit.cause)).toMatchObject({
+      _tag: "Permission.NotFoundError",
+      requestID,
+    })
+  }
+}
+
 describe("reply routing", () => {
-  it.live("returns false when requestID is not pending", () =>
+  it.live("fails when requestID is not pending", () =>
     provideTmpdirInstance(
       () =>
         Effect.gen(function* () {
-          const accepted = yield* reply({
-            requestID: PermissionID.make("permission_unknown"),
-            reply: "once",
-          })
-          expect(accepted).toBe(false)
+          const requestID = PermissionV1.ID.make("permission_unknown")
+          const exit = yield* reply({ requestID, reply: "once" }).pipe(Effect.exit)
+          expectNotFound(exit, requestID)
         }),
       { git: true },
     ),
   )
 
-  it.live("returns true when a pending request is replied to", () =>
+  it.live("succeeds when a pending request is replied to", () =>
     provideTmpdirInstance(
       () =>
         Effect.gen(function* () {
           const asking = yield* ask({
-            id: PermissionID.make("permission_accepted"),
+            id: PermissionV1.ID.make("permission_accepted"),
             sessionID: SessionID.make("session_accept"),
             permission: "bash",
             patterns: ["ls"],
@@ -96,37 +111,34 @@ describe("reply routing", () => {
           }).pipe(Effect.forkScoped)
 
           yield* waitForPending(1)
-          const accepted = yield* reply({
-            requestID: PermissionID.make("permission_accepted"),
+          yield* reply({
+            requestID: PermissionV1.ID.make("permission_accepted"),
             reply: "once",
           })
-          expect(accepted).toBe(true)
           yield* Fiber.join(asking)
         }),
       { git: true },
     ),
   )
 
-  it.live("returns false for a reject reply to an unknown id", () =>
+  it.live("fails for a reject reply to an unknown id", () =>
     provideTmpdirInstance(
       () =>
         Effect.gen(function* () {
-          const accepted = yield* reply({
-            requestID: PermissionID.make("permission_unknown_reject"),
-            reply: "reject",
-          })
-          expect(accepted).toBe(false)
+          const requestID = PermissionV1.ID.make("permission_unknown_reject")
+          const exit = yield* reply({ requestID, reply: "reject" }).pipe(Effect.exit)
+          expectNotFound(exit, requestID)
         }),
       { git: true },
     ),
   )
 
-  it.live("returns false on the second of two replies to the same id", () =>
+  it.live("fails on the second of two replies to the same id", () =>
     provideTmpdirInstance(
       () =>
         Effect.gen(function* () {
           const asking = yield* ask({
-            id: PermissionID.make("permission_double"),
+            id: PermissionV1.ID.make("permission_double"),
             sessionID: SessionID.make("session_double"),
             permission: "bash",
             patterns: ["echo hi"],
@@ -136,18 +148,12 @@ describe("reply routing", () => {
           }).pipe(Effect.forkScoped)
 
           yield* waitForPending(1)
-          const first = yield* reply({
-            requestID: PermissionID.make("permission_double"),
-            reply: "once",
-          })
-          expect(first).toBe(true)
+          const requestID = PermissionV1.ID.make("permission_double")
+          yield* reply({ requestID, reply: "once" })
           yield* Fiber.join(asking)
 
-          const second = yield* reply({
-            requestID: PermissionID.make("permission_double"),
-            reply: "once",
-          })
-          expect(second).toBe(false)
+          const exit = yield* reply({ requestID, reply: "once" }).pipe(Effect.exit)
+          expectNotFound(exit, requestID)
         }),
       { git: true },
     ),
@@ -161,7 +167,7 @@ describe("reply routing", () => {
       const runB = withProvided(dirB)
 
       const fiber = yield* ask({
-        id: PermissionID.make("permission_crossdir"),
+        id: PermissionV1.ID.make("permission_crossdir"),
         sessionID: SessionID.make("session_crossdir"),
         permission: "bash",
         patterns: ["ls"],
@@ -172,20 +178,14 @@ describe("reply routing", () => {
 
       expect(yield* waitForPending(1).pipe(runA)).toHaveLength(1)
 
-      const accepted = yield* reply({
-        requestID: PermissionID.make("permission_crossdir"),
-        reply: "once",
-      }).pipe(runB)
-      expect(accepted).toBe(false)
+      const requestID = PermissionV1.ID.make("permission_crossdir")
+      const exit = yield* reply({ requestID, reply: "once" }).pipe(runB, Effect.exit)
+      expectNotFound(exit, requestID)
 
       expect(yield* list().pipe(runA)).toHaveLength(1)
       expect(yield* list().pipe(runB)).toHaveLength(0)
 
-      const okAccepted = yield* reply({
-        requestID: PermissionID.make("permission_crossdir"),
-        reply: "once",
-      }).pipe(runA)
-      expect(okAccepted).toBe(true)
+      yield* reply({ requestID, reply: "once" }).pipe(runA)
       yield* Fiber.join(fiber)
     }),
   )

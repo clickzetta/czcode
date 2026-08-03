@@ -1,4 +1,4 @@
-import { type Component, createSignal, createMemo, Show, createEffect, on } from "solid-js"
+import { type Component, createSignal, createMemo, Show, createEffect, on, type JSXElement } from "solid-js"
 import type { VirtualizerHandle } from "virtua/solid"
 import { Diff } from "@kilocode/kilo-ui/diff"
 import { Accordion } from "@kilocode/kilo-ui/accordion"
@@ -7,7 +7,6 @@ import { FileIcon } from "@kilocode/kilo-ui/file-icon"
 import { DiffChanges } from "@kilocode/kilo-ui/diff-changes"
 import { Icon } from "@kilocode/kilo-ui/icon"
 import { Button } from "@kilocode/kilo-ui/button"
-import { RadioGroup } from "@kilocode/kilo-ui/radio-group"
 import { IconButton } from "@kilocode/kilo-ui/icon-button"
 import { Spinner } from "@kilocode/kilo-ui/spinner"
 import { Tooltip, TooltipKeybind } from "@kilocode/kilo-ui/tooltip"
@@ -15,6 +14,7 @@ import type { DiffLineAnnotation, AnnotationSide, SelectedLineRange } from "@pie
 import type { WorktreeFileDiff } from "../src/types/messages"
 import { KILO_FILE_PATH_MIME } from "../src/utils/path-mentions"
 import { useLanguage } from "../src/context/language"
+import { DiffStyleSelect } from "../diff-viewer/InlineSelect"
 import { useVSCode } from "../src/context/vscode"
 import { useServer } from "../src/context/server"
 import { useProvider } from "../src/context/provider"
@@ -37,6 +37,7 @@ import {
   reviewComposerEdit,
   reviewDraftSpeechKey,
   reviewEditSpeechKey,
+  sendReviewComments,
   type AnnotationLabels,
   type AnnotationMeta,
   type ReviewComposer,
@@ -57,9 +58,16 @@ import { DiffEndMarker } from "../diff-viewer/DiffEndMarker"
 import { VirtualDiffList } from "../diff-viewer/VirtualDiffList"
 import { treeOrder } from "../diff-viewer/file-tree-utils"
 import { isMarkdownFile, MarkdownDiffView } from "../diff-viewer/MarkdownDiffView"
-import { createDiffRows, diffToken } from "../diff-viewer/diff-state"
+import { ImageDiffView } from "../diff-viewer/ImageDiffView"
+import { createDiffRows } from "../diff-viewer/diff-state"
+import { createDiffRequests } from "../diff-viewer/diff-requests"
 
 // --- Data model ---
+
+/** Well-known diff source notices → i18n keys (mirrors the standalone viewer). */
+const DIFF_NOTICE_KEYS: Record<string, string> = {
+  "snapshots-disabled": "diffViewer.notice.snapshotsDisabled",
+}
 
 interface DiffPanelProps {
   diffs: WorktreeFileDiff[]
@@ -67,6 +75,8 @@ interface DiffPanelProps {
   loadingFiles?: Set<string>
   sessionId?: string
   sessionKey?: string
+  /** Well-known source notice kind (e.g. "snapshots-disabled"), shown as a banner. */
+  notice?: string
   diffStyle?: "unified" | "split"
   onDiffStyleChange?: (style: "unified" | "split") => void
   markdownRender?: boolean
@@ -75,6 +85,7 @@ interface DiffPanelProps {
   onCommentsChange: (comments: ReviewComment[]) => void
   composer?: ReviewComposer
   onSendAll?: () => void
+  onSendClick?: () => void
   onClose: () => void
   onExpand?: () => void
   onRequestDiff?: (file: string) => void
@@ -82,16 +93,25 @@ interface DiffPanelProps {
   onRevertFile?: (file: string) => void
   revertingFiles?: Set<string>
   activeTerminalId?: string
+  /** Optional leading row rendered under the header (e.g. the scope selector). */
+  lead?: JSXElement
+  /** Defaults to true. Hides the per-file Revert action when false. */
+  canRevert?: boolean
 }
 
 export const DiffPanel: Component<DiffPanelProps> = (props) => {
   const { t } = useLanguage()
+  const noticeText = () => {
+    const n = props.notice
+    if (!n) return ""
+    return t(DIFF_NOTICE_KEYS[n] ?? n)
+  }
   const vscode = useVSCode()
   const server = useServer()
   const provider = useProvider()
   const { config } = useConfig()
   const speech = useSpeechToText(vscode, server, { t })
-  const canUseSpeech = () => canUseSpeechToText(config(), provider.connected(), server.profileData())
+  const canUseSpeech = () => canUseSpeechToText(config(), provider.authStates())
   const speechModel = () => selectedSpeechToTextModel(config())
   const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.userAgent)
   const sendAllKeybind = () =>
@@ -102,6 +122,7 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
     placeholder: t("agentManager.review.commentPlaceholder"),
     cancel: t("common.cancel"),
     comment: t("agentManager.review.commentAction"),
+    send: t("prompt.action.send"),
     save: t("common.save"),
     sendToChat: t("agentManager.review.sendToChat"),
     edit: t("common.edit"),
@@ -132,7 +153,6 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
   // collapse state while adding and removing files from live summaries.
   let initializedKey: string | undefined
   let known = new Set<string>()
-  const requested = new Map<string, string>()
 
   // Reorder diffs to match the file-tree's depth-first visual order so
   // scrolling through the accordion matches the tree grouping.
@@ -172,7 +192,7 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
   // row. Raw scrollTop is not stable once the virtualizer remeasures dynamic rows.
   const preserveScroll = (fn: () => void) => {
     const handle = virtualizer()
-    const index = handle?.findStartIndex()
+    const index = handle?.findItemIndex(handle.scrollOffset)
     const file = index === undefined ? undefined : rows()[index]?.file
     const offset = index === undefined ? 0 : (handle?.scrollOffset ?? 0) - (handle?.getItemOffset(index) ?? 0)
     fn()
@@ -236,7 +256,6 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
     on(
       () => props.sessionKey,
       () => {
-        requested.clear()
         setDraft(null)
         draftMeta = null
         setEditing(null)
@@ -247,28 +266,13 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
     ),
   )
 
-  createEffect(
-    on(
-      () => [open(), props.diffs] as const,
-      ([next]) => {
-        const files = new Set(next)
-        for (const file of requested.keys()) {
-          if (!files.has(file)) requested.delete(file)
-        }
-        if (!props.onRequestDiff) return
-        for (const file of next) {
-          if (props.loadingFiles?.has(file)) continue
-          const diff = props.diffs.find((item) => item.file === file)
-          if (!diff || !isDiffExpandable(diff) || diff.summarized !== true) continue
-          const value = diffToken(diff)
-          if (requested.get(file) === value) continue
-          requested.set(file, value)
-          props.onRequestDiff(file)
-        }
-      },
-      { defer: true },
-    ),
-  )
+  const request = createDiffRequests({
+    key: () => props.sessionKey,
+    diffs: () => props.diffs,
+    open,
+    loading: () => props.loadingFiles,
+    send: () => props.onRequestDiff,
+  })
 
   // --- CRUD ---
 
@@ -280,6 +284,18 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
       draftMeta = null
       composer().draft = null
     })
+    focusRoot()
+  }
+
+  const sendComment = (file: string, side: AnnotationSide, line: number, text: string, selectedText: string) => {
+    const comment = { id: `c-${++nextId}-${Date.now()}`, file, side, line, comment: text, selectedText }
+    sendReviewComments([comment], props.activeTerminalId)
+    preserveScroll(() => {
+      setDraft(null)
+      draftMeta = null
+      composer().draft = null
+    })
+    props.onSendClick?.()
     focusRoot()
   }
 
@@ -394,6 +410,7 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
       editing: editing(),
       setEditing: setEditState,
       addComment,
+      sendComment,
       updateComment,
       deleteComment,
       cancelDraft,
@@ -439,6 +456,11 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
     props.onSendAll?.()
   }
 
+  const sendAllClick = () => {
+    props.onSendClick?.()
+    sendAllToChat()
+  }
+
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key !== "Enter") return
     if (!(e.metaKey || e.ctrlKey)) return
@@ -469,21 +491,18 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
     <div class="am-diff-panel" onKeyDown={handleKeyDown} onMouseDown={handleRootMouseDown} tabIndex={-1} ref={rootRef}>
       <div class="am-diff-header">
         <div class="am-diff-header-main">
-          <span class="am-diff-header-title">{t("session.review.change.other")}</span>
+          {/* Scope + base picker replace the static "Changes" title: it names
+              what you're looking at and is the primary control. Always shown,
+              so an empty scope can still be switched away from. */}
+          <Show when={props.lead}>{props.lead}</Show>
           <Show when={props.diffs.length > 0}>
             <>
-              <RadioGroup
-                options={["unified", "split"] as const}
-                current={props.diffStyle ?? "unified"}
-                size="small"
-                value={(style) => style}
-                label={(style) =>
-                  style === "unified" ? t("ui.sessionReview.diffStyle.unified") : t("ui.sessionReview.diffStyle.split")
-                }
-                onSelect={(style) => {
-                  if (!style) return
-                  props.onDiffStyleChange?.(style)
-                }}
+              <DiffStyleSelect
+                value={props.diffStyle ?? "unified"}
+                onSelect={(style) => props.onDiffStyleChange?.(style)}
+                unifiedLabel={t("ui.sessionReview.diffStyle.unified")}
+                splitLabel={t("ui.sessionReview.diffStyle.split")}
+                title={t("ui.sessionReview.diffStyle.unified")}
               />
               <span class="am-diff-header-stats">
                 <span>{t("session.review.filesChanged", { count: totals().files })}</span>
@@ -530,6 +549,15 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
         </div>
       </div>
 
+      <Show when={noticeText()}>
+        <div class="diff-viewer-notice" role="status">
+          <span class="diff-viewer-notice-icon">
+            <Icon name="warning" size="small" />
+          </span>
+          <span class="diff-viewer-notice-text">{noticeText()}</span>
+        </div>
+      </Show>
+
       <Show when={props.loading && props.diffs.length === 0}>
         <div class="am-diff-loading">
           <Spinner />
@@ -537,7 +565,7 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
         </div>
       </Show>
 
-      <Show when={!props.loading && props.diffs.length === 0}>
+      <Show when={!props.loading && props.diffs.length === 0 && !noticeText()}>
         <div class="am-diff-empty">
           <span>{t("session.review.noChanges")}</span>
         </div>
@@ -558,6 +586,10 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
                 const isLargeCollapsed = () => isLargeDiffFile(diff) && !open().includes(diff.file)
                 const isLoadingDetail = () => props.loadingFiles?.has(diff.file) ?? false
                 const fileCommentCount = () => (commentsByFile().get(diff.file) ?? []).length
+
+                createEffect(() => {
+                  if (diff.kind === "image" && open().includes(diff.file)) request(diff)
+                })
 
                 return (
                   <Accordion.Item
@@ -600,6 +632,9 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
                               </span>
                             </Show>
                             <DiffChanges changes={diff} />
+                            <Show when={diff.kind === "image"}>
+                              <span class="am-diff-summary-pill">{t("agentManager.review.image")}</span>
+                            </Show>
                             <Show when={isLargeCollapsed()}>
                               <span class="am-diff-large-pill">{t("agentManager.review.largeFileCollapsed")}</span>
                             </Show>
@@ -623,7 +658,7 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
                                 />
                               </Tooltip>
                             </Show>
-                            <Show when={props.onRevertFile}>
+                            <Show when={props.onRevertFile && props.canRevert !== false}>
                               <Tooltip value={t("agentManager.diff.revertFile")} placement="top">
                                 <IconButton
                                   icon="discard"
@@ -681,36 +716,43 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
                           }
                         >
                           <Show
-                            when={props.markdownRender && isMarkdownFile(diff.file)}
+                            when={diff.kind === "image"}
                             fallback={
-                              <Diff<AnnotationMeta>
-                                before={{ name: diff.file, contents: diff.before }}
-                                after={{ name: diff.file, contents: diff.after }}
-                                patch={diff.patch}
-                                diffStyle={props.diffStyle ?? "unified"}
-                                virtualized={shouldVirtualizeDiff(diff)}
-                                annotations={annotationsForFile(diff.file)}
-                                renderAnnotation={buildAnnotation}
-                                enableGutterUtility={true}
-                                onGutterUtilityClick={(result) => handleGutterClick(diff.file, result)}
-                                onLineNumberClick={(event) => {
-                                  if (event.annotationSide === "deletions") return
-                                  props.onOpenFile?.(diff.file, event.lineNumber)
-                                }}
-                              />
+                              <Show
+                                when={props.markdownRender && isMarkdownFile(diff.file)}
+                                fallback={
+                                  <Diff<AnnotationMeta>
+                                    before={{ name: diff.file, contents: diff.before }}
+                                    after={{ name: diff.file, contents: diff.after }}
+                                    patch={diff.patch}
+                                    diffStyle={props.diffStyle ?? "unified"}
+                                    virtualized={shouldVirtualizeDiff(diff)}
+                                    annotations={annotationsForFile(diff.file)}
+                                    renderAnnotation={buildAnnotation}
+                                    enableGutterUtility={true}
+                                    onGutterUtilityClick={(result) => handleGutterClick(diff.file, result)}
+                                    onLineNumberClick={(event) => {
+                                      if (event.annotationSide === "deletions") return
+                                      props.onOpenFile?.(diff.file, event.lineNumber)
+                                    }}
+                                  />
+                                }
+                              >
+                                <MarkdownDiffView
+                                  diff={diff}
+                                  annotations={annotationsForFile(diff.file)}
+                                  renderAnnotation={buildAnnotation}
+                                  enableGutterUtility={true}
+                                  onGutterUtilityClick={(result) => handleGutterClick(diff.file, result)}
+                                  onLineNumberClick={(event) => {
+                                    if (event.annotationSide === "deletions") return
+                                    props.onOpenFile?.(diff.file, event.lineNumber)
+                                  }}
+                                />
+                              </Show>
                             }
                           >
-                            <MarkdownDiffView
-                              diff={diff}
-                              annotations={annotationsForFile(diff.file)}
-                              renderAnnotation={buildAnnotation}
-                              enableGutterUtility={true}
-                              onGutterUtilityClick={(result) => handleGutterClick(diff.file, result)}
-                              onLineNumberClick={(event) => {
-                                if (event.annotationSide === "deletions") return
-                                props.onOpenFile?.(diff.file, event.lineNumber)
-                              }}
-                            />
+                            <ImageDiffView diff={diff} />
                           </Show>
                         </Show>
                       </Show>
@@ -731,7 +773,7 @@ export const DiffPanel: Component<DiffPanelProps> = (props) => {
               {comments().length} comment{comments().length !== 1 ? "s" : ""}
             </span>
             <TooltipKeybind title={t("agentManager.review.sendAllToChat")} keybind={sendAllKeybind()} placement="top">
-              <Button variant="primary" size="small" onClick={sendAllToChat}>
+              <Button variant="primary" size="small" onClick={sendAllClick}>
                 {t("agentManager.review.sendAllToChat")}
               </Button>
             </TooltipKeybind>

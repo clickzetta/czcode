@@ -10,6 +10,7 @@ import { ModelSelectorBase } from "../components/shared/ModelSelector"
 import { SessionContext } from "../context/session"
 import type { EnrichedModel } from "../context/provider"
 import type { ModelSelection } from "../types/messages"
+import { Markdown } from "@kilocode/kilo-ui/markdown"
 
 const meta: Meta = {
   title: "Shared",
@@ -17,6 +18,27 @@ const meta: Meta = {
 }
 export default meta
 type Story = StoryObj
+
+export const MarkdownMermaid: Story = {
+  name: "Markdown - Mermaid diagram",
+  render: () => (
+    <StoryProviders>
+      <Markdown
+        text={`# Flow
+
+\`\`\`mermaid
+flowchart TD
+  A[Prompt] --> B{Needs tools?}
+  B -->|Yes| C[Run tool]
+  B -->|No| D[Respond]
+  C --> D
+\`\`\`
+
+Rendered after the diagram.`}
+      />
+    </StoryProviders>
+  ),
+}
 
 // ---------------------------------------------------------------------------
 // ModelSelector
@@ -38,9 +60,26 @@ export const ModelSelectorNoProviders: Story = {
 }
 
 const ACCESSIBLE_MODELS: EnrichedModel[] = [
+  {
+    id: "kilo-auto/efficient",
+    name: "Kilo Auto Efficient",
+    providerID: "kilo",
+    providerName: "Kilo",
+    recommendedIndex: 0,
+    options: {
+      description:
+        "Routes each request to the cheapest model that gets the job done, based on continuously benchmarked accuracy and cost.",
+    },
+    autoRouting: { models: ["google/gemini-2.5-flash", "anthropic/claude-sonnet-4.6"] },
+  },
+  { id: "omega", name: "Omega", providerID: "openai", providerName: "OpenAI", recommendedIndex: 1 },
   { id: "alpha", name: "Alpha", providerID: "kilo", providerName: "Kilo" },
   { id: "bravo", name: "Bravo", providerID: "kilo", providerName: "Kilo" },
   { id: "charlie", name: "Charlie", providerID: "kilo", providerName: "Kilo" },
+  { id: "delta", name: "Delta", providerID: "kilo", providerName: "Kilo" },
+  { id: "echo", name: "Echo", providerID: "kilo", providerName: "Kilo" },
+  { id: "nova", name: "Nova", providerID: "nvidia", providerName: "NVIDIA" },
+  { id: "nemotron", name: "Nemotron", providerID: "nvidia", providerName: "NVIDIA" },
 ]
 
 const AccessibleModelSelector = () => {
@@ -90,4 +129,29 @@ export const ModelSelectorSelectedFavorite: Story = {
       </StoryProviders>
     )
   },
+}
+
+const LARGE_MODELS: EnrichedModel[] = Array.from({ length: 600 }, (_, i) => {
+  const id = String(i).padStart(3, "0")
+  const provider = `provider-${i % 12}`
+  return {
+    id: `model-${id}`,
+    name: `Model ${id}`,
+    providerID: provider,
+    providerName: `Provider ${i % 12}`,
+  }
+})
+
+export const ModelSelectorLargeCatalog: Story = {
+  name: "ModelSelector — large catalog",
+  render: () => (
+    <StoryProviders>
+      <ModelSelectorBase
+        value={{ providerID: "provider-0", modelID: "model-300" }}
+        models={LARGE_MODELS}
+        placement="bottom-start"
+        onSelect={() => {}}
+      />
+    </StoryProviders>
+  ),
 }

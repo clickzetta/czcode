@@ -17,6 +17,10 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  container: chat / inline-size;
+  --chat-readable-width: 98ch;
+  --chat-gutter: clamp(16px, 4cqi, 48px);
+  --chat-scrollbar-width: 10px;
 }
 
 .chat-messages-wrapper {
@@ -34,7 +38,6 @@
 
 .chat-input {
   flex-shrink: 0;
-  border-top: 1px solid var(--vscode-panel-border);
 }
 
 /* ============================================
@@ -50,7 +53,8 @@
   height: 100%;
   overflow-x: hidden;
   overflow-y: auto;
-  padding: 12px 16px;
+  padding: 12px var(--chat-gutter, 16px);
+  scrollbar-gutter: stable;
 }
 
 .message-list-loading {
@@ -96,6 +100,7 @@
   min-height: 100%;
   flex-direction: column;
   gap: 12px;
+  margin-inline: calc(var(--chat-scrollbar-width, 10px) / 2) calc(var(--chat-scrollbar-width, 10px) / -2);
 }
 
 .message-list-content-empty {
@@ -199,6 +204,14 @@
   padding: 0 4px 12px;
 }
 
+.vscode-session-turn[data-row="assistant"] {
+  padding-bottom: 6px;
+}
+
+.vscode-session-turn[data-row="assistant"]:has(> .vscode-session-turn-assistant:empty) {
+  padding-bottom: 0;
+}
+
 .vscode-session-turn-user {
   width: 100%;
 }
@@ -211,12 +224,111 @@
 .vscode-session-turn-assistant {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
   width: 100%;
+}
+
+[data-component="assistant-throughput"] {
+  /* Plain-text generation-speed value shown beside the copy/feedback buttons
+   * on an assistant message. Renders as muted metadata — no icon, no
+   * background, no border — so it reads as tertiary info that never
+   * competes with the action row for visual weight. */
+  color: var(--vscode-descriptionForeground);
+  font-family: var(--font-family-sans);
+  font-size: var(--kilo-font-size-11);
+  line-height: var(--line-height-normal);
+  font-variant-numeric: tabular-nums;
 }
 
 .vscode-session-turn-diffs {
   width: 100%;
+}
+
+/* Treat every chat host as a readable document. User messages, assistant
+   prose, tool calls, diffs, and the composer all share one centered lane. */
+.chat-view .vscode-session-turn-user,
+.chat-view .vscode-session-turn-diffs,
+.chat-view .error-card,
+.chat-view [data-component="tool-part-wrapper"] {
+  width: 100%;
+  max-width: var(--chat-readable-width);
+  margin-inline: auto;
+}
+
+/* Lights up the part behind a hovered/focused task-timeline bar, using the
+   bar's own color, so it's easy to follow which bar belongs to which tool
+   call (mirrors the legacy extension's task-timeline row gutter highlight).
+   Drawn as an absolutely positioned strip flush with the card's left edge,
+   not an inset box-shadow: a box-shadow paints as part of the wrapper's own
+   background layer, underneath every child, so tool cards with a negative-
+   margin background (bleeding past this edge) would otherwise cover it.
+   An absolutely positioned element always paints above normal-flow
+   (position: static) children, so it stays visible without needing to
+   extend past the wrapper's own box — virtua's row virtualizer clips its
+   content to exactly that box (`overflow: clip`). */
+[data-component="tool-part-wrapper"] {
+  position: relative;
+}
+
+[data-component="tool-part-wrapper"]::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  /* Use the turn's existing 4px inset: the 3px strip stays within the
+     virtualized row and leaves a 1px gap before the card. */
+  left: -4px;
+  width: 3px;
+  border-radius: 2px 0 0 2px;
+  background: var(--timeline-color, transparent);
+  opacity: 0;
+  z-index: 1;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+
+[data-component="tool-part-wrapper"][data-timeline-highlight]::before {
+  opacity: 0.9;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-component="tool-part-wrapper"]::before {
+    transition: none;
+  }
+}
+
+.chat-view .message-list-content > .revert-banner,
+.chat-view .message-list-content > [data-component="question-dock"],
+.chat-view .message-list-content > .working-indicator-slot,
+.chat-view .message-list-content > .vscode-session-turn[role="status"],
+.chat-view .message-list-content > [data-component="suggest-bar"] {
+  width: calc(100% - 8px);
+  max-width: var(--chat-readable-width);
+  margin-inline: auto;
+}
+
+.chat-view .prompt-input-container,
+.chat-view .new-task-button-wrapper {
+  box-sizing: border-box;
+  width: min(
+    calc(100% - var(--chat-gutter) - var(--chat-gutter) - var(--chat-scrollbar-width) - 8px),
+    var(--chat-readable-width)
+  );
+  margin-inline: auto;
+}
+
+.chat-view .chat-input > .startup-error-banner,
+.chat-view .chat-input > [data-component="permission-shortcuts"] {
+  box-sizing: border-box;
+  width: min(
+    calc(100% - var(--chat-gutter) - var(--chat-gutter) - var(--chat-scrollbar-width) - 8px),
+    var(--chat-readable-width)
+  );
+  margin-inline: auto;
+}
+
+.chat-view .chat-input > [data-component="permission-shortcuts"] > [data-component="dock-prompt"] {
+  margin-inline: 0;
 }
 
 .vscode-session-turn-diffs-trigger {
@@ -265,4 +377,39 @@
 .vscode-session-turn-diffs-trigger [data-slot="session-turn-diffs-meta"] {
   display: inline-flex;
   align-items: center;
+}
+
+/* ============================================
+   Search Active Match Highlight
+   ============================================ */
+
+.vscode-session-turn[data-search-active] {
+  outline: 2px solid var(--vscode-focusBorder);
+  outline-offset: -2px;
+  border-radius: 4px;
+  animation: search-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes search-pulse {
+  0%,
+  100% {
+    outline-color: var(--vscode-focusBorder);
+  }
+  50% {
+    outline-color: color-mix(in srgb, var(--vscode-focusBorder) 30%, transparent);
+  }
+}
+
+/* Occurrence-level highlights painted via the CSS Custom Highlight API (see
+   transcript-search-highlight.ts). Falls back to no visual effect in engines
+   without ::highlight() support — row-level scroll navigation still works.
+   Uses VS Code's own editor find-match theme colors so this matches
+   whatever color scheme the user has configured, rather than a fixed
+   palette that can clash with some themes. */
+::highlight(kilo-transcript-search-match) {
+  background-color: var(--vscode-editor-findMatchHighlightBackground, rgba(234, 190, 0, 0.35));
+}
+
+::highlight(kilo-transcript-search-match-active) {
+  background-color: var(--vscode-editor-findMatchBackground, rgba(255, 165, 0, 0.65));
 }

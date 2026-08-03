@@ -3,11 +3,13 @@ package ai.kilocode.rpc
 import ai.kilocode.rpc.dto.ChatEventDto
 import ai.kilocode.rpc.dto.CloudSessionListDto
 import ai.kilocode.rpc.dto.ConfigUpdateDto
+import ai.kilocode.rpc.dto.DiffFileDto
 import ai.kilocode.rpc.dto.MessageWithPartsDto
 import ai.kilocode.rpc.dto.ModelSelectionDto
 import ai.kilocode.rpc.dto.PermissionAlwaysRulesDto
 import ai.kilocode.rpc.dto.PermissionReplyDto
 import ai.kilocode.rpc.dto.PermissionRequestDto
+import ai.kilocode.rpc.dto.PartDto
 import ai.kilocode.rpc.dto.PromptDto
 import ai.kilocode.rpc.dto.QuestionReplyDto
 import ai.kilocode.rpc.dto.QuestionRequestDto
@@ -77,14 +79,32 @@ interface KiloSessionRpcApi : RemoteApi<Unit> {
     /** Send a prompt to a session (fire-and-forget). */
     suspend fun prompt(id: String, directory: String, prompt: PromptDto)
 
+    /** Run a configured slash command/workflow in a session. */
+    suspend fun command(id: String, directory: String, command: String, arguments: String, prompt: PromptDto)
+
     /** Abort ongoing processing for a session. */
     suspend fun abort(id: String, directory: String)
 
     /** Summarize/compact a session using the selected model. */
     suspend fun compact(id: String, directory: String, model: ModelSelectionDto)
 
+    /** Revert a session to a prior user message or part. */
+    suspend fun revert(id: String, directory: String, messageID: String, partID: String?)
+
+    /** Delete a single message (used to remove a queued prompt). */
+    suspend fun deleteMessage(id: String, directory: String, messageID: String): Boolean
+
+    /** Redo all reverted changes for a session. */
+    suspend fun unrevert(id: String, directory: String)
+
     /** Load message history for a session. */
     suspend fun messages(id: String, directory: String): List<MessageWithPartsDto>
+
+    /** Load cumulative file changes for a session. */
+    suspend fun diff(id: String, directory: String): List<DiffFileDto>
+
+    /** Load one attachment part from a session without returning full history to the frontend. */
+    suspend fun attachmentPart(id: String, directory: String, messageId: String, partId: String, attachmentKey: String?): PartDto?
 
     /** Subscribe to streaming chat events for a specific session. */
     suspend fun events(id: String, directory: String): Flow<ChatEventDto>

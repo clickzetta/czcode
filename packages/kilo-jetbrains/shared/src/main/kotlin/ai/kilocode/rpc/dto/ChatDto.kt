@@ -18,6 +18,12 @@ data class MessageDto(
     val cost: Double? = null,
     val tokens: TokensDto? = null,
     val error: MessageErrorDto? = null,
+    val summary: MessageSummaryDto? = null,
+)
+
+@Serializable
+data class MessageSummaryDto(
+    val diffs: List<DiffFileDto> = emptyList(),
 )
 
 @Serializable
@@ -41,6 +47,8 @@ data class MessageErrorDto(
     val message: String? = null,
     val statusCode: Int? = null,
     val responseBody: String? = null,
+    val dataKeys: List<String> = emptyList(),
+    val ref: String? = null,
 )
 
 @Serializable
@@ -72,6 +80,29 @@ data class PartDto(
     val reason: String? = null,
     val cost: Double? = null,
     val tokens: TokensDto? = null,
+    val mime: String? = null,
+    val url: String? = null,
+    val filename: String? = null,
+    val synthetic: Boolean? = null,
+    val source: PartSourceDto? = null,
+)
+
+@Serializable
+data class PartSourceDto(
+    val type: String,
+    val text: PartSourceTextDto,
+    val path: String? = null,
+    val clientName: String? = null,
+    val uri: String? = null,
+    val name: String? = null,
+    val kind: Int? = null,
+)
+
+@Serializable
+data class PartSourceTextDto(
+    val value: String,
+    val start: Double,
+    val end: Double,
 )
 
 @Serializable
@@ -96,7 +127,11 @@ data class PromptDto(
 @Serializable
 data class PromptPartDto(
     val type: String,
-    val text: String,
+    val text: String? = null,
+    val mime: String? = null,
+    val url: String? = null,
+    val filename: String? = null,
+    val source: PartSourceDto? = null,
 )
 
 // --- Streaming Events ---
@@ -226,6 +261,13 @@ sealed class ChatEventDto {
     ) : ChatEventDto()
 
     @Serializable
+    @SerialName("session.queue.changed")
+    data class SessionQueueChanged(
+        val sessionID: String,
+        val queued: List<String> = emptyList(),
+    ) : ChatEventDto()
+
+    @Serializable
     @SerialName("session.compacted")
     data class SessionCompacted(
         val sessionID: String,
@@ -270,8 +312,18 @@ data class PermissionRequestDto(
     val message: String? = null,
     val command: String? = null,
     val rules: List<String> = emptyList(),
+    val ruleDecisions: List<PermissionRuleDecisionDto> = emptyList(),
     val filePath: String? = null,
     val fileDiffs: List<PermissionFileDiffDto> = emptyList(),
+    // Verbatim skill-shell commands (metadata.commands) the prompt must display; empty for non-skill requests.
+    val skillCommands: List<String> = emptyList(),
+)
+
+@Serializable
+data class PermissionRuleDecisionDto(
+    val pattern: String,
+    val decision: String = "pending",
+    val defaultDecision: String = decision,
 )
 
 @Serializable
@@ -284,6 +336,8 @@ data class ToolRefDto(
 data class PermissionReplyDto(
     val reply: String,
     val message: String? = null,
+    // Set when a human answered the prompt; the CLI ignores machine approvals of skill-shell batches.
+    val interactive: Boolean = false,
 )
 
 @Serializable
@@ -355,6 +409,7 @@ data class DiffFileDto(
     val additions: Int,
     val deletions: Int,
     val patch: String? = null,
+    val status: String? = null,
 )
 
 // --- Config Update ---

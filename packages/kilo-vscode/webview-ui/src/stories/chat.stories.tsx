@@ -9,23 +9,97 @@
 
 import type { Meta, StoryObj } from "storybook-solidjs-vite"
 import type { AssistantMessage } from "@kilocode/sdk/v2"
+import { batch, createSignal } from "solid-js"
 import { StoryProviders, defaultMockData, mockSessionValue } from "./StoryProviders"
 import { ChatView } from "../components/chat/ChatView"
 import { ErrorDisplay } from "../components/chat/ErrorDisplay"
 import { TaskHeader } from "../components/chat/TaskHeader"
+import { TaskUsage } from "../components/chat/TaskUsage"
 import { QuestionDock } from "../components/chat/QuestionDock"
 import { SuggestBar } from "../components/chat/SuggestBar"
 import { MessageList } from "../components/chat/MessageList"
 import { VscodeUserMessage } from "../components/chat/VscodeUserMessage"
 import { TurnOutcome } from "../components/shared/TurnOutcome"
 import { SessionContext } from "../context/session"
+import { ProviderContext } from "../context/provider"
 import { ServerContext } from "../context/server"
 import { WorktreeModeProvider } from "../context/worktree-mode"
-import type { Message, Part, QuestionRequest, ReviewComment, SuggestionRequest, TodoItem } from "../types/messages"
+import type {
+  AgentRequirementResult,
+  Message,
+  Part,
+  QuestionRequest,
+  ReviewComment,
+  SessionModelUsage,
+  SuggestionRequest,
+  TodoItem,
+} from "../types/messages"
 import { formatReviewCommentsMarkdown } from "../utils/review-comment-markdown"
 import { reviewMetadata } from "../../../src/shared/review-comments"
 
 const SESSION_ID = "story-session-chat-001"
+
+const missingToolsRequirements: AgentRequirementResult = {
+  agent: "code-review",
+  directory: "/project",
+  enabled: true,
+  state: "blocked",
+  skills: [
+    { name: "review-checklist", status: "ready" },
+    { name: "security-audit", status: "missing" },
+  ],
+  mcps: [
+    { name: "github", status: "missing" },
+    { name: "filesystem", status: "ready" },
+  ],
+  vscode_extensions: [],
+}
+
+const missingExtensionRequirements: AgentRequirementResult = {
+  agent: "release-review",
+  directory: "/project",
+  enabled: true,
+  state: "blocked",
+  skills: [],
+  mcps: [],
+  vscode_extensions: [
+    {
+      name: "GitHub Pull Requests",
+      id: "github.vscode-pull-request-github",
+      status: "missing",
+    },
+  ],
+}
+
+const malformedRequirements: AgentRequirementResult = {
+  agent: "malformed-agent",
+  directory: "/project",
+  enabled: true,
+  state: "error",
+  skills: [],
+  mcps: [],
+  vscode_extensions: [],
+  error: {
+    code: "malformed_declaration",
+    message: "Invalid requirements declaration.",
+  },
+}
+
+const readyRequirements: AgentRequirementResult = {
+  agent: "ready-agent",
+  directory: "/project",
+  enabled: true,
+  state: "ready",
+  skills: [{ name: "review-checklist", status: "ready" }],
+  mcps: [{ name: "filesystem", status: "ready" }],
+  vscode_extensions: [
+    {
+      name: "GitHub Pull Requests",
+      id: "github.vscode-pull-request-github",
+      status: "ready",
+    },
+  ],
+}
 
 // ---------------------------------------------------------------------------
 // Question fixtures
@@ -79,7 +153,7 @@ const reviewSuggestion: SuggestionRequest = {
   id: "s-review-001",
   sessionID: SESSION_ID,
   text: "Start a code review of uncommitted changes?",
-  actions: [{ label: "Start review", description: "Run a local review now", prompt: "/local-review-uncommitted" }],
+  actions: [{ label: "Start review", description: "Run a local review now", prompt: "/review uncommitted" }],
   tool: { messageID: "asst-msg-002", callID: "call-suggest-001" },
 }
 
@@ -151,6 +225,71 @@ export const ChatViewWithMessages: Story = {
       </StoryProviders>
     )
   },
+}
+
+export const ChatViewRequirementsChecking: Story = {
+  name: "ChatView — agent requirements checking",
+  render: () => (
+    <StoryProviders sessionID={SESSION_ID} status="idle" noPadding agentRequirementsChecking agentRequirementsBlocked>
+      <ServerContext.Provider value={mockServer as any}>
+        <div style={{ height: "600px", display: "flex", "flex-direction": "column" }}>
+          <ChatView />
+        </div>
+      </ServerContext.Provider>
+    </StoryProviders>
+  ),
+}
+
+export const ChatViewRequirementsMissingTools: Story = {
+  name: "ChatView — missing skills and MCPs",
+  render: () => (
+    <StoryProviders sessionID={SESSION_ID} status="idle" noPadding agentRequirements={missingToolsRequirements}>
+      <ServerContext.Provider value={mockServer as any}>
+        <div style={{ height: "600px", display: "flex", "flex-direction": "column" }}>
+          <ChatView />
+        </div>
+      </ServerContext.Provider>
+    </StoryProviders>
+  ),
+}
+
+export const ChatViewRequirementsMissingExtension: Story = {
+  name: "ChatView — missing VS Code extension",
+  render: () => (
+    <StoryProviders sessionID={SESSION_ID} status="idle" noPadding agentRequirements={missingExtensionRequirements}>
+      <ServerContext.Provider value={mockServer as any}>
+        <div style={{ height: "600px", display: "flex", "flex-direction": "column" }}>
+          <ChatView />
+        </div>
+      </ServerContext.Provider>
+    </StoryProviders>
+  ),
+}
+
+export const ChatViewRequirementsMalformed: Story = {
+  name: "ChatView — malformed agent requirements",
+  render: () => (
+    <StoryProviders sessionID={SESSION_ID} status="idle" noPadding agentRequirements={malformedRequirements}>
+      <ServerContext.Provider value={mockServer as any}>
+        <div style={{ height: "600px", display: "flex", "flex-direction": "column" }}>
+          <ChatView />
+        </div>
+      </ServerContext.Provider>
+    </StoryProviders>
+  ),
+}
+
+export const ChatViewRequirementsReady: Story = {
+  name: "ChatView — requirements ready (no card)",
+  render: () => (
+    <StoryProviders sessionID={SESSION_ID} status="idle" noPadding agentRequirements={readyRequirements}>
+      <ServerContext.Provider value={mockServer as any}>
+        <div style={{ height: "600px", display: "flex", "flex-direction": "column" }}>
+          <ChatView />
+        </div>
+      </ServerContext.Provider>
+    </StoryProviders>
+  ),
 }
 
 export const ChatViewAgentManagerCompleted: Story = {
@@ -396,6 +535,13 @@ const spacingParts = {
   ],
   [toolAssistantID]: [
     {
+      id: "part-text-spacing-001",
+      sessionID: SESSION_ID,
+      messageID: toolAssistantID,
+      type: "text",
+      text: "The conversation stays in one centered reading lane so longer explanations remain easy to scan. Tool output, prose, and the composer share the same left and right edges in a wide editor tab.",
+    },
+    {
       id: "part-bash-spacing-001",
       sessionID: SESSION_ID,
       messageID: toolAssistantID,
@@ -435,6 +581,202 @@ const spacingData = {
   ...defaultMockData,
   message: { [SESSION_ID]: spacingMessages },
   part: spacingParts,
+}
+const readableMessages = [spacingMessages[0], spacingMessages[3]]
+const readableData = {
+  ...defaultMockData,
+  message: { [SESSION_ID]: readableMessages },
+  part: spacingParts,
+}
+
+function renderReadableChat(status: "idle" | "busy" = "idle") {
+  const session = {
+    ...mockSessionValue({ id: SESSION_ID, status, closeReason: status === "idle" ? "completed" : undefined }),
+    messages: () => readableMessages,
+    visibleMessages: () => readableMessages,
+    userMessages: () => readableMessages.filter((message) => message?.role === "user"),
+    getParts: (id: string) => spacingParts[id as keyof typeof spacingParts] ?? [],
+  }
+  return (
+    <StoryProviders data={readableData} sessionID={SESSION_ID} status={status} noPadding>
+      <SessionContext.Provider value={session as any}>
+        <div style={{ height: "100vh", display: "flex", "flex-direction": "column" }}>
+          <ChatView />
+        </div>
+      </SessionContext.Provider>
+    </StoryProviders>
+  )
+}
+
+export const ChatViewReadable1280: Story = {
+  name: "ChatView - readable editor tab",
+  render: renderReadableChat,
+}
+
+export const ChatViewReadable420: Story = {
+  name: "ChatView - readable busy sidebar",
+  render: () => renderReadableChat("busy"),
+}
+
+// ---------------------------------------------------------------------------
+// PromptRail — the left-edge tick rail and its hover card
+// Several turns so the rail and card are populated: a long prompt, a short
+// low-signal follow-up, a tool-only answer (empty preview), and a queued one.
+// ---------------------------------------------------------------------------
+
+const railNow = 1_700_000_200_000
+const railTurn = (i: number, prompt: string, answer: string | undefined, queued = false) => {
+  const userID = `rail-user-${i}`
+  const assistantID = `rail-asst-${i}`
+  const messages: any[] = [{ id: userID, sessionID: SESSION_ID, role: "user", time: { created: railNow + i * 100 } }]
+  if (!queued) {
+    messages.push({
+      id: assistantID,
+      sessionID: SESSION_ID,
+      role: "assistant",
+      parentID: userID,
+      time: { created: railNow + i * 100 + 50 },
+      modelID: "claude-sonnet-4-20250514",
+      providerID: "anthropic",
+      mode: "default",
+      agent: "default",
+      path: { cwd: "/project", root: "/project" },
+    })
+  }
+  const parts: Record<string, any[]> = {
+    [userID]: [{ id: `rail-part-user-${i}`, sessionID: SESSION_ID, messageID: userID, type: "text", text: prompt }],
+  }
+  if (!queued) {
+    parts[assistantID] = answer
+      ? [{ id: `rail-part-asst-${i}`, sessionID: SESSION_ID, messageID: assistantID, type: "text", text: answer }]
+      : [
+          {
+            id: `rail-part-asst-${i}`,
+            sessionID: SESSION_ID,
+            messageID: assistantID,
+            type: "tool",
+            callID: `rail-call-${i}`,
+            tool: "bash",
+            state: {
+              status: "completed",
+              input: { command: "ls", description: "List files" },
+              output: "a.ts b.ts",
+              title: "ls",
+              metadata: {},
+              time: { start: railNow + i * 100 + 50, end: railNow + i * 100 + 80 },
+            },
+          },
+        ]
+  }
+  return { messages, parts }
+}
+
+const railTurns = [
+  railTurn(
+    1,
+    "Add a prompt navigator rail to the left edge of the chat that expands into a card of prompt and answer previews when I hover it, without shrinking the readable lane",
+    "Added PromptRail with a tick per prompt and a hover card; the lane width is untouched.",
+  ),
+  railTurn(2, "yes", "Confirmed — wiring it into MessageList next."),
+  railTurn(3, "run the tests", undefined),
+  railTurn(
+    4,
+    "now do the same in the Agent Manager chat",
+    "ChatView → MessageList is shared, so the rail appears there automatically; no Agent Manager specific code needed.",
+  ),
+  railTurn(5, "looks good, ship it", "", true),
+]
+const railMessages = railTurns.flatMap((turn) => turn.messages)
+const railParts = Object.assign({}, ...railTurns.map((turn) => turn.parts))
+const railData = {
+  ...defaultMockData,
+  message: { [SESSION_ID]: railMessages },
+  part: railParts,
+}
+
+const renderRailChat = (status: "idle" | "busy" = "idle") => {
+  const session = {
+    ...mockSessionValue({ id: SESSION_ID, status }),
+    messages: () => railMessages,
+    userMessages: () => railMessages.filter((msg) => msg.role === "user"),
+    getParts: (id: string) => railParts[id] ?? [],
+  }
+  return (
+    <StoryProviders data={railData} sessionID={SESSION_ID} status={status} noPadding>
+      <SessionContext.Provider value={session as any}>
+        <div style={{ height: "100vh", display: "flex", "flex-direction": "column" }}>
+          <ChatView />
+        </div>
+      </SessionContext.Provider>
+    </StoryProviders>
+  )
+}
+
+export const PromptRailWide: Story = {
+  name: "PromptRail - wide editor tab",
+  render: () => renderRailChat(),
+}
+
+export const PromptRailSidebar: Story = {
+  name: "PromptRail - narrow sidebar",
+  render: () => renderRailChat("busy"),
+}
+
+// Long session: more prompts than fit the transcript height, so the rail and
+// the card both cap to the newest ones that fit.
+const manyTurns = Array.from({ length: 80 }, (_, i) =>
+  railTurn(100 + i, `Prompt number ${i + 1} in a long running session`, `Answer number ${i + 1}.`),
+)
+const manyMessages = manyTurns.flatMap((turn) => turn.messages)
+const recentMessages = manyTurns.slice(-40).flatMap((turn) => turn.messages)
+const manyData = {
+  ...defaultMockData,
+  message: { [SESSION_ID]: manyMessages },
+  part: Object.assign({}, ...manyTurns.map((turn) => turn.parts)),
+}
+
+export const PromptRailManyPrompts: Story = {
+  name: "PromptRail - long session caps to what fits",
+  render: () => {
+    const [messages, setMessages] = createSignal(recentMessages)
+    const [older, setOlder] = createSignal(true)
+    const [loading, setLoading] = createSignal(false)
+    const [mutation, setMutation] = createSignal<"prepend">()
+    const load = () => {
+      if (!older() || loading()) return false
+      setLoading(true)
+      // Paging is a backend round trip, so the story keeps a short delay: the
+      // navigator's loading row is part of the behavior being shown.
+      setTimeout(() => {
+        batch(() => {
+          setMessages(manyMessages)
+          setOlder(false)
+          setMutation("prepend")
+          setLoading(false)
+        })
+      }, 300)
+      return true
+    }
+    const session = {
+      ...mockSessionValue({ id: SESSION_ID, status: "idle" }),
+      messages,
+      userMessages: () => messages().filter((msg) => msg.role === "user"),
+      getParts: (id: string) => manyData.part[id] ?? [],
+      hasOlderMessages: older,
+      loadingOlderMessages: loading,
+      messageMutation: mutation,
+      loadOlderMessages: load,
+    }
+    return (
+      <StoryProviders data={manyData} sessionID={SESSION_ID} status="idle" noPadding>
+        <SessionContext.Provider value={session as any}>
+          <div style={{ height: "100vh", display: "flex", "flex-direction": "column" }}>
+            <ChatView />
+          </div>
+        </SessionContext.Provider>
+      </StoryProviders>
+    )
+  },
 }
 
 export const MessageListToolToQueuedUserSpacing: Story = {
@@ -806,6 +1148,84 @@ export const TaskHeaderWithTodosAllDone: Story = {
       </StoryProviders>
     )
   },
+}
+
+const usageTokens = { input: 25_900_000, output: 52_000, reasoning: 4_100, cache: { read: 10_500_000, write: 80_000 } }
+const usageData = {
+  sessionIDs: [SESSION_ID, "story-subagent-001"],
+  totals: {
+    steps: 4,
+    cost: 0.097214,
+    tokens: { input: 25_908_400, output: 52_710, reasoning: 4_220, cache: { read: 10_514_000, write: 80_900 } },
+  },
+  models: [
+    { providerID: "kilo", modelID: "qwen/qwen3.7-plus-20260602", steps: 3, cost: 0.067214, tokens: usageTokens },
+    {
+      providerID: "minimax",
+      modelID: "minimax-m3",
+      steps: 1,
+      cost: 0.03,
+      tokens: { input: 8_400, output: 710, reasoning: 120, cache: { read: 14_000, write: 900 } },
+    },
+  ],
+} satisfies SessionModelUsage
+const usageProviders = {
+  kilo: {
+    id: "kilo",
+    name: "Kilo Gateway",
+    models: {
+      "qwen/qwen3.7-plus": { id: "qwen/qwen3.7-plus", name: "Qwen: Qwen3.7 Plus (20% off)" },
+    },
+  },
+  minimax: {
+    id: "minimax",
+    name: "MiniMax",
+    models: { "minimax-m3": { id: "minimax-m3", name: "MiniMax M3" } },
+  },
+}
+const usageProvider = {
+  providers: () => usageProviders,
+  connected: () => ["kilo", "minimax"],
+  defaults: () => ({}),
+  defaultSelection: () => ({ providerID: "kilo", modelID: "qwen/qwen3.7-plus" }),
+  models: () => [],
+  findModel: () => undefined,
+  authMethods: () => ({}),
+  authStates: () => ({}),
+  isModelValid: () => true,
+}
+
+const usageStory = (open: boolean) => () => (
+  <StoryProviders sessionID={SESSION_ID} status="idle" noPadding>
+    <ProviderContext.Provider value={usageProvider as any}>
+      <div style={{ "max-height": "560px", overflow: "auto" }}>
+        <TaskUsage
+          defaultOpen={open}
+          usage={usageData}
+          tokens={{
+            input: usageData.totals.tokens.input,
+            output: usageData.totals.tokens.output,
+            cached: usageData.totals.tokens.cache.read,
+          }}
+        />
+      </div>
+    </ProviderContext.Provider>
+  </StoryProviders>
+)
+
+export const TaskUsageCollapsed: Story = {
+  name: "Task usage — collapsed",
+  render: usageStory(false),
+}
+
+export const TaskUsageExpanded: Story = {
+  name: "Task usage — provider and model breakdown",
+  render: usageStory(true),
+}
+
+export const TaskUsageExpanded200: Story = {
+  name: "Task usage — provider and model breakdown, narrow",
+  render: usageStory(true),
 }
 
 // ---------------------------------------------------------------------------

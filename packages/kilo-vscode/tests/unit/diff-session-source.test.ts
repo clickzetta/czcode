@@ -91,6 +91,88 @@ describe("createSessionDiffSource.fetch", () => {
     expect(result.diffs[2]?.summarized).toBe(true)
   })
 
+  it("keeps valid files visible when one persisted patch is malformed", async () => {
+    const malformed = [
+      "diff --git a/broken.ts b/broken.ts",
+      "--- a/broken.ts",
+      "+++ b/broken.ts",
+      "@@ -1,2 +1,2 @@",
+      "-old",
+      "+new",
+      "",
+    ].join("\n")
+    const { fetch } = recording([
+      { file: "broken.ts", patch: malformed, additions: 1, deletions: 1, status: "modified" },
+      { file: "foo.ts", patch: modifiedPatch, additions: 1, deletions: 1, status: "modified" },
+    ])
+
+    const result = await createSessionDiffSource("s-malformed", fetch, "/repo").fetch()
+
+    expect(result.diffs).toHaveLength(2)
+    expect(result.diffs[0]).toMatchObject({
+      file: "broken.ts",
+      before: "",
+      after: "",
+      patch: malformed,
+      summarized: true,
+    })
+    expect(result.diffs[1]).toMatchObject({
+      file: "foo.ts",
+      before: "keep\nold\n",
+      after: "keep\nnew\n",
+      summarized: false,
+    })
+  })
+
+  it("rebuilds text-backed SVG snapshot sides without sending them to Pierre", async () => {
+    const before = '<svg xmlns="http://www.w3.org/2000/svg"><rect fill="red"/></svg>'
+    const after = '<svg xmlns="http://www.w3.org/2000/svg"><rect fill="blue"/></svg>'
+    const patch = [
+      "diff --git a/assets/banner.svg b/assets/banner.svg",
+      "--- a/assets/banner.svg",
+      "+++ b/assets/banner.svg",
+      "@@ -1 +1 @@",
+      `-${before}`,
+      `+${after}`,
+      "",
+    ].join("\n")
+    const { fetch } = recording([{ file: "assets/banner.svg", patch, additions: 1, deletions: 1, status: "modified" }])
+    const result = await createSessionDiffSource("s-image", fetch, "/repo").fetch()
+
+    expect(result.diffs[0]).toMatchObject({
+      file: "assets/banner.svg",
+      before: "",
+      after: "",
+      patch: "",
+      kind: "image",
+      summarized: false,
+      image: {
+        before: { mime: "image/svg+xml", data: Buffer.from(`${before}\n`).toString("base64") },
+        after: { mime: "image/svg+xml", data: Buffer.from(`${after}\n`).toString("base64") },
+      },
+    })
+  })
+
+  it("reuses converted image details while the snapshot is unchanged", async () => {
+    const { fetch } = recording([
+      { file: "assets/banner.svg", patch: modifiedPatch, additions: 1, deletions: 1, status: "modified" },
+    ])
+    const source = createSessionDiffSource("s-image-cache", fetch, "/repo")
+    const first = await source.fetch()
+    const second = await source.fetch()
+
+    expect(second.diffs).toBe(first.diffs)
+  })
+
+  it("marks binary snapshot images unavailable when their sides were not retained", async () => {
+    const { fetch } = recording([
+      { file: "assets/banner.png", patch: "", additions: 0, deletions: 0, status: "modified" },
+    ])
+    const result = await createSessionDiffSource("s-image", fetch, "/repo").fetch()
+
+    expect(result.diffs[0]?.image).toEqual({})
+  })
+
   it("propagates errors from the underlying fetch", async () => {
     const { fetch } = recording(new Error("network down"))
     const source = createSessionDiffSource("s3", fetch)

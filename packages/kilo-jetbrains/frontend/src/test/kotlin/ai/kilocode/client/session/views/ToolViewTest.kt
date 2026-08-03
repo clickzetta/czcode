@@ -8,8 +8,12 @@ import ai.kilocode.client.session.ui.style.SessionEditorStyle
 import ai.kilocode.client.session.ui.style.SessionUiStyle
 import ai.kilocode.client.session.views.base.SecondarySessionPartView
 import ai.kilocode.client.session.views.tool.ToolView
+import com.intellij.openapi.editor.DefaultLanguageHighlighterColors
 import com.intellij.openapi.util.Disposer
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.intellij.ui.scale.JBUIScale
+import com.intellij.util.ui.JBUI
+import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.image.BufferedImage
 import javax.swing.JPanel
@@ -94,6 +98,24 @@ class ToolViewTest : BasePlatformTestCase() {
         view.toggle()
         assertTrue(view.bodyVisible())
         assertTrue(view.bodyCreated())
+    }
+
+    fun `test bash tool editor highlights command text`() {
+        val t = tool("p1", "bash", ToolExecState.COMPLETED).also {
+            it.input = mapOf("command" to "git remote -v", "description" to "View remotes")
+            it.output = "origin git@example.com:repo.git"
+        }
+        val view = track(ToolView(t))
+
+        view.toggle()
+        val field = view.bodyEditor()!!
+        val editor = field.getEditor(true)!!
+        val spans = editor.markupModel.allHighlighters.map {
+            field.text.substring(it.startOffset, it.endOffset) to it.textAttributesKey
+        }
+
+        assertTrue(spans.contains("git" to DefaultLanguageHighlighterColors.KEYWORD))
+        assertTrue(spans.contains("-v" to DefaultLanguageHighlighterColors.KEYWORD))
     }
 
     fun `test bash tool uses secondary chrome`() {
@@ -257,6 +279,12 @@ class ToolViewTest : BasePlatformTestCase() {
         assertSmallEditorFont(view.stateFont(), style)
     }
 
+    fun `test tool header uses standard layout gap`() {
+        val view = track(ToolView(tool("p1", "bash", ToolExecState.COMPLETED).also { it.output = "done" }))
+
+        assertEquals(JBUI.scale(SessionUiStyle.View.Layout.GAP), headerGap(view))
+    }
+
     fun `test applyStyle updates tool fonts in place`() {
         val view = ToolView(tool("p1", "bash", ToolExecState.COMPLETED))
         val style = SessionEditorStyle.create(family = "Courier New", size = 25)
@@ -295,6 +323,31 @@ class ToolViewTest : BasePlatformTestCase() {
 
         assertEquals(15, view.bodyMaxRows())
         assertTrue(view.preferredSize.height > 0)
+    }
+
+    fun `test expanded body height ignores user scale factor`() {
+        // The tool body height comes from the editor line height, which tracks the IDE
+        // scale (editor font), not the JBUI user scale factor. Raising the user scale
+        // factor alone must not change the body height; a double-scaling regression would.
+        val original = JBUIScale.scale(1f)
+        val t = tool("p1", "bash", ToolExecState.COMPLETED).also {
+            it.input = mapOf("command" to "log")
+            it.output = (1..6).joinToString("\n") { line -> "line $line" }
+        }
+        try {
+            JBUIScale.setUserScaleFactorForTest(1f)
+            val view = track(ToolView(t))
+            view.toggle()
+            val before = view.bodyEditor()!!.preferredSize.height
+
+            JBUIScale.setUserScaleFactorForTest(2f)
+            view.applyStyle(SessionEditorStyle.current())
+            val after = view.bodyEditor()!!.preferredSize.height
+
+            assertEquals(before, after)
+        } finally {
+            JBUIScale.setUserScaleFactorForTest(original)
+        }
     }
 
     fun `test large tool output is truncated in preview`() {
@@ -379,6 +432,12 @@ class ToolViewTest : BasePlatformTestCase() {
     private fun assertSmallEditorFont(font: java.awt.Font, style: SessionEditorStyle) {
         assertEquals(style.smallEditorFont.name, font.name)
         assertTrue(font.size < style.editorSize)
+    }
+
+    private fun headerGap(view: ToolView): Int {
+        val row = view.components.filterIsInstance<JPanel>().single()
+        val header = (row.layout as BorderLayout).getLayoutComponent(BorderLayout.CENTER) as JPanel
+        return (header.layout as BorderLayout).hgap
     }
 
     private fun paint(border: Border): Color {

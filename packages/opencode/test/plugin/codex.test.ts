@@ -1,10 +1,12 @@
 import { describe, expect, test } from "bun:test"
 import {
+  CodexAuthPlugin,
   parseJwtClaims,
   extractAccountIdFromClaims,
   extractAccountId,
+  renderOAuthError,
   type IdTokenClaims,
-} from "../../src/plugin/codex"
+} from "../../src/plugin/openai/codex"
 
 function createTestJwt(payload: object): string {
   const header = Buffer.from(JSON.stringify({ alg: "none" })).toString("base64url")
@@ -13,6 +15,14 @@ function createTestJwt(payload: object): string {
 }
 
 describe("plugin.codex", () => {
+  test("escapes provider errors in callback HTML", () => {
+    const error = `</div><script>alert("xss" & 'more')</script>`
+    const html = renderOAuthError(error)
+
+    expect(html).toContain("&lt;/div&gt;&lt;script&gt;alert(&quot;xss&quot; &amp; &#39;more&#39;)&lt;/script&gt;")
+    expect(html).not.toContain(error)
+  })
+
   describe("parseJwtClaims", () => {
     test("parses valid JWT with claims", () => {
       const payload = { email: "test@example.com", chatgpt_account_id: "acc-123" }
@@ -120,4 +130,199 @@ describe("plugin.codex", () => {
       ).toBe("acc-123")
     })
   })
+
+  // kilocode_change start
+  describe("models filter", () => {
+    test("filters out disallowed models for oauth users", async () => {
+      const hooks = await CodexAuthPlugin({} as never)
+      const provider = await hooks.provider!.models!({
+        id: "openai",
+        baseURL: "",
+        apiKey: "",
+        models: {
+          "gpt-5.5-pro": {
+            id: "gpt-5.5-pro",
+            api: { id: "gpt-5.5-pro" },
+          } as never,
+          "gpt-5.5": {
+            id: "gpt-5.5",
+            api: { id: "gpt-5.5" },
+          } as never,
+          "gpt-5.6": {
+            id: "gpt-5.6",
+            api: { id: "gpt-5.6" },
+          } as never,
+          "gpt-5.6-sol": {
+            id: "gpt-5.6-sol",
+            api: { id: "gpt-5.6-sol" },
+          } as never,
+          "gpt-5.4-mini": {
+            id: "gpt-5.4-mini",
+            api: { id: "gpt-5.4-mini" },
+          } as never,
+          "gpt-5.1-codex": {
+            id: "gpt-5.1-codex",
+            api: { id: "gpt-5.1-codex" },
+          } as never,
+          "other-model": {
+            id: "other-model",
+            api: { id: "other-model" },
+          } as never,
+        },
+      } as never, { auth: { type: "oauth" } } as never)
+      expect(provider).not.toHaveProperty(["gpt-5.5-pro"])
+      expect(provider).toHaveProperty(["gpt-5.5"])
+      expect(provider).not.toHaveProperty(["gpt-5.6"])
+      expect(provider).toHaveProperty(["gpt-5.6-sol"])
+      expect(provider).toHaveProperty(["gpt-5.4-mini"])
+      expect(provider).toHaveProperty(["gpt-5.1-codex"])
+      expect(provider).not.toHaveProperty(["other-model"])
+    })
+
+    test("passes through all models when not using oauth", async () => {
+      const hooks = await CodexAuthPlugin({} as never)
+      const models = {
+        "gpt-5.5-pro": {
+          id: "gpt-5.5-pro",
+          api: { id: "gpt-5.5-pro" },
+        } as never,
+        "other-model": {
+          id: "other-model",
+          api: { id: "other-model" },
+        } as never,
+      }
+      const provider = await hooks.provider!.models!({
+        id: "openai",
+        baseURL: "",
+        apiKey: "",
+        models,
+      } as never, { auth: { type: "api", key: "sk-test" } } as never)
+      expect(provider).toHaveProperty(["gpt-5.5-pro"])
+      expect(provider).toHaveProperty(["other-model"])
+    })
+  })
+  // kilocode_change end
+
+  test("installs websocket transport only when experimental websockets are enabled", async () => {
+    const disabled = await CodexAuthPlugin({} as never)
+    const enabled = await CodexAuthPlugin({} as never, { experimentalWebSockets: true })
+
+    const disabledOptions = await disabled.auth!.loader!(
+      async () => ({ type: "api", key: "sk-test" }) as never,
+      {} as never,
+    )
+    const enabledOptions = await enabled.auth!.loader!(
+      async () => ({ type: "api", key: "sk-test" }) as never,
+      {} as never,
+    )
+
+    expect(disabledOptions.fetch).toBeUndefined()
+    expect(enabledOptions.fetch).toBeFunction()
+    await enabled.dispose?.()
+  })
+
+  test("deduplicates concurrent Codex token refreshes", async () => {
+    let auth = {
+      type: "oauth" as const,
+      refresh: "refresh-old",
+      access: "",
+      expires: 0,
+    }
+    const authUpdates: Array<{
+      body: { refresh: string; access: string; expires: number; accountId?: string }
+    }> = []
+    let resolveRefresh: (() => void) | undefined
+    const refreshReady = new Promise<void>((resolve) => {
+      resolveRefresh = resolve
+    })
+    let refreshRequests = 0
+    const apiRequests: { authorization: string | null; accountId: string | null }[] = []
+
+    using server = Bun.serve({
+      port: 0,
+      async fetch(request) {
+        const url = new URL(request.url)
+        if (url.pathname === "/oauth/token") {
+          expect(await request.text()).toContain("refresh_token=refresh-old")
+          refreshRequests += 1
+          await refreshReady
+          return Response.json({
+            id_token: createTestJwt({ chatgpt_account_id: "acc-123" }),
+            access_token: "access-new",
+            refresh_token: "refresh-new",
+            expires_in: 3600,
+          })
+        }
+
+        if (url.pathname === "/backend-api/codex/responses") {
+          apiRequests.push({
+            authorization: request.headers.get("authorization"),
+            accountId: request.headers.get("ChatGPT-Account-Id"),
+          })
+          return new Response("{}", { status: 200 })
+        }
+
+        return new Response("unexpected request", { status: 500 })
+      },
+    })
+
+    const hooks = await CodexAuthPlugin(
+      {
+        client: {
+          auth: {
+            async set(input: { body: { refresh: string; access: string; expires: number; accountId?: string } }) {
+              authUpdates.push(input)
+              auth = {
+                type: "oauth",
+                refresh: input.body.refresh,
+                access: input.body.access,
+                expires: input.body.expires,
+                ...(input.body.accountId && { accountId: input.body.accountId }),
+              }
+            },
+          },
+        } as never,
+        project: {} as never,
+        directory: "",
+        worktree: "",
+        experimental_workspace: {
+          register() {},
+        },
+        serverUrl: new URL("https://example.com"),
+        $: {} as never,
+      },
+      {
+        issuer: server.url.origin,
+        codexApiEndpoint: new URL("/backend-api/codex/responses", server.url).toString(),
+      },
+    )
+    const loaded = await hooks.auth!.loader!(async () => auth as never, {} as never)
+
+    const first = loaded.fetch!("https://api.openai.com/v1/responses")
+    const second = loaded.fetch!("https://api.openai.com/v1/responses")
+
+    await waitFor(() => refreshRequests === 1)
+    expect(apiRequests).toHaveLength(0)
+
+    resolveRefresh!()
+    await Promise.all([first, second])
+
+    expect(refreshRequests).toBe(1)
+    expect(authUpdates).toHaveLength(1)
+    expect(authUpdates[0]?.body.refresh).toBe("refresh-new")
+    expect(authUpdates[0]?.body.access).toBe("access-new")
+    expect(authUpdates[0]?.body.accountId).toBe("acc-123")
+    expect(apiRequests).toEqual([
+      { authorization: "Bearer access-new", accountId: "acc-123" },
+      { authorization: "Bearer access-new", accountId: "acc-123" },
+    ])
+  })
 })
+
+async function waitFor(predicate: () => boolean) {
+  const started = Date.now()
+  while (!predicate()) {
+    if (Date.now() - started > 1_000) throw new Error("timed out waiting for condition")
+    await new Promise((resolve) => setTimeout(resolve, 1))
+  }
+}

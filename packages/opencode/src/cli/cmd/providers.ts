@@ -1,9 +1,10 @@
+import type { Argv } from "yargs"
 import { Auth } from "../../auth"
 import { cmd } from "./cmd"
 import { CliError, effectCmd, fail } from "../effect-cmd"
 import { UI } from "../ui"
 import * as Prompt from "../effect/prompt"
-import { ModelsDev } from "@opencode-ai/core/models"
+import { ModelsDev } from "@opencode-ai/core/models-dev"
 
 import { map, pipe, sortBy, values } from "remeda"
 import path from "path"
@@ -16,6 +17,7 @@ import { Process } from "@/util/process"
 import { errorMessage } from "@/util/error"
 import { text } from "node:stream/consumers"
 import { Effect, Option } from "effect"
+// kilocode_change - @/kilocode/auth/remove is dynamically imported in the logout handler to keep startup fast
 
 type PluginAuth = NonNullable<Hooks["auth"]>
 
@@ -300,10 +302,12 @@ export const ProvidersListCommand = effectCmd({
 export const ProvidersLoginCommand = effectCmd({
   command: "login [url]",
   describe: "log in to a provider",
-  builder: (yargs) =>
+  // URL login skips instance bootstrap, which would load remote config with the stale token and crash before re-auth.
+  instance: (args) => !args.url,
+  builder: (yargs: Argv) =>
     yargs
       .positional("url", {
-        describe: "kilo auth provider", // kilocode_change
+        describe: "kilo auth provider",
         type: "string",
       })
       .option("provider", {
@@ -370,7 +374,6 @@ export const ProvidersLoginCommand = effectCmd({
     // kilocode_change start
     const priority: Record<string, number> = {
       kilo: 0,
-      opencode: 1,
       anthropic: 2,
       "github-copilot": 3,
       openai: 4,
@@ -384,9 +387,11 @@ export const ProvidersLoginCommand = effectCmd({
       existingProviders: providers,
       disabled,
       enabled,
+      // kilocode_change start
       providerNames: Object.fromEntries(
         Object.entries(config.provider ?? {}).flatMap(([id, p]) => (p ? [[id, p.name]] : [])),
-      ), // kilocode_change
+      ),
+      // kilocode_change end
     })
     const options = [
       ...pipe(
@@ -400,9 +405,10 @@ export const ProvidersLoginCommand = effectCmd({
           label: x.name,
           value: x.id,
           hint: {
-            kilo: "recommended", // kilocode_change
-            opencode: "recommended",
-            openai: "ChatGPT login or API key", // kilocode_change
+            // kilocode_change start
+            kilo: "recommended",
+            openai: "ChatGPT login or API key",
+            // kilocode_change end
           }[x.id],
         })),
       ),
@@ -457,7 +463,7 @@ export const ProvidersLoginCommand = effectCmd({
       }
 
       yield* Prompt.log.warn(
-        `This only stores a credential for ${provider} - you will need configure it in opencode.json, check the docs for examples.`,
+        `This only stores a credential for ${provider} - you will need configure it in kilo.json, check the docs for examples.`, // kilocode_change
       )
     }
 
@@ -466,13 +472,9 @@ export const ProvidersLoginCommand = effectCmd({
         "Amazon Bedrock authentication priority:\n" +
           "  1. Bearer token (AWS_BEARER_TOKEN_BEDROCK or /connect)\n" +
           "  2. AWS credential chain (profile, access keys, IAM roles, EKS IRSA)\n\n" +
-          "Configure via opencode.json options (profile, region, endpoint) or\n" +
+          "Configure via kilo.json options (profile, region, endpoint) or\n" + // kilocode_change
           "AWS environment variables (AWS_PROFILE, AWS_REGION, AWS_ACCESS_KEY_ID, AWS_WEB_IDENTITY_TOKEN_FILE).",
       )
-    }
-
-    if (provider === "opencode") {
-      yield* Prompt.log.info("Create an api key at https://opencode.ai/auth")
     }
 
     if (provider === "vercel") {
@@ -481,7 +483,7 @@ export const ProvidersLoginCommand = effectCmd({
 
     if (["cloudflare", "cloudflare-ai-gateway"].includes(provider)) {
       yield* Prompt.log.info(
-        "Cloudflare AI Gateway can be configured with CLOUDFLARE_GATEWAY_ID, CLOUDFLARE_ACCOUNT_ID, and CLOUDFLARE_API_TOKEN environment variables. Read more: https://opencode.ai/docs/providers/#cloudflare-ai-gateway",
+        "Cloudflare AI Gateway can be configured with CLOUDFLARE_GATEWAY_ID, CLOUDFLARE_ACCOUNT_ID, and CLOUDFLARE_API_TOKEN environment variables. Read more: https://kilo.ai/docs/ai-providers/cloudflare", // kilocode_change
       )
     }
 
@@ -497,11 +499,16 @@ export const ProvidersLoginCommand = effectCmd({
 })
 
 export const ProvidersLogoutCommand = effectCmd({
-  command: "logout",
+  command: "logout [provider]",
   describe: "log out from a configured provider",
+  builder: (yargs) =>
+    yargs.positional("provider", {
+      describe: "provider id or name to log out from",
+      type: "string",
+    }),
   // Removes a global auth credential; no project instance needed.
   instance: false,
-  handler: Effect.fn("Cli.providers.logout")(function* (_args) {
+  handler: Effect.fn("Cli.providers.logout")(function* (args) {
     const authSvc = yield* Auth.Service
     const modelsDev = yield* ModelsDev.Service
 
@@ -513,14 +520,28 @@ export const ProvidersLogoutCommand = effectCmd({
       return
     }
     const database = yield* modelsDev.get()
-    const selected = yield* Prompt.select({
-      message: "Select provider",
-      options: credentials.map(([key, value]) => ({
-        label: (database[key]?.name || key) + UI.Style.TEXT_DIM + " (" + value.type + ")",
-        value: key,
-      })),
-    })
-    yield* Effect.orDie(authSvc.remove(yield* promptValue(selected)))
+    const options = credentials.map(([key, value]) => ({
+      label: (database[key]?.name || key) + UI.Style.TEXT_DIM + " (" + value.type + ")",
+      value: key,
+    }))
+    const provider = args.provider
+      ? options.find(
+          (option) =>
+            option.value === args.provider ||
+            database[option.value]?.name?.toLowerCase() === args.provider?.toLowerCase(),
+        )?.value
+      : yield* promptValue(
+          yield* Prompt.autocomplete({
+            message: "Select provider",
+            maxItems: 8,
+            options,
+          }),
+        )
+    if (!provider) return yield* fail(`Unknown configured provider "${args.provider}"`)
+    // kilocode_change start - lazy import keeps the CLI startup graph light
+    const { remove: removeAuth } = yield* Effect.promise(() => import("@/kilocode/auth/remove"))
+    yield* removeAuth(provider)
+    // kilocode_change end
     yield* Prompt.outro("Logout successful")
   }),
 })

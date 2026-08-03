@@ -2,6 +2,8 @@ import { afterEach, describe, expect, mock, test } from "bun:test"
 import { APICallError } from "ai"
 import { Effect, Layer, ManagedRuntime, Scope } from "effect"
 import * as Stream from "effect/Stream"
+import { LLMEvent, type LLMEvent as Event } from "@opencode-ai/llm"
+import { Database } from "@opencode-ai/core/database/database"
 import { Agent } from "../../src/agent/agent"
 import { Bus } from "../../src/bus"
 import { Config } from "../../src/config/config"
@@ -13,14 +15,14 @@ import { KiloSessionCompaction } from "../../src/kilocode/session/compaction"
 import { Permission } from "../../src/permission"
 import { Plugin } from "../../src/plugin"
 import { provideTestInstance } from "../fixture/fixture"
-import { ModelID, ProviderID } from "../../src/provider/schema"
+import { ProviderV2 } from "@opencode-ai/core/provider"
+import { ModelV2 } from "@opencode-ai/core/model"
 import { Snapshot } from "../../src/snapshot"
 import { LLM } from "../../src/session/llm"
 import { MessageV2 } from "../../src/session/message-v2"
 import * as SessionProcessorModule from "../../src/session/processor"
 import { Session as SessionNs } from "../../src/session/session"
 import { MessageID, PartID, SessionID } from "../../src/session/schema"
-import { Reference } from "../../src/reference/reference"
 import { SessionCompaction } from "../../src/session/compaction"
 import { SessionStatus } from "../../src/session/status"
 import { SessionSummary } from "../../src/session/summary"
@@ -31,32 +33,31 @@ import { tmpdir } from "../fixture/fixture"
 const sessionID = SessionID.make("ses_payload_recovery")
 const userID = MessageID.ascending()
 const assistantID = MessageID.ascending()
-const providerID = ProviderID.make("test")
-const modelID = ModelID.make("test-model")
+const providerID = ProviderV2.ID.make("test")
+const modelID = ModelV2.ID.make("test-model")
 
 const ref = {
   providerID,
   modelID,
 }
 
-function run<A, E>(fx: Effect.Effect<A, E, SessionNs.Service>) {
-  return Effect.runPromise(fx.pipe(Effect.provide(SessionNs.defaultLayer)))
+function service(rt: ReturnType<typeof runtime>) {
+  return {
+    create(input?: SessionNs.CreateInput) {
+      return rt.runPromise(SessionNs.Service.use((svc) => svc.create(input)))
+    },
+    messages(input: Parameters<SessionNs.Interface["messages"]>[0]) {
+      return rt.runPromise(SessionNs.Service.use((svc) => svc.messages(input)))
+    },
+    updateMessage<T extends MessageV2.Info>(msg: T) {
+      return rt.runPromise(SessionNs.Service.use((svc) => svc.updateMessage(msg)))
+    },
+    updatePart<T extends MessageV2.Part>(part: T) {
+      return rt.runPromise(SessionNs.Service.use((svc) => svc.updatePart(part)))
+    },
+  }
 }
-
-const svc = {
-  create(input?: SessionNs.CreateInput) {
-    return run(SessionNs.Service.use((svc) => svc.create(input)))
-  },
-  messages(input: Parameters<SessionNs.Interface["messages"]>[0]) {
-    return run(SessionNs.Service.use((svc) => svc.messages(input)))
-  },
-  updateMessage<T extends MessageV2.Info>(msg: T) {
-    return run(SessionNs.Service.use((svc) => svc.updateMessage(msg)))
-  },
-  updatePart<T extends MessageV2.Part>(part: T) {
-    return run(SessionNs.Service.use((svc) => svc.updatePart(part)))
-  },
-}
+type Store = ReturnType<typeof service>
 
 const summary = Layer.succeed(
   SessionSummary.Service,
@@ -75,7 +76,7 @@ function base(id: MessageID) {
   }
 }
 
-async function user(sessionID: SessionID, text: string) {
+async function user(svc: Store, sessionID: SessionID, text: string) {
   const msg = await svc.updateMessage({
     id: MessageID.ascending(),
     role: "user",
@@ -94,7 +95,7 @@ async function user(sessionID: SessionID, text: string) {
   return msg
 }
 
-async function assistant(sessionID: SessionID, parentID: MessageID, root: string) {
+async function assistant(svc: Store, sessionID: SessionID, parentID: MessageID, root: string) {
   const msg: MessageV2.Assistant = {
     id: MessageID.ascending(),
     role: "assistant",
@@ -115,12 +116,10 @@ async function assistant(sessionID: SessionID, parentID: MessageID, root: string
 }
 
 function llm() {
-  const queue: Array<
-    Stream.Stream<LLM.Event, unknown> | ((input: LLM.StreamInput) => Stream.Stream<LLM.Event, unknown>)
-  > = []
+  const queue: Array<Stream.Stream<Event, unknown> | ((input: LLM.StreamInput) => Stream.Stream<Event, unknown>)> = []
 
   return {
-    push(stream: Stream.Stream<LLM.Event, unknown> | ((input: LLM.StreamInput) => Stream.Stream<LLM.Event, unknown>)) {
+    push(stream: Stream.Stream<Event, unknown> | ((input: LLM.StreamInput) => Stream.Stream<Event, unknown>)) {
       queue.push(stream)
     },
     layer: Layer.succeed(
@@ -139,40 +138,16 @@ function llm() {
 function reply(
   text: string,
   capture?: (input: LLM.StreamInput) => void,
-): (input: LLM.StreamInput) => Stream.Stream<LLM.Event, unknown> {
+): (input: LLM.StreamInput) => Stream.Stream<Event, unknown> {
   return (input) => {
     capture?.(input)
+    const usage = { inputTokens: 1, outputTokens: 1, totalTokens: 2 }
     return Stream.make(
-      { type: "start" } as LLM.Event,
-      { type: "text-start", id: "txt-0" } as LLM.Event,
-      { type: "text-delta", id: "txt-0", delta: text, text } as LLM.Event,
-      { type: "text-end", id: "txt-0" } as LLM.Event,
-      {
-        type: "finish-step",
-        finishReason: "stop",
-        rawFinishReason: "stop",
-        response: { id: "res", modelId: "test-model", timestamp: new Date() },
-        providerMetadata: undefined,
-        usage: {
-          inputTokens: 1,
-          outputTokens: 1,
-          totalTokens: 2,
-          inputTokenDetails: { noCacheTokens: undefined, cacheReadTokens: undefined, cacheWriteTokens: undefined },
-          outputTokenDetails: { textTokens: undefined, reasoningTokens: undefined },
-        },
-      } as LLM.Event,
-      {
-        type: "finish",
-        finishReason: "stop",
-        rawFinishReason: "stop",
-        totalUsage: {
-          inputTokens: 1,
-          outputTokens: 1,
-          totalTokens: 2,
-          inputTokenDetails: { noCacheTokens: undefined, cacheReadTokens: undefined, cacheWriteTokens: undefined },
-          outputTokenDetails: { textTokens: undefined, reasoningTokens: undefined },
-        },
-      } as LLM.Event,
+      LLMEvent.textStart({ id: "txt-0" }),
+      LLMEvent.textDelta({ id: "txt-0", text }),
+      LLMEvent.textEnd({ id: "txt-0" }),
+      LLMEvent.stepFinish({ index: 0, reason: "stop", usage }),
+      LLMEvent.finish({ reason: "stop", usage }),
     )
   }
 }
@@ -191,7 +166,7 @@ function runtime(layer: Layer.Layer<LLM.Service>, config = Config.defaultLayer) 
   return ManagedRuntime.make(
     Layer.mergeAll(SessionCompaction.layer.pipe(Layer.provide(processor)), processor, bus, status).pipe(
       Layer.provide(ProviderTest.fake({ model }).layer),
-      Layer.provide(SessionNs.defaultLayer),
+      Layer.provideMerge(SessionNs.defaultLayer),
       Layer.provide(Snapshot.defaultLayer),
       Layer.provide(layer),
       Layer.provide(Permission.defaultLayer),
@@ -202,10 +177,9 @@ function runtime(layer: Layer.Layer<LLM.Service>, config = Config.defaultLayer) 
       Layer.provide(config),
       Layer.provide(RuntimeFlags.layer()),
       Layer.provide(scope),
-      Layer.provide(Reference.defaultLayer),
       Layer.provide(SyncEvent.defaultLayer),
       Layer.provide(EventV2Bridge.defaultLayer),
-      Layer.provide(Reference.defaultLayer),
+      Layer.provide(Database.defaultLayer),
     ),
   )
 }
@@ -301,20 +275,16 @@ describe("KiloCompactionPayloadRecovery", () => {
     const captures: string[] = []
     stub.push((input) => {
       captures.push(JSON.stringify(input.messages))
-      return Stream.make({ type: "start" } as LLM.Event).pipe(
-        Stream.concat(
-          Stream.fail(
-            new APICallError({
-              message: "Request Entity Too Large",
-              url: "https://api.kilo.ai/api/openrouter/responses",
-              requestBodyValues: {},
-              statusCode: 413,
-              responseHeaders: { "content-type": "text/plain" },
-              responseBody: "Request Entity Too Large\n\nFUNCTION_PAYLOAD_TOO_LARGE",
-              isRetryable: false,
-            }),
-          ),
-        ),
+      return Stream.fail(
+        new APICallError({
+          message: "Request Entity Too Large",
+          url: "https://api.kilo.ai/api/openrouter/responses",
+          requestBodyValues: {},
+          statusCode: 413,
+          responseHeaders: { "content-type": "text/plain" },
+          responseBody: "Request Entity Too Large\n\nFUNCTION_PAYLOAD_TOO_LARGE",
+          isRetryable: false,
+        }),
       )
     })
     stub.push(
@@ -326,8 +296,10 @@ describe("KiloCompactionPayloadRecovery", () => {
     await provideTestInstance({
       directory: tmp.path,
       fn: async () => {
+        const rt = runtime(stub.layer, Config.defaultLayer)
+        const svc = service(rt)
         const session = await svc.create({})
-        const old = await user(session.id, "old image turn")
+        const old = await user(svc, session.id, "old image turn")
         await svc.updatePart({
           id: PartID.ascending(),
           messageID: old.id,
@@ -337,7 +309,7 @@ describe("KiloCompactionPayloadRecovery", () => {
           filename: "old.png",
           url: `data:image/png;base64,${"a".repeat(8_000)}`,
         })
-        const oldReply = await assistant(session.id, old.id, tmp.path)
+        const oldReply = await assistant(svc, session.id, old.id, tmp.path)
         await svc.updatePart({
           id: PartID.ascending(),
           messageID: oldReply.id,
@@ -354,9 +326,9 @@ describe("KiloCompactionPayloadRecovery", () => {
             time: { start: Date.now(), end: Date.now() },
           },
         })
-        await user(session.id, "latest turn")
-        const keep = await user(session.id, "preserved tail turn")
-        const keepReply = await assistant(session.id, keep.id, tmp.path)
+        await user(svc, session.id, "latest turn")
+        const keep = await user(svc, session.id, "preserved tail turn")
+        const keepReply = await assistant(svc, session.id, keep.id, tmp.path)
         await svc.updatePart({
           id: PartID.ascending(),
           messageID: keepReply.id,
@@ -386,7 +358,6 @@ describe("KiloCompactionPayloadRecovery", () => {
           }),
         )
 
-        const rt = runtime(stub.layer, Config.defaultLayer)
         try {
           const msgs = await svc.messages({ sessionID: session.id })
           const parent = msgs.at(-1)?.info.id

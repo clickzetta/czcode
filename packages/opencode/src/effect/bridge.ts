@@ -1,6 +1,6 @@
 import { Context, Effect, Exit, Fiber } from "effect"
 import { WorkspaceContext } from "@/control-plane/workspace-context"
-import type { WorkspaceID } from "@/control-plane/schema"
+import type { WorkspaceV2 } from "@opencode-ai/core/workspace"
 import { InstanceRef, WorkspaceRef } from "./instance-ref"
 import { attachWith } from "./run-service"
 import { Instance, type InstanceContext } from "@/kilocode/instance" // kilocode_change
@@ -13,7 +13,7 @@ export interface Shape {
 }
 
 // kilocode_change start - preserve legacy Kilo contexts across Promise callbacks
-function restore<R>(instance: InstanceContext | undefined, workspace: WorkspaceID | undefined, fn: () => R): R {
+function restore<R>(instance: InstanceContext | undefined, workspace: WorkspaceV2.ID | undefined, fn: () => R): R {
   if (instance && workspace !== undefined) {
     return WorkspaceContext.restore(workspace, () => Instance.restore(instance, fn))
   }
@@ -34,7 +34,8 @@ function captureSync() {
 export const bind = <Args extends readonly unknown[], Result>(fn: (...args: Args) => Result) => {
   const captured = captureSync()
   return (...args: Args) =>
-    restore(captured.instance, captured.workspace, () => // kilocode_change
+    // kilocode_change start
+    restore(captured.instance, captured.workspace, () =>
       Effect.runSync(
         attachWith(
           Effect.sync(() => fn(...args)),
@@ -42,6 +43,7 @@ export const bind = <Args extends readonly unknown[], Result>(fn: (...args: Args
         ),
       ),
     )
+  // kilocode_change end
 }
 
 /**

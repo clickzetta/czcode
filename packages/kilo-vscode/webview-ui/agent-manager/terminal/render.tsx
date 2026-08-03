@@ -7,10 +7,17 @@
  */
 
 import { For, Show } from "solid-js"
-import type { JSX } from "solid-js"
+import type { Accessor, JSX } from "solid-js"
 import { SortableTerminalTab } from "./SortableTerminalTab"
 import { TerminalTab } from "./TerminalTab"
 import type { TerminalStateControls } from "./state"
+
+/** Serial of the latest focus request addressed to `id`, or 0. Read
+ *  inside JSX so the effect re-runs when a request lands. */
+function focusSerial(state: TerminalStateControls, id: string): number {
+  const request = state.focusRequest()
+  return request?.id === id ? request.serial : 0
+}
 
 export interface TerminalTabRenderDeps {
   id: string
@@ -22,6 +29,11 @@ export interface TerminalTabRenderDeps {
   onSelect: (id: string) => void
   onMiddleClick: (id: string, e: MouseEvent) => void
   onClose: (id: string) => void
+  onCloseOthers: (id: string) => void
+  role?: "tab"
+  selected?: boolean
+  tabIndex?: number
+  onKeyDown?: JSX.EventHandlerUnion<HTMLDivElement, KeyboardEvent>
 }
 
 /** Render the terminal entry inside the agent-manager tab bar `<For>`. */
@@ -29,20 +41,28 @@ export function renderTerminalTab(deps: TerminalTabRenderDeps): JSX.Element {
   const term = deps.terms.lookup().get(deps.id)
   if (!term) return null
   const isActive = () => deps.terms.activeId() === deps.id
+  // Label and tooltip read through `terms.title` so OSC title changes
+  // (shell/program escape codes) rename the tab live.
   return (
     <SortableTerminalTab
       id={deps.id}
-      label={term.title}
-      tooltip={term.title}
+      label={deps.terms.title(deps.id) ?? term.title}
+      tooltip={deps.terms.title(deps.id) ?? term.title}
+      status={deps.terms.scriptStatus(deps.id)}
       keybind={isActive() ? "" : deps.keybind()}
       closeKeybind={deps.closeKeybind()}
       active={isActive()}
+      role={deps.role}
+      selected={deps.selected}
+      tabIndex={deps.tabIndex}
+      onKeyDown={deps.onKeyDown}
       onSelect={() => deps.onSelect(deps.id)}
       onMiddleClick={(e: MouseEvent) => deps.onMiddleClick(deps.id, e)}
       onClose={(e: MouseEvent) => {
         e.stopPropagation()
         deps.onClose(deps.id)
       }}
+      onCloseOthers={() => deps.onCloseOthers(deps.id)}
     />
   )
 }
@@ -84,13 +104,64 @@ export function renderTerminalLayer(props: { state: TerminalStateControls }): JS
           {(term) => {
             const visible = () => slotVisible(term.id, term.contextKey)
             return (
-              <div class={`am-terminal-slot ${visible() ? "am-terminal-slot-visible" : ""}`}>
-                <TerminalTab terminalId={term.id} wsUrl={term.wsUrl} active={visible()} font={term.font} />
+              <div class={`am-terminal-slot ${visible() ? "am-terminal-slot-visible" : ""}`} inert={!visible()}>
+                <TerminalTab
+                  terminalId={term.id}
+                  wsUrl={term.wsUrl}
+                  active={visible()}
+                  focusSerial={focusSerial(props.state, term.id)}
+                  font={term.font}
+                  onFocusChange={(focused) => props.state.setFocusedId(focused ? term.id : undefined)}
+                  onTitleChange={(title) => props.state.setTitle(term.id, title)}
+                />
               </div>
             )
           }}
         </For>
       </div>
     </Show>
+  )
+}
+
+/**
+ * Render the side-panel terminal layer inside the right-hand inspector.
+ *
+ * Same paint-tree invariant as `renderTerminalLayer`: every side
+ * terminal stays mounted, visibility is toggled via `opacity` /
+ * `pointer-events` / `inert` only. The layer is scoped to
+ * `contextKey` — side terminals from other contexts stay composed in
+ * the background and never refit — and within a context only the
+ * active strip tab's terminal is shown.
+ */
+export function renderSideTerminalLayer(props: {
+  state: TerminalStateControls
+  contextKey: Accessor<string>
+  visible: Accessor<boolean>
+}): JSX.Element {
+  return (
+    <div class={`am-side-terminal-layer ${props.visible() ? "am-side-terminal-layer-active" : ""}`}>
+      <For each={props.state.sides()}>
+        {(term) => {
+          const active = () =>
+            props.visible() &&
+            term.contextKey === props.contextKey() &&
+            props.state.sideActiveFor(term.contextKey) === term.id
+          return (
+            <div class={`am-terminal-slot ${active() ? "am-terminal-slot-visible" : ""}`} inert={!active()}>
+              <TerminalTab
+                terminalId={term.id}
+                wsUrl={term.wsUrl}
+                active={active()}
+                focusSerial={focusSerial(props.state, term.id)}
+                font={term.font}
+                status={() => props.state.scriptStatus(term.id)}
+                onFocusChange={(focused) => props.state.setFocusedId(focused ? term.id : undefined)}
+                onTitleChange={(title) => props.state.setTitle(term.id, title)}
+              />
+            </div>
+          )
+        }}
+      </For>
+    </div>
   )
 }

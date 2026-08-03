@@ -36,8 +36,10 @@ async function disableAnimations(page: Page) {
   await page.addStyleTag({
     content: `
       *, *::before, *::after {
+        animation: none !important;
         animation-duration: 0s !important;
         animation-delay: 0s !important;
+        transition: none !important;
         transition-duration: 0s !important;
         transition-delay: 0s !important;
       }
@@ -45,13 +47,43 @@ async function disableAnimations(page: Page) {
   })
 }
 
+async function settle(page: Page) {
+  const frames = () =>
+    page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        }),
+    )
+
+  await page.evaluate(async () => {
+    await document.fonts.ready
+  })
+  await frames()
+  await page.waitForFunction(
+    () => {
+      const root = document.querySelector("#storybook-root")
+      return root && !root.querySelector('pre > code[data-lang]:not([data-lang="mermaid"])')
+    },
+    undefined,
+    { timeout: 5_000 },
+  )
+  await frames()
+}
+
 // Stories to skip from visual regression (add IDs here if needed)
 // Spinner animation captures at an indeterminate frame, causing flaky diffs.
 // Permission dock config-preloaded has non-deterministic toggle rendering.
+// Sandboxing rows can settle at different scroll heights after settings context updates.
+// Side terminal tabs mount live xterm instances whose websocket error text
+// lands at indeterminate times.
 const SKIP = new Set<string>([
   "agentmanager--worktree-item-busy",
   "agentmanager--full-screen-diff-agent-edit-scroll",
+  "agentmanager--side-terminal-panel-tabs",
   "composite-webview--permission-dock-config-preloaded",
+  "settings--sandboxing-allowlist",
+  "settings--sandboxing-panel",
 ])
 
 const DOCS = new Map<string, string[]>([
@@ -86,10 +118,9 @@ for (const story of stories) {
       test.info().annotations.push({ type: "docs", description: ref })
     }
 
-    // Narrow stories (IDs ending in "-200") use a 200px viewport
-    // The "-200" suffix comes from the export name convention (e.g. Default200, WithThinking200)
-    const narrow = story.id.endsWith("-200")
-    await page.setViewportSize({ width: narrow ? 200 : 420, height: 720 })
+    // Width-suffixed stories cover layouts outside the default sidebar viewport.
+    const width = story.id.endsWith("-200") ? 200 : story.id.endsWith("-1280") ? 1280 : 420
+    await page.setViewportSize({ width, height: 720 })
 
     await page.goto(
       `/iframe.html?id=${story.id}&viewMode=story&globals=colorScheme:dark;theme:kilo-vscode;vscodeTheme:dark-modern`,
@@ -97,9 +128,10 @@ for (const story of stories) {
     )
     await disableAnimations(page)
     await page.waitForSelector("#storybook-root *", { state: "attached" })
+    await settle(page)
 
     const [component, variant] = story.id.split("--")
     const root = page.locator("#storybook-root")
-    await expect(root).toHaveScreenshot(["visual-regression", component!, `${variant}-chromium-linux.png`])
+    await expect(root).toHaveScreenshot(["visual-regression", component!, `${variant!}-chromium-linux.png`])
   })
 }

@@ -8,24 +8,28 @@ import { Cause, Effect, Exit, Layer } from "effect"
 import { GlobTool } from "../../src/tool/glob"
 import { SessionID, MessageID } from "../../src/session/schema"
 import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
-import { Ripgrep } from "../../src/file/ripgrep"
-import { AppFileSystem } from "@opencode-ai/core/filesystem"
+import { Ripgrep } from "@opencode-ai/core/ripgrep"
+import { FSUtil } from "@opencode-ai/core/fs-util"
 import { Truncate } from "@/tool/truncate"
 import { Agent } from "../../src/agent/agent"
 import { TestInstance } from "../fixture/fixture"
 import { testEffect } from "../lib/effect"
-import { Reference } from "@/reference/reference"
+import { RuntimeFlags } from "@/effect/runtime-flags"
+import { Git } from "@/git"
+import { Filesystem } from "@/util/filesystem"
 
-const it = testEffect(
+const toolLayer = (flags: Partial<RuntimeFlags.Info> = {}) =>
   Layer.mergeAll(
     CrossSpawnSpawner.defaultLayer,
-    AppFileSystem.defaultLayer,
+    FSUtil.defaultLayer,
     Ripgrep.defaultLayer,
     Truncate.defaultLayer,
     Agent.defaultLayer,
-    Reference.defaultLayer,
-  ),
-)
+    Git.defaultLayer,
+  )
+
+const it = testEffect(toolLayer())
+const full = (p: string) => (process.platform === "win32" ? Filesystem.normalizePath(p) : p)
 
 const ctx = {
   sessionID: SessionID.make("ses_test"),
@@ -88,7 +92,6 @@ describe("tool.glob", () => {
       }
     }),
   )
-
   // kilocode_change start - absolute glob patterns outside the project
   unixInstance(
     "supports absolute glob patterns outside the project",

@@ -3,13 +3,12 @@
 // When upstream adds a new command to index.ts, add it here too.
 import { AcpCommand } from "../cli/cmd/acp"
 import { McpCommand } from "../cli/cmd/mcp"
-import { TuiThreadCommand } from "../cli/cmd/tui/thread"
-import { AttachCommand } from "../cli/cmd/tui/attach"
+import { TuiThreadCommand } from "../cli/cmd/tui"
+import { AttachCommand } from "../cli/cmd/attach"
 import { RunCommand } from "../cli/cmd/run"
 import { GenerateCommand } from "../cli/cmd/generate"
 import { DebugCommand } from "../cli/cmd/debug"
-import { ConsoleCommand } from "../cli/cmd/account"
-import { ProvidersCommand } from "../cli/cmd/providers" // kilocode_change — upstream renamed auth → providers
+import { ProvidersCommand } from "../cli/cmd/providers"
 import { AgentCommand } from "../cli/cmd/agent"
 import { UpgradeCommand } from "../cli/cmd/upgrade"
 import { UninstallCommand } from "../cli/cmd/uninstall"
@@ -31,6 +30,7 @@ import { RollCallCommand } from "./cli/cmd/roll-call"
 import { ProfileCommand } from "./cli/cmd/profile"
 import { DaemonCommand } from "./cli/cmd/daemon"
 import { KiloConsoleCommand } from "./cli/cmd/console"
+import { CloudCommand } from "./cli/cmd/cloud"
 import { HelpCommand } from "./help-command"
 import { InstallationBuildKind } from "@opencode-ai/core/installation/version"
 
@@ -56,8 +56,7 @@ export const commands = [
   RunCommand,
   GenerateCommand,
   DebugCommand,
-  ConsoleCommand,
-  ProvidersCommand, // kilocode_change — upstream renamed AuthCommand → ProvidersCommand
+  ProvidersCommand,
   AgentCommand,
   UpgradeCommand,
   UninstallCommand,
@@ -75,6 +74,7 @@ export const commands = [
   RemoteCommand,
   DaemonCommand,
   KiloConsoleCommand,
+  CloudCommand,
   DbCommand,
   ConfigCLICommand,
   ...dev,
