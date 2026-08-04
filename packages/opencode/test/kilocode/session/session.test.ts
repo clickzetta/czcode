@@ -1,137 +1,115 @@
-import { describe, expect, test } from "bun:test"
-import path from "path"
+import { describe, expect } from "bun:test"
 import { Session as SessionNs } from "@/session/session"
+import { Database } from "@opencode-ai/core/database/database"
+import { SessionProjector } from "@opencode-ai/core/session/projector"
+import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
+import { Deferred, Effect, Exit, Layer } from "effect"
+import { provideInstance, testInstanceStoreLayer, tmpdirScoped } from "../../fixture/fixture"
+import { testEffect } from "../../lib/effect"
+import { Storage } from "@/storage/storage"
+import { RuntimeFlags } from "@/effect/runtime-flags"
+import { BackgroundJob } from "@/background/job"
 import { EventV2Bridge } from "@/event-v2-bridge"
-import * as Log from "@opencode-ai/core/util/log"
-import { provide as withInstanceProvide } from "../../../src/kilocode/instance"
-import { AppRuntime } from "../../../src/effect/app-runtime"
-import { RuntimeFlags } from "../../../src/effect/runtime-flags"
-import { Effect } from "effect"
-import { tmpdir } from "../../fixture/fixture"
 import type { SessionID } from "../../../src/session/schema"
 
-const projectRoot = path.join(__dirname, "../../..")
-void Log.init({ print: false })
+const it = testEffect(
+  Layer.mergeAll(
+    SessionNs.layer.pipe(
+      Layer.provide(Storage.defaultLayer),
+      Layer.provide(Database.defaultLayer),
+      Layer.provideMerge(EventV2Bridge.defaultLayer),
+      Layer.provide(SessionProjector.defaultLayer),
+      Layer.provide(RuntimeFlags.layer({ experimentalWorkspaces: false })),
+      Layer.provide(BackgroundJob.defaultLayer),
+    ),
+    CrossSpawnSpawner.defaultLayer,
+    testInstanceStoreLayer,
+  ),
+)
 
-function create(input?: SessionNs.CreateInput) {
-  return AppRuntime.runPromise(SessionNs.Service.use((svc) => svc.create(input)))
-}
+const awaitDeferred = <T>(deferred: Deferred.Deferred<T>, message: string) =>
+  Effect.race(
+    Deferred.await(deferred),
+    Effect.sleep("2 seconds").pipe(Effect.flatMap(() => Effect.fail(new Error(message)))),
+  )
 
-function get(id: SessionID) {
-  return AppRuntime.runPromise(SessionNs.Service.use((svc) => svc.get(id)))
-}
-
-function remove(id: SessionID) {
-  return AppRuntime.runPromise(SessionNs.Service.use((svc) => svc.remove(id)))
-}
+const remove = (id: SessionID) => SessionNs.use.remove(id)
 
 describe("session.created event", () => {
-  test("should emit session.created event when session is created", async () => {
-    await withInstanceProvide({
-      directory: projectRoot,
-      fn: async () => {
-        let eventReceived = false
-        let receivedInfo: SessionNs.Info | undefined
+  it.instance("should emit session.created event when session is created", () =>
+    Effect.gen(function* () {
+      const session = yield* SessionNs.Service
+      const events = yield* EventV2Bridge.Service
+      const received = yield* Deferred.make<SessionNs.Info>()
 
-        const title = `created-event-${Date.now()}`
-        const unsub = await AppRuntime.runPromise(
-          EventV2Bridge.Service.use((events) =>
-            events.listen((event) => {
-              if (event.type !== SessionNs.Event.Created.type) return Effect.void
-              const info = (event.data as typeof SessionNs.Event.Created.data.Type).info as SessionNs.Info
-              if (info.title !== title) return Effect.void
-              eventReceived = true
-              receivedInfo = info
-              return Effect.void
-            }),
-          ),
-        )
-
-        const info = await create({ title })
-        await new Promise((resolve) => setTimeout(resolve, 100))
-        await AppRuntime.runPromise(unsub)
-
-        expect(eventReceived).toBe(true)
-        expect(receivedInfo).toBeDefined()
-        expect(receivedInfo?.id).toBe(info.id)
-        expect(receivedInfo?.projectID).toBe(info.projectID)
-        expect(receivedInfo?.directory).toBe(info.directory)
-        expect(receivedInfo?.path).toBe(info.path)
-        expect(receivedInfo?.title).toBe(info.title)
-
-        await remove(info.id)
-      },
-    })
-  })
-
-  test("session.created event should be emitted before session.updated", async () => {
-    const previous = process.env.KILO_EXPERIMENTAL_WORKSPACES
-    delete process.env.KILO_EXPERIMENTAL_WORKSPACES
-    try {
-      await withInstanceProvide({
-        directory: projectRoot,
-        fn: async () => {
-          const flags = AppRuntime.runSync(Effect.service(RuntimeFlags.Service))
-          const enabled = flags.experimentalWorkspaces
-          Object.assign(flags, { experimentalWorkspaces: false })
-          const events: string[] = []
-          const title = `event-order-${Date.now()}`
-
-          const unsub = await AppRuntime.runPromise(
-            EventV2Bridge.Service.use((source) =>
-              source.listen((event) => {
-                if (
-                  event.type === SessionNs.Event.Created.type &&
-                  (event.data as typeof SessionNs.Event.Created.data.Type).info.title === title
-                )
-                  events.push("created")
-                if (
-                  event.type === SessionNs.Event.Updated.type &&
-                  (event.data as typeof SessionNs.Event.Updated.data.Type).info.title === title
-                )
-                  events.push("updated")
-                return Effect.void
-              }),
-            ),
+      const unsub = yield* events.listen((event) => {
+        if (event.type === SessionNs.Event.Created.type)
+          Deferred.doneUnsafe(
+            received,
+            Effect.succeed((event.data as typeof SessionNs.Event.Created.data.Type).info as SessionNs.Info),
           )
-
-          const info = await create({ title })
-          await new Promise((resolve) => setTimeout(resolve, 100))
-          await AppRuntime.runPromise(unsub)
-
-          expect(events).toContain("created")
-          expect(events).toContain("updated")
-          expect(events.indexOf("created")).toBeLessThan(events.indexOf("updated"))
-
-          await remove(info.id)
-          Object.assign(flags, { experimentalWorkspaces: enabled })
-        },
+        return Effect.void
       })
-    } finally {
-      if (previous === undefined) delete process.env.KILO_EXPERIMENTAL_WORKSPACES
-      else process.env.KILO_EXPERIMENTAL_WORKSPACES = previous
-    }
-  })
+      yield* Effect.addFinalizer(() => unsub)
+
+      const info = yield* session.create({})
+      const receivedInfo = yield* awaitDeferred(received, "timed out waiting for session.created")
+
+      expect(receivedInfo.id).toBe(info.id)
+      expect(receivedInfo.projectID).toBe(info.projectID)
+      expect(receivedInfo.directory).toBe(info.directory)
+      expect(receivedInfo.path).toBe(info.path)
+      expect(receivedInfo.title).toBe(info.title)
+
+      yield* session.remove(info.id)
+    }),
+  )
+
+  it.instance("session.created event should be emitted before session.updated", () =>
+    Effect.gen(function* () {
+      const session = yield* SessionNs.Service
+      const source = yield* EventV2Bridge.Service
+      const events: string[] = []
+      const received = yield* Deferred.make<string[]>()
+      const push = (event: string) => {
+        events.push(event)
+        if (events.includes("created") && events.includes("updated")) {
+          Deferred.doneUnsafe(received, Effect.succeed(events))
+        }
+      }
+
+      const unsubscribe = yield* source.listen((event) => {
+        if (event.type === SessionNs.Event.Created.type) push("created")
+        if (event.type === SessionNs.Event.Updated.type) push("updated")
+        return Effect.void
+      })
+      yield* Effect.addFinalizer(() => unsubscribe)
+
+      const info = yield* session.create({})
+      yield* session.setTitle({ sessionID: info.id, title: "updated" })
+      const receivedEvents = yield* awaitDeferred(received, "timed out waiting for session created/updated events")
+
+      expect(receivedEvents).toContain("created")
+      expect(receivedEvents).toContain("updated")
+      expect(receivedEvents.indexOf("created")).toBeLessThan(receivedEvents.indexOf("updated"))
+
+      yield* session.remove(info.id)
+    }),
+  )
 })
 
 describe("Session", () => {
-  test("remove works without an instance", async () => {
-    await using tmp = await tmpdir({ git: true })
+  it.live("remove works without an instance", () =>
+    Effect.gen(function* () {
+      const session = yield* SessionNs.Service
+      const dir = yield* tmpdirScoped({ git: true })
+      const info = yield* provideInstance(dir)(session.create({ title: "remove-without-instance" }))
 
-    const info = await withInstanceProvide({
-      directory: tmp.path,
-      fn: () => create({ title: "remove-without-instance" }),
-    })
+      const removeExit = yield* remove(info.id).pipe(Effect.exit)
+      expect(Exit.isSuccess(removeExit)).toBe(true)
 
-    await expect(async () => {
-      await remove(info.id)
-    }).not.toThrow()
-
-    let missing = false
-    await get(info.id).catch(() => {
-      missing = true
-    })
-
-    expect(missing).toBe(true)
-  })
+      const getExit = yield* session.get(info.id).pipe(Effect.exit)
+      expect(Exit.isFailure(getExit)).toBe(true)
+    }),
+  )
 })

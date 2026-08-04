@@ -34,14 +34,6 @@ const testAllow: Record<string, { count: number; reason: string }> = {
   "kilocode/config-validation.test.ts": { count: 2, reason: "existing runtime integration test" },
   "kilocode/cli-shutdown.test.ts": { count: 1, reason: "mocked runtime boundary for shutdown unit tests" },
   "kilocode/plan-followup.test.ts": { count: 3, reason: "existing runtime integration test" },
-  "kilocode/session-compaction-chunks.test.ts": {
-    count: 2,
-    reason: "disk-backed instance integration test cleanup",
-  },
-  "kilocode/session-fork-remap.test.ts": {
-    count: 2,
-    reason: "disk-backed instance integration test cleanup",
-  },
   "kilocode/kilo-sessions.test.ts": {
     count: 29,
     reason:
@@ -54,7 +46,6 @@ const testAllow: Record<string, { count: number; reason: string }> = {
       "real requests through that same runtime. Scoped layers cannot express this — " +
       "the global-runtime coupling is exactly what is under test.",
   },
-  "kilocode/session/platform-attribution.test.ts": { count: 2, reason: "existing runtime integration test" },
   "kilocode/session-prompt-queue.test.ts": { count: 6, reason: "prompt queue legacy instance bridge regression" },
   "kilocode/session-prompt-steering.test.ts": {
     count: 2,
