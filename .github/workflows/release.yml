@@ -96,6 +96,17 @@ jobs:
             @opentui/core@$(node -p "require('./packages/opencode/package.json').dependencies['@opentui/core']") \
             @parcel/watcher@$(node -p "require('./packages/opencode/package.json').dependencies['@parcel/watcher']")
 
+      # czcode_change start - install Zig to compile the bundled Bubblewrap helper for Linux CLI artifacts (upstream v7.4.18)
+      - name: Install Zig
+        run: |
+          curl --fail --location --retry 3 \
+            https://ziglang.org/download/0.14.0/zig-linux-x86_64-0.14.0.tar.xz \
+            --output "$RUNNER_TEMP/zig.tar.xz"
+          echo "473ec26806133cf4d1918caf1a410f8403a13d979726a9045b421b685031a982  $RUNNER_TEMP/zig.tar.xz" | sha256sum --check --status
+          tar -xJf "$RUNNER_TEMP/zig.tar.xz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/zig-linux-x86_64-0.14.0" >> "$GITHUB_PATH"
+      # czcode_change end
+
       - name: Build all platform binaries
         run: ~/.bun/bin/bun run packages/opencode/script/build.ts --skip-install
         env:
