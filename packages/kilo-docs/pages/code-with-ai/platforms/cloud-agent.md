@@ -36,6 +36,16 @@ Before using Cloud Agents:
 
 Your work is always pushed to GitHub, ensuring nothing is lost.
 
+## Starting Tasks from the CLI
+
+Use the `kilo cloud` command to run Cloud Agent tasks without opening the browser:
+
+```bash
+kilo cloud start --prompt "Fix the flaky login test" --repo Kilo-Org/kilocode
+```
+
+`kilo cloud` can start tasks, send follow-up prompts, and check task status and results. Repository, branch, model, mode, and organization are inferred from your local checkout and CLI defaults unless you pass the matching flags. Add `--stream` to `kilo cloud start` to print task events as JSONL until the task completes. See the [CLI reference](/docs/code-with-ai/platforms/cli-reference#kilo-cloud) for all commands and options.
+
 ## How Cloud Agents Work
 
 - Each user receives an **isolated Linux container** with common dev tools preinstalled (Node.js, git, gh CLI, glab CLI, etc.).
@@ -96,7 +106,7 @@ You can customize each Cloud Agent session by also defining env vars and startup
 
 ## Skills
 
-Cloud Agents support project-level [skills](/docs/code-with-ai/platforms/cli#skills) stored in your repository. When your repo is cloned, any skills in `.kilocode/skills/` are automatically available.
+Cloud Agents support project-level [skills](/docs/code-with-ai/platforms/cli#skills) stored in your repository. When your repo is cloned, any skills in `.kilocode/skills/` are automatically available. Skill folders are uploaded as `.zip` archives, with up to 40 companion files per skill.
 
 {% callout type="note" %}
 Global skills (`~/.kilocode/skills/`) are not available in Cloud Agents since there is no persistent user home directory.
@@ -147,6 +157,12 @@ Triggers allow you to initiate cloud agent sessions automatically, either via HT
 Triggers are currently in beta and subject to change.
 {% /callout %}
 
+Webhook triggers and scheduled triggers use the same trigger concepts across Cloud
+Agent and KiloClaw, but target different agents. Use Cloud Agent triggers when an
+HTTP event or schedule should start a Cloud Agent session against a repository.
+Use KiloClaw triggers when the event should deliver a chat message to a KiloClaw
+instance.
+
 ### Accessing Triggers
 
 Triggers are accessible from the main sidebar under **Webhooks / Triggers** and link to [https://app.kilo.ai/cloud/triggers](https://app.kilo.ai/cloud/triggers) for personal accounts. Organization-level trigger configurations are available through your organization's sidebar.
@@ -185,6 +201,15 @@ Additional limits:
 - **In-flight cap**: at most **20 requests per trigger** can be in `captured` or `inprogress` at once (returns `429`)
 
 The trigger endpoint will return rate limit responses when the number of queued or processing requests exceeds system capacity.
+
+### Request History
+
+Open a trigger's request history to inspect recent invocations. History entries
+show the source (webhook or scheduled), status such as captured, in progress,
+success, or failed, request metadata, payload details when available, and links
+or sharing actions for the resulting session. Use this view to debug webhook
+payloads, scheduled runs, and organization handoff without changing the trigger
+configuration.
 
 ### Prompt Template Variables
 

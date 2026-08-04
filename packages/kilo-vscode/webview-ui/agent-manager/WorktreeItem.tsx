@@ -2,7 +2,7 @@
  * Sidebar worktree item with inline delete confirmation, HoverCard, rename, and stats.
  * Extracted from AgentManagerApp for reuse and visual-regression testing via Storybook.
  */
-import { Component, For, Show, createSignal } from "solid-js"
+import { Component, For, Match, Show, Switch, createSignal } from "solid-js"
 import { Icon } from "@kilocode/kilo-ui/icon"
 import { IconButton } from "@kilocode/kilo-ui/icon-button"
 import { Spinner } from "@kilocode/kilo-ui/spinner"
@@ -21,6 +21,8 @@ const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigat
 
 interface WorktreeItemProps {
   worktree: WorktreeState
+  /** Stable composite ID used by multi-project sidebar bodies. */
+  sidebarId?: string
   /** Display label (resolved from label, first session title, or branch). */
   label: string
   /** Branch name shown as subtitle when it differs from the label. */
@@ -84,15 +86,41 @@ const MAX_SHORTCUT = 9
 const hasStats = (s: WorktreeGitStats | undefined): s is WorktreeGitStats =>
   !!s && (s.files > 0 || s.additions > 0 || s.deletions > 0 || s.ahead > 0 || s.behind > 0)
 
-/** Returns the accent color for a PR badge based on state priority. */
+/**
+ * Accent color for a PR badge, derived from the PR's lifecycle state
+ * (open/draft/merged/closed). The one exception is an open PR with checks still
+ * running, which uses amber and pulses its background (see prChecksRunning) — a
+ * transient, unambiguous signal since no lifecycle state uses amber. Terminal CI
+ * and review results are conveyed by a separate status icon (see prBadgeIndicator)
+ * so a failing check is not mistaken for a closed PR.
+ */
 export function prAccentColor(pr: PRStatus): string {
   if (pr.state === "draft") return "var(--text-weaker)"
   if (pr.state === "merged") return "#a78bfa"
   if (pr.state === "closed") return "#f87171"
-  if (pr.checks.status === "failure") return "#ef4444"
-  if (pr.review === "changes_requested") return "#fbbf24"
   if (pr.checks.status === "pending") return "#fbbf24"
   return "#34d399"
+}
+
+/** True while an open PR's checks are still running — drives the pulsing amber badge. */
+export function prChecksRunning(pr: PRStatus): boolean {
+  return pr.state === "open" && pr.checks.status === "pending"
+}
+
+export type PRBadgeIndicator = "failure" | "changes" | "approved" | "none"
+
+/**
+ * Terminal CI/review status shown as an icon overlaid on the PR badge, independent
+ * of the badge's state-based accent color. Running checks are not represented here —
+ * they are shown by the pulsing amber background instead. Terminal PRs (merged/closed)
+ * show no indicator since their checks are no longer actionable.
+ */
+export function prBadgeIndicator(pr: PRStatus): PRBadgeIndicator {
+  if (pr.state === "merged" || pr.state === "closed") return "none"
+  if (pr.checks.status === "failure") return "failure"
+  if (pr.review === "changes_requested") return "changes"
+  if (pr.review === "approved") return "approved"
+  return "none"
 }
 
 function prStateLabel(state: PRStatus["state"]): string {
@@ -141,6 +169,13 @@ export const WorktreeItem: Component<WorktreeItemProps> = (props) => {
     props.onOpenPR?.()
   }
 
+  /** Worktree directory basename shown in the hover card (e.g. "decorous-taker"). */
+  const name = () => {
+    const p = props.worktree.path.replace(/[\\/]+$/, "")
+    const i = Math.max(p.lastIndexOf("/"), p.lastIndexOf("\\"))
+    return i >= 0 ? p.slice(i + 1) : p
+  }
+
   return (
     <>
       <Show when={props.groupStart}>
@@ -151,8 +186,9 @@ export const WorktreeItem: Component<WorktreeItemProps> = (props) => {
       </Show>
       <ContextMenu>
         <HoverCard
-          openDelay={100}
-          closeDelay={100}
+          class="am-worktree-hover-card"
+          openDelay={50}
+          closeDelay={50}
           placement="right-start"
           gutter={8}
           open={hovered() && !overClose() && !props.pendingDelete}
@@ -167,7 +203,7 @@ export const WorktreeItem: Component<WorktreeItemProps> = (props) => {
                   "am-wt-grouped": props.grouped,
                   "am-wt-group-end": props.groupEnd,
                 }}
-                data-sidebar-id={props.worktree.id}
+                data-sidebar-id={props.sidebarId ?? props.worktree.id}
                 onClick={() => props.onClick()}
               >
                 <div class="am-wt-icon">
@@ -314,14 +350,30 @@ export const WorktreeItem: Component<WorktreeItemProps> = (props) => {
                     >
                       {(pr) => {
                         const accent = () => prAccentColor(pr())
+                        const indicator = () => prBadgeIndicator(pr())
                         return (
                           <span
                             class="am-pr-badge"
                             style={{ "--pr-accent": accent() }}
-                            data-pending={pr().state === "open" && pr().checks.status === "pending" ? "" : undefined}
+                            data-pending={prChecksRunning(pr()) ? "" : undefined}
                             onClick={handleOpenPR}
                           >
-                            <Icon name={pr().review === "approved" ? "check-small" : "branch"} size="small" />
+                            <Switch fallback={<Icon name="branch" size="small" />}>
+                              <Match when={indicator() === "failure"}>
+                                <Icon name="circle-x" size="small" class="am-pr-badge-status" data-status="failure" />
+                              </Match>
+                              <Match when={indicator() === "changes"}>
+                                <Icon name="warning" size="small" class="am-pr-badge-status" data-status="changes" />
+                              </Match>
+                              <Match when={indicator() === "approved"}>
+                                <Icon
+                                  name="circle-check"
+                                  size="small"
+                                  class="am-pr-badge-status"
+                                  data-status="approved"
+                                />
+                              </Match>
+                            </Switch>
                             <span class="am-pr-badge-number">#{pr().number}</span>
                           </span>
                         )
@@ -343,6 +395,11 @@ export const WorktreeItem: Component<WorktreeItemProps> = (props) => {
               <Show when={props.navHint}>
                 <span class="am-hover-card-keybind">{props.navHint}</span>
               </Show>
+            </div>
+            <div class="am-hover-card-divider" />
+            <div class="am-hover-card-row">
+              <span class="am-hover-card-row-label">{t("agentManager.hoverCard.worktree")}</span>
+              <span class="am-hover-card-row-value">{name()}</span>
             </div>
             <Show when={props.worktree.parentBranch}>
               <div class="am-hover-card-divider" />

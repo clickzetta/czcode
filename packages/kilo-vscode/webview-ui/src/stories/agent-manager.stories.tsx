@@ -5,21 +5,34 @@
  */
 
 import type { Meta, StoryObj } from "storybook-solidjs-vite"
-import { StoryProviders } from "./StoryProviders"
+import { StoryProviders, defaultMockData, mockSessionValue, t } from "./StoryProviders"
 import { FileTree } from "../../diff-viewer/FileTree"
 import { DiffPanel } from "../../agent-manager/DiffPanel"
 import { FullScreenDiffView } from "../../diff-viewer/FullScreenDiffView"
 import { WorktreeItem } from "../../agent-manager/WorktreeItem"
+import { ChatView } from "../components/chat/ChatView"
+import { registerVscodeToolOverrides } from "../components/chat/VscodeToolOverrides"
+import { SessionContext } from "../context/session"
+import { ServerContext } from "../context/server"
+import { WorktreeModeProvider } from "../context/worktree-mode"
+import { SidebarSearchMenu } from "../../agent-manager/SidebarSearchMenu"
+import { SidebarToggleButton } from "../../agent-manager/SidebarToggleButton"
+import { SideTerminalPanel, createTerminalState } from "../../agent-manager/terminal"
+import { LOCAL } from "../../agent-manager/navigate"
+import type { SidebarSearchItem } from "../../agent-manager/sidebar-search"
 import { Button } from "@kilocode/kilo-ui/button"
 import { IconButton } from "@kilocode/kilo-ui/icon-button"
 import { Icon } from "@kilocode/kilo-ui/icon"
 import { TooltipKeybind } from "@kilocode/kilo-ui/tooltip"
 import { ContextMenu } from "@kilocode/kilo-ui/context-menu"
-import { createSignal, type JSX } from "solid-js"
+import { ThinkingSelectorBase } from "../components/shared/ThinkingSelector"
+import { createSignal, onCleanup, onMount, type JSX } from "solid-js"
 import type { WorktreeFileDiff, WorktreeState, WorktreeGitStats, PRStatus } from "../types/messages"
 import type { ReviewComment } from "../../diff-viewer/review-comments"
 import "../../agent-manager/agent-manager.css"
 import "../../agent-manager/agent-manager-review.css"
+
+registerVscodeToolOverrides()
 
 // ---------------------------------------------------------------------------
 // Shared mock data
@@ -116,6 +129,139 @@ const meta: Meta = {
 }
 export default meta
 type Story = StoryObj
+
+// ---------------------------------------------------------------------------
+// Wide chat layout
+// ---------------------------------------------------------------------------
+
+const chatSessionID = "story-agent-manager-chat"
+const chatUserID = "story-agent-manager-user"
+const chatAssistantID = "story-agent-manager-assistant"
+const chatTime = 1_718_000_000_000
+const chatDiff = {
+  file: "webview-ui/src/styles/chat-layout.css",
+  status: "modified" as const,
+  additions: 12,
+  deletions: 4,
+  before: ".chat-view {\n  display: flex;\n}\n",
+  after: ".chat-view {\n  display: flex;\n  container: chat / inline-size;\n}\n",
+}
+const chatMessages = [
+  {
+    id: chatUserID,
+    sessionID: chatSessionID,
+    role: "user",
+    createdAt: new Date(chatTime).toISOString(),
+    time: { created: chatTime },
+    summary: { diffs: [chatDiff] },
+  },
+  {
+    id: chatAssistantID,
+    sessionID: chatSessionID,
+    role: "assistant",
+    parentID: chatUserID,
+    createdAt: new Date(chatTime + 1000).toISOString(),
+    time: { created: chatTime + 1000, completed: chatTime + 5000 },
+    modelID: "anthropic/claude-sonnet-4-6",
+    providerID: "kilo",
+    mode: "default",
+    agent: "code",
+    path: { cwd: "/project", root: "/project" },
+  },
+]
+const chatParts = {
+  [chatUserID]: [
+    {
+      id: "story-agent-manager-user-text",
+      sessionID: chatSessionID,
+      messageID: chatUserID,
+      type: "text",
+      text: "Make the full-screen Agent Manager conversation easier to scan without squeezing tool output or diffs.",
+    },
+  ],
+  [chatAssistantID]: [
+    {
+      id: "story-agent-manager-assistant-text",
+      sessionID: chatSessionID,
+      messageID: chatAssistantID,
+      type: "text",
+      text: "The transcript now follows a centered 78 character reading lane. Long explanations share one consistent left edge, so the eye can move between turns without crossing the entire editor.\n\nTool output and the composer use the same lane, keeping every conversation element aligned.",
+    },
+    {
+      id: "story-agent-manager-bash",
+      sessionID: chatSessionID,
+      messageID: chatAssistantID,
+      type: "tool",
+      callID: "story-agent-manager-bash-call",
+      tool: "bash",
+      state: {
+        status: "completed",
+        input: { command: "bun run test:unit", description: "Run focused Agent Manager tests" },
+        output: "18 tests passed\n0 tests failed",
+        title: "Run focused Agent Manager tests",
+        metadata: {},
+        time: { start: chatTime + 2000, end: chatTime + 4000 },
+      },
+    },
+  ],
+}
+const chatData = {
+  ...defaultMockData,
+  message: { [chatSessionID]: chatMessages },
+  part: chatParts,
+}
+const chatServer = {
+  connectionState: () => "connected" as const,
+  serverInfo: () => undefined,
+  extensionVersion: () => "1.0.0",
+  errorMessage: () => undefined,
+  errorDetails: () => undefined,
+  isConnected: () => true,
+  profileData: () => null,
+  deviceAuth: () => ({ status: "idle" as const }),
+  startLogin: () => undefined,
+  goToLogin: () => undefined,
+  vscodeLanguage: () => "en",
+  languageOverride: () => undefined,
+  workspaceDirectory: () => "/project",
+  gitInstalled: () => true,
+}
+
+function renderChat() {
+  const session = {
+    ...mockSessionValue({ id: chatSessionID, status: "idle", closeReason: "completed" }),
+    messages: () => chatMessages,
+    visibleMessages: () => chatMessages,
+    userMessages: () => chatMessages.filter((message) => message.role === "user"),
+    getParts: (id: string) => chatParts[id as keyof typeof chatParts] ?? [],
+    worktreeStats: () => ({ files: 3, additions: 32, deletions: 8 }),
+  }
+  return (
+    <StoryProviders data={chatData} sessionID={chatSessionID} status="idle" noPadding>
+      <ServerContext.Provider value={chatServer}>
+        <SessionContext.Provider value={session as any}>
+          <WorktreeModeProvider>
+            <div class="am-chat-wrapper" style={{ height: "100vh" }}>
+              <ChatView onForkSession={() => undefined} />
+            </div>
+          </WorktreeModeProvider>
+        </SessionContext.Provider>
+      </ServerContext.Provider>
+    </StoryProviders>
+  )
+}
+
+export const ReadableChat1280: Story = {
+  name: "Chat - readable wide editor",
+  parameters: { layout: "fullscreen" },
+  render: renderChat,
+}
+
+export const ReadableChat420: Story = {
+  name: "Chat - constrained editor",
+  parameters: { layout: "fullscreen" },
+  render: renderChat,
+}
 
 // ---------------------------------------------------------------------------
 // FileTree
@@ -683,18 +829,9 @@ const MockReviewTab = (props: { active?: boolean }) => (
   </div>
 )
 
-const MockTabsSearchButton = () => (
-  <button class="am-tabs-menu-trigger" type="button" aria-label="Search open tabs">
-    <svg class="am-tabs-search-icon" viewBox="0 0 16 16" aria-hidden="true">
-      <circle cx="6.8" cy="6.8" r="4.3" />
-      <path d="M10.2 10.2L13.5 13.5" />
-    </svg>
-  </button>
-)
-
 const MockTabLeading = () => (
   <div class="am-tab-leading">
-    <MockTabsSearchButton />
+    <SidebarToggleButton collapsed={false} onClick={() => {}} />
   </div>
 )
 
@@ -793,4 +930,411 @@ export const TabBarSingleTab: Story = {
       </div>
     </StoryProviders>
   ),
+}
+
+// Side terminal panel inside the real inspector host chain, empty state —
+// no live PTY, so the start affordance renders. The tab strip header keeps
+// the .am-diff-header height so the a11y/screenshot baseline also guards
+// the alignment against the diff panel chrome.
+export const SideTerminalPanelEmpty: Story = {
+  name: "Side terminal panel — empty",
+  render: () => {
+    const state = createTerminalState(() => LOCAL)
+    return (
+      <StoryProviders noPadding>
+        <div class="am-detail-stack" style={{ height: "420px" }}>
+          <div class="am-detail-content am-detail-split">
+            <div class="am-main-pane" style={{ padding: "24px", color: "var(--text-weak)" }}>
+              Agent session stays visible beside the terminal.
+            </div>
+            <div class="am-diff-resize" style={{ width: "320px" }}>
+              <div class="am-diff-panel-wrapper">
+                <SideTerminalPanel
+                  state={state}
+                  contextKey={() => LOCAL}
+                  visible={() => true}
+                  onSelect={() => undefined}
+                  onClose={() => undefined}
+                  onCloseOthers={() => undefined}
+                  onStart={() => undefined}
+                  onStop={() => undefined}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </StoryProviders>
+    )
+  },
+}
+
+// Tab strip with several side terminals: the active one shows the X close
+// button, the others reveal it on hover. Terminals point at a dead port —
+// xterm renders its connection-error notice inside the panel, which keeps
+// the story self-contained without a live PTY.
+export const SideTerminalPanelTabs: Story = {
+  name: "Side terminal panel — tabs",
+  render: () => {
+    const state = createTerminalState(() => LOCAL)
+    const font = { fontFamily: "monospace", fontSize: 12 }
+    state.add(null, { id: "terminal:one", title: "Terminal 1", wsUrl: "ws://127.0.0.1:1/a", font, placement: "side" })
+    state.add(null, { id: "terminal:two", title: "Terminal 2", wsUrl: "ws://127.0.0.1:1/b", font, placement: "side" })
+    state.add(null, { id: "terminal:three", title: "Terminal 3", wsUrl: "ws://127.0.0.1:1/c", font, placement: "side" })
+    state.setSideActive(LOCAL, "terminal:two")
+    state.setTitle("terminal:two", "npm run dev")
+    return (
+      <StoryProviders noPadding>
+        <div class="am-detail-stack" style={{ height: "420px" }}>
+          <div class="am-detail-content am-detail-split">
+            <div class="am-main-pane" style={{ padding: "24px", color: "var(--text-weak)" }}>
+              Agent session stays visible beside the terminal.
+            </div>
+            <div class="am-diff-resize" style={{ width: "360px" }}>
+              <div class="am-diff-panel-wrapper">
+                <SideTerminalPanel
+                  state={state}
+                  contextKey={() => LOCAL}
+                  visible={() => true}
+                  onSelect={(id) => state.setSideActive(LOCAL, id)}
+                  onClose={() => undefined}
+                  onCloseOthers={() => undefined}
+                  onStart={() => undefined}
+                  onStop={() => undefined}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </StoryProviders>
+    )
+  },
+}
+
+// ---------------------------------------------------------------------------
+// NewWorktreeDialog — inline selector popovers must escape the dialog scroll
+// containers. Regression: the reasoning-variant and mode pickers were clipped
+// by .am-nv-dialog-content (overflow-y: auto) and .am-prompt-input-container
+// (overflow: hidden) because the overflow escape hatch only covered the model
+// picker. This fixture reproduces the real clipping chain (same CSS classes +
+// the real inline ThinkingSelectorBase with portal={false}) so a screenshot
+// baseline catches any future regression. Rendered inline (no dialog portal)
+// because the visual-regression harness screenshots #storybook-root.
+// ---------------------------------------------------------------------------
+
+const VariantPickerOpener = () => {
+  let frame = 0
+  let attempts = 0
+  const open = () => {
+    if (document.querySelector("[data-component='popover-content']")) return
+    if (attempts++ >= 120) return
+    window.dispatchEvent(new CustomEvent("openVariantPicker"))
+    frame = requestAnimationFrame(open)
+  }
+  onMount(() => {
+    frame = requestAnimationFrame(open)
+  })
+  onCleanup(() => cancelAnimationFrame(frame))
+  return null
+}
+
+export const NewWorktreeVariantDropdown1280: Story = {
+  name: "NewWorktreeDialog — variant dropdown open",
+  parameters: { layout: "fullscreen" },
+  render: () => (
+    <StoryProviders noPadding>
+      {/* Filler pushes the prompt container to the bottom of the dialog content.
+          The variant popover opens upward from the trigger, extending above the
+          container's top edge. Without the overflow escape fix, .am-prompt-input-container
+          (overflow: hidden + position: relative) clips the top of the popover. */}
+      <div style={{ height: "100vh", display: "flex", "flex-direction": "column" }}>
+        <div class="am-nv-dialog">
+          <div class="am-nv-dialog-content">
+            <div style={{ height: "500px", "flex-shrink": 0 }} />
+            <div
+              class="prompt-input-container am-prompt-input-container"
+              style={{ position: "relative", "flex-shrink": 0 }}
+            >
+              <div class="prompt-input-hint">
+                <div class="prompt-input-hint-selectors">
+                  <ThinkingSelectorBase
+                    variants={["low", "medium", "high"]}
+                    value="low"
+                    onSelect={() => {}}
+                    portal={false}
+                    deferDismiss
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <VariantPickerOpener />
+    </StoryProviders>
+  ),
+}
+
+const searchSection = { id: "polish", name: "Polish", color: "Blue", order: 0, collapsed: false }
+const slackedSection = { id: "slacked", name: "SLACKED", color: "Yellow", order: 1, collapsed: false }
+const sidebarSearchItems: SidebarSearchItem[] = [
+  {
+    key: "session:session-build",
+    kind: "session",
+    group: "sessions",
+    title: "Build grouped worktree search",
+    meta: ["Polish", "Agent Manager search", "feat/sidebar-search"],
+    search: "Build grouped worktree search Agent Manager search feat/sidebar-search Polish",
+    sessionId: "session-build",
+    location: "worktree",
+    worktreeId: "wt-search",
+    updatedAt: new Date(Date.now() - 3 * 60_000).toISOString(),
+    state: "busy",
+    visible: true,
+    section: searchSection,
+  },
+  {
+    key: "session:session-local",
+    kind: "session",
+    group: "sessions",
+    title: "Investigate local indexing",
+    meta: ["local"],
+    search: "Investigate local indexing local",
+    sessionId: "session-local",
+    location: "local",
+    updatedAt: new Date(Date.now() - 8 * 60_000).toISOString(),
+    state: "idle",
+    visible: true,
+  },
+  {
+    key: "session:session-render",
+    kind: "session",
+    group: "sessions",
+    title: "Render images in diff viewer",
+    meta: ["SLACKED", "images diff viewer", "utopian-approval"],
+    search: "Render images in diff viewer SLACKED images diff viewer utopian-approval",
+    sessionId: "session-render",
+    location: "worktree",
+    worktreeId: "wt-render",
+    updatedAt: new Date(Date.now() - 60 * 60_000).toISOString(),
+    state: "idle",
+    visible: true,
+    section: slackedSection,
+  },
+  {
+    key: "local",
+    kind: "local",
+    group: "contexts",
+    title: "local",
+    meta: ["main"],
+    search: "local main",
+    updatedAt: new Date(Date.now() - 3 * 60_000).toISOString(),
+    state: "idle",
+    visible: true,
+    count: 2,
+  },
+  {
+    key: "worktree:wt-search",
+    kind: "worktree",
+    group: "contexts",
+    title: "Agent Manager search",
+    meta: ["Polish", "feat/sidebar-search"],
+    search: "Agent Manager search Polish feat/sidebar-search",
+    worktreeId: "wt-search",
+    updatedAt: new Date(Date.now() - 3 * 60_000).toISOString(),
+    state: "busy",
+    visible: true,
+    section: searchSection,
+    count: 2,
+  },
+]
+
+export const SidebarSearchOpen: Story = {
+  name: "Sidebar search — worktrees and sessions",
+  render: () => {
+    const [selected, setSelected] = createSignal("worktree:wt-search")
+    let prompt!: HTMLTextAreaElement
+    const refocus = () => requestAnimationFrame(() => prompt.focus())
+    onMount(() => {
+      window.addEventListener("focusPrompt", refocus)
+      onCleanup(() => window.removeEventListener("focusPrompt", refocus))
+    })
+    return (
+      <StoryProviders noPadding>
+        <div style={{ "min-height": "430px", padding: "16px", background: "var(--surface-base)" }}>
+          <div class="am-section-header">
+            <span class="am-section-label">WORKTREES</span>
+            <div class="am-section-actions">
+              <SidebarSearchMenu
+                items={() => sidebarSearchItems}
+                keybind="⌘F"
+                current={() => sidebarSearchItems.find((item) => item.key === selected())}
+                labels={{
+                  search: "Search worktrees and sessions",
+                  scope: "Searches the local workspace, local sessions, worktrees, and their sessions",
+                  contexts: "LOCAL & WORKTREES",
+                  sessions: "SESSIONS",
+                  waiting: "Wait",
+                  retry: "Retry",
+                }}
+                onSelect={(item) => setSelected(item.key)}
+                defaultOpen
+                portal={false}
+              />
+            </div>
+          </div>
+          <output class="sr-only" data-slot="sidebar-search-selection">
+            {selected()}
+          </output>
+          <textarea ref={prompt} class="sr-only" aria-label="Story prompt" />
+        </div>
+      </StoryProviders>
+    )
+  },
+}
+
+// ---------------------------------------------------------------------------
+// Multi-project sidebar
+// ---------------------------------------------------------------------------
+
+import { ProjectList } from "../../agent-manager/ProjectList"
+import type {
+  AgentManagerStateMessage,
+  AgentProjectSnapshot,
+  LocalGitStats,
+  ProjectSessionInfo,
+} from "../types/messages"
+
+const projectA: AgentProjectSnapshot = {
+  id: "prj-aaaa1111aaaa",
+  root: "/repos/kilocode",
+  label: "kilocode",
+  pinned: true,
+  active: true,
+  expanded: true,
+  initialized: true,
+  trusted: true,
+  missing: false,
+}
+const projectB: AgentProjectSnapshot = {
+  id: "prj-bbbb2222bbbb",
+  root: "/repos/kilo-gateway",
+  label: "kilo-gateway",
+  pinned: false,
+  active: false,
+  expanded: true,
+  initialized: true,
+  trusted: true,
+  missing: false,
+}
+
+const wt = (id: string, branch: string, label?: string): WorktreeState => ({
+  id,
+  branch,
+  path: `/repos/x/.kilo/worktrees/${id}`,
+  parentBranch: "main",
+  createdAt: "2026-07-20T10:00:00Z",
+  label,
+})
+
+const projectState = (
+  projectId: string,
+  worktrees: WorktreeState[],
+  sessions: { id: string; worktreeId: string | null }[],
+  sections: NonNullable<AgentManagerStateMessage["sections"]> = [],
+  baseBranch = "main",
+): AgentManagerStateMessage => ({
+  type: "agentManager.state",
+  projectId,
+  worktrees,
+  sessions: sessions.map((s) => ({ id: s.id, worktreeId: s.worktreeId, createdAt: "2026-07-20T10:00:00Z" })),
+  sections,
+  staleWorktreeIds: [],
+  isGitRepo: true,
+  defaultBaseBranch: baseBranch,
+  sessionsCollapsed: false,
+})
+
+const projectSession = (
+  id: string,
+  worktreeId: string | null,
+  title: string,
+  updatedAt: string,
+): ProjectSessionInfo => ({
+  id,
+  worktreeId,
+  title,
+  createdAt: "2026-07-19T09:00:00Z",
+  updatedAt,
+})
+
+const storyStats = (worktreeId: string, additions: number, deletions: number, ahead = 0): WorktreeGitStats => ({
+  worktreeId,
+  files: 3,
+  additions,
+  deletions,
+  ahead,
+  behind: 0,
+})
+
+const storyLocal = (branch: string, additions: number, deletions: number, ahead = 0, behind = 0): LocalGitStats => ({
+  branch,
+  files: 2,
+  additions,
+  deletions,
+  ahead,
+  behind,
+})
+
+export const MultiProjectSidebar: Story = {
+  name: "Project List — two expanded projects with restored controls",
+  render: () => {
+    return (
+      <StoryProviders noPadding>
+        <div style={{ display: "flex", "flex-direction": "column", "max-height": "720px", overflow: "auto" }}>
+          <ProjectList
+            projects={[projectA, projectB]}
+            states={{
+              [projectA.id]: projectState(
+                projectA.id,
+                [wt("wt-a1", "feature/project-list", "Project list UI"), wt("wt-a2", "fix/session-routing")],
+                [
+                  { id: "ses-a1", worktreeId: null },
+                  { id: "ses-a2", worktreeId: "wt-a1" },
+                ],
+              ),
+              [projectB.id]: projectState(
+                projectB.id,
+                [wt("wt-b1", "feat/gateway-routing", "Gateway routing")],
+                [{ id: "ses-b1", worktreeId: null }],
+                [{ id: "sec-b1", name: "In progress", color: null, order: 0, collapsed: false }],
+                "master",
+              ),
+            }}
+            stats={{
+              [projectA.id]: { "wt-a1": storyStats("wt-a1", 342, 87, 2), "wt-a2": storyStats("wt-a2", 18, 4) },
+              [projectB.id]: { "wt-b1": storyStats("wt-b1", 96, 12, 1) },
+            }}
+            local={{
+              [projectA.id]: storyLocal("main", 124, 33, 1),
+              [projectB.id]: storyLocal("master", 0, 0, 0, 2),
+            }}
+            prs={{ [projectA.id]: {}, [projectB.id]: {} }}
+            sessions={{
+              [projectA.id]: [
+                projectSession("ses-a1", null, "Refine project accordion layout", "2026-07-24T08:30:00Z"),
+                projectSession("ses-a2", "wt-a1", "Add per-project actions", "2026-07-23T16:10:00Z"),
+              ],
+              [projectB.id]: [projectSession("ses-b1", null, "Route stats per project", "2026-07-24T07:45:00Z")],
+            }}
+            selectedProject={projectA.id}
+            selection="local"
+            bindings={{ search: "⌘F", showShortcuts: "⌘⇧/", newWorktree: "⌘N", quickWorktree: "⌘⇧N" }}
+            t={t}
+            onSearchRef={() => {}}
+            onShortcuts={() => {}}
+          />
+        </div>
+      </StoryProviders>
+    )
+  },
 }

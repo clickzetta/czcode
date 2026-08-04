@@ -8,7 +8,7 @@ import { t } from "@/kilocode/plugins/czcode-i18n"
 import type { TuiPlugin, TuiPluginModule } from "@kilocode/plugin/tui"
 import type { Message, ToolPart } from "@kilocode/sdk/v2"
 import { DialogSelect } from "@tui/ui/dialog-select"
-import * as Clipboard from "@tui/util/clipboard"
+import * as Clipboard from "@tui/clipboard"
 
 const id = "internal:czcode-sql-history"
 
@@ -71,7 +71,7 @@ const tui: TuiPlugin = async (api) => {
               const idx = Number(option.value)
               const entry = entries[idx]
               if (entry) {
-                await Clipboard.copy(entry.sql)
+                await Clipboard.write(entry.sql)
                 api.ui.toast({ message: t("cmd.history.copied"), variant: "success", duration: 2000 })
               }
             }}

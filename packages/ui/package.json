@@ -6,6 +6,7 @@
   "exports": {
     "./package.json": "./package.json",
     "./*": "./src/components/*.tsx",
+    "./session-diff": "./src/components/session-diff.ts",
     "./i18n/*": "./src/i18n/*.ts",
     "./pierre": "./src/pierre/index.ts",
     "./pierre/*": "./src/pierre/*.ts",
@@ -21,14 +22,18 @@
     "./icons/file-type": "./src/components/file-icons/types.ts",
     "./icons/app": "./src/components/app-icons/types.ts",
     "./fonts/*": "./src/assets/fonts/*",
-    "./audio/*": "./src/assets/audio/*"
+    "./audio/*": "./src/assets/audio/*",
+    "./v2/*.css": "./src/v2/components/*.css",
+    "./v2/*": "./src/v2/components/*.tsx",
+    "./v2/styles/*": "./src/v2/styles/*"
   },
   "scripts": {
     "typecheck": "tsgo --noEmit",
-    "test": "bun test src",
-    "test:ci": "mkdir -p .artifacts/unit && bun test src --reporter=junit --reporter-outfile=.artifacts/unit/junit.xml",
+    "test": "bun test src --only-failures",
     "dev": "vite",
-    "generate:tailwind": "bun run script/tailwind.ts"
+    "generate:tailwind": "bun run script/tailwind.ts",
+    "generate:v2-oc2": "bun run script/build-oc2-v2-overrides.ts",
+    "test:ci": "mkdir -p .artifacts/unit && bun test src --reporter=junit --reporter-outfile=.artifacts/unit/junit.xml"
   },
   "devDependencies": {
     "@tailwindcss/vite": "catalog:",
@@ -41,7 +46,8 @@
     "typescript": "catalog:",
     "vite": "catalog:",
     "vite-plugin-icons-spritesheet": "3.0.1",
-    "vite-plugin-solid": "catalog:"
+    "vite-plugin-solid": "catalog:",
+    "happy-dom": "20.8.9"
   },
   "dependencies": {
     "@kobalte/core": "catalog:",
@@ -76,7 +82,8 @@
     "virtua": "catalog:",
     "@typescript/native-preview": "catalog:",
     "@opencode-ai/core": "workspace:*",
-    "@opencode-ai/shared": "workspace:*"
+    "@opencode-ai/shared": "workspace:*",
+    "@shikijs/stream": "catalog:"
   },
   "peerDependencies": {}
 }

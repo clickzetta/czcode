@@ -1,8 +1,10 @@
 package ai.kilocode.backend.cli
 
 import ai.kilocode.rpc.dto.ChatEventDto
+import ai.kilocode.rpc.dto.DiffFileDto
 import ai.kilocode.rpc.dto.MessageDto
 import ai.kilocode.rpc.dto.MessageErrorDto
+import ai.kilocode.rpc.dto.MessageSummaryDto
 import ai.kilocode.rpc.dto.MessageTimeDto
 import ai.kilocode.rpc.dto.PartDto
 import ai.kilocode.rpc.dto.PartTimeDto
@@ -15,6 +17,7 @@ import ai.kilocode.rpc.dto.SessionStatusDto
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -217,9 +220,57 @@ class ChatDtoSerializationTest {
     }
 
     @Test
+    fun `PartDto file fields are preserved in round-trip`() {
+        val part = PartDto(
+            id = "p1", sessionID = "s1", messageID = "m1",
+            type = "file", mime = "image/png", url = "file:///tmp/a.png", filename = "a.png",
+        )
+        val encoded = json.encodeToString(PartDto.serializer(), part)
+        assertTrue(encoded.contains(""""mime":"image/png""""))
+        assertTrue(encoded.contains(""""url":"file:///tmp/a.png""""))
+        assertTrue(encoded.contains(""""filename":"a.png""""))
+
+        val decoded = json.decodeFromString(PartDto.serializer(), encoded)
+        assertEquals("image/png", decoded.mime)
+        assertEquals("file:///tmp/a.png", decoded.url)
+        assertEquals("a.png", decoded.filename)
+    }
+
+    @Test
+    fun `MessageDto summary diffs are preserved in round-trip`() {
+        val msg = msg("msg_1").copy(
+            summary = MessageSummaryDto(
+                diffs = listOf(DiffFileDto("src/A.kt", 2, 1, "@@ patch", "modified")),
+            ),
+        )
+
+        val encoded = json.encodeToString(MessageDto.serializer(), msg)
+        assertTrue(encoded.contains(""""summary""""))
+        assertTrue(encoded.contains(""""diffs""""))
+
+        val decoded = json.decodeFromString(MessageDto.serializer(), encoded)
+        val diff = decoded.summary?.diffs?.single()
+        assertEquals("src/A.kt", diff?.file)
+        assertEquals("@@ patch", diff?.patch)
+        assertEquals("modified", diff?.status)
+    }
+
+    @Test
+    fun `MessageDto summary defaults to null`() {
+        val encoded = json.encodeToString(MessageDto.serializer(), msg("msg_1"))
+
+        val decoded = json.decodeFromString(MessageDto.serializer(), encoded)
+
+        assertNull(decoded.summary)
+    }
+
+    @Test
     fun `PromptDto variant is preserved in round-trip`() {
         val prompt = PromptDto(
-            parts = listOf(PromptPartDto("text", "hello")),
+            parts = listOf(
+                PromptPartDto("text", "hello"),
+                PromptPartDto(type = "file", mime = "image/png", url = "file:///tmp/a.png", filename = "a.png"),
+            ),
             providerID = "kilo",
             modelID = "gpt-5",
             agent = "code",
@@ -228,7 +279,12 @@ class ChatDtoSerializationTest {
         val encoded = json.encodeToString(PromptDto.serializer(), prompt)
 
         assertTrue(encoded.contains(""""variant":"medium""""))
-        assertEquals("medium", json.decodeFromString(PromptDto.serializer(), encoded).variant)
+        val decoded = json.decodeFromString(PromptDto.serializer(), encoded)
+        assertEquals("medium", decoded.variant)
+        assertEquals("file", decoded.parts[1].type)
+        assertEquals("image/png", decoded.parts[1].mime)
+        assertEquals("file:///tmp/a.png", decoded.parts[1].url)
+        assertEquals("a.png", decoded.parts[1].filename)
     }
 
     // ------ helpers ------

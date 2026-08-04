@@ -186,7 +186,10 @@ export namespace Telemetry {
     track(TelemetryEvent.AGENT_USED, { agent, sessionId })
   }
 
-  export function trackPlanFollowup(sessionId: string, choice: "new_session" | "continue" | "custom" | "dismissed") {
+  export function trackPlanFollowup(
+    sessionId: string,
+    choice: "new_session" | "continue" | "custom" | "dismissed" | "keep_refining",
+  ) {
     track(TelemetryEvent.PLAN_FOLLOWUP, { sessionId, choice })
   }
 
@@ -313,7 +316,11 @@ export namespace Telemetry {
   }
   // czcode_change end
 
-  export async function shutdown(): Promise<void> {
-    await Client.shutdown()
+  export function flushInBackground(delayMs?: number): void {
+    Client.flushInBackground(delayMs)
+  }
+
+  export async function shutdown(timeoutMs?: number): Promise<void> {
+    await Client.shutdown(timeoutMs)
   }
 }

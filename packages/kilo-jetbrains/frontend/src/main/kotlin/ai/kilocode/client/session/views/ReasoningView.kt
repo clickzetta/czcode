@@ -3,12 +3,18 @@
 package ai.kilocode.client.session.views
 
 import ai.kilocode.client.plugin.KiloBundle
+import ai.kilocode.client.session.SessionFileOpener
+import ai.kilocode.client.session.openSessionLink
 import ai.kilocode.client.session.model.Content
 import ai.kilocode.client.session.model.Reasoning
+import ai.kilocode.client.session.ui.popup.HeaderPopupBody
+import ai.kilocode.client.session.ui.popup.HeaderPopupRequest
 import ai.kilocode.client.session.ui.style.SessionEditorStyle
 import ai.kilocode.client.session.ui.selection.SessionSelection
 import ai.kilocode.client.session.ui.style.SessionUiStyle
+import ai.kilocode.client.session.views.base.PartHeader
 import ai.kilocode.client.session.views.base.SecondarySessionPartView
+import ai.kilocode.client.telemetry.Telemetry
 import ai.kilocode.client.ui.UiStyle
 import ai.kilocode.client.ui.md.MdView
 import ai.kilocode.client.ui.md.MdViewFactory
@@ -29,13 +35,14 @@ import javax.swing.SwingUtilities
 /** Renders reasoning as a secondary collapsible block. */
 class ReasoningView(
     reasoning: Reasoning,
+    private val openFile: SessionFileOpener = { _, _ -> },
     private val openUrl: (String) -> Unit = {},
     private val selection: SessionSelection? = null,
     private val parts: ReasoningParts = reasoningParts(selection),
 ) :
     SecondarySessionPartView(
         parts.header,
-        { parts.scroll(openUrl) },
+        { parts.scroll(openFile, openUrl) },
         expanded = reasoning.content.isNotBlank() && !reasoning.done,
     ) {
 
@@ -46,7 +53,7 @@ class ReasoningView(
         @RequiresEdt
         get() {
             val fresh = !parts.bodyCreated()
-            val view = parts.md(openUrl)
+            val view = parts.md(openFile, openUrl)
             if (!fresh) return view
             registerBody(view)
             view.set(source)
@@ -60,6 +67,7 @@ class ReasoningView(
     private var done = reasoning.done
     private var registered = false
     private var following = false
+    private var pinned = false
 
     private val arrow = JBLabel()
     private val body = TrackPanel().apply {
@@ -117,7 +125,9 @@ class ReasoningView(
     init {
         row.border = JBUI.Borders.empty(
             JBUI.scale(SessionUiStyle.View.Reasoning.HEADER_VERTICAL_PADDING),
-            JBUI.scale(SessionUiStyle.View.Layout.HORIZONTAL_PADDING),
+            SessionUiStyle.View.Header.left(),
+            JBUI.scale(SessionUiStyle.View.Reasoning.HEADER_VERTICAL_PADDING),
+            SessionUiStyle.View.Header.right(),
         )
         bindHeader(parts.title, parts.icon)
         applyStyle(style)
@@ -150,6 +160,7 @@ class ReasoningView(
         var changed = false
         val next = content.content.toString()
         val follow = tailVisible()
+        val finishing = !done && content.done
         if (done != content.done) {
             done = content.done
             changed = true
@@ -162,8 +173,28 @@ class ReasoningView(
             }
             changed = true
         }
+        if (finishing && !pinned) {
+            changed = collapse() || changed
+            changed = releaseBody() || changed
+        }
         changed = sync() || changed
         if (changed) refresh()
+    }
+
+    /** Detaches and disposes the markdown body so its editors are released when reasoning finishes. */
+    @RequiresEdt
+    private fun releaseBody(): Boolean {
+        if (!parts.bodyCreated()) return false
+        val detached = discardBody()
+        Disposer.dispose(parts.md(openFile, openUrl))
+        parts.reset()
+        registered = false
+        return detached
+    }
+
+    @RequiresEdt
+    override fun userToggled() {
+        pinned = true
     }
 
     @RequiresEdt
@@ -199,6 +230,15 @@ class ReasoningView(
     internal fun bodyScrollValue() = parts.scrollOrNull?.verticalScrollBar?.value ?: 0
     @RequiresEdt
     internal fun bodyScrollBottom() = parts.scrollOrNull?.verticalScrollBar?.let { it.maximum - it.visibleAmount } ?: 0
+
+    @RequiresEdt
+    override fun headerPopup(): HeaderPopupRequest? {
+        if (isExpanded()) return null
+        val text = source.takeIf { it.isNotBlank() } ?: return null
+        return HeaderPopupRequest(row, build = { buildPopupBody(text) }) {
+            Telemetry.send("Header Popup Shown", mapOf("surface" to "session", "part" to "reasoning"))
+        }
+    }
 
     @RequiresEdt
     override fun applyStyle(style: SessionEditorStyle) {
@@ -285,6 +325,32 @@ class ReasoningView(
         Disposer.register(this, md)
     }
 
+    @RequiresEdt
+    private fun buildPopupBody(text: String): HeaderPopupBody {
+        val md = MdViewFactory.create(style, null).apply {
+            addLinkListener { openSessionLink(it, openFile, openUrl) }
+        }
+        md.applyStyle(style)
+        md.font = style.smallEditorFont.deriveFont(Font.ITALIC)
+        md.codeFont = style.editorFamily
+        md.foreground = UiStyle.Colors.weak()
+        md.background = style.editorBackground
+        md.component.border = JBUI.Borders.empty()
+        md.set(text)
+        // The shared popup wrapper (HeaderPopupBody) provides the scroll pane, so pass the content
+        // panel directly instead of nesting a second scroll pane here.
+        val panel = TrackPanel().apply {
+            isOpaque = true
+            background = style.editorBackground
+            border = JBUI.Borders.empty(
+                JBUI.scale(SessionUiStyle.View.Reasoning.BODY_VERTICAL_PADDING),
+                JBUI.scale(SessionUiStyle.View.Reasoning.BODY_HORIZONTAL_PADDING),
+            )
+            add(md.component, BorderLayout.CENTER)
+        }
+        return HeaderPopupBody(panel, md, style.editorBackground)
+    }
+
     private fun bodyMaxHeight(): Int {
         if (!parts.bodyCreated()) return 0
         val md = md
@@ -320,7 +386,7 @@ class ReasoningView(
 }
 
 class ReasoningParts(
-    val header: JPanel,
+    val header: PartHeader,
     val title: JBLabel,
     val icon: JBLabel,
     private val selection: SessionSelection?,
@@ -330,16 +396,20 @@ class ReasoningParts(
 
     fun bodyCreated() = body != null
 
-    fun md(openUrl: (String) -> Unit): MdView = body(openUrl).md
+    fun reset() {
+        body = null
+    }
 
-    fun scroll(openUrl: (String) -> Unit): JBScrollPane = body(openUrl).scroll
+    fun md(openFile: SessionFileOpener, openUrl: (String) -> Unit): MdView = body(openFile, openUrl).md
 
-    private fun body(openUrl: (String) -> Unit): ReasoningBody {
+    fun scroll(openFile: SessionFileOpener, openUrl: (String) -> Unit): JBScrollPane = body(openFile, openUrl).scroll
+
+    private fun body(openFile: SessionFileOpener, openUrl: (String) -> Unit): ReasoningBody {
         val item = body
         if (item != null) return item
         val md = MdViewFactory.create(SessionEditorStyle.current(), selection).apply {
             opaque = false
-            addLinkListener { openUrl(it.href) }
+            addLinkListener { openSessionLink(it, openFile, openUrl) }
         }
         val panel = TrackPanel().apply {
             isOpaque = true
@@ -370,11 +440,10 @@ class ReasoningBody(
 
 private fun reasoningParts(selection: SessionSelection? = null): ReasoningParts {
     val title = JBLabel(KiloBundle.message("session.part.reasoning")).apply { foreground = UiStyle.Colors.weak() }
-    val icon = JBLabel(SessionViewIcons.eye).apply { foreground = UiStyle.Colors.weak() }
-    val header = JPanel(BorderLayout(JBUI.scale(SessionUiStyle.View.Layout.GAP), 0)).apply {
-        isOpaque = false
-        add(icon, BorderLayout.WEST)
-        add(title, BorderLayout.CENTER)
+    val icon = JBLabel(SessionViewIcons.brain).apply { foreground = UiStyle.Colors.weak() }
+    val header = PartHeader().apply {
+        leading(icon)
+        left(title)
     }
     return ReasoningParts(header, title, icon, selection)
 }

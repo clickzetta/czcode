@@ -51,6 +51,15 @@ export const dict = {
   "ui.sessionTurn.error.freeUsageExceeded": "Gratis forbrug overskredet",
   "ui.sessionTurn.error.addCredits": "Tilføj kreditter",
 
+  "dialog.usageExceeded.freeTier.title": "Gratis grænse nået",
+  "dialog.usageExceeded.freeTier.description":
+    "Abonnér på Kilo Go for pålidelig adgang til de bedste open source-modeller, fra $5/måned.",
+  "dialog.usageExceeded.freeTier.actionLabel": "Abonnér",
+  "dialog.usageExceeded.accountRateLimit.title": "Go-grænse nået",
+  "dialog.usageExceeded.accountRateLimit.description":
+    "Forbrugsgrænse nået. For at fortsætte med at bruge denne model nu, aktivér forbrug fra din tilgængelige saldo",
+  "dialog.usageExceeded.accountRateLimit.actionLabel": "Åbn indstillinger",
+
   "ui.sessionTurn.status.delegating": "Delegerer arbejde",
   "ui.sessionTurn.status.delegatingWaitingPermission": "Subagent waiting for permission",
   "ui.sessionTurn.status.delegatingWaitingQuestion": "Subagent waiting for response",
@@ -111,6 +120,7 @@ export const dict = {
 
   "ui.tool.read": "Læs",
   "ui.tool.loaded": "Indlæst",
+  "ui.tool.swePruned": "SWE-Pruner · {{kept}} af {{total}} linjer beholdt", // kilocode_change
   "ui.tool.list": "Liste",
   "ui.tool.glob": "Glob",
   "ui.tool.grep": "Grep",
@@ -146,6 +156,7 @@ export const dict = {
   "ui.message.collapse": "Skjul besked",
   "ui.message.copy": "Kopier",
   "ui.message.copyMessage": "Kopier besked",
+  "ui.message.deleteQueued": "Slet besked i kø", // kilocode_change
   "ui.message.forkMessage": "Forgren til ny session",
   "ui.message.revertMessage": "Nulstil til dette punkt",
   "ui.message.copyResponse": "Kopier svar",
@@ -161,7 +172,9 @@ export const dict = {
   "ui.patch.action.patched": "Patchet",
 
   "ui.question.subtitle.answered": "{{count}} besvaret",
+  "ui.question.subtitle.dismissed": "{{count}} dismissed", // kilocode_change
   "ui.question.answer.none": "(intet svar)",
+  "ui.question.answer.dismissed": "Dismissed", // kilocode_change
   "ui.question.review.notAnswered": "(ikke besvaret)",
   "ui.question.multiHint": "Vælg alle der gælder",
   "ui.question.singleHint": "Vælg ét svar",

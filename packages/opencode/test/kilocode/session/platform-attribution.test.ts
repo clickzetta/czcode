@@ -2,8 +2,9 @@ import { describe, expect, test } from "bun:test"
 import path from "path"
 import * as Log from "@opencode-ai/core/util/log"
 import { Session as SessionNs } from "@/session/session"
+import { Effect } from "effect"
 import { AppRuntime } from "../../../src/effect/app-runtime"
-import { Bus } from "../../../src/bus"
+import { EventV2Bridge } from "@/event-v2-bridge"
 import { KiloSession } from "../../../src/kilocode/session"
 import { provide as withInstanceProvide } from "../../../src/kilocode/instance"
 import { MessageV2 } from "../../../src/session/message-v2"
@@ -89,9 +90,15 @@ describe("step-finish token propagation via Bus event", () => {
           } as unknown as MessageV2.Info)
 
           let received: MessageV2.Part | undefined
-          const unsub = Bus.subscribe(MessageV2.Event.PartUpdated, (event) => {
-            received = event.properties.part as MessageV2.Part
-          })
+          const unsub = await AppRuntime.runPromise(
+            EventV2Bridge.Service.use((events) =>
+              events.listen((event) => {
+                if (event.type === MessageV2.Event.PartUpdated.type)
+                  received = (event.data as typeof MessageV2.Event.PartUpdated.data.Type).part as MessageV2.Part
+                return Effect.void
+              }),
+            ),
+          )
 
           const tokens = {
             total: 1500,
@@ -126,7 +133,7 @@ describe("step-finish token propagation via Bus event", () => {
           expect(finish.cost).toBe(0.005)
           expect(received).not.toBe(part)
 
-          unsub()
+          await AppRuntime.runPromise(unsub)
           await remove(info.id)
         },
       })

@@ -137,7 +137,9 @@
   "dependencies": {
     "@kobalte/core": "catalog:",
     "@kilocode/kilo-ui": "workspace:*",
-    "solid-js": "catalog:"
+    "solid-js": "catalog:",
+    "@opencode-ai/ui": "workspace:*",
+    "@pierre/diffs": "catalog:"
   },
   "devDependencies": {
     "@tsconfig/node22": "catalog:",

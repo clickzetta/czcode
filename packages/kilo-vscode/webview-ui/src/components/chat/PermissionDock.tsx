@@ -17,12 +17,19 @@ import { Tooltip } from "@kilocode/kilo-ui/tooltip"
 import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
 import { useConfig } from "../../context/config"
-import { describePatterns, describeRule, savedRuleStates, type RuleDecision } from "./permission-dock-utils"
+import {
+  describePatterns,
+  describeRule,
+  displaySkillCommand,
+  savedRuleStates,
+  type RuleDecision,
+} from "./permission-dock-utils"
 import { PermissionCommand } from "./PermissionCommand"
 import { PermissionDiff } from "./PermissionDiff"
 import { permissionDiffs } from "./permission-diff-utils"
 import { normalizeUrls } from "../../../../../opencode/src/kilocode/util/url"
 import type { PermissionRequest } from "../../types/messages"
+import { isEnterKeyCommitNotIme } from "../../utils/ime-enter"
 
 let rulesExpandedPreference = false
 
@@ -36,6 +43,12 @@ export const PermissionDock: Component<{
   const { config } = useConfig()
 
   const fromChild = () => props.request.sessionID !== session.currentSessionID()
+  // Skill shell batches are never persisted, so they show no auto-approve rules. The command
+  // list is only shown for the bash ask; the sibling external_directory ask (same skillShell
+  // metadata) keeps its normal directory rendering.
+  const skillShell = () => props.request.args?.skillShell === true
+  const skillShellCommands = () =>
+    skillShell() && props.request.toolName === "bash" ? (props.request.args?.commands ?? []) : []
   // Bash sends fine-grained rules via metadata.rules; other tools use the always array.
   const rules = () => props.request.args?.rules ?? props.request.always ?? []
   // Rules like "git *" or "git log *" — strip the trailing wildcard for display.
@@ -47,6 +60,8 @@ export const PermissionDock: Component<{
     // Normalize IDN/Unicode hostnames to punycode ASCII to prevent homograph attacks.
     return normalizeUrls(cmd)
   }
+  const text = (rule: string) => (command() ? label(rule) : describeRule(props.request.toolName, rule, language.t))
+  const external = () => props.request.toolName === "external_directory"
   const cmdDescription = () => {
     const val = props.request.args?.description
     return typeof val === "string" && val.length > 0 ? val : undefined
@@ -66,7 +81,7 @@ export const PermissionDock: Component<{
 
   let root!: HTMLDivElement
 
-  const hasRules = () => rules().length > 0
+  const hasRules = () => rules().length > 0 && !skillShell()
 
   const toggleExpanded = () => {
     const next = !expanded()
@@ -113,8 +128,15 @@ export const PermissionDock: Component<{
     return value
   }
 
-  const title = () =>
-    fromChild() ? language.t("notification.permission.titleSubagent") : language.t("notification.permission.title")
+  const title = () => {
+    const skill = props.request.args?.skill
+    if (skillShell() && typeof skill === "string" && skill.length > 0)
+      // Escape the untrusted skill name so bidi/control chars can't reorder the header text.
+      return language.t("notification.permission.titleSkillShell", { skill: displaySkillCommand(skill) })
+    return fromChild()
+      ? language.t("notification.permission.titleSubagent")
+      : language.t("notification.permission.title")
+  }
 
   const focusPrompt = () => requestAnimationFrame(() => window.dispatchEvent(new Event("focusPrompt")))
 
@@ -132,8 +154,7 @@ export const PermissionDock: Component<{
       "button, input, select, textarea, a[href], [contenteditable='true'], [role='button'], [role='menu'], [role='menuitem'], [role='listbox'], [role='option'], [role='combobox'], [role='textbox']",
     )
 
-  const plain = (e: KeyboardEvent) =>
-    e.key === "Enter" && !e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && !e.isComposing
+  const plain = (e: KeyboardEvent) => isEnterKeyCommitNotIme(e) && !e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey
 
   const skip = (e: KeyboardEvent, target: Element | undefined) => {
     const local = !!target?.closest("[data-component='permission-shortcuts']")
@@ -248,8 +269,13 @@ export const PermissionDock: Component<{
                               </button>
                             </Tooltip>
                           </div>
-                          <code data-slot="permission-rule">
-                            {command() ? label(rule) : describeRule(props.request.toolName, rule, language.t)}
+                          <code data-slot="permission-rule" data-wrap={external() ? "" : undefined} title={text(rule)}>
+                            <Show when={external() && rule !== "*"} fallback={text(rule)}>
+                              <span data-slot="permission-rule-label">
+                                {language.t("ui.permission.toolLabel.externalDirectory")}{" "}
+                              </span>
+                              <span data-slot="permission-rule-path">{rule}</span>
+                            </Show>
                           </code>
                         </div>
                       )}
@@ -261,21 +287,44 @@ export const PermissionDock: Component<{
           </Show>
         }
       >
-        <Show when={cmdDescription()}>{(desc) => <div data-slot="permission-hint">{desc()}</div>}</Show>
-        <Show when={command()}>{(cmd) => <PermissionCommand command={cmd()} />}</Show>
+        <Show
+          when={skillShellCommands().length > 0}
+          fallback={
+            <>
+              <Show when={cmdDescription()}>{(desc) => <div data-slot="permission-hint">{desc()}</div>}</Show>
+              <Show when={command()}>
+                {(cmd) => <PermissionCommand command={cmd()} plain={props.request.args.heredoc === true} />}
+              </Show>
 
-        {(() => {
-          const desc = description()
-          if (!desc)
-            return !command() && toolDescription() ? <div data-slot="permission-hint">{toolDescription()}</div> : null
-          if (desc.kind === "single") return <div data-slot="permission-hint">{desc.text}</div>
-          return (
-            <div data-slot="permission-patterns">
-              <span data-slot="permission-patterns-title">{desc.title}</span>
-              <For each={desc.paths}>{(path) => <code data-slot="permission-pattern">{path}</code>}</For>
-            </div>
-          )
-        })()}
+              {(() => {
+                const desc = description()
+                if (!desc)
+                  return !command() && toolDescription() ? (
+                    <div data-slot="permission-hint">{toolDescription()}</div>
+                  ) : null
+                if (desc.kind === "single")
+                  return (
+                    <div
+                      data-slot="permission-hint"
+                      data-wrap={external() ? "" : undefined}
+                      title={external() ? desc.text : undefined}
+                    >
+                      {desc.text}
+                    </div>
+                  )
+                return (
+                  <div data-slot="permission-patterns">
+                    <span data-slot="permission-patterns-title">{desc.title}</span>
+                    <For each={desc.paths}>{(path) => <code data-slot="permission-pattern">{path}</code>}</For>
+                  </div>
+                )
+              })()}
+            </>
+          }
+        >
+          {/* Verbatim commands (args.commands), control-char/bidi-escaped so the displayed command matches execution. */}
+          <For each={skillShellCommands()}>{(cmd) => <PermissionCommand command={displaySkillCommand(cmd)} />}</For>
+        </Show>
 
         <Show when={diffs().length > 0}>
           <div data-slot="permission-diffs" data-count={diffs().length}>
@@ -293,7 +342,7 @@ export const PermissionDock: Component<{
             }}
             disabled={props.responding}
           >
-            {language.t("ui.permission.run")}
+            {language.t("ui.permission.allowOnce")}
           </Button>
           <Button
             variant="ghost"

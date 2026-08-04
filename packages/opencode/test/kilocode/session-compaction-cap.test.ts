@@ -15,8 +15,8 @@ import { Config } from "../../src/config/config"
 import { RuntimeFlags } from "../../src/effect/runtime-flags"
 import * as CrossSpawnSpawner from "@opencode-ai/core/cross-spawn-spawner"
 import { Env } from "../../src/env"
-import { Ripgrep } from "../../src/file/ripgrep"
-import { AppFileSystem } from "@opencode-ai/core/filesystem"
+import { Ripgrep } from "@opencode-ai/core/ripgrep"
+import { FSUtil } from "@opencode-ai/core/fs-util"
 import { Format } from "../../src/format"
 import { Git } from "../../src/git"
 import { Image } from "../../src/image/image"
@@ -27,9 +27,10 @@ import { MCP } from "../../src/mcp"
 import { Permission } from "../../src/permission"
 import { Plugin } from "../../src/plugin"
 import { Provider as ProviderSvc } from "../../src/provider/provider"
-import { ModelID, ProviderID } from "../../src/provider/schema"
+import { ProviderV2 } from "@opencode-ai/core/provider"
+import { ModelV2 } from "@opencode-ai/core/model"
 import { Question } from "../../src/question"
-import { Reference } from "../../src/reference/reference"
+import { Reference } from "@opencode-ai/core/reference"
 import { Session } from "../../src/session/session"
 import { SessionCompaction } from "../../src/session/compaction"
 import { Instruction } from "../../src/session/instruction"
@@ -48,6 +49,11 @@ import { Skill } from "../../src/skill"
 import { Snapshot } from "../../src/snapshot"
 import { SyncEvent } from "../../src/sync"
 import { EventV2Bridge } from "@/event-v2-bridge"
+import { Database } from "@opencode-ai/core/database/database"
+import { KiloSessions } from "@/kilo-sessions/kilo-sessions"
+import { MemoryService } from "@kilocode/kilo-memory/effect/service"
+import { Auth } from "../../src/auth"
+import { RepositoryCache } from "@opencode-ai/core/repository-cache"
 import { ToolRegistry } from "../../src/tool/registry"
 import { Truncate } from "../../src/tool/truncate"
 import * as Log from "@opencode-ai/core/util/log"
@@ -58,8 +64,8 @@ import { TestLLMServer } from "../lib/llm-server"
 Log.init({ print: false })
 
 const ref = {
-  providerID: ProviderID.make("test"),
-  modelID: ModelID.make("test-model"),
+  providerID: ProviderV2.ID.make("test"),
+  modelID: ModelV2.ID.make("test-model"),
 }
 
 const summary = Layer.succeed(
@@ -124,7 +130,10 @@ const lsp = Layer.succeed(
   }),
 )
 
-const status = SessionStatus.layer.pipe(Layer.provideMerge(Bus.layer))
+const reference = Layer.mock(Reference.Service, {
+  list: () => Effect.succeed([]),
+})
+const status = Layer.mergeAll(SessionStatus.defaultLayer, Bus.layer)
 const runState = SessionRunState.layer.pipe(Layer.provide(status))
 const infra = Layer.mergeAll(NodeFileSystem.layer, CrossSpawnSpawner.defaultLayer)
 
@@ -144,10 +153,13 @@ function makeHttp() {
     ProviderSvc.defaultLayer,
     lsp,
     mcp,
-    AppFileSystem.defaultLayer,
+    FSUtil.defaultLayer,
     SyncEvent.defaultLayer,
     EventV2Bridge.defaultLayer,
-    Reference.defaultLayer,
+    Database.defaultLayer,
+    KiloSessions.testLayer,
+    MemoryService.layer,
+    reference,
     status,
   ).pipe(Layer.provideMerge(infra))
   const question = Question.layer.pipe(Layer.provideMerge(deps))
@@ -159,6 +171,8 @@ function makeHttp() {
     Layer.provide(Ripgrep.defaultLayer),
     Layer.provide(Format.defaultLayer),
     Layer.provide(Git.defaultLayer),
+    Layer.provide(RepositoryCache.defaultLayer),
+    Layer.provide(Auth.defaultLayer),
     Layer.provideMerge(todo),
     Layer.provideMerge(question),
     Layer.provideMerge(deps),

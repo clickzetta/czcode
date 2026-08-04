@@ -4,6 +4,21 @@ import type { SlashCommandInfo, WebviewMessage, ExtensionMessage } from "../type
 
 export const SLASH_PATTERN = /^\/(\S*)$/
 
+function getMatchScore(cmd: SlashCommandEntry, lower: string): number {
+  const name = cmd.name.toLowerCase()
+  if (name === lower) return 3
+  if (name.startsWith(lower)) return 2
+  if (name.includes(lower)) return 1
+  if (cmd.description?.toLowerCase().includes(lower)) return 1
+  if (cmd.hints.some((h) => h.toLowerCase().includes(lower))) return 1
+  return 0
+}
+
+export function sortByScore(matches: SlashCommandEntry[], query: string): SlashCommandEntry[] {
+  const lower = query.toLowerCase()
+  return [...matches].sort((a, b) => getMatchScore(b, lower) - getMatchScore(a, lower))
+}
+
 interface VSCodeContext {
   postMessage: (message: WebviewMessage) => void
   onMessage: (handler: (message: ExtensionMessage) => void) => () => void
@@ -11,6 +26,8 @@ interface VSCodeContext {
 
 export interface SlashCommandEntry extends SlashCommandInfo {
   action?: () => void
+  enabled?: Accessor<boolean>
+  nested?: boolean
 }
 
 export interface SlashCommand {
@@ -35,7 +52,11 @@ export interface SlashCommand {
   close: () => void
 }
 
-export function useSlashCommand(vscode: VSCodeContext, exclude?: Set<string> | Accessor<Set<string>>): SlashCommand {
+export function useSlashCommand(
+  vscode: VSCodeContext,
+  sandbox: { action: () => void; enabled: Accessor<boolean> },
+  exclude?: Set<string> | Accessor<Set<string>>,
+): SlashCommand {
   const [server, setServer] = createSignal<SlashCommandInfo[]>([])
   const [query, setQuery] = createSignal<string | null>(null)
   const [index, setIndex] = createSignal(0)
@@ -100,6 +121,24 @@ export function useSlashCommand(vscode: VSCodeContext, exclude?: Set<string> | A
       },
     },
     {
+      name: "memory",
+      description: "Manage project memory",
+      hints: ["mem"],
+      nested: true,
+    },
+    { name: "memory status", description: "Show project memory status", hints: [] },
+    { name: "memory show", description: "Show stored project memory", hints: [] },
+    { name: "memory on", description: "Enable project memory", hints: [] },
+    { name: "memory off", description: "Disable project memory", hints: [] },
+    { name: "memory inspect", description: "Reveal the project memory folder", hints: [] },
+    { name: "memory rebuild", description: "Rebuild the memory index", hints: [] },
+    { name: "memory remember", description: "Save a project memory note", hints: [] },
+    { name: "memory correct", description: "Save a correction to project memory", hints: [] },
+    { name: "memory forget", description: "Remove matching project memory", hints: [] },
+    { name: "memory auto on", description: "Enable automatic memory saves", hints: [] },
+    { name: "memory auto off", description: "Disable automatic memory saves", hints: [] },
+    { name: "memory purge confirm", description: "Delete all project memory files", hints: [] },
+    {
       name: "export",
       description: "Export the current session transcript as Markdown",
       hints: ["markdown", "transcript"],
@@ -121,6 +160,29 @@ export function useSlashCommand(vscode: VSCodeContext, exclude?: Set<string> | A
       hints: [],
       action: () => {
         vscode.postMessage({ type: "toggleRemote" })
+      },
+    },
+    {
+      name: "kiloclaw",
+      description: "Open KiloClaw chat",
+      hints: ["claw"],
+      action: () => {
+        vscode.postMessage({ type: "openKiloClaw" })
+      },
+    },
+    {
+      name: "sandbox",
+      description: "Toggle sandbox",
+      hints: [],
+      action: sandbox.action,
+      enabled: sandbox.enabled,
+    },
+    {
+      name: "reload",
+      description: "Reload config, skills, agents, and commands from disk",
+      hints: ["refresh"],
+      action: () => {
+        vscode.postMessage({ type: "reload" })
       },
     },
   ]
@@ -155,15 +217,26 @@ export function useSlashCommand(vscode: VSCodeContext, exclude?: Set<string> | A
   const results = () => {
     const q = query()
     if (q === null) return []
-    const all = commands()
-    if (!q) return all
+    const list = commands()
+    if (q.startsWith("memory ")) {
+      const matches = list.filter((cmd) => cmd.name.startsWith("memory "))
+      if (q === "memory ") return matches
+      const lower = q.toLowerCase()
+      return sortByScore(
+        matches.filter((cmd) => cmd.name.toLowerCase().startsWith(lower)),
+        lower,
+      )
+    }
+    const root = list.filter((cmd) => !cmd.name.includes(" "))
+    if (!q) return root
     const lower = q.toLowerCase()
-    return all.filter(
+    const matches = root.filter(
       (cmd) =>
         cmd.name.toLowerCase().includes(lower) ||
         cmd.description?.toLowerCase().includes(lower) ||
         cmd.hints.some((h) => h.toLowerCase().includes(lower)),
     )
+    return sortByScore(matches, lower)
   }
 
   const unsubscribe = vscode.onMessage((message) => {
@@ -186,9 +259,15 @@ export function useSlashCommand(vscode: VSCodeContext, exclude?: Set<string> | A
       request()
       setQuery(match[1])
       setIndex(0)
-    } else {
-      close()
+      return
     }
+    const memory = before.match(/^\/(?:memory|mem)\s+([^\n]*)$/i)
+    if (!memory) return close()
+    const value = `memory ${memory[1]}`.toLowerCase()
+    if (!commands().some((cmd) => cmd.name.toLowerCase().startsWith(value))) return close()
+    request()
+    setQuery(value)
+    setIndex(0)
   }
 
   const select = (
@@ -198,6 +277,7 @@ export function useSlashCommand(vscode: VSCodeContext, exclude?: Set<string> | A
     onSelect?: () => void,
   ) => {
     if (cmd.action) {
+      if (cmd.enabled && !cmd.enabled()) return
       textarea.value = ""
       setText("")
       close()
@@ -211,7 +291,11 @@ export function useSlashCommand(vscode: VSCodeContext, exclude?: Set<string> | A
     const pos = text.length
     textarea.setSelectionRange(pos, pos)
     textarea.focus()
-    close()
+    if (cmd.nested) {
+      setQuery(`${cmd.name} `)
+      setIndex(0)
+    }
+    if (!cmd.nested) close()
     onSelect?.()
   }
 

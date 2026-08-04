@@ -20,6 +20,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -29,6 +30,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.concurrent.atomic.AtomicReference
@@ -144,6 +146,7 @@ class KiloBackendWorkspace(
                 }
 
                 ensureActive()
+                startWatchingGlobalSseEvents()
                 _state.value = KiloWorkspaceState.Ready(
                     providers = prov!!,
                     agents = ag!!,
@@ -151,7 +154,6 @@ class KiloBackendWorkspace(
                     skills = sk!!,
                 )
                 log.info("Workspace data loaded for $directory")
-                startWatchingGlobalSseEvents()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -218,15 +220,18 @@ class KiloBackendWorkspace(
 
     // ------ fetch methods ------
 
-    private fun fetchProviders(): FetchResult<ProviderData> =
+    private suspend fun fetchProviders(): FetchResult<ProviderData> = withContext(Dispatchers.IO) {
         try {
             FetchResult.ok(KiloCliDataParser.parseProviders(fetch("/provider?directory=${encode(directory)}")))
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             log.warn("Providers fetch failed: ${e.message}", e)
             FetchResult.fail("providers", e)
         }
+    }
 
-    private fun fetchAgents(): FetchResult<AgentData> =
+    private suspend fun fetchAgents(): FetchResult<AgentData> = withContext(Dispatchers.IO) {
         try {
             val response = api.appAgents(directory = directory)
             val mapped = response.map(::mapAgent)
@@ -236,32 +241,42 @@ class KiloBackendWorkspace(
                 all = mapped,
                 default = visible.firstOrNull()?.name ?: "code",
             ))
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             log.warn("Agents fetch failed: ${e.message}", e)
             FetchResult.fail("agents", e)
         }
+    }
 
-    private fun fetchCommands(): FetchResult<List<CommandInfo>> =
+    private suspend fun fetchCommands(): FetchResult<List<CommandInfo>> = withContext(Dispatchers.IO) {
         try {
             FetchResult.ok(KiloCliDataParser.parseCommands(fetch("/command?directory=${encode(directory)}")))
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             log.warn("Commands fetch failed: ${e.message}", e)
             FetchResult.fail("commands", e)
         }
+    }
 
-    private fun fetchSkills(): FetchResult<List<SkillInfo>> =
+    private suspend fun fetchSkills(): FetchResult<List<SkillInfo>> = withContext(Dispatchers.IO) {
         try {
             FetchResult.ok(api.appSkills(directory = directory).map { s ->
                 SkillInfo(
                     name = s.name,
                     description = s.description,
                     location = s.location,
+                    content = s.content,
                 )
             })
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             log.warn("Skills fetch failed: ${e.message}", e)
             FetchResult.fail("skills", e)
         }
+    }
 
     // ------ helpers ------
 
@@ -287,7 +302,7 @@ class KiloBackendWorkspace(
 
     private suspend fun <T> fetchWithRetry(
         name: String,
-        block: () -> FetchResult<T>,
+        block: suspend () -> FetchResult<T>,
     ): FetchResult<T> {
         var last = FetchResult.fail<T>(name)
         repeat(MAX_RETRIES) { attempt ->

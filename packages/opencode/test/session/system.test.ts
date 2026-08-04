@@ -5,7 +5,9 @@ import { NamedError } from "@opencode-ai/core/util/error"
 import { Skill } from "../../src/skill"
 import { Permission } from "../../src/permission"
 import { SystemPrompt } from "../../src/session/system"
+import { LocationServiceMap } from "@opencode-ai/core/location-layer"
 import { testEffect } from "../lib/effect"
+import { Config } from "../../src/config/config" // kilocode_change
 
 const skills: Skill.Info[] = [
   {
@@ -42,11 +44,18 @@ const build: Agent.Info = {
 
 const it = testEffect(
   SystemPrompt.layer.pipe(
+    Layer.provide(LocationServiceMap.layer),
+    Layer.provide(Config.defaultLayer), // kilocode_change
     Layer.provide(
       Layer.succeed(
         Skill.Service,
         Skill.Service.of({
           get: (name) => Effect.succeed(skills.find((skill) => skill.name === name)),
+          require: (name) => {
+            const info = skills.find((skill) => skill.name === name)
+            if (info) return Effect.succeed(info)
+            return Effect.fail(new Skill.NotFoundError({ name, available: skills.map((skill) => skill.name) }))
+          },
           all: () => Effect.succeed(skills),
           dirs: () => Effect.succeed([]),
           available: () => Effect.succeed(skills),

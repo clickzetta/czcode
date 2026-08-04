@@ -1,14 +1,11 @@
 import { afterEach, describe, expect } from "bun:test"
 import path from "path"
 import { Server } from "../../src/server/server"
-import * as Log from "@opencode-ai/core/util/log"
 import { Effect, Fiber } from "effect"
 import { resetDatabase } from "../fixture/db"
 import { disposeAllInstances, tmpdir } from "../fixture/fixture"
 import { it } from "../lib/effect"
 import { waitGlobalBusEvent } from "./global-bus"
-
-void Log.init({ print: false })
 
 function app() {
   return Server.Default().app
@@ -37,7 +34,7 @@ describe("config HttpApi", () => {
     "serves config update through the default server app",
     Effect.gen(function* () {
       const tmp = yield* tmpdirEffect({ config: { formatter: false, lsp: false } })
-      const disposed = yield* waitDisposed(tmp.path).pipe(Effect.forkScoped)
+      const disposed = yield* waitDisposed(tmp.path).pipe(Effect.forkScoped({ startImmediately: true }))
 
       const response = yield* Effect.promise(() =>
         Promise.resolve(
@@ -59,7 +56,9 @@ describe("config HttpApi", () => {
         lsp: false,
       })
       yield* Fiber.join(disposed)
-      expect(yield* Effect.promise(() => Bun.file(path.join(tmp.path, "opencode.json")).json())).toMatchObject({ // kilocode_change
+      // kilocode_change start
+      expect(yield* Effect.promise(() => Bun.file(path.join(tmp.path, "opencode.json")).json())).toMatchObject({
+        // kilocode_change end
         username: "patched-user",
         formatter: false,
         lsp: false,

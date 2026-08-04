@@ -19,13 +19,33 @@ import path from "node:path"
 
 const MONOREPO_ROOT = path.resolve(import.meta.dir, "../../../..")
 const KILO_UI_DIR = path.join(MONOREPO_ROOT, "packages/kilo-ui")
+const WORKER_URL = path.join(MONOREPO_ROOT, "packages/kilo-vscode/tests/setup/worker-url.ts")
 const BASIC_TOOL_FILE = path.join(MONOREPO_ROOT, "packages/ui/src/components/basic-tool.tsx")
 const DATA_CONTEXT_FILE = path.join(MONOREPO_ROOT, "packages/ui/src/context/data.tsx")
 const MESSAGE_PART_FILE = path.join(MONOREPO_ROOT, "packages/ui/src/components/message-part.tsx")
 const KILO_MESSAGE_PART_FILE = path.join(MONOREPO_ROOT, "packages/kilo-ui/src/components/message-part.tsx")
+const KILO_MESSAGE_HIGHLIGHT_FILE = path.join(MONOREPO_ROOT, "packages/kilo-ui/src/components/message-highlight.ts")
+const KILO_BASIC_TOOL_CSS_FILE = path.join(MONOREPO_ROOT, "packages/kilo-ui/src/components/basic-tool.css")
+const KILO_MESSAGE_PART_CSS_FILE = path.join(MONOREPO_ROOT, "packages/kilo-ui/src/components/message-part.css")
+const SHELL_ROLLING_FILE = path.join(MONOREPO_ROOT, "packages/kilo-ui/src/components/shell-rolling-results.tsx")
+const ASSISTANT_MESSAGE_FILE = path.join(
+  MONOREPO_ROOT,
+  "packages/kilo-vscode/webview-ui/src/components/chat/AssistantMessage.tsx",
+)
+const TASK_HEADER_FILE = path.join(MONOREPO_ROOT, "packages/kilo-vscode/webview-ui/src/components/chat/TaskHeader.tsx")
+const CONTEXT_TAB_FILE = path.join(
+  MONOREPO_ROOT,
+  "packages/kilo-vscode/webview-ui/src/components/settings/ContextTab.tsx",
+)
+const PROMPT_INPUT_FILE = path.join(
+  MONOREPO_ROOT,
+  "packages/kilo-vscode/webview-ui/src/components/chat/PromptInput.tsx",
+)
+const TRANSCRIPT_PARTS_FILE = path.join(MONOREPO_ROOT, "packages/kilo-vscode/webview-ui/src/utils/transcript-parts.ts")
+const CHAT_LAYOUT_FILE = path.join(MONOREPO_ROOT, "packages/kilo-vscode/webview-ui/src/styles/chat-layout.css")
 
 function check(code: string): { ok: boolean; output: string } {
-  const result = Bun.spawnSync(["bun", "--conditions=browser", "-e", code], {
+  const result = Bun.spawnSync(["bun", "--preload", WORKER_URL, "--conditions=browser", "-e", code], {
     cwd: KILO_UI_DIR,
     stdout: "pipe",
     stderr: "pipe",
@@ -185,7 +205,7 @@ describe("Write and apply_patch patch rendering contracts (source)", () => {
   })
 })
 
-describe("Bash tool syntax highlighting and section labels (source)", () => {
+describe("Bash tool static terminal preview (source)", () => {
   const src = fs.readFileSync(KILO_MESSAGE_PART_FILE, "utf-8")
   const block =
     src.match(/ToolRegistry\.register\(\{\s*name:\s*"bash"[\s\S]*?(?=ToolRegistry\.register\(|$)/)?.[0] ?? ""
@@ -194,25 +214,42 @@ describe("Bash tool syntax highlighting and section labels (source)", () => {
     expect(block).toContain("BashHighlightedOutput")
   })
 
-  it("BashHighlightedOutput uses shellscript grammar for commands without $ prefix", () => {
-    // The command should be highlighted as shellscript, but the $ prompt must
-    // NOT be inside the highlighted code (it breaks Shiki's parse context)
-    expect(src).toMatch(/data-lang="shellscript">\$\{escapeHtml\(cmd\)\}/)
-    expect(src).not.toMatch(/data-lang="shellscript">\$\s/)
+  it("does not animate expanded bash details", () => {
+    expect(block).toMatch(/allowPendingToggle\s+trigger=/)
+    expect(block).not.toMatch(/allowPendingToggle\s+animated/)
   })
 
-  it("BashHighlightedOutput uses log grammar for output", () => {
-    expect(src).toMatch(/data-lang="log"/)
+  it("BashHighlightedOutput syntax highlights the command next to the prompt", () => {
+    expect(src).toContain('data-slot="bash-terminal" data-kind="command"')
+    expect(src).toContain('data-slot="bash-prompt"')
+    expect(src).toContain('data-slot="bash-section-code" data-scrollable ref={cmdRef}')
+    expect(src).toContain('data-lang="shellscript"')
+    expect(src).toContain("escapeHtml(cmd)")
   })
 
-  it("BashHighlightedOutput renders section labels matching MCP tool pattern", () => {
-    // Must use the same data-slot as MCP tools for consistent styling
-    expect(src).toMatch(/data-slot="mcp-section-label".*shell\.command/)
-    expect(src).toMatch(/data-slot="mcp-section-label".*shell\.output/)
+  it("BashHighlightedOutput syntax highlights log output", () => {
+    expect(src).toContain('data-slot="bash-terminal" data-kind="output"')
+    expect(src).toContain('data-slot="bash-section-code" data-scrollable ref={outRef}')
+    expect(src).toContain('data-lang="log"')
+    expect(src).toContain("escapeHtml(out)")
   })
 
-  it("BashHighlightedOutput has edge-to-edge divider between sections", () => {
-    expect(src).toContain('data-slot="bash-divider"')
+  it("BashHighlightedOutput highlights only while expanded", () => {
+    expect(src).toContain("if (!props.active) return")
+    // Also active when forceOpen fires from a virtualized remount that
+    // starts already open — `open()` alone only reflects the toggle
+    // transition, not that initial-mount case.
+    expect(block).toContain("active={open() || !!props.forceOpen}")
+  })
+
+  it("BashHighlightedOutput keeps command and output in separate terminal containers", () => {
+    const slots = src.match(/data-slot="bash-terminal"/g) ?? []
+    expect(slots).toHaveLength(2)
+  })
+
+  it("BashHighlightedOutput does not render shell section labels or a divider", () => {
+    expect(src).not.toMatch(/data-slot="mcp-section-label".*shell\./)
+    expect(src).not.toContain('data-slot="bash-divider"')
   })
 
   it("BashHighlightedOutput supports openContent for opening output in editor", () => {
@@ -230,20 +267,44 @@ describe("Bash tool syntax highlighting and section labels (source)", () => {
   it("bash tool passes outputPath from metadata to BashHighlightedOutput", () => {
     expect(block).toContain("props.metadata.outputPath")
   })
+
+  it("bash tool shows the SWE-Pruner kept-lines indicator", () => {
+    expect(block).toContain("swePruned(props.metadata)")
+    expect(block).toContain('i18n.t("ui.tool.swePruned"')
+  })
+})
+
+describe("Expanded tool motion and typography (source)", () => {
+  it("animates completed rolling shell details", () => {
+    const src = fs.readFileSync(SHELL_ROLLING_FILE, "utf-8")
+    expect(src).toContain("useCollapsible({")
+    expect(src).toContain("content: () => contentRef")
+    expect(src).toContain("body: () => bodyRef")
+  })
+
+  it("uses the assistant markdown line-height ratio for reasoning output", () => {
+    const css = fs.readFileSync(KILO_MESSAGE_PART_CSS_FILE, "utf-8")
+    const block = css.match(
+      /html\[data-theme="kilo-vscode"\] \[data-component="reasoning-part"\][\s\S]*?(?=@keyframes reasoning-pulse)/,
+    )?.[0]
+    expect(block).toMatch(/\[data-component="markdown"\]\s*\{[^}]*line-height:\s*160%;/)
+  })
 })
 
 describe("HighlightedText @mention regex fallback and click handler (source)", () => {
   const src = fs.readFileSync(KILO_MESSAGE_PART_FILE, "utf-8")
+  const helper = fs.readFileSync(KILO_MESSAGE_HIGHLIGHT_FILE, "utf-8")
 
   it("detects @path patterns via regex when source offsets are missing", () => {
-    // detectMentions is the regex fallback for when the backend doesn't
-    // populate FilePart.source.text.{start,end}
-    expect(src).toContain("detectMentions")
-    expect(src).toMatch(/MENTION_RE/)
+    // detect is the regex fallback for when the backend doesn't populate FilePart.source.text.{start,end}
+    expect(src).toContain("buildHighlightedTextSegments")
+    expect(helper).toMatch(/MENTION_RE/)
+    expect(helper).toMatch(/refs\.length\s*>\s*0\s*\?\s*resolve\(text,\s*refs\)\s*:\s*detect\(text\)/)
   })
 
   it("prefers source offsets over regex when both are available", () => {
-    expect(src).toMatch(/offset\.length\s*>\s*0\s*\?/)
+    expect(helper).toMatch(/const refs = \[/)
+    expect(helper).toMatch(/refs\.length\s*>\s*0\s*\?\s*resolve\(text,\s*refs\)\s*:\s*detect\(text\)/)
   })
 
   it("file mention spans are clickable via data.openFile", () => {
@@ -255,10 +316,94 @@ describe("HighlightedText @mention regex fallback and click handler (source)", (
     expect(src).toMatch(/segment\.text\.replace\(\/\^@\//)
   })
 
-  it("escapeHtml is imported from shared util, not duplicated", () => {
-    expect(src).toMatch(/import.*escapeHtml.*from.*util\/escape-html/)
-    // Must NOT contain a local function definition
+  it("does not duplicate HTML escaping helpers", () => {
     expect(src).not.toMatch(/function escapeHtml/)
+  })
+})
+
+describe("AssistantMessage visible row contract (source)", () => {
+  const src = fs.readFileSync(ASSISTANT_MESSAGE_FILE, "utf-8")
+  const parts = fs.readFileSync(TRANSCRIPT_PARTS_FILE, "utf-8")
+
+  it("filters suppressed tools that have no visible renderer", () => {
+    expect(parts).toContain('part.state.status === "completed" && !!ToolRegistry.render(part.tool)')
+  })
+
+  it("filters pending questions until their dock request exists", () => {
+    expect(src).toContain('part.state.status !== "pending" && part.state.status !== "running"')
+    expect(src).toContain('matchToolRequest(part, "question", session.questions())')
+  })
+
+  it("filters completed synthetic text and redaction-only reasoning", () => {
+    expect(parts).toContain("part.synthetic && message?.time.completed")
+    expect(parts).toContain('.text?.replace("[REDACTED]", "").trim()')
+  })
+
+  it("uses the plan exit card only when plan metadata is renderable", () => {
+    expect(src).toContain("if (!planExitInfo(part)) return")
+  })
+
+  it("uses the native recall tool without a separate memory badge", () => {
+    const tools = fs.readFileSync(KILO_MESSAGE_PART_FILE, "utf-8")
+    expect(src).not.toContain("assistant-memory-badge")
+    expect(tools).toContain("ToolRegistry.render(part.tool) ?? McpTool")
+  })
+})
+
+describe("Native tool summary contract (source)", () => {
+  const tools = fs.readFileSync(KILO_MESSAGE_PART_FILE, "utf-8")
+  const css = fs.readFileSync(KILO_BASIC_TOOL_CSS_FILE, "utf-8")
+
+  it("shows one secondary argument while preserving complete expanded input", () => {
+    const start = tools.indexOf("const inputArgs")
+    const end = tools.indexOf("const formatted", start)
+    expect(tools.slice(start, end)).toContain(".slice(0, 1)")
+    expect(tools).toContain("JSON.stringify(props.input, null, 2)")
+  })
+
+  it("gives the primary label remaining width and bounds secondary arguments", () => {
+    expect(css).toMatch(/\[data-slot="basic-tool-tool-info"\][\s\S]*?flex: 1 1 auto;/)
+    expect(css).toMatch(/\[data-slot="basic-tool-tool-subtitle"\][\s\S]*?flex: 1 1 auto;/)
+    expect(css).toMatch(/\[data-slot="basic-tool-tool-arg"\][\s\S]*?max-width: 24ch;/)
+  })
+})
+
+describe("Memory control placement contract (source)", () => {
+  const header = fs.readFileSync(TASK_HEADER_FILE, "utf-8")
+  const settings = fs.readFileSync(CONTEXT_TAB_FILE, "utf-8")
+  const prompt = fs.readFileSync(PROMPT_INPUT_FILE, "utf-8")
+
+  it("keeps memory controls out of the task header", () => {
+    expect(header).not.toContain("useMemory")
+    expect(header).not.toContain('name="memory"')
+  })
+
+  it("shows storage inspection in settings without a manual rebuild action", () => {
+    expect(settings).toContain("settings.context.memory.storage.title")
+    expect(settings).toContain("settings.context.memory.status.enabledTokens")
+    expect(settings).toContain("memory.inspect()")
+    expect(settings).not.toContain("memory.rebuild()")
+    expect(settings).not.toContain("lastOperationCount")
+    expect(settings).not.toContain("sessionTokens")
+  })
+
+  it("expands bare memory commands into inline completion", () => {
+    expect(prompt).toContain('const value = "/memory "')
+    expect(prompt).toContain("slash.onInput(value, value.length)")
+  })
+})
+
+describe("Assistant transcript spacing contract (source)", () => {
+  const css = fs.readFileSync(CHAT_LAYOUT_FILE, "utf-8")
+
+  it("uses a 6px gap between virtualized assistant rows", () => {
+    expect(css).toMatch(/\.vscode-session-turn\[data-row="assistant"\]\s*\{\s*padding-bottom: 6px;/)
+  })
+
+  it("removes spacing from assistant rows without visible content", () => {
+    expect(css).toMatch(
+      /\.vscode-session-turn\[data-row="assistant"\]:has\(> \.vscode-session-turn-assistant:empty\)\s*\{\s*padding-bottom: 0;/,
+    )
   })
 })
 
@@ -287,7 +432,7 @@ describe("Collapsed deferred tool details contract (source)", () => {
 
   it("uses an explicit details hint before touching deferred children", () => {
     expect(basic).toContain("hasDetails?: boolean")
-    expect(basic).toContain("props.hasDetails ?? !!props.children")
+    expect(basic).toContain("props.hasDetails ?? !!hasChildren()")
     expect(basic).toMatch(/<Show when=\{!props\.defer \|\| ready\(\)\}>\{props\.children\}<\/Show>/)
   })
 
@@ -306,7 +451,7 @@ describe("Collapsed deferred tool details contract (source)", () => {
     const block =
       message.match(/ToolRegistry\.register\(\{\s*name:\s*"bash"[\s\S]*?(?=ToolRegistry\.register\(|$)/)?.[0] ?? ""
     expect(block).toContain("const [mounted, setMounted] = createSignal(open())")
-    expect(block).toMatch(/if \(open\(\) \|\| pending\(\)\) setMounted\(true\)/)
+    expect(block).toMatch(/if \(open\(\) \|\| pending\(\) \|\| props\.forceOpen\) setMounted\(true\)/)
     expect(block).toContain("hasDetails")
     expect(block).toMatch(/<Show when=\{mounted\(\)\}>[\s\S]*?<BashHighlightedOutput/)
   })

@@ -10,13 +10,17 @@ import ai.kilocode.client.session.ui.style.SessionUiStyle
 import ai.kilocode.client.session.views.todo.TodoListPanel
 import ai.kilocode.client.ui.HoverIcon
 import ai.kilocode.client.ui.UiStyle
+import ai.kilocode.client.ui.layout.Stack
+import ai.kilocode.rpc.dto.DiffFileDto
 import ai.kilocode.rpc.dto.TodoDto
 import ai.kilocode.rpc.dto.TokensDto
 import com.intellij.icons.AllIcons
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.IconLoader
+import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
+import com.intellij.util.ui.SwingTextTrimmer
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.components.BorderLayoutPanel
 import java.awt.BorderLayout
@@ -38,12 +42,11 @@ import javax.swing.SwingUtilities
 class SessionHeaderPanel(
     private val controller: SessionController,
     parent: Disposable,
+    onOpenBranchDiff: (() -> Unit)? = null,
 ) : BorderLayoutPanel(), SessionEditorStyleTarget {
 
     companion object {
         private val COMPRESS_ICON: Icon = IconLoader.getIcon("/icons/compress.svg", SessionHeaderPanel::class.java)
-        private val CHEVRON_ICON: Icon = IconLoader.getIcon("/icons/chevron-down.svg", SessionHeaderPanel::class.java)
-        private val CHEVRON_UP_ICON: Icon = RotatedIcon(CHEVRON_ICON)
         private val UP_ICON: Icon = IconLoader.getIcon("/icons/arrow-up.svg", SessionHeaderPanel::class.java)
         private val DOWN_ICON: Icon = IconLoader.getIcon("/icons/arrow-down-to-line.svg", SessionHeaderPanel::class.java)
         private const val TOUCH_BEGIN = 2
@@ -52,7 +55,15 @@ class SessionHeaderPanel(
         internal const val EXPANDED_KEY = "kilo.session.header.expanded"
     }
 
-    private val title = JBLabel()
+    private val title = JBLabel().apply {
+        putClientProperty(SwingTextTrimmer.KEY, SwingTextTrimmer.ELLIPSIS_AT_RIGHT)
+        cursor = java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR)
+        addMouseListener(object : MouseAdapter() {
+            override fun mouseClicked(event: MouseEvent) {
+                toggle()
+            }
+        })
+    }
     private val cost = JBLabel()
     private val context = JBLabel()
     private val todos = JBLabel()
@@ -60,15 +71,22 @@ class SessionHeaderPanel(
     private val todoList = TodoListPanel()
     private val compact = HoverIcon().apply {
         icon = COMPRESS_ICON
+        cursor = java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR)
         toolTipText = KiloBundle.message("session.header.compact.description")
         accessibleContext.accessibleName = KiloBundle.message("session.header.compact")
         addActionListener { controller.compact() }
     }
-    private val expand = HoverIcon().apply {
-        icon = CHEVRON_ICON
+    private val changes = BranchChangesBadge { onOpenBranchDiff?.invoke() }
+    private val expand = JBLabel().apply {
+        border = JBUI.Borders.empty(0, UiStyle.Gap.sm())
+        cursor = java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR)
         toolTipText = KiloBundle.message("session.header.expand")
         accessibleContext.accessibleName = KiloBundle.message("session.header.expand")
-        addActionListener { toggle() }
+        addMouseListener(object : MouseAdapter() {
+            override fun mouseClicked(event: MouseEvent) {
+                toggle()
+            }
+        })
     }
     private val timeline = TimelinePanel()
     private val viewport = JViewport().apply {
@@ -97,16 +115,48 @@ class SessionHeaderPanel(
         iconTextGap = UiStyle.Gap.xs()
     }
     private val top = BorderLayoutPanel()
-    private val right = JPanel(FlowLayout(FlowLayout.RIGHT, UiStyle.Gap.md(), 0)).apply {
-        isOpaque = false
-        add(cost)
-        add(context)
-        add(compact)
-        add(expand)
+    // Lays the title out first with the branch-changes badge hugging its trailing edge,
+    // both vertically centered. The title ellipsizes so the badge stays visible on long titles.
+    private val centerGroup = object : JPanel(null) {
+        override fun getPreferredSize(): Dimension {
+            val ins = insets
+            val t = title.preferredSize
+            var w = t.width
+            var h = t.height
+            if (changes.isVisible) {
+                val b = changes.preferredSize
+                w += UiStyle.Gap.sm() + b.width
+                h = maxOf(h, b.height)
+            }
+            return Dimension(w + ins.left + ins.right, h + ins.top + ins.bottom)
+        }
+
+        override fun doLayout() {
+            val ins = insets
+            val availW = maxOf(0, width - ins.left - ins.right)
+            val availH = maxOf(0, height - ins.top - ins.bottom)
+            val t = title.preferredSize
+            val gap = if (changes.isVisible) UiStyle.Gap.sm() else 0
+            val b = if (changes.isVisible) changes.preferredSize else Dimension(0, 0)
+            val badgeW = minOf(b.width, availW)
+            val titleW = minOf(t.width, maxOf(0, availW - badgeW - gap))
+            val titleH = minOf(t.height, availH)
+            title.setBounds(ins.left, ins.top + (availH - titleH) / 2, titleW, titleH)
+            if (changes.isVisible) {
+                val badgeH = minOf(b.height, availH)
+                changes.setBounds(ins.left + titleW + gap, ins.top + (availH - badgeH) / 2, badgeW, badgeH)
+            }
+        }
     }
+    private val right = Stack.horizontal()
+        .next(cost)
+        .gap(UiStyle.Gap.xl())
+        .next(context)
+        .gap(UiStyle.Gap.sm())
+        .next(compact)
     private val tokens = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0)).apply {
         isOpaque = false
-        border = JBUI.Borders.empty(UiStyle.Gap.sm(), 0, 0, 0)
+        border = JBUI.Borders.empty(UiStyle.Gap.sm(), UiStyle.Gap.pad(), 0, UiStyle.Gap.pad())
         add(tokenTitle)
         add(Box.createHorizontalStrut(UiStyle.Gap.md()))
         add(input)
@@ -134,19 +184,28 @@ class SessionHeaderPanel(
     private val body = JPanel().apply {
         isOpaque = false
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
-        border = JBUI.Borders.empty(UiStyle.Gap.sm(), 0, 0, 0)
+        border = JBUI.Borders.empty(
+            UiStyle.Gap.sm(),
+            UiStyle.Gap.xl(),
+            UiStyle.Gap.md(),
+            UiStyle.Gap.xl(),
+        )
         add(viewport)
         add(tokens)
         add(bar)
         add(todoBox)
     }
     private var style = SessionEditorStyle.current()
+    private var costValue = ""
 
     init {
         isOpaque = true
         updateUI()
 
-        top.add(title, BorderLayout.CENTER)
+        centerGroup.add(title)
+        centerGroup.add(changes)
+        top.add(expand, BorderLayout.WEST)
+        top.add(centerGroup, BorderLayout.CENTER)
         top.add(right, BorderLayout.EAST)
         add(top, BorderLayout.NORTH)
         timeline.addMouseListener(object : MouseAdapter() {
@@ -191,6 +250,8 @@ class SessionHeaderPanel(
                 is SessionModelEvent.DiffUpdated,
                 is SessionModelEvent.TodosUpdated,
                 is SessionModelEvent.SessionUpdated,
+                is SessionModelEvent.RevertChanged,
+                is SessionModelEvent.QueueChanged,
                 is SessionModelEvent.Compacted,
                 is SessionModelEvent.HistoryLoaded,
                 is SessionModelEvent.Cleared,
@@ -208,10 +269,12 @@ class SessionHeaderPanel(
     override fun updateUI() {
         super.updateUI()
         border = JBUI.Borders.compound(
-            JBUI.Borders.customLine(JBUI.CurrentTheme.ToolWindow.borderColor(), 1, 0, 1, 0),
-            JBUI.Borders.empty(UiStyle.Gap.lg(), UiStyle.Gap.pad(), UiStyle.Gap.sm(), UiStyle.Gap.pad()),
+            JBUI.Borders.customLine(separator(), 0, 0, 1, 0),
+            JBUI.Borders.empty(),
         )
     }
+
+    private fun separator() = JBColor.namedColor("EditorTabs.underTabsBorderColor", JBUI.CurrentTheme.EditorTabs.borderColor())
 
     fun update(header: SessionHeaderSnapshot) {
         val before = isVisible
@@ -227,7 +290,7 @@ class SessionHeaderPanel(
 
         syncExpanded(expanded())
 
-        set(cost, money(header.cost))
+        setCost(money(header.cost))
         set(context, contextText(header.context))
         context.toolTipText = contextTip(header.context)
         setTokens(header.tokens)
@@ -242,12 +305,22 @@ class SessionHeaderPanel(
         refresh()
     }
 
+    fun setBranchChanges(files: List<DiffFileDto>) {
+        if (!changes.update(files)) return
+        refresh()
+    }
+
     override fun applyStyle(style: SessionEditorStyle) {
         this.style = style
         background = style.editorBackground
         foreground = style.editorForeground
         top.background = style.editorBackground
+        top.isOpaque = true
+        top.border = JBUI.Borders.empty(UiStyle.Gap.md(), UiStyle.Gap.sm(), UiStyle.Gap.md(), UiStyle.Gap.sm())
+        centerGroup.background = style.editorBackground
+        centerGroup.isOpaque = true
         right.background = style.editorBackground
+        changes.background = style.editorBackground
         tokens.background = style.editorBackground
         todoRow.background = style.editorBackground
         todoBox.background = style.editorBackground
@@ -255,8 +328,10 @@ class SessionHeaderPanel(
         viewport.background = style.editorBackground
         title.font = style.boldFont
         title.foreground = style.editorForeground
+        changes.applyStyle(style)
         cost.font = style.regularFont
         cost.foreground = style.editorForeground
+        cost.icon = null
         context.font = style.regularFont
         context.foreground = style.editorForeground
         todos.font = style.smallFont
@@ -279,7 +354,11 @@ class SessionHeaderPanel(
 
     internal fun titleText(): String = title.text
 
-    internal fun costText(): String = cost.text
+    internal fun titleLabel() = title
+
+    internal fun costText(): String = costValue
+
+    internal fun costTip() = cost.toolTipText
 
     internal fun contextText(): String = context.text
 
@@ -313,6 +392,18 @@ class SessionHeaderPanel(
     internal fun todoListPanel() = todoList
 
     internal fun compactButton() = compact
+
+    internal fun changesBadge() = changes
+
+    internal fun changesVisible() = changes.isVisible
+
+    internal fun changesText() = changes.countText()
+
+    internal fun changesStat() = changes.stats()
+
+    internal fun centerGroupPanel() = centerGroup
+
+    internal fun rightPanel() = right
 
     internal fun expandButton() = expand
 
@@ -392,6 +483,16 @@ class SessionHeaderPanel(
         tokens.isVisible = total > 0
     }
 
+    private fun setCost(value: String?) {
+        costValue = value.orEmpty()
+        cost.text = costValue
+        cost.icon = null
+        val tip = costValue.takeIf { it.isNotBlank() }?.let { KiloBundle.message("session.header.cost.tooltip", it) }
+        cost.toolTipText = tip
+        cost.accessibleContext.accessibleName = tip
+        cost.isVisible = costValue.isNotBlank()
+    }
+
     private fun syncTodos(items: List<TodoDto>) {
         val total = items.size
         val done = items.count { it.status == "completed" }
@@ -447,7 +548,10 @@ class SessionHeaderPanel(
 
     private fun collapse(): Boolean {
         val attached = body.parent === this
-        if (!attached) return false
+        if (!attached) {
+            setExpand(false)
+            return false
+        }
         remove(body)
         setExpand(false)
         return attached
@@ -455,7 +559,8 @@ class SessionHeaderPanel(
 
     private fun setExpand(expanded: Boolean) {
         val key = if (expanded) "session.header.collapse" else "session.header.expand"
-        expand.icon = if (expanded) CHEVRON_UP_ICON else CHEVRON_ICON
+        expand.text = ""
+        expand.icon = if (expanded) AllIcons.General.ChevronDown else AllIcons.General.ChevronRight
         expand.toolTipText = KiloBundle.message(key)
         expand.accessibleContext.accessibleName = KiloBundle.message(key)
     }

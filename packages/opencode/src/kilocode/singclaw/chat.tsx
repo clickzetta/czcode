@@ -4,7 +4,7 @@ import { t } from "@/kilocode/plugins/czcode-i18n"
 import { createEffect, createMemo, For, Show } from "solid-js"
 import { type KeyBinding, type MouseEvent, type TextareaRenderable } from "@opentui/core"
 import { useTheme } from "@tui/context/theme"
-import { SplitBorder, EmptyBorder } from "@tui/component/border"
+import { SplitBorder, EmptyBorder } from "@tui/ui/border"
 import { useKV } from "@tui/context/kv"
 import type { SingClawMessage } from "./types"
 

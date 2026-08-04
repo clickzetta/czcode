@@ -8,7 +8,7 @@ import { Hash } from "@opencode-ai/core/util/hash"
 import { Snapshot } from "../../src/snapshot"
 import { Instance } from "../../src/kilocode/instance"
 import { Filesystem } from "../../src/util/filesystem"
-import { disposeAllInstances, provideInstance, tmpdir } from "../fixture/fixture"
+import { disposeAllInstances, provideInstance, testInstanceStoreLayer, tmpdir } from "../fixture/fixture"
 
 const fwd = (...parts: string[]) => path.join(...parts).replaceAll("\\", "/")
 
@@ -19,7 +19,7 @@ function run<A>(dir: string, body: (snapshot: Snapshot.Interface) => Effect.Effe
       const value = yield* body(snapshot)
       const gitdir = path.join(Global.Path.data, "snapshot", Instance.project.id, Hash.fast(Instance.worktree))
       return { value, gitdir }
-    }).pipe(provideInstance(dir), Effect.provide(Snapshot.defaultLayer)),
+    }).pipe(provideInstance(dir), Effect.provide(Snapshot.defaultLayer), Effect.provide(testInstanceStoreLayer)),
   )
 }
 

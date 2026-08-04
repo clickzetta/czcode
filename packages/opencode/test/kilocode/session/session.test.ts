@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import path from "path"
 import { Session as SessionNs } from "@/session/session"
-import { Bus } from "../../../src/bus"
+import { EventV2Bridge } from "@/event-v2-bridge"
 import * as Log from "@opencode-ai/core/util/log"
 import { provide as withInstanceProvide } from "../../../src/kilocode/instance"
 import { AppRuntime } from "../../../src/effect/app-runtime"
@@ -34,16 +34,22 @@ describe("session.created event", () => {
         let receivedInfo: SessionNs.Info | undefined
 
         const title = `created-event-${Date.now()}`
-        const unsub = Bus.subscribe(SessionNs.Event.Created, (event) => {
-          const info = event.properties.info as SessionNs.Info
-          if (info.title !== title) return
-          eventReceived = true
-          receivedInfo = info
-        })
+        const unsub = await AppRuntime.runPromise(
+          EventV2Bridge.Service.use((events) =>
+            events.listen((event) => {
+              if (event.type !== SessionNs.Event.Created.type) return Effect.void
+              const info = (event.data as typeof SessionNs.Event.Created.data.Type).info as SessionNs.Info
+              if (info.title !== title) return Effect.void
+              eventReceived = true
+              receivedInfo = info
+              return Effect.void
+            }),
+          ),
+        )
 
         const info = await create({ title })
         await new Promise((resolve) => setTimeout(resolve, 100))
-        unsub()
+        await AppRuntime.runPromise(unsub)
 
         expect(eventReceived).toBe(true)
         expect(receivedInfo).toBeDefined()
@@ -71,18 +77,27 @@ describe("session.created event", () => {
           const events: string[] = []
           const title = `event-order-${Date.now()}`
 
-          const unsubCreated = Bus.subscribe(SessionNs.Event.Created, (event) => {
-            if (event.properties.info.title === title) events.push("created")
-          })
-
-          const unsubUpdated = Bus.subscribe(SessionNs.Event.Updated, (event) => {
-            if (event.properties.info.title === title) events.push("updated")
-          })
+          const unsub = await AppRuntime.runPromise(
+            EventV2Bridge.Service.use((source) =>
+              source.listen((event) => {
+                if (
+                  event.type === SessionNs.Event.Created.type &&
+                  (event.data as typeof SessionNs.Event.Created.data.Type).info.title === title
+                )
+                  events.push("created")
+                if (
+                  event.type === SessionNs.Event.Updated.type &&
+                  (event.data as typeof SessionNs.Event.Updated.data.Type).info.title === title
+                )
+                  events.push("updated")
+                return Effect.void
+              }),
+            ),
+          )
 
           const info = await create({ title })
           await new Promise((resolve) => setTimeout(resolve, 100))
-          unsubCreated()
-          unsubUpdated()
+          await AppRuntime.runPromise(unsub)
 
           expect(events).toContain("created")
           expect(events).toContain("updated")

@@ -2,7 +2,16 @@
 import { $ } from "bun"
 import { join, relative, dirname, basename } from "node:path"
 import { chmodSync, statSync, rmSync, readdirSync, existsSync } from "node:fs"
-import { copyTreeSitterResources, hasTreeSitterResources } from "../src/services/cli-backend/cli-resources"
+import {
+  copyKiloSandboxWorker,
+  copySandboxResources,
+  copyTreeSitterResources,
+  hasKiloSandboxWorker,
+  hasTreeSitterResources,
+  kiloSandboxWorkerForBinary,
+  sanitizeSandboxResources,
+} from "../src/services/cli-backend/cli-resources"
+import { currentBwrapTarget, ensureBwrapForTarget } from "./bwrap-helper"
 import { currentFfmpegTarget, ensureFfmpegForTarget } from "./ffmpeg-helper"
 
 const forceRebuild = process.argv.includes("--force")
@@ -21,18 +30,17 @@ const forceRebuild = process.argv.includes("--force")
 
 const kiloVscodeDir = join(import.meta.dir, "..")
 const packagesDir = join(kiloVscodeDir, "..")
+const repoDir = join(packagesDir, "..")
 const opencodeDir = join(packagesDir, "opencode")
 const coreDir = join(packagesDir, "core")
 const gatewayDir = join(packagesDir, "kilo-gateway")
 const indexingDir = join(packagesDir, "kilo-indexing")
+const sandboxDir = join(packagesDir, "kilo-sandbox")
 
 const targetBinDir = join(kiloVscodeDir, "bin")
 const binName = process.platform === "win32" ? "kilo.exe" : "kilo"
 const targetBinPath = join(targetBinDir, binName)
-const snapshotName = "models-snapshot.json"
-const targetSnapshotPath = join(targetBinDir, snapshotName)
 const versionFile = join(targetBinDir, ".cli-version")
-const devSnapshotPath = join(opencodeDir, "src", "provider", snapshotName)
 
 function log(msg: string) {
   console.log(`[local-bin] ${msg}`)
@@ -44,10 +52,8 @@ async function cliSourceHash(): Promise<string | null> {
     const coreResult = await $`git log -1 --format=%H -- .`.cwd(coreDir).quiet()
     const gatewayResult = await $`git log -1 --format=%H -- .`.cwd(gatewayDir).quiet()
     const indexingResult = await $`git log -1 --format=%H -- .`.cwd(indexingDir).quiet()
-    return (
-      `${opencodeResult.text().trim()}-${coreResult.text().trim()}-${gatewayResult.text().trim()}-${indexingResult.text().trim()}` ||
-      null
-    )
+    const sandboxResult = await $`git log -1 --format=%H -- .`.cwd(sandboxDir).quiet()
+    return `${opencodeResult.text().trim()}-${coreResult.text().trim()}-${gatewayResult.text().trim()}-${indexingResult.text().trim()}-${sandboxResult.text().trim()}`
   } catch {
     return null
   }
@@ -59,11 +65,13 @@ async function isDirty(): Promise<boolean> {
     const coreResult = await $`git status --porcelain -- .`.cwd(coreDir).quiet()
     const gatewayResult = await $`git status --porcelain -- .`.cwd(gatewayDir).quiet()
     const indexingResult = await $`git status --porcelain -- .`.cwd(indexingDir).quiet()
+    const sandboxResult = await $`git status --porcelain -- .`.cwd(sandboxDir).quiet()
     return (
       opencodeResult.text().trim().length > 0 ||
       coreResult.text().trim().length > 0 ||
       gatewayResult.text().trim().length > 0 ||
-      indexingResult.text().trim().length > 0
+      indexingResult.text().trim().length > 0 ||
+      sandboxResult.text().trim().length > 0
     )
   } catch {
     return false
@@ -101,8 +109,7 @@ async function findKiloBinaryInOpencodeDist(): Promise<string | null> {
   const preferred = join(distDir, `@kilocode`, tag, "bin", binName)
   try {
     statSync(preferred)
-    if (!hasTreeSitterResources(preferred)) return null
-    if (!existsSync(snapshotForBinary(preferred))) return null
+    if (!hasTreeSitterResources(preferred) || !hasKiloSandboxWorker(preferred)) return null
     return preferred
   } catch {
     // fall through to generic search
@@ -128,17 +135,12 @@ async function findKiloBinaryInOpencodeDist(): Promise<string | null> {
         continue
       }
       if (e.isFile() && (e.name === "kilo" || e.name === "kilo.exe") && basename(dirname(p)) === "bin") {
-        if (!hasTreeSitterResources(p)) continue
-        if (!existsSync(snapshotForBinary(p))) continue
+        if (!hasTreeSitterResources(p) || !hasKiloSandboxWorker(p)) continue
         return p
       }
     }
   }
   return null
-}
-
-function snapshotForBinary(file: string): string {
-  return join(dirname(file), snapshotName)
 }
 
 async function ensureBuiltBinary(): Promise<string> {
@@ -149,20 +151,20 @@ async function ensureBuiltBinary(): Promise<string> {
     `No prebuilt binary found under ${relative(kiloVscodeDir, join(opencodeDir, "dist"))} - attempting build via bun.`,
   )
 
-  const bunPath = Bun.which("bun")
-  if (!bunPath) {
+  if (!Bun.which("bun")) {
     throw new Error(
       `Bun is required to build the CLI binary, but was not found on PATH. ` +
         `Install bun, or build the CLI separately in ${opencodeDir} and re-run.`,
     )
   }
 
-  // Ensure dependencies are installed before building.
+  // Use the repository-pinned Bun version throughout. Newer canaries can fail compilation
+  // and must not cause packaged snapshots to fall back to the browser-mode source wrapper.
+  const pkg = await Bun.file(join(repoDir, "package.json")).json()
+  const bun = String(pkg.packageManager)
   log("Installing dependencies in opencode package...")
-  await $`bun install --frozen-lockfile`.cwd(opencodeDir)
-
-  // Build using the opencode package script.
-  await $`bun run build --single`.cwd(opencodeDir)
+  await $`bunx ${bun} install --frozen-lockfile`.cwd(opencodeDir)
+  await $`bunx ${bun} run build --single --skip-install`.cwd(opencodeDir)
 
   const built = await findKiloBinaryInOpencodeDist()
   if (!built) {
@@ -171,6 +173,24 @@ async function ensureBuiltBinary(): Promise<string> {
     )
   }
   return built
+}
+
+async function bundleKiloSandboxWorker() {
+  const result = await Bun.build({
+    entrypoints: [join(sandboxDir, "src", "kilo-sandbox-mutation-worker.ts")],
+    target: "bun",
+    format: "esm",
+    minify: true,
+  })
+  if (!result.success || result.outputs.length !== 1) throw new Error("Could not bundle Kilo sandbox mutation worker")
+  await Bun.write(kiloSandboxWorkerForBinary(targetBinPath), result.outputs[0])
+}
+
+async function ensureLocalHelpers() {
+  await ensureFfmpegForTarget(currentFfmpegTarget(), targetBinDir)
+  if (process.env.KILO_SKIP_BUNDLED_BWRAP === "1") return
+  if (await sanitizeSandboxResources(targetBinDir, true)) return
+  await ensureBwrapForTarget(currentBwrapTarget())
 }
 
 async function writeSourceWrapper() {
@@ -186,13 +206,13 @@ async function writeSourceWrapper() {
       "#!/usr/bin/env bash",
       "set -euo pipefail",
       `cd ${JSON.stringify(opencodeDir)}`,
-      `exec ${JSON.stringify(bun)} --conditions=browser src/index.ts "$@"`,
+      `exec ${JSON.stringify(bun)} --conditions=node src/index.ts "$@"`,
       "",
     ].join("\n"),
   )
   chmodSync(targetBinPath, 0o755)
-  if (existsSync(devSnapshotPath)) await $`cp ${devSnapshotPath} ${targetSnapshotPath}`
-  await ensureFfmpegForTarget(currentFfmpegTarget(), targetBinDir)
+  await bundleKiloSandboxWorker()
+  await ensureLocalHelpers()
 
   const hash = await cliSourceHash()
   if (hash) await Bun.write(versionFile, hash + "\n")
@@ -204,18 +224,17 @@ async function writeSourceWrapper() {
 async function main() {
   const targetFile = Bun.file(targetBinPath)
   const exists = await targetFile.exists()
-  const snapshotExists = await Bun.file(targetSnapshotPath).exists()
-  const ready = exists && snapshotExists
+  const ready = exists && hasTreeSitterResources(targetBinPath) && hasKiloSandboxWorker(targetBinPath)
 
   const stale = ready && !forceRebuild && (await isStale())
-  const rebuild = forceRebuild || stale || (exists && !snapshotExists)
+  const rebuild = forceRebuild || stale || !ready
 
   if (ready && !rebuild) {
     const st = statSync(targetBinPath)
     log(
       `CLI binary already present at ${relative(kiloVscodeDir, targetBinPath)} (${Math.round(st.size / 1024 / 1024)}MB). Use --force to rebuild.`,
     )
-    await ensureFfmpegForTarget(currentFfmpegTarget(), targetBinDir)
+    await ensureLocalHelpers()
     return
   }
 
@@ -226,8 +245,7 @@ async function main() {
   if (exists && rebuild) {
     log(stale ? `CLI source has changed — rebuilding.` : `Refreshing existing CLI resources.`)
     rmSync(targetBinPath)
-    if (existsSync(targetSnapshotPath)) rmSync(targetSnapshotPath)
-    if (forceRebuild || stale) {
+    if (forceRebuild || stale || !ready) {
       removeDist()
     }
   }
@@ -238,20 +256,20 @@ async function main() {
   }
 
   const sourceBinPath = await ensureBuiltBinary().catch(async (err) => {
+    if (forceRebuild) throw err
     await writeSourceWrapper()
     log(`Wrapper fallback reason: ${err instanceof Error ? err.message : String(err)}`)
     return null
   })
   if (!sourceBinPath) return
-  const sourceSnapshotPath = snapshotForBinary(sourceBinPath)
   await $`mkdir -p ${targetBinDir}`
-  await $`cp ${sourceSnapshotPath} ${targetSnapshotPath}`
   await $`cp ${sourceBinPath} ${targetBinPath}`
   await copyTreeSitterResources(sourceBinPath, targetBinPath)
+  await copySandboxResources(sourceBinPath, targetBinPath)
+  await copyKiloSandboxWorker(sourceBinPath, targetBinPath)
   chmodSync(targetBinPath, 0o755)
-  await ensureFfmpegForTarget(currentFfmpegTarget(), targetBinDir)
+  await ensureLocalHelpers()
 
-  // Record the CLI source version so future runs detect when a rebuild is needed
   const hash = await cliSourceHash()
   if (hash) await Bun.write(versionFile, hash + "\n")
 

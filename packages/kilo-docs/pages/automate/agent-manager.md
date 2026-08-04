@@ -39,7 +39,7 @@ The panel opens as an editor tab and stays active across focus changes.
 
 Agent Manager uses the same sign-in, provider settings, models, BYOK keys, custom providers, MCP servers, and permission rules as the extension sidebar. Configure them from extension Settings and they apply to Agent Manager as well.
 
-See [Setup & Authentication](/docs/getting-started/setup-authentication), [AI Providers](/docs/ai-providers), and [Bring Your Own Key](/docs/getting-started/byok) for setup details.
+See [Authentication](/docs/getting-started/setup-authentication), [AI Providers](/docs/ai-providers), and [Bring Your Own Key](/docs/getting-started/byok) for setup details.
 
 ## Working with Worktrees
 
@@ -69,7 +69,7 @@ The extension uses `gh` to automatically discover PRs for each worktree branch. 
 2. **Branch name** — `gh pr view <branch>` matches same-repo branches pushed to origin
 3. **HEAD commit SHA** — `gh pr list --search "<sha>"` as a last resort, matching PRs whose head ref points to the exact same commit
 
-You can also import a PR directly from the advanced new worktree dialog: open the **New Worktree** dropdown and select **Advanced**, or press `Cmd+Shift+N` (macOS) / `Ctrl+Shift+N` (Windows/Linux), switch to the **Import** tab, then paste the GitHub PR URL. The branch is checked out and the badge appears automatically.
+You can also import a PR directly from the new worktree dialog: click **New Worktree** or press `Cmd+N` (macOS) / `Ctrl+N` (Windows/Linux), switch to the **Import** tab, then paste the GitHub PR URL. The branch is checked out and the badge appears automatically.
 
 #### Badge colors
 
@@ -106,11 +106,13 @@ PR badges update automatically in the background. The active worktree refreshes 
 
 ### Creating a New Worktree Session
 
-1. Click **New Worktree** or press `Cmd+N` (macOS) / `Ctrl+N` (Windows/Linux) to create a new worktree
+1. Click **New Worktree** or press `Cmd+N` (macOS) / `Ctrl+N` (Windows/Linux) to open the new worktree dialog
 2. Enter a branch name (or let Kilo generate one)
-3. Type your first message to start the agent
+3. Type your first message, then create the worktree
 
 A new git worktree is created from your current branch. The agent works in isolation — your main branch is unaffected.
+
+To create a worktree immediately from the default base branch, press `Cmd+Shift+N` (macOS) / `Ctrl+Shift+N` (Windows/Linux).
 
 ### Multi-Version Mode
 
@@ -136,6 +138,12 @@ Imported work stays associated with its branch or worktree and can be continued 
 - Use session history to reopen local sessions or preview cloud sessions
 - Continue a cloud session locally from Agent Manager using the same extension sign-in and provider settings
 
+### Renaming Worktrees
+
+Double-click a worktree name to edit its label inline. You can also right-click the worktree and choose **Rename**. Press `Enter` or click outside the field to save, or press `Escape` to cancel.
+
+Renaming a worktree changes only the label shown in Agent Manager. It does not rename the underlying git branch.
+
 ## Starting Sessions From Chat
 
 Kilo can start Agent Manager sessions from chat with the `agent_manager` tool. It is available by default only in the VS Code extension because Agent Manager is an extension feature.
@@ -147,9 +155,13 @@ The tool supports two modes:
 | `worktree` | Creates one Agent Manager git worktree and session per task |
 | `local` | Creates Agent Manager sessions in the current workspace without git worktree isolation |
 
-Each request can include 1-20 tasks. Each task must include at least one of `prompt`, `name`, or `branchName`. Use `versions: true` only when the tasks are alternate versions of the same work to compare; otherwise, multiple tasks start as independent sessions.
+Each request can include 1-20 tasks. Each task must include at least one of `prompt`, `name`, or `branchName`. Prompted tasks inherit the model and reasoning variant used by the chat turn that starts them. A task can override that selection with a `model` (by name, e.g. `Claude Opus 4.1`) when you explicitly request a different model, or with one of the current model's reasoning `variant` values when you request a different variant. Agent Manager resolves the provider for a model override, preferring the provider used by the current turn and falling back to the Kilo Gateway; a qualified `provider/model` ID is also accepted to force a specific provider. Prepared sessions without an initial prompt use the normal model defaults. Use `versions: true` only when the tasks are alternate versions of the same work to compare; otherwise, multiple tasks start as independent sessions.
 
-The tool uses the `agent_manager` permission. Approval prompts are scoped to the requested mode, so approving `worktree` does not automatically approve `local`.
+The companion `agent_manager_models` tool searches models and their supported reasoning variants on demand. Results are grouped by model name (with the offering providers listed for reference) and limited to 20 per call, so the full catalog is never added to the conversation context.
+
+The same tool also manages existing sessions. It can return a compact overview of sections, worktrees, and local sessions, send a prompt to one managed session, or stop a managed session. Stopping aborts the session's active work and removes it from the panel, just like closing the session tab.
+
+The tool uses the `agent_manager` permission. Approval prompts are scoped to the requested capability, so approving `worktree` does not automatically approve `local`, an overview, or a targeted prompt. Prompting an existing managed session requires an explicit `prompt` approval the first time, even if Agent Manager session creation was previously approved broadly. Stopping a session likewise requires an explicit `stop` approval.
 
 ## Sections
 
@@ -168,7 +180,7 @@ Sections let you group worktrees into collapsible, color-coded folders in the si
 
 Multi-version worktrees (created via Multi-Version Mode) are moved together — assigning one version to a section moves all versions in the group.
 
-### Renaming
+### Renaming Sections
 
 Right-click the section header and select **Rename Section**. An inline text field appears — type the new name and press `Enter` to confirm or `Escape` to cancel.
 
@@ -231,6 +243,8 @@ Create a script file in `.kilo/` using the appropriate filename for your platfor
 
 Kilo runs the script automatically whenever a new worktree is created. It uses `sh` for POSIX scripts, PowerShell for `.ps1`, and `cmd.exe` for `.cmd` / `.bat`, so executable permissions are not required.
 
+Where the script runs follows the terminal destination dropdown in the Agent Manager toolbar. **Agent Manager panel** shows live output in a named `Setup` tab in the side terminal panel. After success, the panel returns to its previous state unless you interacted with it; the retained tab remains available for review. Failures keep the panel open. **VS Code terminal** runs setup as a task in the integrated terminal. The script keeps the existing five-minute timeout; when it expires, the setup process tree is terminated and the failed tab retains its partial output.
+
 Two extra variables are injected into the setup script's environment:
 
 | Variable | Value |
@@ -253,7 +267,7 @@ if [ -f "$REPO_PATH/apps/web/.env.local" ] && [ ! -f "$WORKTREE_PATH/apps/web/.e
 fi
 ```
 
-If the setup script fails, Agent Manager shows the failure and keeps the worktree available so you can inspect it, fix the script, or run setup steps manually.
+If the setup script fails, Agent Manager shows the failure (a failed `Setup` tab in the side terminal panel, or the task output in the integrated terminal) and keeps the worktree available so you can inspect it, fix the script, or run setup steps manually.
 
 ### Environment File Copying
 
@@ -329,9 +343,11 @@ Two extra variables are injected into the script's environment:
 
 ### Using the run button
 
-- **Run:** Click the play button in the toolbar or press `Cmd+E` (macOS) / `Ctrl+E` (Windows/Linux). Output appears in a dedicated VS Code task panel.
+- **Run:** Click the play button in the toolbar or press `Cmd+E` (macOS) / `Ctrl+E` (Windows/Linux). Output appears in a named `Run` tab in the Agent Manager terminal panel and remains available after the script exits.
 - **Stop:** Click the stop button (same position) or press `Cmd+E` again while running.
 - **Configure:** Click the dropdown arrow next to the run button and select "Configure run script" to open the script in your editor.
+
+The terminal destination dropdown in the Agent Manager toolbar also controls where the script runs. **Agent Manager panel** uses the named side terminal, while **VS Code terminal** runs it as a task in the integrated terminal. The integrated terminal option is kept for comparison and will be removed in a future release.
 
 ## Session State and Persistence
 
@@ -344,8 +360,8 @@ Closing a managed worktree removes it from Agent Manager, deletes its `.kilo/wor
 | Shortcut (macOS) | Shortcut (Windows/Linux) | Action |
 |---|---|---|
 | `Cmd+Shift+M` | `Ctrl+Shift+M` | Open / focus Agent Manager (works from anywhere) |
-| `Cmd+N` | `Ctrl+N` | New worktree |
-| `Cmd+Shift+N` | `Ctrl+Shift+N` | New worktree (advanced options) |
+| `Cmd+N` | `Ctrl+N` | Configure a new worktree |
+| `Cmd+Shift+N` | `Ctrl+Shift+N` | Create a new worktree immediately |
 | `Cmd+Shift+O` | `Ctrl+Shift+O` | Import/open worktree |
 | `Cmd+Shift+W` | `Ctrl+Shift+W` | Close current worktree |
 | `Cmd+T` | `Ctrl+T` | New tab (session) in worktree |

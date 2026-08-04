@@ -3,7 +3,6 @@ package ai.kilocode.client.session.views.base
 import ai.kilocode.client.session.ui.style.SessionUiStyle
 import ai.kilocode.client.session.views.SessionViewIcons
 import com.intellij.ui.components.JBLabel
-import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
@@ -29,7 +28,7 @@ abstract class AbstractSessionPartView(
     ) : this(header, { body }, expanded, expandable)
 
     protected val arrow = JBLabel()
-    protected val row = JPanel(BorderLayout(JBUI.scale(SessionUiStyle.View.Layout.GAP), 0))
+    protected val row = JPanel(BorderLayout(SessionUiStyle.View.Header.gap(), 0))
     private val bound = linkedSetOf<Component>()
     private var body: JComponent? = null
 
@@ -67,9 +66,12 @@ abstract class AbstractSessionPartView(
         if (!expandable || !arrow.isVisible) return
         val changed = toggleLocal()
         if (!changed) return
+        userToggled()
         syncArrow()
         refresh()
     }
+
+    protected open fun userToggled() {}
 
     open fun expand(): Boolean {
         if (!expandable) return false
@@ -88,6 +90,15 @@ abstract class AbstractSessionPartView(
     protected fun hasBody(): Boolean = body != null
 
     protected fun bodyComponent(): JComponent = body()
+
+    /** Detaches and forgets the cached body so the next expansion builds a fresh one. */
+    protected fun discardBody(): Boolean {
+        val item = body ?: return false
+        val attached = item.parent === this
+        if (attached) remove(item)
+        body = null
+        return attached
+    }
 
     private fun toggleLocal(): Boolean {
         val fn = resize ?: return toggleBody()
@@ -110,6 +121,10 @@ abstract class AbstractSessionPartView(
 
     protected fun bindHeader(vararg items: Component) {
         items.forEach { bind(it) }
+    }
+
+    protected fun unbindHeader(vararg items: Component) {
+        items.forEach { unbind(it) }
     }
 
     protected fun refresh() {
@@ -139,6 +154,13 @@ abstract class AbstractSessionPartView(
         component.addMouseListener(mouse)
     }
 
+    private fun unbind(component: Component) {
+        if (!bound.remove(component)) return
+        component.removeMouseListener(click)
+        component.removeMouseListener(mouse)
+        component.cursor = Cursor.getDefaultCursor()
+    }
+
     private fun body(): JComponent {
         val item = body
         if (item != null) return item
@@ -157,7 +179,7 @@ abstract class AbstractSessionPartView(
     }
 
     private fun syncArrow(): Boolean {
-        val icon = if (isExpanded()) SessionViewIcons.chevronDown else SessionViewIcons.chevronRight
+        val icon = if (isExpanded()) SessionViewIcons.chevronExpanded else SessionViewIcons.chevronCollapsed
         if (arrow.icon === icon) return false
         arrow.icon = icon
         return true
