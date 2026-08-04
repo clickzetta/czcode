@@ -1,5 +1,4 @@
 import { z } from "zod"
-import { Effect } from "effect"
 
 export type ToolContext = {
   sessionID: string
@@ -19,7 +18,7 @@ export type ToolContext = {
   /** czcode_change: extra context passed by the runtime (e.g. messages for skill detection) */
   extra?: Record<string, unknown>
   metadata(input: { title?: string; metadata?: { [key: string]: any } }): void
-  ask(input: AskInput): Effect.Effect<void>
+  ask(input: AskInput): Promise<void>
 }
 
 type AskInput = {

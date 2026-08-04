@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test"
-import { toIndexingConfigInput } from "../../../src/config"
+import {
+  IndexingConfig,
+  normalizeFileExtensions,
+  parseFileExtensions,
+  toIndexingConfigInput,
+} from "../../../src/config"
 import { CodeIndexConfigManager, type IndexingConfigInput } from "../../../src/indexing/config-manager"
 
 function createInput(input: Partial<IndexingConfigInput> = {}): IndexingConfigInput {
@@ -26,6 +31,34 @@ describe("CodeIndexConfigManager", () => {
     expect(cfg.getConfig().ollamaOptions?.baseUrl).toBe("http://localhost:11434")
   })
 
+  test("configures an OpenAI-compatible endpoint without an API key", () => {
+    const cfg = new CodeIndexConfigManager(
+      createInput({
+        embedderProvider: "openai-compatible",
+        openAiKey: undefined,
+        openAiCompatibleBaseUrl: "http://localhost:1234/v1",
+      }),
+    )
+
+    expect(cfg.isFeatureConfigured).toBe(true)
+    expect(cfg.getConfig().openAiCompatibleOptions).toEqual({
+      baseUrl: "http://localhost:1234/v1",
+      apiKey: undefined,
+    })
+  })
+
+  test("requires a base URL for an OpenAI-compatible endpoint", () => {
+    const cfg = new CodeIndexConfigManager(
+      createInput({
+        embedderProvider: "openai-compatible",
+        openAiKey: undefined,
+        openAiCompatibleApiKey: "sk-test",
+      }),
+    )
+
+    expect(cfg.isFeatureConfigured).toBe(false)
+  })
+
   test("defaults vector store to LanceDB when omitted", () => {
     const cfg = new CodeIndexConfigManager(createInput({ vectorStoreProvider: undefined }))
 
@@ -42,6 +75,25 @@ describe("CodeIndexConfigManager", () => {
 
     expect(input.vectorStoreProvider).toBe("qdrant")
     expect(cfg.getConfig().vectorStoreProvider).toBe("qdrant")
+  })
+
+  test("normalizes configured file extensions", () => {
+    expect(normalizeFileExtensions([" PHP ", ".JS", "js", "css"])).toEqual([".css", ".js", ".php"])
+    expect(parseFileExtensions(" PHP, .JS, js, css ")).toEqual([".css", ".js", ".php"])
+    expect(parseFileExtensions("  ")).toBeUndefined()
+    expect(toIndexingConfigInput({ fileExtensions: ["PHP", ".JS"] }).fileExtensions).toEqual([".js", ".php"])
+    expect(normalizeFileExtensions(["", "  "])).toBeUndefined()
+    expect(
+      normalizeFileExtensions(Array.from({ length: 10_000 }, (_, index) => (index % 2 ? " PHP " : ".JS"))),
+    ).toEqual([".js", ".php"])
+  })
+
+  test("validates file extension tokens", () => {
+    expect(IndexingConfig.safeParse({ fileExtensions: ["php", " .JS "] }).success).toBe(true)
+    expect(IndexingConfig.safeParse({ fileExtensions: [] }).success).toBe(false)
+    expect(IndexingConfig.safeParse({ fileExtensions: ["*.js"] }).success).toBe(false)
+    expect(IndexingConfig.safeParse({ fileExtensions: ["src/php"] }).success).toBe(false)
+    expect(IndexingConfig.safeParse({ fileExtensions: [".d.ts"] }).success).toBe(false)
   })
 
   test("configures Kilo with hosted auth options and explicit model metadata", () => {
@@ -142,6 +194,19 @@ describe("CodeIndexConfigManager", () => {
       expect(result.requiresRestart).toBe(true)
     })
 
+    test("requires restart when OpenAI-compatible auth is added or removed", () => {
+      const input = createInput({
+        embedderProvider: "openai-compatible",
+        openAiKey: undefined,
+        openAiCompatibleBaseUrl: "http://localhost:1234/v1",
+      })
+      const cfg = new CodeIndexConfigManager(input)
+
+      expect(cfg.loadConfiguration({ ...input, openAiCompatibleApiKey: "sk-test" }).requiresRestart).toBe(true)
+      expect(cfg.loadConfiguration(input).requiresRestart).toBe(true)
+      expect(cfg.loadConfiguration(input).requiresRestart).toBe(false)
+    })
+
     test("requires restart when Kilo auth changes", () => {
       const cfg = new CodeIndexConfigManager(
         createInput({
@@ -164,6 +229,14 @@ describe("CodeIndexConfigManager", () => {
       )
 
       expect(result.requiresRestart).toBe(true)
+    })
+
+    test("restarts only when the normalized file extension allowlist changes", () => {
+      const cfg = new CodeIndexConfigManager(createInput({ fileExtensions: ["php", ".JS"] }))
+
+      expect(cfg.getConfig().fileExtensions).toEqual([".js", ".php"])
+      expect(cfg.loadConfiguration(createInput({ fileExtensions: [".js", ".PHP", "php"] })).requiresRestart).toBe(false)
+      expect(cfg.loadConfiguration(createInput({ fileExtensions: [".css"] })).requiresRestart).toBe(true)
     })
   })
 })

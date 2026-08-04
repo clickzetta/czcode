@@ -7,14 +7,13 @@
  */
 import { createContext, useContext, type ParentProps } from "solid-js"
 import { createStore, reconcile } from "solid-js/store"
-import { TuiConfig } from "@/cli/cmd/tui/config/tui"
-import { TuiKeybind } from "@/cli/cmd/tui/config/keybind"
-import { KeymapLeaderTimeoutDefault } from "@/cli/cmd/tui/config/tui-schema"
+import { LeaderTimeoutDefault, TuiConfig, TuiConfigProvider, useTuiConfig } from "@tui/config"
+import { TuiKeybind } from "@tui/config/keybind"
 import { createBindingLookup } from "@opentui/keymap/extras"
+import { KiloTitleIcon } from "@/kilocode/cli/cmd/tui/title-icon"
 
 export type SetTuiConfig = (next: TuiConfig.Info) => void
 
-const ConfigContext = createContext<TuiConfig.Resolved>()
 const SetContext = createContext<SetTuiConfig>()
 
 export namespace KiloTuiConfig {
@@ -25,19 +24,21 @@ export namespace KiloTuiConfig {
       const keybinds = TuiKeybind.parse(next.keybinds ?? {})
       const config: TuiConfig.Resolved = {
         ...next,
+        title_icon: next.title_icon ?? KiloTitleIcon.Default,
         attention: {
           enabled: next.attention?.enabled ?? false,
           notifications: next.attention?.notifications ?? true,
           sound: next.attention?.sound ?? true,
           volume: next.attention?.volume ?? 0.4,
-          sound_pack: next.attention?.sound_pack ?? "opencode.default",
+          sound_pack: next.attention?.sound_pack ?? "kilo.default",
           sounds: next.attention?.sounds ?? {},
         },
         keybinds: createBindingLookup(TuiKeybind.toBindingConfig(keybinds), {
           commandMap: TuiKeybind.CommandMap,
           bindingDefaults: TuiKeybind.bindingDefaults(),
         }),
-        leader_timeout: next.leader_timeout ?? KeymapLeaderTimeoutDefault,
+        leader_timeout: next.leader_timeout ?? LeaderTimeoutDefault,
+        mouse: next.mouse ?? true,
       }
       if (JSON.stringify(config.keybinds.bindings) === JSON.stringify(store.keybinds.bindings)) {
         config.keybinds = store.keybinds
@@ -50,16 +51,14 @@ export namespace KiloTuiConfig {
   export function Provider(props: ParentProps<{ config: TuiConfig.Resolved }>) {
     const store = makeStore(props.config)
     return (
-      <ConfigContext.Provider value={store.config}>
+      <TuiConfigProvider config={store.config}>
         <SetContext.Provider value={store.set}>{props.children}</SetContext.Provider>
-      </ConfigContext.Provider>
+      </TuiConfigProvider>
     )
   }
 
   export function use() {
-    const value = useContext(ConfigContext)
-    if (!value) throw new Error("TuiConfig context must be used within a context provider")
-    return value
+    return useTuiConfig()
   }
 
   export function useSet() {

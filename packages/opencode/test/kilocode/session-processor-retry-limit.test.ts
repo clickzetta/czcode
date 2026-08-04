@@ -18,7 +18,9 @@ import { Image } from "../../src/image/image"
 import { Permission } from "../../src/permission"
 import { Plugin } from "../../src/plugin"
 import type { Provider } from "../../src/provider/provider"
-import { ModelID, ProviderID } from "../../src/provider/schema"
+import { LLMEvent } from "@opencode-ai/llm"
+import { ProviderV2 } from "@opencode-ai/core/provider"
+import { ModelV2 } from "@opencode-ai/core/model"
 import { Session } from "../../src/session/session"
 import { LLM } from "../../src/session/llm"
 import { MessageV2 } from "../../src/session/message-v2"
@@ -30,6 +32,8 @@ import { SessionSummary } from "../../src/session/summary"
 import { Snapshot } from "../../src/snapshot"
 import { SyncEvent } from "../../src/sync"
 import { EventV2Bridge } from "@/event-v2-bridge"
+import { Database } from "@opencode-ai/core/database/database"
+import { Reference } from "@opencode-ai/core/reference"
 import * as Log from "@opencode-ai/core/util/log"
 import * as CrossSpawnSpawner from "@opencode-ai/core/cross-spawn-spawner"
 import { provideTmpdirInstance } from "../fixture/fixture"
@@ -38,11 +42,11 @@ import { testEffect } from "../lib/effect"
 Log.init({ print: false })
 
 const ref = {
-  providerID: ProviderID.make("test"),
-  modelID: ModelID.make("test-model"),
+  providerID: ProviderV2.ID.make("test"),
+  modelID: ModelV2.ID.make("test-model"),
 }
 
-type Script = Stream.Stream<LLM.Event, unknown>
+type Script = Stream.Stream<LLMEvent, unknown>
 
 class TestLLM extends Context.Service<
   TestLLM,
@@ -107,24 +111,33 @@ const llm = Layer.unwrap(
   }),
 )
 
-const status = SessionStatus.layer.pipe(Layer.provideMerge(Bus.layer))
+const status = Layer.mergeAll(SessionStatus.defaultLayer, Bus.layer)
 const infra = Layer.mergeAll(NodeFileSystem.layer, CrossSpawnSpawner.defaultLayer)
-const deps = Layer.mergeAll(
-  Session.defaultLayer,
-  Snapshot.defaultLayer,
-  AgentSvc.defaultLayer,
-  Permission.defaultLayer,
-  Plugin.defaultLayer,
-  Config.defaultLayer,
-  RuntimeFlags.layer(),
-  SessionSummary.defaultLayer,
-  Image.defaultLayer,
-  SyncEvent.defaultLayer,
-  EventV2Bridge.defaultLayer,
-  status,
-  llm,
-).pipe(Layer.provideMerge(infra))
-const env = SessionProcessor.layer.pipe(Layer.provideMerge(deps))
+const reference = Layer.mock(Reference.Service, {
+  list: () => Effect.succeed([]),
+})
+const env = SessionProcessor.layer.pipe(
+  Layer.provideMerge(
+    Layer.mergeAll(
+      Session.defaultLayer,
+      Snapshot.defaultLayer,
+      AgentSvc.defaultLayer,
+      Permission.defaultLayer,
+      Plugin.defaultLayer,
+      Config.defaultLayer,
+      RuntimeFlags.layer(),
+      reference,
+      SessionSummary.defaultLayer,
+      Image.defaultLayer,
+      SyncEvent.defaultLayer,
+      EventV2Bridge.defaultLayer,
+      Database.defaultLayer,
+      status,
+      llm,
+    ).pipe(Layer.provideMerge(infra)),
+  ),
+  Layer.provide(reference),
+)
 
 const it = testEffect(env)
 
@@ -194,7 +207,7 @@ describe("session processor retry limit", () => {
               tools: {},
             }
 
-            const expected = MessageV2.fromError(retryable429(), { providerID: ProviderID.make("test") })
+            const expected = MessageV2.fromError(retryable429(), { providerID: ProviderV2.ID.make("test") })
             try {
               const result = yield* handle.process(input)
               const calls = yield* test.calls

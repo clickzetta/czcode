@@ -1,4 +1,4 @@
-import { Server } from "../../server/server"
+
 import { PublicApi } from "../../server/routes/instance/httpapi/public"
 import type { CommandModule } from "yargs"
 import { OpenApi } from "effect/unstable/httpapi"
@@ -9,6 +9,7 @@ export const GenerateCommand = {
   command: "generate",
   builder: (yargs) => yargs,
   handler: async () => {
+    const { Server } = await import("../../server/server")
     const specs = (await Server.openapi()) as {
       info: { title: string; description: string } // kilocode_change
       paths: Record<string, Record<string, any>>
@@ -26,7 +27,7 @@ export const GenerateCommand = {
           {
             lang: "js",
             source: [
-              `import { createKiloClient } from "@kilocode/sdk`,
+              `import { createKiloClient } from "@kilocode/sdk"`,
               ``,
               `const client = createKiloClient()`,
               `await client.${operation.operationId}({`,

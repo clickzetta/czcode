@@ -3,7 +3,7 @@ name: containers
 on:
   push:
     branches:
-      - dev
+      - main # kilocode_change
     paths:
       - packages/containers/**
       - .github/workflows/containers.yml
@@ -16,6 +16,7 @@ permissions:
 
 jobs:
   build:
+    if: github.event_name == 'workflow_dispatch' || github.repository == 'Kilo-Org/kilocode' # kilocode_change
     runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       # kilocode_change start

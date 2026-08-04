@@ -2,9 +2,11 @@
 import { afterEach, describe, expect, test } from "bun:test"
 import { Effect, Layer, Option, Schema } from "effect"
 import { NodeFileSystem, NodePath } from "@effect/platform-node"
+import { FetchHttpClient } from "effect/unstable/http"
+import { Git } from "../../../src/git"
 import path from "path"
 import { Global } from "@opencode-ai/core/global"
-import { AppFileSystem } from "@opencode-ai/core/filesystem"
+import { FSUtil } from "@opencode-ai/core/fs-util"
 import { EffectFlock } from "@opencode-ai/core/util/effect-flock"
 import * as CrossSpawnSpawner from "@opencode-ai/core/cross-spawn-spawner"
 import { Npm } from "@opencode-ai/core/npm"
@@ -36,10 +38,12 @@ const noopNpm = Layer.mock(Npm.Service)({
 })
 const layer = Config.layer.pipe(
   Layer.provide(EffectFlock.defaultLayer),
-  Layer.provide(AppFileSystem.defaultLayer),
+  Layer.provide(FSUtil.defaultLayer),
   Layer.provide(Env.defaultLayer),
   Layer.provide(emptyAuth),
   Layer.provide(emptyAccount),
+  Layer.provide(Git.defaultLayer),
+  Layer.provide(FetchHttpClient.layer),
   Layer.provideMerge(infra),
   Layer.provide(noopNpm),
 )
@@ -97,7 +101,7 @@ describe("markdown substitutions", () => {
       },
     })
 
-    const md = await ConfigMarkdown.parse(path.join(tmp.path, "SKILL.md"))
+    const md = await ConfigMarkdown.parse(path.join(tmp.path, "SKILL.md"), { trusted: true })
 
     expect(md.content).toContain("file content")
     expect(md.content).toContain("env content")

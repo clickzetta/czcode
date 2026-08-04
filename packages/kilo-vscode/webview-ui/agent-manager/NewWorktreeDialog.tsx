@@ -3,7 +3,13 @@
 /** @jsxImportSource solid-js */
 
 import { type Component, For, Show, createSignal, createEffect, createMemo, onMount, onCleanup } from "solid-js"
-import type { AgentManagerBranchesMessage, AgentManagerImportResultMessage, BranchInfo } from "../src/types/messages"
+import type {
+  AgentManagerBranchesMessage,
+  AgentManagerImportResultMessage,
+  BranchInfo,
+  EnhancePromptResultMessage,
+  EnhancePromptErrorMessage,
+} from "../src/types/messages"
 import { Dialog } from "@kilocode/kilo-ui/dialog"
 import { showToast } from "@kilocode/kilo-ui/toast"
 import { Icon } from "@kilocode/kilo-ui/icon"
@@ -16,11 +22,13 @@ import { useServer } from "../src/context/server"
 import { useSession } from "../src/context/session"
 import { useProvider } from "../src/context/provider"
 import { useConfig } from "../src/context/config"
+import { cycleVariant } from "../src/context/session-variant-store"
 import { ModelSelectorBase } from "../src/components/shared/ModelSelector"
 import { ModeSwitcherBase } from "../src/components/shared/ModeSwitcher"
 import { SpeechToTextButton } from "../src/components/speech-to-text/SpeechToTextButton"
 import { canUseSpeechToText, selectedSpeechToTextModel } from "../src/components/speech-to-text/availability"
 import { ThinkingSelectorBase } from "../src/components/shared/ThinkingSelector"
+import { SandboxButtonBase, SandboxTooltipContent } from "../src/components/shared/SandboxButton"
 import {
   MultiModelSelector,
   type ModelAllocations,
@@ -33,7 +41,9 @@ import { useImageAttachments, type ImageAttachment } from "../src/hooks/useImage
 import { useSpeechToText } from "../src/components/speech-to-text/useSpeechToText"
 import { convertToMentionPath } from "../src/utils/path-mentions"
 import { insertSpacedText } from "../src/components/chat/prompt-input-utils"
+import { WandSparkles } from "@kilocode/kilo-ui/lucide"
 import { BranchSelect, BranchSelectPopover } from "../src/components/shared/BranchSelect"
+import { tracker } from "./telemetry"
 
 type VersionCount = 1 | 2 | 3 | 4
 const VERSION_OPTIONS: VersionCount[] = [1, 2, 3, 4]
@@ -64,13 +74,19 @@ function sanitizeBranchName(name: string): string {
     .join("/")
 }
 
-export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBranch?: string }> = (props) => {
+export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBranch?: string; projectId?: string }> = (
+  props,
+) => {
   const { t } = useLanguage()
   const vscode = useVSCode()
   const server = useServer()
   const session = useSession()
   const provider = useProvider()
-  const { config } = useConfig()
+  const { config, globalConfig, features, settings } = useConfig()
+  const metrics = tracker(vscode)
+  const track = (button: string, properties?: Record<string, string | number | boolean | undefined>) =>
+    metrics.track(button, "configure_worktree_dialog", properties)
+  const click = metrics.click
 
   const [tab, setTab] = createSignal<DialogTab>("new")
 
@@ -90,6 +106,7 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
   const [modelAllocations, setModelAllocations] = createSignal<ModelAllocations>(new Map())
   const [agent, setAgent] = createSignal(session.selectedAgent())
   const [starting, setStarting] = createSignal(false)
+  const [enhancing, setEnhancing] = createSignal(false)
   const [showAdvanced, setShowAdvanced] = createSignal(false)
   const [branchName, setBranchName] = createSignal("")
   const [baseBranch, setBaseBranch] = createSignal<string | null>(null)
@@ -97,9 +114,24 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
   const [compareOpen, setCompareOpen] = createSignal(false)
   const [highlightedIndex, setHighlightedIndex] = createSignal(0)
   const [variant, setVariant] = createSignal<string | undefined>(session.currentVariant())
+  const [sandbox, setSandbox] = createSignal<boolean | undefined>()
+  const [sandboxDefault, setSandboxDefault] = createSignal<boolean | undefined>()
+  const [sandboxOverride, setSandboxOverride] = createSignal<boolean | undefined>()
+  const [sandboxAvailable, setSandboxAvailable] = createSignal(true)
+  const [sandboxReason, setSandboxReason] = createSignal<string | undefined>()
+  const [sandboxRevision, setSandboxRevision] = createSignal(-1)
+  const sandboxRequestID = crypto.randomUUID()
+  const sandboxVisible = () => features().sandboxControls && globalConfig().sandbox?.enabled === true
   const speech = useSpeechToText(vscode, server, { t })
-  const canUseSpeech = () => canUseSpeechToText(config(), provider.connected(), server.profileData())
+  const canUseSpeech = () => canUseSpeechToText(config(), provider.authStates())
   const speechModel = () => selectedSpeechToTextModel(config())
+  let prior: string | null = null
+  let request: string | undefined
+  const cancel = () => {
+    prior = null
+    request = undefined
+    setEnhancing(false)
+  }
 
   // Variant list for the currently selected model
   const variants = createMemo(() => {
@@ -137,6 +169,45 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
     if (!stored || !list.includes(stored)) setVariant(list[0])
   })
 
+  createEffect(() => {
+    if (!sandboxVisible()) return
+    if (server.connectionState() !== "connected") {
+      setSandbox(undefined)
+      setSandboxDefault(undefined)
+      setSandboxOverride(undefined)
+      return
+    }
+    vscode.postMessage({ type: "requestSandboxDefault", requestID: sandboxRequestID })
+  })
+
+  const unsubSandbox = vscode.onMessage((message) => {
+    if (message.type !== "sandboxDefaultStatus") return
+    if (message.requestID !== sandboxRequestID) return
+    if (message.revision < sandboxRevision()) return
+
+    setSandboxRevision(message.revision)
+    setSandboxDefault(message.desired)
+    setSandboxAvailable(message.available)
+    setSandboxReason(message.reason)
+
+    const override = sandboxOverride()
+    if (override === undefined) {
+      setSandbox(message.enabled)
+      return
+    }
+    if (override === message.desired) setSandboxOverride(undefined)
+  })
+  onCleanup(unsubSandbox)
+
+  const toggleSandbox = () => {
+    const current = sandbox()
+    if (current === undefined || !sandboxAvailable()) return
+    const next = !current
+    setSandbox(next)
+    setSandboxOverride(next === sandboxDefault() ? undefined : next)
+    vscode.postMessage({ type: "setSandboxDefault", enabled: next, requestID: sandboxRequestID })
+  }
+
   const imageAttach = useImageAttachments()
   imageAttach.setFilePathDropHandler((paths) => {
     const cwd = server.workspaceDirectory()
@@ -150,6 +221,7 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
     const inserted = resolved.map((p) => `@${p}`).join(" ")
     const result = before + inserted + " " + after
     ref.value = result
+    cancel()
     setPrompt(result)
     persistPrompt(result)
     const pos = cursor + inserted.length + 1
@@ -176,10 +248,11 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
   createEffect(() => persistImages(imageAttach.images()))
 
   let textareaRef: HTMLTextAreaElement | undefined
+  let containerRef: HTMLDivElement | undefined
 
   onMount(() => {
     setBranchesLoading(true)
-    vscode.postMessage({ type: "agentManager.requestBranches" })
+    vscode.postMessage({ type: "agentManager.requestBranches", projectId: props.projectId })
     // Resize textarea if restoring a cached prompt
     if (prompt()) adjustHeight()
     const focus = () => {
@@ -209,6 +282,8 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
     if (compareMode() && totalAllocations(modelAllocations()) === 0) return false
     return true
   }
+  const total = () => (compareMode() ? totalAllocations(modelAllocations()) : versions())
+  const mode = () => (compareMode() ? "compare_models" : versions() > 1 ? "multiple_versions" : "single")
 
   const handleSubmit = () => {
     if (!canSubmit()) return
@@ -224,11 +299,12 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
 
     const isCompare = compareMode()
     const allocations = isCompare ? allocationsToArray(modelAllocations()) : undefined
-    const count = isCompare ? totalAllocations(modelAllocations()) : versions()
+    const count = total()
     const sel = isCompare ? null : model()
 
     vscode.postMessage({
       type: "agentManager.createMultiVersion",
+      projectId: props.projectId,
       text,
       name: name().trim() || undefined,
       versions: count,
@@ -239,6 +315,7 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
       baseBranch: advanced ? (baseBranch() ?? undefined) : undefined,
       branchName: customBranch,
       modelAllocations: allocations,
+      sandbox: sandboxVisible() ? sandboxOverride() : undefined,
       files: imgFiles,
     })
 
@@ -254,10 +331,46 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
     }
   }
 
-  const adjustHeight = () => {
+  const undo = (e: KeyboardEvent) => {
+    if (e.key !== "z" || (!e.metaKey && !e.ctrlKey) || e.shiftKey || prior === null) return
+    e.preventDefault()
+    const restored = prior
+    cancel()
+    setPrompt(restored)
+    persistPrompt(restored)
     if (!textareaRef) return
-    textareaRef.style.height = "auto"
-    textareaRef.style.height = `${Math.min(textareaRef.scrollHeight, 200)}px`
+    textareaRef.value = restored
+    adjustHeight()
+    textareaRef.focus()
+  }
+
+  const onKey = (e: KeyboardEvent) => {
+    // Shift+Tab cycles reasoning effort variants (setting: chat.shiftTabCyclesVariant).
+    // When disabled or no variants exist, fall through to default focus navigation.
+    if (e.key === "Tab" && e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      if (settings()["chat.shiftTabCyclesVariant"] === false) return
+      const list = variants()
+      if (list.length === 0) return
+      const next = cycleVariant(effectiveVariant(), list)
+      if (!next) return
+      e.preventDefault()
+      setVariant(next)
+      return
+    }
+    undo(e)
+  }
+
+  const adjustHeight = () => {
+    const box = containerRef
+    const area = textareaRef
+    if (!box || !area) return
+    // Grow the container with the prompt (same 200px auto-grow cap as the
+    // sidebar prompt), never the textarea: it fills the container and is the
+    // only element that scrolls. A manual container resize persists until the
+    // next input re-fits the height.
+    box.style.height = "auto"
+    const chrome = box.offsetHeight - area.offsetHeight
+    box.style.height = `${Math.min(area.scrollHeight, 200) + chrome}px`
   }
 
   const insertSpeechText = (value: string) => {
@@ -267,6 +380,7 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
     const end = ref?.selectionEnd ?? start
     const result = insertSpacedText(current, value, start, end)
 
+    cancel()
     setPrompt(result.text)
     persistPrompt(result.text)
     if (!ref) return
@@ -278,6 +392,29 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
 
   const startSpeech = () => {
     speech.start({ model: speechModel(), insert: insertSpeechText })
+  }
+
+  const canEnhance = () => !starting() && !enhancing() && !speech.active() && server.isConnected()
+
+  const handleEnhance = () => {
+    if (!canEnhance()) return
+    const draft = prompt().trim()
+    if (!draft) {
+      const description = t("prompt.action.enhanceDescription")
+      setPrompt(description)
+      persistPrompt(description)
+      if (textareaRef) {
+        textareaRef.value = description
+        adjustHeight()
+        textareaRef.focus()
+      }
+      return
+    }
+    prior = prompt()
+    const id = `enhance-newworktree-${crypto.randomUUID()}`
+    request = id
+    setEnhancing(true)
+    vscode.postMessage({ type: "enhancePrompt", text: draft, requestId: id })
   }
 
   // --- Import tab state ---
@@ -307,23 +444,45 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
         showToast({ variant: "error", title: t("agentManager.import.failed"), description })
       }
     }
+    if (msg.type === "enhancePromptResult") {
+      const ev = msg as EnhancePromptResultMessage
+      if (ev.requestId === request) {
+        request = undefined
+        setPrompt(ev.text)
+        persistPrompt(ev.text)
+        setEnhancing(false)
+        if (textareaRef) {
+          textareaRef.value = ev.text
+          adjustHeight()
+          textareaRef.focus()
+        }
+      }
+    }
+    if (msg.type === "enhancePromptError") {
+      const ev = msg as EnhancePromptErrorMessage
+      if (ev.requestId === request) cancel()
+    }
   })
 
-  onCleanup(() => importUnsub())
+  onCleanup(() => {
+    request = undefined
+    importUnsub()
+  })
 
   const handlePRSubmit = () => {
     const url = prUrl().trim()
     if (!url || isPending()) return
     setPrPending(true)
-    vscode.postMessage({ type: "agentManager.importFromPR", url })
+    vscode.postMessage({ type: "agentManager.importFromPR", projectId: props.projectId, url })
   }
 
   const handleBranchSelect = (name: string) => {
     if (isPending()) return
+    track("import_branch")
     setImportPending(true)
     setBranchOpen(false)
     setBranchSearch("")
-    vscode.postMessage({ type: "agentManager.importFromBranch", branch: name })
+    vscode.postMessage({ type: "agentManager.importFromBranch", projectId: props.projectId, branch: name })
   }
 
   return (
@@ -333,7 +492,7 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
         <button
           class="am-tab-switcher-pill"
           classList={{ "am-tab-switcher-pill-active": tab() === "new" }}
-          onClick={() => setTab("new")}
+          onClick={click("switch_dialog_tab", "configure_worktree_dialog", () => setTab("new"), { tab: "new" })}
           type="button"
         >
           {t("agentManager.dialog.tab.new")}
@@ -341,7 +500,7 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
         <button
           class="am-tab-switcher-pill"
           classList={{ "am-tab-switcher-pill-active": tab() === "import" }}
-          onClick={() => setTab("import")}
+          onClick={click("switch_dialog_tab", "configure_worktree_dialog", () => setTab("import"), { tab: "import" })}
           type="button"
         >
           {t("agentManager.dialog.tab.import")}
@@ -360,6 +519,7 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
             />
             {/* Prompt input — reuses the sidebar chat-input base classes for consistent styling */}
             <div
+              ref={containerRef}
               class="prompt-input-container am-prompt-input-container"
               classList={{ "prompt-input-container--dragging": imageAttach.dragging() }}
               onDragOver={imageAttach.handleDragOver}
@@ -405,19 +565,28 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
                     value={prompt()}
                     onInput={(e) => {
                       const val = e.currentTarget.value
+                      cancel()
                       setPrompt(val)
                       persistPrompt(val)
                       adjustHeight()
                     }}
+                    onKeyDown={onKey}
                     onPaste={(e) => imageAttach.handlePaste(e)}
                     rows={3}
+                    dir="auto"
                   />
                 </div>
               </div>
               <div class="prompt-input-hint">
                 <div class="prompt-input-hint-selectors">
                   <Show when={session.agents().length > 1}>
-                    <ModeSwitcherBase agents={session.agents()} value={agent()} onSelect={setAgent} deferDismiss />
+                    <ModeSwitcherBase
+                      agents={session.agents()}
+                      value={agent()}
+                      onSelect={setAgent}
+                      portal={false}
+                      deferDismiss
+                    />
                   </Show>
                   <Show when={!compareMode()}>
                     <ModelSelectorBase
@@ -433,7 +602,9 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
                       variants={variants()}
                       value={effectiveVariant()}
                       onSelect={setVariant}
+                      portal={false}
                       deferDismiss
+                      cycleHint={settings()["chat.shiftTabCyclesVariant"] !== false}
                     />
                     <Show when={overridden()}>
                       <Tooltip value={t("prompt.action.resetModel")} placement="top">
@@ -452,6 +623,35 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
                   </Show>
                 </div>
                 <div class="prompt-input-hint-actions">
+                  <Tooltip value={t("prompt.action.enhance")} placement="top">
+                    <Button
+                      variant="ghost"
+                      size="small"
+                      onClick={handleEnhance}
+                      disabled={!canEnhance()}
+                      aria-label={t("prompt.action.enhance")}
+                    >
+                      <WandSparkles size={16} class={enhancing() ? "enhance-spinner" : ""} />
+                    </Button>
+                  </Tooltip>
+                  <Show when={sandboxVisible()}>
+                    <SandboxButtonBase
+                      enabled={sandbox() ?? false}
+                      available={sandbox() === undefined ? undefined : sandboxAvailable()}
+                      reason={sandboxReason()}
+                      disabled={sandbox() === undefined}
+                      tooltip={
+                        <SandboxTooltipContent
+                          enabled={sandbox() ?? false}
+                          network={config().sandbox?.network !== "allow"}
+                        />
+                      }
+                      tooltipClass="prompt-sandbox-tooltip-content"
+                      onToggle={click("sandbox_toggle", "configure_worktree_dialog", toggleSandbox, () => ({
+                        enabled: !(sandbox() ?? false),
+                      }))}
+                    />
+                  </Show>
                   <Show when={canUseSpeech()}>
                     <SpeechToTextButton speech={speech} disabled={starting()} start={startSpeech} label={t} />
                   </Show>
@@ -460,7 +660,16 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
             </div>
 
             {/* Advanced options toggle */}
-            <button class="am-advanced-toggle" onClick={() => setShowAdvanced(!showAdvanced())} type="button">
+            <button
+              class="am-advanced-toggle"
+              onClick={click(
+                "advanced_options",
+                "configure_worktree_dialog",
+                () => setShowAdvanced(!showAdvanced()),
+                () => ({ action: showAdvanced() ? "close" : "open" }),
+              )}
+              type="button"
+            >
               <Icon name={showAdvanced() ? "chevron-down" : "chevron-right"} size="small" />
               <span>{t("agentManager.dialog.advancedOptions")}</span>
             </button>
@@ -584,7 +793,9 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
                       <button
                         class="am-nv-pill"
                         classList={{ "am-nv-pill-active": versions() === count }}
-                        onClick={() => setVersions(count)}
+                        onClick={click("version_count", "configure_worktree_dialog", () => setVersions(count), {
+                          count,
+                        })}
                         type="button"
                       >
                         {count}
@@ -595,7 +806,13 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
                       placement="top"
                       contentClass="am-tooltip-wrap"
                     >
-                      <button class="am-nv-pill am-nv-pill-compare" onClick={() => setCompareMode(true)} type="button">
+                      <button
+                        class="am-nv-pill am-nv-pill-compare"
+                        onClick={click("compare_models", "configure_worktree_dialog", () => setCompareMode(true), {
+                          action: "open",
+                        })}
+                        type="button"
+                      >
                         <Icon name="layers" size="small" />
                         <span class="am-nv-pill-compare-label">{t("agentManager.dialog.compareModels")}</span>
                       </button>
@@ -622,6 +839,7 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
                   <button
                     class="am-nv-pill-back"
                     onClick={() => {
+                      track("compare_models", { action: "close" })
                       setCompareMode(false)
                       setModelAllocations(new Map())
                     }}
@@ -653,7 +871,9 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
                           }
                         >
                           <span class="am-selector-value">
-                            {[...modelAllocations().values()].map((e) => e.name).join(", ")}
+                            {[...modelAllocations().values()]
+                              .map((e) => (e.variant ? `${e.name} (${e.variant})` : e.name))
+                              .join(", ")}
                           </span>
                         </Show>
                       </span>
@@ -670,7 +890,21 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
           </div>
           {/* Submit button — fixed footer, always visible */}
           <div class="am-nv-dialog-footer">
-            <Button variant="primary" size="large" class="am-nv-submit" onClick={handleSubmit} disabled={!canSubmit()}>
+            <Button
+              variant="primary"
+              size="large"
+              class="am-nv-submit"
+              onClick={click("create_worktree", "configure_worktree_dialog", handleSubmit, () => ({
+                mode: mode(),
+                versionCount: total(),
+                advanced: showAdvanced(),
+                customBranch: showAdvanced() && !!branchName().trim(),
+                customBase: showAdvanced() && !!baseBranch(),
+                hasPrompt: !!prompt().trim(),
+                hasAttachments: imageAttach.images().length > 0,
+              }))}
+              disabled={!canSubmit()}
+            >
               <Show
                 when={!starting()}
                 fallback={
@@ -714,7 +948,7 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
               <Button
                 variant="secondary"
                 size="small"
-                onClick={handlePRSubmit}
+                onClick={click("import_pull_request", "configure_worktree_dialog", handlePRSubmit)}
                 disabled={!prUrl().trim() || isPending()}
               >
                 <Show when={prPending()} fallback={t("agentManager.import.open")}>

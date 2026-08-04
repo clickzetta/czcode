@@ -14,13 +14,15 @@ import { NodeFileSystem, NodePath } from "@effect/platform-node"
 import { Config } from "../../src/config/config"
 import { EffectFlock } from "@opencode-ai/core/util/effect-flock"
 import { Npm } from "@opencode-ai/core/npm"
-import { AppFileSystem } from "@opencode-ai/core/filesystem"
+import { FSUtil } from "@opencode-ai/core/fs-util"
 import { Env } from "../../src/env"
+import { Git } from "../../src/git"
 import { Auth } from "../../src/auth"
 import { Account } from "../../src/account/account"
 import { provideTestInstance } from "../fixture/fixture"
 import { Filesystem } from "../../src/util/filesystem"
 import * as CrossSpawnSpawner from "@opencode-ai/core/cross-spawn-spawner"
+import { HttpClient } from "effect/unstable/http"
 import { tmpdir } from "../fixture/fixture"
 
 const infra = CrossSpawnSpawner.defaultLayer.pipe(
@@ -42,14 +44,20 @@ const noopNpm = Layer.mock(Npm.Service)({
   which: () => Effect.succeed(Option.none()),
 })
 
+const unexpectedHttp = HttpClient.make((request) =>
+  Effect.die(`unexpected http request: ${request.method} ${request.url}`),
+)
+
 const testLayer = Config.layer.pipe(
+  Layer.provide(Git.defaultLayer),
   Layer.provide(EffectFlock.defaultLayer),
-  Layer.provide(AppFileSystem.defaultLayer),
+  Layer.provide(FSUtil.defaultLayer),
   Layer.provide(Env.defaultLayer),
   Layer.provide(emptyAuth),
   Layer.provide(emptyAccount),
   Layer.provideMerge(infra),
   Layer.provide(noopNpm),
+  Layer.provide(Layer.succeed(HttpClient.HttpClient, unexpectedHttp)),
 )
 
 test(".gitignore in .kilo config dir includes pnpm and yarn lockfile patterns", async () => {

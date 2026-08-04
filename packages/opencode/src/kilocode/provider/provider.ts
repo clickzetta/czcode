@@ -8,8 +8,10 @@
 
 import { createKilo, type KiloProvider, AI_SDK_PROVIDERS, PROMPTS } from "@kilocode/kilo-gateway"
 import { DEFAULT_HEADERS } from "@/kilocode/const"
-import { ProviderID, ModelID } from "@/provider/schema"
+import { ProviderV2 } from "@opencode-ai/core/provider"
+import { ModelV2 } from "@opencode-ai/core/model"
 import { optionalOmitUndefined } from "@opencode-ai/core/schema"
+import { ProviderError } from "@/provider/error"
 import { Effect, Schema } from "effect"
 import type { LanguageModelV3 } from "@ai-sdk/provider"
 import { mapValues, omit, pickBy } from "remeda"
@@ -36,10 +38,16 @@ export const KILO_MODEL_SCHEMA_EXTENSIONS = {
   prompt: Schema.optional(Schema.Literals(PROMPTS)),
   isFree: Schema.optional(Schema.Boolean),
   mayTrainOnYourPrompts: Schema.optional(Schema.Boolean),
+  hasUserByokAvailable: Schema.optional(Schema.Boolean),
   terminalBench: optionalOmitUndefined(
     Schema.Struct({
       overallScore: Schema.Finite,
       avgAttemptCostUsd: Schema.Finite,
+    }),
+  ),
+  autoRouting: optionalOmitUndefined(
+    Schema.Struct({
+      models: Schema.Array(Schema.String),
     }),
   ),
   ai_sdk_provider: Schema.optional(Schema.Literals(AI_SDK_PROVIDERS)),
@@ -56,7 +64,9 @@ export function patchModelsDevModel(providerID: string, source: any) {
     prompt: source.prompt,
     isFree: source.isFree,
     mayTrainOnYourPrompts: source.mayTrainOnYourPrompts,
+    hasUserByokAvailable: source.hasUserByokAvailable,
     terminalBench: source.terminalBench,
+    autoRouting: source.autoRouting,
     ai_sdk_provider: source.ai_sdk_provider,
     options: source.options ?? {},
   }
@@ -72,7 +82,9 @@ export function patchConfigModel(cfg: any, existing: any) {
     prompt: cfg.prompt ?? existing?.prompt,
     isFree: cfg.isFree ?? existing?.isFree,
     mayTrainOnYourPrompts: cfg.mayTrainOnYourPrompts ?? existing?.mayTrainOnYourPrompts,
+    hasUserByokAvailable: cfg.hasUserByokAvailable ?? existing?.hasUserByokAvailable,
     terminalBench: existing?.terminalBench,
+    autoRouting: existing?.autoRouting,
     ai_sdk_provider: cfg.ai_sdk_provider ?? existing?.ai_sdk_provider,
     variants: cfg.variants
       ? mapValues(
@@ -115,6 +127,11 @@ function useLanguageModel(sdk: any) {
   return sdk.responses === undefined && sdk.chat === undefined
 }
 
+export function patchKiloProviderPrivacy(provider: { options?: Record<string, any> } | undefined, config: any) {
+  if (!provider || config.hide_prompt_training_models !== true) return
+  provider.options = { ...provider.options, dataCollection: "deny" }
+}
+
 export function kiloCustomLoaders(dep: CustomDep): Record<string, CustomLoader> {
   return {
     "github-copilot-enterprise": () =>
@@ -129,16 +146,20 @@ export function kiloCustomLoaders(dep: CustomDep): Record<string, CustomLoader> 
 
     kilo: Effect.fnUntraced(function* (input: any) {
       const env = yield* dep.env()
+      const config = yield* dep.config()
       const hasKey = yield* Effect.gen(function* () {
         if (input.env.some((item: string) => env[item])) return true
         if (yield* dep.auth(input.id)) return true
-        if ((yield* dep.config()).provider?.["kilo"]?.options?.apiKey) return true
+        if (config.provider?.["kilo"]?.options?.apiKey) return true
         return false
       })
 
       const options: Record<string, string> = {}
       if (env.KILO_ORG_ID) {
         options.kilocodeOrganizationId = env.KILO_ORG_ID
+      }
+      if (config.hide_prompt_training_models === true) {
+        options.dataCollection = "deny"
       }
       if (!hasKey) {
         options.apiKey = "anonymous"
@@ -225,28 +246,105 @@ export function kiloSmallModelPriority(providerID: string): string[] | undefined
 }
 
 // ---------------------------------------------------------------------------
-// Fetch timeout wrapper
+// Fetch timeout wrappers
 // Replaces AbortSignal.timeout() with a cancellable setTimeout+AbortController
-// so the timer is cleared once response headers arrive. This prevents healthy
-// streaming responses from being aborted mid-stream.
+// so the timer is cleared once response headers arrive, then hands the remaining
+// deadline to wrapFirstByte until the body produces data. One configured
+// `timeout` value bounds both phases together, so providers that accept a
+// request and go silent cannot hang the agent loop, while healthy streaming
+// responses are never aborted mid-stream.
 // ---------------------------------------------------------------------------
+
+/**
+ * Resolves the configured request timeout in milliseconds. `timeout: false`
+ * explicitly disables it (returns `undefined`); any other invalid, unset or
+ * non-positive value falls back to {@link REQUEST_TIMEOUT_MS} so the wait for a
+ * provider response is always bounded rather than left open-ended.
+ */
+export function requestTimeout(options: Record<string, any>): number | undefined {
+  const ms = options["timeout"] ?? REQUEST_TIMEOUT_MS
+  if (ms === false) return undefined
+  if (typeof ms === "number" && Number.isFinite(ms) && ms > 0) return ms
+  return REQUEST_TIMEOUT_MS
+}
 
 export function buildTimeoutSignal(options: Record<string, any>): {
   signal: AbortSignal | undefined
   clear: () => void
 } {
-  const ms = options["timeout"] ?? REQUEST_TIMEOUT_MS
-  if (ms === false || ms === undefined || ms === null) return { signal: undefined, clear() {} }
+  const ms = requestTimeout(options)
+  if (ms === undefined) return { signal: undefined, clear() {} }
 
   const controller = new AbortController()
-  const timer = setTimeout(
-    () => controller.abort(new DOMException("The operation timed out.", "TimeoutError")),
-    ms as number,
-  )
+  const timer = setTimeout(() => controller.abort(new DOMException("The operation timed out.", "TimeoutError")), ms)
   return {
     signal: controller.signal,
     clear() {
       clearTimeout(timer)
     },
   }
+}
+
+/**
+ * Bounds the wait for the response body's first byte by `ms`.
+ *
+ * Response headers do not prove a live stream: a provider can answer 200 with
+ * SSE headers and then never send data. The connection-phase timeout is cleared
+ * as soon as headers arrive, so that state used to hang the agent loop forever
+ * (the turn sits between step-finish and the next step-start with no error).
+ *
+ * Only the first byte is guarded. Once any data arrives the wrapper becomes a
+ * passthrough, so idle gaps inside a streaming response (reasoning, buffering,
+ * slow token generation) are never touched here and remain opt-in through
+ * `chunkTimeout`.
+ */
+export function wrapFirstByte(res: Response, ms: number, ctl: AbortController) {
+  if (typeof ms !== "number" || ms <= 0) return res
+  if (!res.body) return res
+
+  const reader = res.body.getReader()
+  let seen = false
+  const body = new ReadableStream<Uint8Array>({
+    async pull(ctrl) {
+      if (seen) {
+        const part = await reader.read()
+        if (part.done) return ctrl.close()
+        return ctrl.enqueue(part.value)
+      }
+
+      const part = await new Promise<Awaited<ReturnType<typeof reader.read>>>((resolve, reject) => {
+        const id = setTimeout(() => {
+          const err = new ProviderError.ResponseStreamError(`Provider sent no response data within ${ms}ms`)
+          ctl.abort(err)
+          void reader.cancel(err)
+          reject(err)
+        }, ms)
+
+        reader.read().then(
+          (part) => {
+            clearTimeout(id)
+            resolve(part)
+          },
+          (err) => {
+            clearTimeout(id)
+            reject(err)
+          },
+        )
+      })
+
+      seen = true
+      if (part.done) return ctrl.close()
+      ctrl.enqueue(part.value)
+    },
+    async cancel(reason) {
+      ctl.abort(reason)
+      await reader.cancel(reason)
+    },
+  })
+
+  return new Response(body, {
+    headers: new Headers(res.headers),
+    status: res.status,
+    statusText: res.statusText,
+  })
 }

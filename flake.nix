@@ -21,63 +21,14 @@
       devShells = forEachSystem (pkgs: {
         default =
           let
-            # Pin bun to the version declared in package.json (packageManager: "bun@1.3.14").
-            # The locked nixpkgs revision ships 1.3.11, so we fetch the official release directly.
-            bun =
-              let
-                sources = {
-                  "aarch64-linux" = {
-                    name = "bun-linux-aarch64";
-                    hash = "sha256-on/7Y6gxA3WDbg1vZorhf6jY0YuIw3yCHGUzGXOhmjs=";
-                  };
-                  "x86_64-linux" = {
-                    name = "bun-linux-x64";
-                    hash = "sha256-lR7iruhV8IWVruxiJSJqKY0/6oOj3NZGXAnLzN9+hI8=";
-                  };
-                  "aarch64-darwin" = {
-                    name = "bun-darwin-aarch64";
-                    hash = "sha256-2LliIYKK1vl6x6wKt+lYcjQa92MAHogD6CZ2UsJlJiA=";
-                  };
-                  "x86_64-darwin" = {
-                    name = "bun-darwin-x64";
-                    hash = "sha256-QYPfM3RiPlurMVxUfPoJdFM81FfYa3O2OfeoeXTNZjM=";
-                  };
-                };
-                source =
-                  sources.${pkgs.stdenv.hostPlatform.system}
-                    or (throw "Unsupported system for bun: ${pkgs.stdenv.hostPlatform.system}");
-              in
-              pkgs.stdenv.mkDerivation rec {
-                pname = "bun";
-                version = "1.3.14";
-                src = pkgs.fetchurl {
-                  url = "https://github.com/oven-sh/bun/releases/download/bun-v${version}/${source.name}.zip";
-                  inherit (source) hash;
-                };
-                nativeBuildInputs = [
-                  pkgs.unzip
-                ] ++ pkgs.lib.optional pkgs.stdenv.isLinux pkgs.autoPatchelfHook;
-                buildInputs = pkgs.lib.optionals pkgs.stdenv.isLinux [ pkgs.stdenv.cc.cc.lib ];
-                dontConfigure = true;
-                dontBuild = true;
-                installPhase = ''
-                  runHook preInstall
-                  install -Dm755 bun $out/bin/bun
-                  ln -s $out/bin/bun $out/bin/bunx
-                  runHook postInstall
-                '';
-                meta = {
-                  description = "Fast all-in-one JavaScript runtime";
-                  homepage = "https://bun.sh";
-                  license = pkgs.lib.licenses.mit;
-                  mainProgram = "bun";
-                  platforms = builtins.attrNames sources;
-                };
-              };
+            bun = pkgs.callPackage ./nix/bun.nix { };
 
             kilo-dev = pkgs.writeShellScriptBin "kilo-dev" ''
-                cd "$KILO_ROOT"
-              exec ${bun}/bin/bun dev "$@"
+              set -euo pipefail
+
+              : "''${KILO_ROOT:?KILO_ROOT is not set. Enter the flake dev shell from the repo root.}"
+              export KILO_DEV_CWD="$PWD"
+              exec ${bun}/bin/bun --cwd "$KILO_ROOT/packages/opencode" --conditions=browser ./src/index.ts "$@"
             '';
 
             kilo-install-bin = pkgs.writeShellScriptBin "kilo-install" ''
@@ -276,11 +227,12 @@
       packages = forEachSystem (
         pkgs:
         let
+          bun = pkgs.callPackage ./nix/bun.nix { };
           node_modules = pkgs.callPackage ./nix/node_modules.nix {
-            inherit rev;
+            inherit bun rev;
           };
           kilo = pkgs.callPackage ./nix/kilo.nix {
-            inherit node_modules;
+            inherit bun node_modules;
           };
         in
         {

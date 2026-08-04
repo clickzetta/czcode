@@ -2,18 +2,18 @@
 // Tests that unauthenticated Kilo models are assembled with paid models and autoloaded anonymously.
 
 import { expect } from "bun:test"
-import { AppFileSystem } from "@opencode-ai/core/filesystem"
+import { FSUtil } from "@opencode-ai/core/fs-util"
 import { ModelsDev } from "../../src/provider/models"
-import * as CoreModels from "@opencode-ai/core/models"
+import * as CoreModels from "@opencode-ai/core/models-dev"
 import { Effect, Layer } from "effect"
 import { FetchHttpClient } from "effect/unstable/http"
-import { kiloCustomLoaders } from "../../src/kilocode/provider/provider"
+import { kiloCustomLoaders, patchKiloProviderPrivacy } from "../../src/kilocode/provider/provider"
 import { Auth } from "../../src/auth"
 import { ModelCache } from "../../src/provider/model-cache"
 import { Provider } from "../../src/provider/provider"
 import { TestConfig } from "../fixture/config"
 import { testEffect } from "../lib/effect"
-import { provideInstance } from "../fixture/fixture"
+import { provideInstance, testInstanceStoreLayer } from "../fixture/fixture"
 
 const input = {
   id: "kilo",
@@ -48,16 +48,16 @@ const auth = Layer.mock(Auth.Service)({
 })
 
 const files = Layer.effect(
-  AppFileSystem.Service,
+  FSUtil.Service,
   Effect.gen(function* () {
-    const fs = yield* AppFileSystem.Service
-    return AppFileSystem.Service.of({
+    const fs = yield* FSUtil.Service
+    return FSUtil.Service.of({
       ...fs,
       readJson: () => Effect.succeed(seed),
       stat: () => fs.stat(import.meta.path),
     })
   }),
-).pipe(Layer.provide(AppFileSystem.defaultLayer))
+).pipe(Layer.provide(FSUtil.defaultLayer))
 
 function load(data?: { auth?: object; config?: object; env?: Record<string, string | undefined> }) {
   return kiloCustomLoaders({
@@ -117,7 +117,7 @@ function layer() {
   )
 }
 
-const it = testEffect(Layer.empty)
+const it = testEffect(testInstanceStoreLayer)
 
 it.live("assembles paid Kilo models without auth", () =>
   Effect.gen(function* () {
@@ -162,6 +162,21 @@ it.effect("enables a paid catalog when config apiKey is present", () =>
     const result = yield* load({ config: { provider: { kilo: { options: { apiKey: "test-key" } } } } })
     expect(result.autoload).toBe(true)
     expect(result.options).toEqual({})
+  }),
+)
+
+it.effect("denies provider data collection when prompt-training models are hidden", () =>
+  Effect.gen(function* () {
+    const result = yield* load({ config: { hide_prompt_training_models: true } })
+    expect(result.options).toEqual({ apiKey: "anonymous", dataCollection: "deny" })
+  }),
+)
+
+it.effect("keeps data collection denied after configured options are applied", () =>
+  Effect.sync(() => {
+    const provider = { options: { dataCollection: "allow", baseURL: "https://api.kilo.ai" } }
+    patchKiloProviderPrivacy(provider, { hide_prompt_training_models: true })
+    expect(provider.options).toEqual({ dataCollection: "deny", baseURL: "https://api.kilo.ai" })
   }),
 )
 

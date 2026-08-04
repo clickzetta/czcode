@@ -7,7 +7,7 @@
 import { t } from "@/kilocode/plugins/czcode-i18n"
 import type { TuiPlugin, TuiPluginModule, TuiToast } from "@kilocode/plugin/tui"
 import { DialogSelect } from "@tui/ui/dialog-select"
-import { useLocal } from "@/cli/cmd/tui/context/local"
+import { useLocal } from "@tui/context/local"
 import { useDialog } from "@tui/ui/dialog"
 
 const id = "internal:czcode-role-switch"

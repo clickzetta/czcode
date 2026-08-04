@@ -1,3 +1,7 @@
+// kilocode_change - Kilo compatibility layer. Upstream deleted this Bus (Effect PubSub) service in v1.16.2
+// in favour of EventV2; Kilo keeps it ONLY for existing Kilo-owned callers (kilocode/* features) that rely on
+// its eager-callback subscription + fork-atomicity semantics. Do NOT add new shared/upstream-shaped consumers.
+// Full migration of Kilo callers onto core EventV2 is tracked as a dedicated follow-up.
 import { Effect, Exit, Fiber, Layer, PubSub, Scope, Context, Stream, Schema } from "effect" // kilocode_change
 import { EffectBridge } from "@/effect/bridge"
 import * as Log from "@opencode-ai/core/util/log"
@@ -5,10 +9,12 @@ import { BusEvent } from "./bus-event"
 import { GlobalBus } from "./global"
 import { InstanceState } from "@/effect/instance-state"
 import { makeRuntime } from "@/effect/run-service"
+import { serviceUse } from "@opencode-ai/core/effect/service-use"
 import { Identifier } from "@/id/id"
 import { context as instanceContext, type InstanceContext } from "@/project/instance-context" // kilocode_change
 import { InstanceRef } from "@/effect/instance-ref"
 import { LocalContext } from "@/util/local-context" // kilocode_change
+import { LayerNode } from "@opencode-ai/core/effect/layer-node" // kilocode_change
 
 const log = Log.create({ service: "bus" })
 
@@ -38,8 +44,16 @@ export interface Interface {
     properties: BusProperties<D>,
     options?: { id?: string },
   ) => Effect.Effect<void>
-  readonly subscribe: <D extends BusEvent.Definition>(def: D) => Stream.Stream<Payload<D>>
-  readonly subscribeAll: () => Stream.Stream<Payload>
+  // subscribe / subscribeAll are eager: the underlying PubSub subscription is
+  // acquired in the caller's Scope at `yield*` time. Any publish after the
+  // yield is delivered, even if stream consumption starts later. The previous
+  // Stream-returning shape acquired the subscription lazily on first pull,
+  // opening a race window during which publishes were lost — see
+  // test/bus/bus-effect.test.ts RACE tests.
+  readonly subscribe: <D extends BusEvent.Definition>(
+    def: D,
+  ) => Effect.Effect<Stream.Stream<Payload<D>>, never, Scope.Scope>
+  readonly subscribeAll: () => Effect.Effect<Stream.Stream<Payload>, never, Scope.Scope>
   readonly subscribeCallback: <D extends BusEvent.Definition>(
     def: D,
     callback: (event: Payload<D>) => unknown,
@@ -48,6 +62,8 @@ export interface Interface {
 }
 
 export class Service extends Context.Service<Service, Interface>()("@opencode/Bus") {}
+
+export const use = serviceUse(Service)
 
 export const layer = Layer.effect(
   Service,
@@ -110,26 +126,26 @@ export const layer = Layer.effect(
       })
     }
 
-    function subscribe<D extends BusEvent.Definition>(def: D): Stream.Stream<Payload<D>> {
-      log.info("subscribing", { type: def.type })
-      return Stream.unwrap(
-        Effect.gen(function* () {
-          const s = yield* InstanceState.get(state)
-          const ps = yield* getOrCreate(s, def)
-          return Stream.fromPubSub(ps)
-        }),
-      ).pipe(Stream.ensuring(Effect.sync(() => log.info("unsubscribing", { type: def.type }))))
-    }
+    const subscribe = <D extends BusEvent.Definition>(
+      def: D,
+    ): Effect.Effect<Stream.Stream<Payload<D>>, never, Scope.Scope> =>
+      Effect.gen(function* () {
+        log.info("subscribing", { type: def.type })
+        const s = yield* InstanceState.get(state)
+        const ps = yield* getOrCreate(s, def)
+        const subscription = yield* PubSub.subscribe(ps)
+        yield* Effect.addFinalizer(() => Effect.sync(() => log.info("unsubscribing", { type: def.type })))
+        return Stream.fromSubscription(subscription)
+      })
 
-    function subscribeAll(): Stream.Stream<Payload> {
-      log.info("subscribing", { type: "*" })
-      return Stream.unwrap(
-        Effect.gen(function* () {
-          const s = yield* InstanceState.get(state)
-          return Stream.fromPubSub(s.wildcard)
-        }),
-      ).pipe(Stream.ensuring(Effect.sync(() => log.info("unsubscribing", { type: "*" }))))
-    }
+    const subscribeAll = (): Effect.Effect<Stream.Stream<Payload>, never, Scope.Scope> =>
+      Effect.gen(function* () {
+        log.info("subscribing", { type: "*" })
+        const s = yield* InstanceState.get(state)
+        const subscription = yield* PubSub.subscribe(s.wildcard)
+        yield* Effect.addFinalizer(() => Effect.sync(() => log.info("unsubscribing", { type: "*" })))
+        return Stream.fromSubscription(subscription)
+      })
 
     function on<T>(pubsub: PubSub.PubSub<T>, type: string, callback: (event: T) => unknown) {
       return Effect.gen(function* () {
@@ -178,11 +194,9 @@ export const layer = Layer.effect(
 )
 
 export const defaultLayer = layer
+export const node = LayerNode.make(layer, []) // kilocode_change
 
-const { runPromise, runSync } = makeRuntime(Service, layer)
-
-// runSync is safe here because the subscribe chain (InstanceState.get, PubSub.subscribe,
-// Scope.make, Effect.forkScoped) is entirely synchronous. If any step becomes async, this will throw.
+const { runPromise } = makeRuntime(Service, layer) // kilocode_change
 export function createID() {
   return Identifier.create("evt", "ascending")
 }
@@ -208,24 +222,32 @@ function active() {
   }
 }
 
+function deliver<T>(ctx: InstanceContext, type: string, callback: (event: T) => unknown, event: T) {
+  void Promise.resolve()
+    .then(() => instanceContext.provide(ctx, () => callback(event)))
+    .catch((cause) => log.error("subscriber failed", { type, cause }))
+}
+
 export function subscribe<D extends BusEvent.Definition>(def: D, callback: (event: Payload<D>) => unknown) {
   const ctx = active()
   if (!ctx) throw new Error("Instance context not available")
-  return runSync((svc) =>
-    svc
-      .subscribeCallback(def, (event) => instanceContext.provide(ctx, () => callback(event)))
-      .pipe(Effect.provideService(InstanceRef, ctx)),
-  )
+  const handler = (event: { directory?: string; payload: Payload }) => {
+    if (event.directory !== ctx.directory || event.payload.type !== def.type) return
+    deliver(ctx, def.type, callback, event.payload as Payload<D>)
+  }
+  GlobalBus.on("event", handler)
+  return () => GlobalBus.off("event", handler)
 }
 
 export function subscribeAll(callback: (event: any) => unknown) {
   const ctx = active()
   if (!ctx) throw new Error("Instance context not available")
-  return runSync((svc) =>
-    svc
-      .subscribeAllCallback((event) => instanceContext.provide(ctx, () => callback(event)))
-      .pipe(Effect.provideService(InstanceRef, ctx)),
-  )
+  const handler = (event: { directory?: string; payload: Payload }) => {
+    if (event.directory !== ctx.directory) return
+    deliver(ctx, "*", callback, event.payload)
+  }
+  GlobalBus.on("event", handler)
+  return () => GlobalBus.off("event", handler)
 }
 // kilocode_change end
 

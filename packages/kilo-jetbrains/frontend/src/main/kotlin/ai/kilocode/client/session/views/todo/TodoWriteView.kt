@@ -7,15 +7,14 @@ import ai.kilocode.client.session.model.ToolExecState
 import ai.kilocode.client.session.ui.style.SessionEditorStyle
 import ai.kilocode.client.session.ui.style.SessionUiStyle
 import ai.kilocode.client.session.views.SessionViewIcons
+import ai.kilocode.client.session.views.base.PartHeader
 import ai.kilocode.client.session.views.base.PrimarySessionPartView
 import ai.kilocode.client.ui.UiStyle
+import ai.kilocode.client.ui.layout.Stack
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBUI
-import java.awt.BorderLayout
 import java.awt.Font
-import javax.swing.Box
 import javax.swing.JComponent
-import javax.swing.JPanel
 
 class TodoWriteView(tool: Tool, private val parts: TodoParts = todoParts()) :
     PrimarySessionPartView(parts.header, parts.list, expanded = true) {
@@ -26,7 +25,7 @@ class TodoWriteView(tool: Tool, private val parts: TodoParts = todoParts()) :
     private var style = SessionEditorStyle.current()
 
     init {
-        bindHeader(parts.glyph, parts.title, parts.sub, parts.center, parts.controls)
+        bindHeader(parts.glyph, parts.title, parts.sub, parts.left, parts.right)
         parts.list.border = JBUI.Borders.compound(
             JBUI.Borders.customLine(
                 SessionUiStyle.View.Outline.color(),
@@ -35,7 +34,7 @@ class TodoWriteView(tool: Tool, private val parts: TodoParts = todoParts()) :
                 0,
                 0,
             ),
-            JBUI.Borders.empty(UiStyle.Gap.sm(), UiStyle.Gap.md()),
+            JBUI.Borders.empty(UiStyle.Gap.lg(), UiStyle.Gap.pad()),
         )
         applyStyle(style)
         sync()
@@ -60,7 +59,11 @@ class TodoWriteView(tool: Tool, private val parts: TodoParts = todoParts()) :
     internal fun rowCount() = parts.list.rowCount()
     internal fun rowText(index: Int) = parts.list.rowText(index)
     internal fun rowChecked(index: Int) = parts.list.rowChecked(index)
-    internal fun rowCheckboxOpaque(index: Int) = parts.list.rowCheckboxOpaque(index)
+    internal fun rowCheckBackground(index: Int) = parts.list.rowCheckBackground(index)
+    internal fun rowCheckForeground(index: Int) = parts.list.rowCheckForeground(index)
+    internal fun rowCheckBorder(index: Int) = parts.list.rowCheckBorder(index)
+    internal fun rowCheckAccessibleName(index: Int) = parts.list.rowCheckAccessibleName(index)
+    internal fun rowFont(index: Int) = parts.list.rowFont(index)
     internal fun rowForeground(index: Int) = parts.list.rowForeground(index)
     internal fun hiddenText() = parts.list.hiddenText()
     internal fun titleFont() = parts.title.font
@@ -88,12 +91,12 @@ class TodoWriteView(tool: Tool, private val parts: TodoParts = todoParts()) :
 }
 
 class TodoParts(
-    val header: JPanel,
+    val header: PartHeader,
     val glyph: JBLabel,
     val title: JBLabel,
     val sub: JBLabel,
-    val center: JPanel,
-    val controls: JComponent,
+    val left: Stack,
+    val right: Stack,
     val list: TodoListPanel,
 )
 
@@ -101,19 +104,13 @@ private fun todoParts(): TodoParts {
     val glyph = JBLabel(SessionViewIcons.checklist)
     val title = JBLabel(KiloBundle.message("session.part.todo.title"))
     val sub = JBLabel().apply { foreground = UiStyle.Colors.weak() }
-    val center = JPanel(BorderLayout(JBUI.scale(SessionUiStyle.View.Layout.GAP), 0)).apply {
-        isOpaque = false
-        add(title, BorderLayout.WEST)
-        add(sub, BorderLayout.CENTER)
+    val header = PartHeader().apply {
+        leading(glyph)
+        left(title)
+        titleGap()
+        left(sub)
     }
-    val controls = Box.createHorizontalBox()
-    val header = JPanel(BorderLayout(JBUI.scale(SessionUiStyle.View.Layout.GAP), 0)).apply {
-        isOpaque = false
-        add(glyph, BorderLayout.WEST)
-        add(center, BorderLayout.CENTER)
-        add(controls, BorderLayout.EAST)
-    }
-    return TodoParts(header, glyph, title, sub, center, controls, TodoListPanel())
+    return TodoParts(header, glyph, title, sub, header.left, header.right, TodoListPanel())
 }
 
 private fun subtitle(tool: Tool): String {

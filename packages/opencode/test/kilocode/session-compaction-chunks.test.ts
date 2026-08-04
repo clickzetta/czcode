@@ -9,7 +9,9 @@ import { Image } from "../../src/image/image"
 import { Permission } from "../../src/permission"
 import { Plugin } from "../../src/plugin"
 import { provide as withInstanceProvide } from "../../src/kilocode/instance"
-import { ModelID, ProviderID } from "../../src/provider/schema"
+import { LLMEvent, Usage } from "@opencode-ai/llm"
+import { ProviderV2 } from "@opencode-ai/core/provider"
+import { ModelV2 } from "@opencode-ai/core/model"
 import { Snapshot } from "../../src/snapshot"
 import { KiloCompactionChunks } from "../../src/kilocode/session/compaction-chunks"
 import { KiloSessionCompaction } from "../../src/kilocode/session/compaction"
@@ -24,11 +26,13 @@ import { SessionStatus } from "../../src/session/status"
 import { SessionSummary } from "../../src/session/summary"
 import { SyncEvent } from "../../src/sync"
 import { EventV2Bridge } from "@/event-v2-bridge"
+import { Database } from "@opencode-ai/core/database/database"
+import * as CrossSpawnSpawner from "@opencode-ai/core/cross-spawn-spawner"
 import { ProviderTest } from "../fake/provider"
 import { tmpdir } from "../fixture/fixture"
 
-const providerID = ProviderID.make("test")
-const modelID = ModelID.make("test-model")
+const providerID = ProviderV2.ID.make("test")
+const modelID = ModelV2.ID.make("test-model")
 const ref = { providerID, modelID }
 
 function run<A, E>(fx: Effect.Effect<A, E, SessionNs.Service>) {
@@ -112,11 +116,11 @@ async function assistant(sessionID: SessionID, parentID: MessageID, root: string
 
 function llm() {
   const queue: Array<
-    Stream.Stream<LLM.Event, unknown> | ((input: LLM.StreamInput) => Stream.Stream<LLM.Event, unknown>)
+    Stream.Stream<LLMEvent, unknown> | ((input: LLM.StreamInput) => Stream.Stream<LLMEvent, unknown>)
   > = []
 
   return {
-    push(stream: Stream.Stream<LLM.Event, unknown> | ((input: LLM.StreamInput) => Stream.Stream<LLM.Event, unknown>)) {
+    push(stream: Stream.Stream<LLMEvent, unknown> | ((input: LLM.StreamInput) => Stream.Stream<LLMEvent, unknown>)) {
       queue.push(stream)
     },
     layer: Layer.succeed(
@@ -135,76 +139,30 @@ function llm() {
 function reply(text: string, capture?: (input: LLM.StreamInput) => void) {
   return (input: LLM.StreamInput) => {
     capture?.(input)
+    const usage = new Usage({ inputTokens: 1, outputTokens: 1, totalTokens: 2 })
     return Stream.make(
-      { type: "start" } as LLM.Event,
-      { type: "text-start", id: "txt-0" } as LLM.Event,
-      { type: "text-delta", id: "txt-0", delta: text, text } as LLM.Event,
-      { type: "text-end", id: "txt-0" } as LLM.Event,
-      {
-        type: "finish-step",
-        finishReason: "stop",
-        rawFinishReason: "stop",
-        response: { id: "res", modelId: "test-model", timestamp: new Date() },
-        providerMetadata: undefined,
-        usage: {
-          inputTokens: 1,
-          outputTokens: 1,
-          totalTokens: 2,
-          inputTokenDetails: { noCacheTokens: undefined, cacheReadTokens: undefined, cacheWriteTokens: undefined },
-          outputTokenDetails: { textTokens: undefined, reasoningTokens: undefined },
-        },
-      } as LLM.Event,
-      {
-        type: "finish",
-        finishReason: "stop",
-        rawFinishReason: "stop",
-        totalUsage: {
-          inputTokens: 1,
-          outputTokens: 1,
-          totalTokens: 2,
-          inputTokenDetails: { noCacheTokens: undefined, cacheReadTokens: undefined, cacheWriteTokens: undefined },
-          outputTokenDetails: { textTokens: undefined, reasoningTokens: undefined },
-        },
-      } as LLM.Event,
+      LLMEvent.stepStart({ index: 0 }),
+      LLMEvent.textStart({ id: "txt-0" }),
+      LLMEvent.textDelta({ id: "txt-0", text }),
+      LLMEvent.textEnd({ id: "txt-0" }),
+      LLMEvent.stepFinish({ index: 0, reason: "stop", usage }),
+      LLMEvent.finish({ reason: "stop", usage }),
     )
   }
 }
 
 function overflow() {
+  const usage = new Usage({ inputTokens: 20_000, outputTokens: 1, totalTokens: 20_001 })
   return Stream.make(
-    { type: "start" } as LLM.Event,
-    {
-      type: "finish-step",
-      finishReason: "stop",
-      rawFinishReason: "stop",
-      response: { id: "res", modelId: "test-model", timestamp: new Date() },
-      providerMetadata: undefined,
-      usage: {
-        inputTokens: 20_000,
-        outputTokens: 1,
-        totalTokens: 20_001,
-        inputTokenDetails: { noCacheTokens: undefined, cacheReadTokens: undefined, cacheWriteTokens: undefined },
-        outputTokenDetails: { textTokens: undefined, reasoningTokens: undefined },
-      },
-    } as LLM.Event,
-    {
-      type: "finish",
-      finishReason: "stop",
-      rawFinishReason: "stop",
-      totalUsage: {
-        inputTokens: 20_000,
-        outputTokens: 1,
-        totalTokens: 20_001,
-        inputTokenDetails: { noCacheTokens: undefined, cacheReadTokens: undefined, cacheWriteTokens: undefined },
-        outputTokenDetails: { textTokens: undefined, reasoningTokens: undefined },
-      },
-    } as LLM.Event,
+    LLMEvent.stepStart({ index: 0 }),
+    LLMEvent.stepFinish({ index: 0, reason: "stop", usage }),
+    LLMEvent.finish({ reason: "stop", usage }),
   )
 }
 
 function runtime(layer: Layer.Layer<LLM.Service>, context = 7_000) {
   const bus = Bus.layer
-  const status = SessionStatus.layer.pipe(Layer.provide(bus))
+  const status = SessionStatus.defaultLayer
   const processor = SessionProcessorModule.SessionProcessor.layer.pipe(
     Layer.provide(summary),
     Layer.provide(Image.defaultLayer),
@@ -226,6 +184,8 @@ function runtime(layer: Layer.Layer<LLM.Service>, context = 7_000) {
       Layer.provide(RuntimeFlags.layer()),
       Layer.provide(status),
       Layer.provide(bus),
+      Layer.provide(Database.defaultLayer),
+      Layer.provide(CrossSpawnSpawner.defaultLayer),
       Layer.provide(
         Layer.mock(Config.Service)({
           get: () => Effect.succeed({ ...{}, compaction: { reserved: 1_000 } }),
@@ -250,6 +210,7 @@ function fakeRuntime() {
               return input.assistantMessage
             },
             updateToolCall: Effect.fn("TestSessionProcessor.updateToolCall")(() => Effect.succeed(undefined)),
+            metadata: Effect.fn("TestSessionProcessor.metadata")(() => Effect.void),
             completeToolCall: Effect.fn("TestSessionProcessor.completeToolCall")(() => Effect.void),
             process: Effect.fn("TestSessionProcessor.process")((stream: LLM.StreamInput) =>
               Effect.gen(function* () {
@@ -292,6 +253,8 @@ function fakeRuntime() {
         Layer.provide(EventV2Bridge.defaultLayer),
         Layer.provide(RuntimeFlags.layer()),
         Layer.provide(bus),
+        Layer.provide(Database.defaultLayer),
+        Layer.provide(CrossSpawnSpawner.defaultLayer),
         Layer.provide(
           Layer.mock(Config.Service)({
             get: () => Effect.succeed({ ...{}, compaction: { reserved: 1_000 } }),
@@ -304,7 +267,7 @@ function fakeRuntime() {
 
 function liveRuntime(layer: Layer.Layer<LLM.Service>, context = 10_000) {
   const bus = Bus.layer
-  const status = SessionStatus.layer.pipe(Layer.provide(bus))
+  const status = SessionStatus.defaultLayer
   const processor = SessionProcessorModule.SessionProcessor.layer.pipe(
     Layer.provide(summary),
     Layer.provide(Image.defaultLayer),
@@ -326,6 +289,8 @@ function liveRuntime(layer: Layer.Layer<LLM.Service>, context = 10_000) {
       Layer.provide(RuntimeFlags.layer()),
       Layer.provide(status),
       Layer.provide(bus),
+      Layer.provide(Database.defaultLayer),
+      Layer.provide(CrossSpawnSpawner.defaultLayer),
       Layer.provide(
         Layer.mock(Config.Service)({
           get: () => Effect.succeed({ ...{}, compaction: { reserved: 1_000 } }),

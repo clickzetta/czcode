@@ -12,7 +12,9 @@ import { KiloSessionCompaction } from "../../src/kilocode/session/compaction"
 import { Permission } from "../../src/permission"
 import { Plugin } from "../../src/plugin"
 import { provide as withInstanceProvide } from "../../src/kilocode/instance"
-import { ModelID, ProviderID } from "../../src/provider/schema"
+import { LLMEvent, Usage } from "@opencode-ai/llm"
+import { ProviderV2 } from "@opencode-ai/core/provider"
+import { ModelV2 } from "@opencode-ai/core/model"
 import { Snapshot } from "../../src/snapshot"
 import { LLM } from "../../src/session/llm"
 import { MessageV2 } from "../../src/session/message-v2"
@@ -24,14 +26,16 @@ import { SessionStatus } from "../../src/session/status"
 import { SessionSummary } from "../../src/session/summary"
 import { SyncEvent } from "../../src/sync"
 import { EventV2Bridge } from "@/event-v2-bridge"
+import { Database } from "@opencode-ai/core/database/database"
+import * as CrossSpawnSpawner from "@opencode-ai/core/cross-spawn-spawner"
 import { ProviderTest } from "../fake/provider"
 import { tmpdir } from "../fixture/fixture"
 
 const sessionID = SessionID.make("ses_payload_recovery")
 const userID = MessageID.ascending()
 const assistantID = MessageID.ascending()
-const providerID = ProviderID.make("test")
-const modelID = ModelID.make("test-model")
+const providerID = ProviderV2.ID.make("test")
+const modelID = ModelV2.ID.make("test-model")
 
 const ref = {
   providerID,
@@ -115,11 +119,11 @@ async function assistant(sessionID: SessionID, parentID: MessageID, root: string
 
 function llm() {
   const queue: Array<
-    Stream.Stream<LLM.Event, unknown> | ((input: LLM.StreamInput) => Stream.Stream<LLM.Event, unknown>)
+    Stream.Stream<LLMEvent, unknown> | ((input: LLM.StreamInput) => Stream.Stream<LLMEvent, unknown>)
   > = []
 
   return {
-    push(stream: Stream.Stream<LLM.Event, unknown> | ((input: LLM.StreamInput) => Stream.Stream<LLM.Event, unknown>)) {
+    push(stream: Stream.Stream<LLMEvent, unknown> | ((input: LLM.StreamInput) => Stream.Stream<LLMEvent, unknown>)) {
       queue.push(stream)
     },
     layer: Layer.succeed(
@@ -138,40 +142,17 @@ function llm() {
 function reply(
   text: string,
   capture?: (input: LLM.StreamInput) => void,
-): (input: LLM.StreamInput) => Stream.Stream<LLM.Event, unknown> {
+): (input: LLM.StreamInput) => Stream.Stream<LLMEvent, unknown> {
   return (input) => {
     capture?.(input)
+    const usage = new Usage({ inputTokens: 1, outputTokens: 1, totalTokens: 2 })
     return Stream.make(
-      { type: "start" } as LLM.Event,
-      { type: "text-start", id: "txt-0" } as LLM.Event,
-      { type: "text-delta", id: "txt-0", delta: text, text } as LLM.Event,
-      { type: "text-end", id: "txt-0" } as LLM.Event,
-      {
-        type: "finish-step",
-        finishReason: "stop",
-        rawFinishReason: "stop",
-        response: { id: "res", modelId: "test-model", timestamp: new Date() },
-        providerMetadata: undefined,
-        usage: {
-          inputTokens: 1,
-          outputTokens: 1,
-          totalTokens: 2,
-          inputTokenDetails: { noCacheTokens: undefined, cacheReadTokens: undefined, cacheWriteTokens: undefined },
-          outputTokenDetails: { textTokens: undefined, reasoningTokens: undefined },
-        },
-      } as LLM.Event,
-      {
-        type: "finish",
-        finishReason: "stop",
-        rawFinishReason: "stop",
-        totalUsage: {
-          inputTokens: 1,
-          outputTokens: 1,
-          totalTokens: 2,
-          inputTokenDetails: { noCacheTokens: undefined, cacheReadTokens: undefined, cacheWriteTokens: undefined },
-          outputTokenDetails: { textTokens: undefined, reasoningTokens: undefined },
-        },
-      } as LLM.Event,
+      LLMEvent.stepStart({ index: 0 }),
+      LLMEvent.textStart({ id: "txt-0" }),
+      LLMEvent.textDelta({ id: "txt-0", text }),
+      LLMEvent.textEnd({ id: "txt-0" }),
+      LLMEvent.stepFinish({ index: 0, reason: "stop", usage }),
+      LLMEvent.finish({ reason: "stop", usage }),
     )
   }
 }
@@ -201,6 +182,8 @@ function runtime(layer: Layer.Layer<LLM.Service>, config = Config.defaultLayer) 
       Layer.provide(RuntimeFlags.layer()),
       Layer.provide(SyncEvent.defaultLayer),
       Layer.provide(EventV2Bridge.defaultLayer),
+      Layer.provide(Database.defaultLayer),
+      Layer.provide(CrossSpawnSpawner.defaultLayer),
     ),
   )
 }
@@ -296,7 +279,7 @@ describe("KiloCompactionPayloadRecovery", () => {
     const captures: string[] = []
     stub.push((input) => {
       captures.push(JSON.stringify(input.messages))
-      return Stream.make({ type: "start" } as LLM.Event).pipe(
+      return Stream.make(LLMEvent.stepStart({ index: 0 })).pipe(
         Stream.concat(
           Stream.fail(
             new APICallError({

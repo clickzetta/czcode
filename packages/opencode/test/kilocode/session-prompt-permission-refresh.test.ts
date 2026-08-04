@@ -3,7 +3,7 @@ import { expect } from "bun:test"
 import { Effect, Exit, Fiber, Layer } from "effect"
 import { FetchHttpClient } from "effect/unstable/http"
 import path from "path"
-import { AppFileSystem } from "@opencode-ai/core/filesystem"
+import { FSUtil } from "@opencode-ai/core/fs-util"
 import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
 import * as Log from "@opencode-ai/core/util/log"
 import { Agent as AgentSvc } from "../../src/agent/agent"
@@ -22,7 +22,7 @@ import { Permission } from "../../src/permission"
 import { Plugin } from "../../src/plugin"
 import { Provider as ProviderSvc } from "../../src/provider/provider"
 import { Question } from "../../src/question"
-import { Reference } from "../../src/reference/reference"
+import { Reference } from "@opencode-ai/core/reference"
 import { SessionCompaction } from "../../src/session/compaction"
 import { Instruction } from "../../src/session/instruction"
 import { LLM } from "../../src/session/llm"
@@ -39,7 +39,12 @@ import { Skill } from "../../src/skill"
 import { Snapshot } from "../../src/snapshot"
 import { SyncEvent } from "../../src/sync"
 import { EventV2Bridge } from "@/event-v2-bridge"
-import { Ripgrep } from "../../src/file/ripgrep"
+import { Database } from "@opencode-ai/core/database/database"
+import { KiloSessions } from "@/kilo-sessions/kilo-sessions"
+import { MemoryService } from "@kilocode/kilo-memory/effect/service"
+import { Auth } from "../../src/auth"
+import { RepositoryCache } from "@opencode-ai/core/repository-cache"
+import { Ripgrep } from "@opencode-ai/core/ripgrep"
 import { ToolRegistry } from "../../src/tool/registry"
 import { Truncate } from "../../src/tool/truncate"
 import { provideTmpdirServer } from "../fixture/fixture"
@@ -111,7 +116,10 @@ const lsp = Layer.succeed(
   }),
 )
 
-const status = SessionStatus.layer.pipe(Layer.provideMerge(Bus.layer))
+const reference = Layer.mock(Reference.Service, {
+  list: () => Effect.succeed([]),
+})
+const status = Layer.mergeAll(SessionStatus.defaultLayer, Bus.layer)
 const run = SessionRunState.layer.pipe(Layer.provide(status))
 const infra = Layer.mergeAll(NodeFileSystem.layer, CrossSpawnSpawner.defaultLayer)
 
@@ -131,10 +139,13 @@ function makeHttp() {
     ProviderSvc.defaultLayer,
     lsp,
     mcp,
-    AppFileSystem.defaultLayer,
-    Reference.defaultLayer,
+    FSUtil.defaultLayer,
+    reference,
     SyncEvent.defaultLayer,
     EventV2Bridge.defaultLayer,
+    Database.defaultLayer,
+    KiloSessions.testLayer,
+    MemoryService.layer,
     status,
   ).pipe(Layer.provideMerge(infra))
   const question = Question.layer.pipe(Layer.provideMerge(deps))
@@ -146,7 +157,9 @@ function makeHttp() {
     Layer.provide(Ripgrep.defaultLayer),
     Layer.provide(Format.defaultLayer),
     Layer.provide(Git.defaultLayer),
-    Layer.provide(Reference.defaultLayer),
+    Layer.provide(RepositoryCache.defaultLayer),
+    Layer.provide(Auth.defaultLayer),
+    Layer.provide(reference),
     Layer.provideMerge(todo),
     Layer.provideMerge(question),
     Layer.provideMerge(deps),

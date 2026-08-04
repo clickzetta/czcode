@@ -9,7 +9,7 @@ import { MessageID, PartID, SessionID } from "../../src/session/schema"
 import * as Log from "@opencode-ai/core/util/log"
 import { disposeAllInstances, tmpdir } from "../fixture/fixture"
 import { Database, eq } from "../../src/storage/db"
-import { EventSequenceTable, EventTable } from "../../src/sync/event.sql"
+import { EventSequenceTable, EventTable } from "@opencode-ai/core/event/sql"
 import { Flag } from "@opencode-ai/core/flag/flag"
 
 Log.init({ print: false })

@@ -17,7 +17,7 @@ export interface CodeIndexConfig {
   kiloOptions?: { apiKey: string; baseUrl?: string; organizationId?: string }
   openAiOptions?: { apiKey: string }
   ollamaOptions?: { baseUrl: string; modelId?: string }
-  openAiCompatibleOptions?: { baseUrl: string; apiKey: string }
+  openAiCompatibleOptions?: { baseUrl: string; apiKey?: string }
   geminiOptions?: { apiKey: string }
   mistralOptions?: { apiKey: string }
   vercelAiGatewayOptions?: { apiKey: string }
@@ -30,6 +30,7 @@ export interface CodeIndexConfig {
   searchMaxResults?: number
   embeddingBatchSize?: number
   scannerMaxBatchRetries?: number
+  fileExtensions: string[]
 }
 
 export type PreviousConfigSnapshot = {
@@ -57,4 +58,5 @@ export type PreviousConfigSnapshot = {
   voyageApiKey?: string
   qdrantUrl?: string
   qdrantApiKey?: string
+  fileExtensions: string[]
 }

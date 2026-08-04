@@ -11,7 +11,9 @@ import { Image } from "../../src/image/image"
 import { Permission } from "../../src/permission"
 import { Plugin } from "../../src/plugin"
 import type { Provider } from "../../src/provider/provider"
-import { ModelID, ProviderID } from "../../src/provider/schema"
+import { LLMEvent, Usage } from "@opencode-ai/llm"
+import { ProviderV2 } from "@opencode-ai/core/provider"
+import { ModelV2 } from "@opencode-ai/core/model"
 import { Session } from "../../src/session/session"
 import { LLM } from "../../src/session/llm"
 import { MessageV2 } from "../../src/session/message-v2"
@@ -22,6 +24,8 @@ import { SessionSummary } from "../../src/session/summary"
 import { Snapshot } from "../../src/snapshot"
 import { SyncEvent } from "../../src/sync"
 import { EventV2Bridge } from "@/event-v2-bridge"
+import { Database } from "@opencode-ai/core/database/database"
+import { Reference } from "@opencode-ai/core/reference"
 import { KiloSessionProcessor } from "../../src/kilocode/session/processor"
 import * as Log from "@opencode-ai/core/util/log"
 import * as CrossSpawnSpawner from "@opencode-ai/core/cross-spawn-spawner"
@@ -31,16 +35,16 @@ import { testEffect } from "../lib/effect"
 Log.init({ print: false })
 
 const ref = {
-  providerID: ProviderID.make("test"),
-  modelID: ModelID.make("test-model"),
+  providerID: ProviderV2.ID.make("test"),
+  modelID: ModelV2.ID.make("test-model"),
 }
 
-type Script = Stream.Stream<LLM.Event, unknown>
+type Script = Stream.Stream<LLMEvent, unknown>
 
 class TestLLM extends Context.Service<
   TestLLM,
   {
-    readonly reply: (...items: LLM.Event[]) => Effect.Effect<void>
+    readonly reply: (...items: LLMEvent[]) => Effect.Effect<void>
   }
 >()("@test/EmptyToolCallsLLM") {}
 
@@ -65,11 +69,11 @@ function model(): Provider.Model {
 }
 
 function usage() {
-  return {
+  return new Usage({
     inputTokens: 100,
     outputTokens: 41,
     totalTokens: 141,
-  }
+  })
 }
 
 const llm = Layer.unwrap(
@@ -79,7 +83,7 @@ const llm = Layer.unwrap(
       queue.push(item)
       return Effect.void
     }
-    const reply = (...items: LLM.Event[]) => push(Stream.make(...items))
+    const reply = (...items: LLMEvent[]) => push(Stream.make(...items))
     return Layer.mergeAll(
       Layer.succeed(
         LLM.Service,
@@ -95,24 +99,33 @@ const llm = Layer.unwrap(
   }),
 )
 
-const status = SessionStatus.layer.pipe(Layer.provideMerge(Bus.layer))
+const reference = Layer.mock(Reference.Service, {
+  list: () => Effect.succeed([]),
+})
+const status = Layer.mergeAll(SessionStatus.defaultLayer, Bus.layer)
 const infra = Layer.mergeAll(NodeFileSystem.layer, CrossSpawnSpawner.defaultLayer)
-const deps = Layer.mergeAll(
-  Session.defaultLayer,
-  Snapshot.defaultLayer,
-  AgentSvc.defaultLayer,
-  Permission.defaultLayer,
-  Plugin.defaultLayer,
-  Config.defaultLayer,
-  RuntimeFlags.layer(),
-  SessionSummary.defaultLayer,
-  Image.defaultLayer,
-  SyncEvent.defaultLayer,
-  EventV2Bridge.defaultLayer,
-  status,
-  llm,
-).pipe(Layer.provideMerge(infra))
-const env = SessionProcessor.layer.pipe(Layer.provideMerge(deps))
+const env = SessionProcessor.layer.pipe(
+  Layer.provideMerge(
+    Layer.mergeAll(
+      Session.defaultLayer,
+      Snapshot.defaultLayer,
+      AgentSvc.defaultLayer,
+      Permission.defaultLayer,
+      Plugin.defaultLayer,
+      Config.defaultLayer,
+      RuntimeFlags.layer(),
+      reference,
+      SessionSummary.defaultLayer,
+      Image.defaultLayer,
+      SyncEvent.defaultLayer,
+      EventV2Bridge.defaultLayer,
+      Database.defaultLayer,
+      status,
+      llm,
+    ).pipe(Layer.provideMerge(infra)),
+  ),
+  Layer.provide(reference),
+)
 
 const it = testEffect(env)
 
@@ -126,17 +139,9 @@ describe("session processor empty tool-calls", () => {
           const session = yield* Session.Service
 
           yield* test.reply(
-            { type: "start" },
-            {
-              type: "start-step",
-            } as LLM.Event,
-            {
-              type: "finish-step",
-              finishReason: "tool-calls",
-              usage: usage(),
-              providerMetadata: undefined,
-            } as LLM.Event,
-            { type: "finish" } as LLM.Event,
+            LLMEvent.stepStart({ index: 0 }),
+            LLMEvent.stepFinish({ index: 0, reason: "tool-calls", usage: usage() }),
+            LLMEvent.finish({ reason: "tool-calls", usage: usage() }),
           )
 
           const chat = yield* session.create({})
@@ -183,7 +188,7 @@ describe("session processor empty tool-calls", () => {
 
           yield* handle.process(input)
           expect(handle.message.finish).toBe("stop")
-          const parts = MessageV2.parts(msg.id)
+          const parts = yield* MessageV2.parts(msg.id)
           const tools = parts.filter((p) => p.type === "tool")
           expect(tools.length).toBe(0)
         }),
@@ -200,18 +205,12 @@ describe("session processor empty tool-calls", () => {
           const session = yield* Session.Service
 
           yield* test.reply(
-            { type: "start" },
-            { type: "start-step" } as LLM.Event,
-            { type: "reasoning-start", id: "reasoning", providerMetadata: undefined } as LLM.Event,
-            { type: "reasoning-delta", id: "reasoning", text: "thinking", providerMetadata: undefined } as LLM.Event,
-            { type: "reasoning-end", id: "reasoning", providerMetadata: undefined } as LLM.Event,
-            {
-              type: "finish-step",
-              finishReason: "length",
-              usage: usage(),
-              providerMetadata: undefined,
-            } as LLM.Event,
-            { type: "finish" } as LLM.Event,
+            LLMEvent.stepStart({ index: 0 }),
+            LLMEvent.reasoningStart({ id: "reasoning" }),
+            LLMEvent.reasoningDelta({ id: "reasoning", text: "thinking" }),
+            LLMEvent.reasoningEnd({ id: "reasoning" }),
+            LLMEvent.stepFinish({ index: 0, reason: "length", usage: usage() }),
+            LLMEvent.finish({ reason: "length", usage: usage() }),
           )
 
           const chat = yield* session.create({})
@@ -257,7 +256,7 @@ describe("session processor empty tool-calls", () => {
           }
 
           yield* handle.process(input)
-          const parts = MessageV2.parts(msg.id)
+          const parts = yield* MessageV2.parts(msg.id)
           const warning = parts.find(
             (part): part is MessageV2.TextPart =>
               part.type === "text" && part.text === KiloSessionProcessor.REASONING_LENGTH_WARNING,
@@ -281,15 +280,9 @@ describe("session processor empty tool-calls", () => {
           const session = yield* Session.Service
 
           yield* test.reply(
-            { type: "start" },
-            { type: "start-step" } as LLM.Event,
-            {
-              type: "finish-step",
-              finishReason: "error",
-              usage: usage(),
-              providerMetadata: undefined,
-            } as LLM.Event,
-            { type: "finish" } as LLM.Event,
+            LLMEvent.stepStart({ index: 0 }),
+            LLMEvent.stepFinish({ index: 0, reason: "error", usage: usage() }),
+            LLMEvent.finish({ reason: "error", usage: usage() }),
           )
 
           const chat = yield* session.create({})
@@ -355,18 +348,12 @@ describe("session processor empty tool-calls", () => {
           const session = yield* Session.Service
 
           yield* test.reply(
-            { type: "start" },
-            { type: "start-step" } as LLM.Event,
-            { type: "text-start", id: "text", providerMetadata: undefined } as LLM.Event,
-            { type: "text-delta", id: "text", text: "partial answer", providerMetadata: undefined } as LLM.Event,
-            { type: "text-end", id: "text", providerMetadata: undefined } as LLM.Event,
-            {
-              type: "finish-step",
-              finishReason: "length",
-              usage: usage(),
-              providerMetadata: undefined,
-            } as LLM.Event,
-            { type: "finish" } as LLM.Event,
+            LLMEvent.stepStart({ index: 0 }),
+            LLMEvent.textStart({ id: "text" }),
+            LLMEvent.textDelta({ id: "text", text: "partial answer" }),
+            LLMEvent.textEnd({ id: "text" }),
+            LLMEvent.stepFinish({ index: 0, reason: "length", usage: usage() }),
+            LLMEvent.finish({ reason: "length", usage: usage() }),
           )
 
           const chat = yield* session.create({})
@@ -412,7 +399,7 @@ describe("session processor empty tool-calls", () => {
           }
 
           yield* handle.process(input)
-          const parts = MessageV2.parts(msg.id)
+          const parts = yield* MessageV2.parts(msg.id)
           const warning = parts.find(
             (part): part is MessageV2.TextPart =>
               part.type === "text" && part.text === KiloSessionProcessor.OUTPUT_LENGTH_WARNING,
@@ -438,15 +425,9 @@ describe("session processor empty tool-calls", () => {
           const session = yield* Session.Service
 
           yield* test.reply(
-            { type: "start" },
-            { type: "start-step" } as LLM.Event,
-            {
-              type: "finish-step",
-              finishReason: "stop",
-              usage: usage(),
-              providerMetadata: undefined,
-            } as LLM.Event,
-            { type: "finish" } as LLM.Event,
+            LLMEvent.stepStart({ index: 0 }),
+            LLMEvent.stepFinish({ index: 0, reason: "stop", usage: usage() }),
+            LLMEvent.finish({ reason: "stop", usage: usage() }),
           )
 
           const chat = yield* session.create({})
@@ -509,18 +490,10 @@ describe("session processor empty tool-calls", () => {
           const session = yield* Session.Service
 
           yield* test.reply(
-            { type: "start" },
-            {
-              type: "start-step",
-            } as LLM.Event,
-            { type: "tool-input-start", id: "call_1", toolName: "test_tool" } as LLM.Event,
-            {
-              type: "finish-step",
-              finishReason: "tool-calls",
-              usage: usage(),
-              providerMetadata: undefined,
-            } as LLM.Event,
-            { type: "finish" } as LLM.Event,
+            LLMEvent.stepStart({ index: 0 }),
+            LLMEvent.toolInputStart({ id: "call_1", name: "test_tool" }),
+            LLMEvent.stepFinish({ index: 0, reason: "tool-calls", usage: usage() }),
+            LLMEvent.finish({ reason: "tool-calls", usage: usage() }),
           )
 
           const chat = yield* session.create({})
@@ -568,7 +541,7 @@ describe("session processor empty tool-calls", () => {
           const result = yield* handle.process(input)
           expect(handle.message.finish).toBe("tool-calls")
           expect(result).toBe("continue")
-          const parts = MessageV2.parts(msg.id)
+          const parts = yield* MessageV2.parts(msg.id)
           const tools = parts.filter((p) => p.type === "tool")
           expect(tools.length).toBe(1)
         }),

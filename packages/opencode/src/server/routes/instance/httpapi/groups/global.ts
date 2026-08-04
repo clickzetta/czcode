@@ -1,10 +1,13 @@
 import { Config } from "@/config/config"
-import { BusEvent } from "@/bus/bus-event"
-import { SyncEvent } from "@/sync"
+import { ConfigV1 } from "@opencode-ai/core/v1/config/config"
+import { EventV2 } from "@opencode-ai/core/event"
+import { InstanceDisposed } from "@/server/event"
+import { BusEvent } from "@/bus/bus-event" // kilocode_change - include legacy Kilo events until they migrate to EventV2
+import "@opencode-ai/core/account"
 import "@/server/event"
 import "@/kilocode/indexing-event" // kilocode_change - register indexing.status before HttpApi event schemas
 import { Schema } from "effect"
-import { HttpApi, HttpApiEndpoint, HttpApiError, HttpApiGroup, OpenApi } from "effect/unstable/httpapi"
+import { HttpApi, HttpApiEndpoint, HttpApiError, HttpApiGroup, HttpApiSchema, OpenApi } from "effect/unstable/httpapi"
 import { described } from "./metadata"
 
 const GlobalHealth = Schema.Struct({
@@ -12,11 +15,35 @@ const GlobalHealth = Schema.Struct({
   version: Schema.String,
 })
 
+const SyncEventSchemas = EventV2.registry
+  .values()
+  .flatMap((definition) => {
+    if (!definition.sync) return []
+    return [
+      Schema.Struct({
+        type: Schema.Literal("sync"),
+        id: EventV2.ID,
+        syncEvent: Schema.Struct({
+          type: Schema.Literal(EventV2.versionedType(definition.type, definition.sync.version)),
+          id: EventV2.ID,
+          seq: Schema.Finite,
+          aggregateID: Schema.String,
+          data: definition.data,
+        }),
+      }).annotate({ identifier: `SyncEvent.${definition.type}` }),
+    ]
+  })
+  .toArray()
+
 const GlobalEventSchema = Schema.Struct({
   directory: Schema.String,
   project: Schema.optional(Schema.String),
   workspace: Schema.optional(Schema.String),
-  payload: Schema.Union([...BusEvent.effectPayloads(), ...SyncEvent.effectPayloads()]),
+  payload: Schema.Union([
+    ...BusEvent.effectPayloads(), // kilocode_change
+    InstanceDisposed,
+    ...SyncEventSchemas,
+  ]),
 }).annotate({ identifier: "GlobalEvent" })
 
 export const GlobalUpgradeInput = Schema.Struct({
@@ -51,7 +78,7 @@ export const GlobalApi = HttpApi.make("global").add(
         OpenApi.annotations({
           identifier: "global.health",
           summary: "Get health",
-          description: "Get health information about the OpenCode server.",
+          description: "Get health information about the Kilo server.", // kilocode_change
         }),
       ),
       HttpApiEndpoint.get("event", GlobalPaths.event, {
@@ -60,27 +87,27 @@ export const GlobalApi = HttpApi.make("global").add(
         OpenApi.annotations({
           identifier: "global.event",
           summary: "Get global events",
-          description: "Subscribe to global events from the OpenCode system using server-sent events.",
+          description: "Subscribe to global events from the Kilo system using server-sent events.", // kilocode_change
         }),
       ),
       HttpApiEndpoint.get("configGet", GlobalPaths.config, {
-        success: described(Config.Info, "Get global config info"),
+        success: described(ConfigV1.Info, "Get global config info"),
       }).annotateMerge(
         OpenApi.annotations({
           identifier: "global.config.get",
           summary: "Get global configuration",
-          description: "Retrieve the current global OpenCode configuration settings and preferences.",
+          description: "Retrieve the current global Kilo configuration settings and preferences.", // kilocode_change
         }),
       ),
       HttpApiEndpoint.patch("configUpdate", GlobalPaths.config, {
-        payload: Config.Info,
-        success: described(Config.Info, "Successfully updated global config"),
+        payload: ConfigV1.Info,
+        success: described(ConfigV1.Info, "Successfully updated global config"),
         error: HttpApiError.BadRequest,
       }).annotateMerge(
         OpenApi.annotations({
           identifier: "global.config.update",
           summary: "Update global configuration",
-          description: "Update global OpenCode configuration settings and preferences.",
+          description: "Update global Kilo configuration settings and preferences.", // kilocode_change
         }),
       ),
       HttpApiEndpoint.post("dispose", GlobalPaths.dispose, {
@@ -89,11 +116,11 @@ export const GlobalApi = HttpApi.make("global").add(
         OpenApi.annotations({
           identifier: "global.dispose",
           summary: "Dispose instance",
-          description: "Clean up and dispose all OpenCode instances, releasing all resources.",
+          description: "Clean up and dispose all Kilo instances, releasing all resources.", // kilocode_change
         }),
       ),
       HttpApiEndpoint.post("upgrade", GlobalPaths.upgrade, {
-        payload: GlobalUpgradeInput,
+        payload: [HttpApiSchema.NoContent, GlobalUpgradeInput],
         success: described(GlobalUpgradeResult, "Upgrade result"),
         error: HttpApiError.BadRequest,
       }).annotateMerge(
