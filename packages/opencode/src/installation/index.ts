@@ -202,63 +202,13 @@ export const layer: Layer.Layer<Service, never, HttpClient.HttpClient | AppProce
         if (process.execPath.includes(path.join(".kilo", "bin"))) return "curl" as Method
         // czcode_change end
         if (process.execPath.includes(path.join(".opencode", "bin"))) return "curl" as Method
+        // czcode_change start - czcode only ships GitHub Releases; skip npm/brew/choco/scoop
+        // detection entirely so the upgrade check never queries kilocode's package registries.
+        // Anything not installed to a known curl bin dir resolves to "unknown", which makes
+        // upgrade() skip auto-update and latest() fall through to the clickzetta/czcode source.
         if (process.execPath.includes(path.join(".local", "bin"))) return "curl" as Method
-        const exec = process.execPath.toLowerCase()
-
-        const checks: Array<{
-          name: Method
-          command: () => Effect.Effect<string>
-        }> = [
-          {
-            name: "npm",
-            command: () => text(["npm", "list", "-g", "--depth=0"]),
-          },
-          { name: "yarn", command: () => text(["yarn", "global", "list"]) },
-          {
-            name: "pnpm",
-            command: () => text(["pnpm", "list", "-g", "--depth=0"]),
-          },
-          { name: "bun", command: () => text(["bun", "pm", "ls", "-g"]) },
-          {
-            name: "brew",
-            command: () => text(["brew", "list", "--formula", KiloBrew.formula]),
-          }, // kilocode_change
-          {
-            name: "scoop",
-            command: () => text(["scoop", "list", KiloScoop.name]),
-          }, // kilocode_change
-          {
-            name: "choco",
-            command: () => text(["choco", "list", "--limit-output", KiloChoco.name]),
-          }, // kilocode_change
-        ]
-
-        checks.sort((a, b) => {
-          const aMatches = exec.includes(a.name)
-          const bMatches = exec.includes(b.name)
-          if (aMatches && !bMatches) return -1
-          if (!aMatches && bMatches) return 1
-          return 0
-        })
-
-        for (const check of checks) {
-          const output = yield* check.command()
-          // kilocode_change start
-          const installedName =
-            check.name === "brew"
-              ? KiloBrew.name
-              : check.name === "choco"
-                ? KiloChoco.name
-                : check.name === "scoop"
-                  ? KiloScoop.name
-                  : KiloNpm.name
-          // kilocode_change end
-          if (output.includes(installedName)) {
-            return check.name
-          }
-        }
-
         return "unknown" as Method
+        // czcode_change end
       }),
       latest: Effect.fn("Installation.latest")(function* (installMethod?: Method) {
         const detectedMethod = installMethod || (yield* result.method())

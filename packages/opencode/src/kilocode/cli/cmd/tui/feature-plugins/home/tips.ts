@@ -127,18 +127,15 @@ export const KILO_TIPS: Tip[] = [
   "Tool definitions can invoke scripts written in Python, Go, etc",
   "Add {highlight}.ts{/highlight} files to {highlight}.czcode/plugins/{/highlight} for event hooks", // czcode_change
   "Use plugins to send OS notifications when sessions complete",
-  "Create a plugin to prevent Kilo from reading sensitive files",
-  "Use {highlight}kilo run{/highlight} for non-interactive scripting",
-  "Use {highlight}kilo --continue{/highlight} to resume the last session",
-  "Use {highlight}kilo run -f file.ts{/highlight} to attach files via CLI",
+  "Create a plugin to prevent ClickZetta from reading sensitive files", // czcode_change
+  "Use {highlight}czcode run{/highlight} for non-interactive scripting", // czcode_change
+  "Use {highlight}czcode --continue{/highlight} to resume the last session", // czcode_change
+  "Use {highlight}czcode run -f file.ts{/highlight} to attach files via CLI", // czcode_change
   "Use {highlight}--format json{/highlight} for machine-readable output in scripts",
-  "Run {highlight}kilo serve{/highlight} for headless API access to Kilo",
-  "Use {highlight}kilo run --attach{/highlight} to connect to a running server",
-  "Run {highlight}kilo upgrade{/highlight} to update to the latest version",
-  "Run {highlight}kilo auth list{/highlight} to see all configured providers",
-  "Run {highlight}kilo agent create{/highlight} for guided agent creation",
-  "Run {highlight}kilo github install{/highlight} to set up the GitHub workflow",
-  "Comment {highlight}/kilo fix this{/highlight} on issues to auto-create PRs",
+  "Run {highlight}czcode serve{/highlight} for headless API access to ClickZetta", // czcode_change
+  "Use {highlight}czcode run --attach{/highlight} to connect to a running server", // czcode_change
+  "Run {highlight}czcode auth list{/highlight} to see all configured providers", // czcode_change
+  "Run {highlight}czcode agent create{/highlight} for guided agent creation", // czcode_change
   'Use {highlight}"theme": "system"{/highlight} to match your terminal\'s colors',
   "Create JSON theme files in {highlight}.czcode/themes/{/highlight} directory", // czcode_change
   "Themes support dark/light variants for both modes",
@@ -156,7 +153,7 @@ export const KILO_TIPS: Tip[] = [
   "Run {highlight}/unshare{/highlight} to remove a session from public access",
   "Permission {highlight}doom_loop{/highlight} prevents infinite tool call loops",
   "Permission {highlight}external_directory{/highlight} protects files outside project",
-  "Run {highlight}kilo debug config{/highlight} to troubleshoot configuration",
+  "Run {highlight}czcode debug config{/highlight} to troubleshoot configuration", // czcode_change
   "Use {highlight}--print-logs{/highlight} flag to see detailed logs in stderr",
   (shortcuts) => `Use ${commandText("/timeline", shortcuts.sessionTimeline())} to jump to specific messages`,
   (shortcuts) => press(shortcuts.messagesToggleConceal(), "to toggle code block visibility in messages"),
@@ -166,8 +163,6 @@ export const KILO_TIPS: Tip[] = [
     shortcuts.commandList()
       ? `Toggle username display in chat via the command palette (${shortcutText(shortcuts.commandList())})`
       : "Toggle username display in chat via the command palette",
-  "Run {highlight}docker run -it --rm ghcr.io/kilo-org/kilocode{/highlight} for containerized use",
-  "Use {highlight}/connect{/highlight} with Kilo Gateway for curated, tested models",
   "Commit your project's {highlight}AGENTS.md{/highlight} file to Git for team sharing",
   "Use {highlight}/review{/highlight} to review uncommitted changes, commits, branches, or PRs",
   (shortcuts) => `Use ${commandText("/help", shortcuts.helpShow())} to show the help dialog`,
