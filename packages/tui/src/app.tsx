@@ -1112,11 +1112,6 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
             <Match when={route.data.type === "kiloclaw"}>
               <KiloApp.KiloClawView />
             </Match>
-            {/* czcode_change start */}
-            <Match when={route.data.type === "singclaw"}>
-              <KiloApp.SingClawView context={(route.data as any).context} returnTo={(route.data as any).returnTo} />
-            </Match>
-            {/* czcode_change end */}
           </Switch>
           {plugin()}
         </box>

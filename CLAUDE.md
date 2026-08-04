@@ -199,11 +199,6 @@ All czcode TUI plugins live in `packages/opencode/src/kilocode/plugins/czcode-*.
 | `czcode-schema-browser.tsx` | `sidebar_content` | 360 | Schema list from session history |
 | `czcode-vcluster-dashboard.tsx` | `sidebar_content` + command | 370 | VCluster status + `/cz_vcluster` |
 | `czcode-role-switch.tsx` | command | — | `/cz_role` role picker |
-| `czcode-sql-history.tsx` | command | — | `/cz_sql_history` SQL browser |
-| `czcode-sample.tsx` | command | — | `/cz_sample` table sampling |
-| `czcode-count.tsx` | command | — | `/cz_count` row count |
-| `czcode-profile.tsx` | command | — | `/cz_profile` data profiling |
-| `czcode-singclaw.tsx` | command + route | — | `/cz_singclaw` SingClaw integration |
 | `home-footer.tsx` (modified) | `home_footer` | 99 | Added Lakehouse connection status |
 
 ### TUI Plugin Development Rules
@@ -211,7 +206,7 @@ All czcode TUI plugins live in `packages/opencode/src/kilocode/plugins/czcode-*.
 1. **Slot modes matter**: `home_footer` and `sidebar_footer` use `single_winner` mode (lowest order wins, replaces all others). `sidebar_content` is additive. Check the mode before registering a new slot.
 2. **Use `czcode-dotenv.ts`**: Any plugin reading `process.env` must `import "@/kilocode/plugins/czcode-dotenv"` at the top. Compiled binaries don't auto-load `.env`.
 3. **Use native `DialogSelect`**: Import from `@tui/ui/dialog-select`, not `api.ui.DialogSelect`. The native component handles Esc/close properly.
-4. **Command naming**: All czcode commands must use `cz_` prefix (e.g., `cz_sample`, `cz_role`).
+4. **Command naming**: All czcode commands must use `cz_` prefix (e.g., `cz_vcluster`, `cz_role`).
 5. **Toast duration**: Always pass `duration: 2000` (or appropriate value) to `toast.show()`. Without it, toasts never auto-dismiss.
 6. **Register in `internal.ts`**: Add import + array entry with `// czcode_change` markers.
 
@@ -222,12 +217,7 @@ All czcode TUI plugins live in `packages/opencode/src/kilocode/plugins/czcode-*.
 | Command | Alias | Description |
 |---------|-------|-------------|
 | `/cz_role` | `/cz_r` | Switch data agent role |
-| `/cz_sample` | `/cz_s` | Quick table sampling |
-| `/cz_count` | `/cz_c` | Table row count |
-| `/cz_profile` | `/cz_p` | Data quality profiling |
 | `/cz_vcluster` | `/cz_vc` | VCluster status query |
-| `/cz_sql_history` | `/cz_sh` | Browse/copy past SQL |
-| `/cz_singclaw` | `/singclaw` | Open SingClaw chat |
 | `/cz_skill-update` | — | Update ClickZetta skills |
 | `/cz_skill-fix` | — | Fix skill content locally |
 

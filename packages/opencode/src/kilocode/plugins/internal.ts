@@ -20,12 +20,7 @@ import SessionV2Debug from "@/kilocode/plugins/session-v2-debug"
 import CzCodeConnectionStatus from "@/kilocode/plugins/czcode-connection-status"
 import CzCodeRoleSwitch from "@/kilocode/plugins/czcode-role-switch"
 import CzCodeSchemaBrowser from "@/kilocode/plugins/czcode-schema-browser"
-import CzCodeSqlHistory from "@/kilocode/plugins/czcode-sql-history"
 import CzCodeVClusterDashboard from "@/kilocode/plugins/czcode-vcluster-dashboard"
-import CzCodeSample from "@/kilocode/plugins/czcode-sample"
-import CzCodeCount from "@/kilocode/plugins/czcode-count"
-import CzCodeProfile from "@/kilocode/plugins/czcode-profile"
-import CzCodeSingClaw from "@/kilocode/plugins/czcode-singclaw"
 // czcode_change end
 import type { RuntimeFlags } from "@/effect/runtime-flags"
 
@@ -49,12 +44,7 @@ const plugins = [
   CzCodeConnectionStatus,
   CzCodeRoleSwitch,
   CzCodeSchemaBrowser,
-  CzCodeSqlHistory,
   CzCodeVClusterDashboard,
-  CzCodeSample,
-  CzCodeCount,
-  CzCodeProfile,
-  CzCodeSingClaw,
   // czcode_change end
 ] satisfies BuiltinTuiPlugin[]
 

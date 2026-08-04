@@ -29,7 +29,6 @@ import { Session as SessionApi } from "@/session/session"
 
 // Re-export so upstream can render the route without importing directly
 export { KiloClawView } from "@/kilocode/claw/view"
-export { SingClawView } from "@/kilocode/singclaw/view" // czcode_change
 export { KiloTerminalTitle } from "./terminal-title"
 
 // Hot reload TUI-local settings (keybinds/theme/ui) when changed from the Kilo Console.
@@ -206,15 +205,6 @@ export function getTerminalTitle(input: {
     }
   }
 
-  // czcode_change start - SingClaw route terminal title
-  if (input.route.data.type === "singclaw") {
-    return {
-      title: KiloTerminalTitle.format({ base: input.base, title: "SingClaw", indicator: "none", icon: input.icon }),
-      active: false,
-      indicator: "none",
-    }
-  }
-  // czcode_change end
 }
 
 // ---------------------------------------------------------------------------
