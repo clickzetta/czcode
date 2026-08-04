@@ -521,8 +521,8 @@ export namespace KilocodeConfig {
 
   // ── Opencode config migration notice ─────────────────────────────────
 
-  /** Client-neutral docs page describing where Kilo reads configuration from. */
-  export const CONFIG_DOCS_URL = "https://kilo.ai/docs/getting-started/settings"
+  /** Client-neutral docs page describing where ClickZetta reads configuration from. */
+  export const CONFIG_DOCS_URL = "https://www.yunqi.tech/documents" // czcode_change
 
   /** Stable id for the synthetic "move your opencode config" notification (used for client-side dismissal). */
   export const OPENCODE_NOTIFICATION_ID = "kilo.local.opencode-config-detected"
@@ -568,10 +568,12 @@ export namespace KilocodeConfig {
     return {
       id: OPENCODE_NOTIFICATION_ID,
       title: "Move your opencode configuration",
+      // czcode_change start
       message:
-        `Kilo no longer falls back to opencode configuration. ` +
+        `ClickZetta no longer falls back to opencode configuration. ` +
         `Found opencode config at ${found[0]}${suffix}. ` +
-        `Move it into a .kilo directory (project) or ${Global.Path.config} (global).`,
+        `Move it into a .czcode directory (project) or ${Global.Path.config} (global).`,
+      // czcode_change end
       action: { actionText: "Learn more", actionURL: CONFIG_DOCS_URL },
       showIn: ["cli", "extension"],
     }

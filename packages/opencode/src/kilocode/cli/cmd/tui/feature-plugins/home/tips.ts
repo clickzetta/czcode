@@ -104,17 +104,17 @@ export const KILO_TIPS: Tip[] = [
     if (!items.length) return undefined
     return `Use ${items.map(shortcutText).join(" / ")} to move between parent and child sessions`
   },
-  "Create {highlight}kilo.json{/highlight} for server settings and {highlight}tui.json{/highlight} for TUI settings",
-  "Place TUI settings in {highlight}~/.config/kilo/tui.json{/highlight} for global config",
+  "Create {highlight}czcode.json{/highlight} for server settings and {highlight}tui.json{/highlight} for TUI settings", // czcode_change
+  "Place TUI settings in {highlight}~/.config/czcode/tui.json{/highlight} for global config", // czcode_change
   "Add {highlight}$schema{/highlight} to your config for autocomplete in your editor",
   "Configure {highlight}model{/highlight} in config to set your default model",
   "Override any keybind in {highlight}tui.json{/highlight} via the {highlight}keybinds{/highlight} section",
   "Set any keybind to {highlight}none{/highlight} to disable it completely",
   "Configure local or remote MCP servers in the {highlight}mcp{/highlight} config section",
-  "Add {highlight}.md{/highlight} files to {highlight}.kilo/command/{/highlight} to define reusable custom prompts",
+  "Add {highlight}.md{/highlight} files to {highlight}.czcode/command/{/highlight} to define reusable custom prompts", // czcode_change
   "Use {highlight}$ARGUMENTS{/highlight}, {highlight}$1{/highlight}, {highlight}$2{/highlight} in custom commands for dynamic input",
   "Use backticks in commands to inject shell output (e.g., {highlight}`git status`{/highlight})",
-  "Add {highlight}.md{/highlight} files to {highlight}.kilo/agent/{/highlight} for specialized AI personas",
+  "Add {highlight}.md{/highlight} files to {highlight}.czcode/agent/{/highlight} for specialized AI personas", // czcode_change
   "Configure per-agent permissions for {highlight}edit{/highlight}, {highlight}bash{/highlight}, and {highlight}webfetch{/highlight} tools",
   'Use patterns like {highlight}"git *": "allow"{/highlight} for granular bash permissions',
   'Set {highlight}"rm -rf *": "deny"{/highlight} to block destructive commands',
@@ -123,9 +123,9 @@ export const KILO_TIPS: Tip[] = [
   'Set {highlight}"formatter": false{/highlight} in config to disable formatters enabled by another config layer',
   "Define custom formatter commands with file extensions in config",
   'Set {highlight}"lsp": true{/highlight} in config to enable built-in LSP servers for code analysis',
-  "Create {highlight}.ts{/highlight} files in {highlight}.kilo/tools/{/highlight} to define new LLM tools",
+  "Create {highlight}.ts{/highlight} files in {highlight}.czcode/tools/{/highlight} to define new LLM tools", // czcode_change
   "Tool definitions can invoke scripts written in Python, Go, etc",
-  "Add {highlight}.ts{/highlight} files to {highlight}.kilo/plugins/{/highlight} for event hooks",
+  "Add {highlight}.ts{/highlight} files to {highlight}.czcode/plugins/{/highlight} for event hooks", // czcode_change
   "Use plugins to send OS notifications when sessions complete",
   "Create a plugin to prevent Kilo from reading sensitive files",
   "Use {highlight}kilo run{/highlight} for non-interactive scripting",
@@ -140,7 +140,7 @@ export const KILO_TIPS: Tip[] = [
   "Run {highlight}kilo github install{/highlight} to set up the GitHub workflow",
   "Comment {highlight}/kilo fix this{/highlight} on issues to auto-create PRs",
   'Use {highlight}"theme": "system"{/highlight} to match your terminal\'s colors',
-  "Create JSON theme files in {highlight}.kilo/themes/{/highlight} directory",
+  "Create JSON theme files in {highlight}.czcode/themes/{/highlight} directory", // czcode_change
   "Themes support dark/light variants for both modes",
   "Use numeric xterm color codes 0-255 in custom theme JSON",
   "Use {highlight}{env:VAR_NAME}{/highlight} syntax to reference environment variables in config",
