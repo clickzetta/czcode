@@ -1,5 +1,5 @@
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
-import { httpClient } from "@opencode-ai/core/effect/layer-node-platform"
+import { httpClient } from "@opencode-ai/core/effect/app-node-platform"
 import path from "path"
 import { SessionV1 } from "@opencode-ai/core/v1/session"
 import { Effect, Layer, Context } from "effect"
@@ -12,6 +12,7 @@ import { FSUtil } from "@opencode-ai/core/fs-util"
 import { withTransientReadRetry } from "@/util/effect-http-client"
 import { Global } from "@opencode-ai/core/global"
 import { KilocodeInstruction } from "@/kilocode/session/instruction" // kilocode_change
+import { ClaudeMigration } from "@/kilocode/config/claude-migration" // kilocode_change
 import type { KilocodeMarkdown } from "@/kilocode/config/markdown" // kilocode_change
 import type { MessageV2 } from "./message-v2"
 import type { MessageID } from "./schema"
@@ -47,7 +48,7 @@ export interface Interface {
 
 export class Service extends Context.Service<Service, Interface>()("@opencode/Instruction") {}
 
-export const layer: Layer.Layer<
+const layer: Layer.Layer<
   Service,
   never,
   FSUtil.Service | Config.Service | Global.Service | HttpClient.HttpClient | RuntimeFlags.Service
@@ -59,12 +60,16 @@ export const layer: Layer.Layer<
     const global = yield* Global.Service
     const flags = yield* RuntimeFlags.Service
     const http = HttpClient.filterStatusOk(withTransientReadRetry(yield* HttpClient.HttpClient))
-    const globalFiles = [
+    const globalFiles = () => [ // kilocode_change - reevaluate the global handoff after config initialization
       // kilocode_change start - prefer KILO_CONFIG_DIR profile when set
       ...(Flag.KILO_CONFIG_DIR ? [path.join(Flag.KILO_CONFIG_DIR, "AGENTS.md")] : []),
       // kilocode_change end
       path.join(global.config, "AGENTS.md"),
-      ...(!flags.disableClaudeCodePrompt ? [path.join(global.home, ".claude", "CLAUDE.md")] : []),
+      // kilocode_change start - stop automatic global Claude instructions after migration
+      ...(!flags.disableClaudeCodePrompt && !ClaudeMigration.globalHandoff()
+        ? [path.join(global.home, ".claude", "CLAUDE.md")]
+        : []),
+      // kilocode_change end
     ]
     const instructionFiles = [
       "AGENTS.md",
@@ -137,7 +142,7 @@ export const layer: Layer.Layer<
         paths.set(filepath, origin)
       }
 
-      for (const file of globalFiles) {
+      for (const file of globalFiles()) { // kilocode_change - evaluate handoff at discovery time
         if (yield* fs.existsSafe(file)) {
           add(file, { trusted: true, source: file })
           break
@@ -262,18 +267,14 @@ export const layer: Layer.Layer<
   }),
 )
 
-export const defaultLayer = layer.pipe(
-  Layer.provide(Config.defaultLayer),
-  Layer.provide(Global.layer),
-  Layer.provide(FSUtil.defaultLayer),
-  Layer.provide(FetchHttpClient.layer),
-  Layer.provide(RuntimeFlags.defaultLayer),
-)
-
 export function loaded(messages: SessionV1.WithParts[]) {
   return extract(messages)
 }
 
-export const node = LayerNode.make(layer, [Config.node, FSUtil.node, Global.node, RuntimeFlags.node, httpClient])
+export const node = LayerNode.make({
+  service: Service,
+  layer: layer,
+  deps: [Config.node, FSUtil.node, Global.node, RuntimeFlags.node, httpClient],
+})
 
 export * as Instruction from "./instruction"

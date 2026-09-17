@@ -1,6 +1,7 @@
 import { For, Show } from "solid-js"
 import { useConfig } from "../../context/config"
 import { ConfigPage, ConfigTag as Tag, ConfigToolbar } from "./ConfigPage"
+import "../../styles/sources.css"
 
 export function SourcesRoute() {
   const ctx = useConfig()
@@ -14,9 +15,7 @@ export function SourcesRoute() {
             title="Load Order"
             description="Load order and editability without exposing secret values."
             meta={
-              <Tag>
-                {data().overlay.targets.active.writable ? data().overlay.targets.active.scope : "Read only"}
-              </Tag>
+              <Tag>{data().overlay.targets.active.writable ? data().overlay.targets.active.scope : "Read only"}</Tag>
             }
           />
 

@@ -1,6 +1,18 @@
 import { createMemo, createSignal } from "solid-js"
 import type { WorktreeFileDiff } from "../src/types/messages"
 
+const sizeKeys = new WeakMap<
+  WorktreeFileDiff,
+  {
+    context: string | undefined
+    style: string
+    patch: string | undefined
+    before: string
+    after: string
+    key: object
+  }
+>()
+
 export function sameDiffMeta(left: WorktreeFileDiff, right: WorktreeFileDiff) {
   return (
     left.file === right.file &&
@@ -18,6 +30,23 @@ export function sameDiffMeta(left: WorktreeFileDiff, right: WorktreeFileDiff) {
 export function diffToken(diff: WorktreeFileDiff) {
   const parts = [diff.status ?? "", diff.additions, diff.deletions, diff.tracked ?? "", diff.generatedLike ?? ""]
   return diff.stamp ?? parts.join(":")
+}
+
+export function diffSizeKey(context: string | undefined, diff: WorktreeFileDiff, style: string) {
+  const cached = sizeKeys.get(diff)
+  if (
+    cached &&
+    cached.context === context &&
+    cached.style === style &&
+    cached.patch === diff.patch &&
+    cached.before === diff.before &&
+    cached.after === diff.after
+  )
+    return cached.key
+
+  const key = {}
+  sizeKeys.set(diff, { context, style, patch: diff.patch, before: diff.before, after: diff.after, key })
+  return key
 }
 
 // Keep each rendered row mounted while live detail refreshes replace its data.
@@ -59,6 +88,15 @@ export function createDiffRows(source: () => WorktreeFileDiff[], key: () => stri
   })
 }
 
+export function resolveDiffFile(diffs: WorktreeFileDiff[], file: string, detail?: WorktreeFileDiff | null) {
+  return diffs.map((diff) => {
+    if (diff.file !== (detail?.file ?? file)) return diff
+    const next = detail ?? diff
+    if (next.summarized === true) return { ...next, failed: true }
+    return next.failed ? { ...next, failed: undefined } : next
+  })
+}
+
 export interface MergeResult {
   diffs: WorktreeFileDiff[]
   /** Files whose metadata changed while we preserved cached content.
@@ -72,6 +110,7 @@ export function mergeWorktreeDiffs(prev: WorktreeFileDiff[], next: WorktreeFileD
   const diffs = next.map((diff) => {
     const existing = map.get(diff.file)
     if (!existing) return diff
+    if (existing.failed && diff.summarized && sameDiffMeta(existing, diff)) return existing
     // Preserve referential identity when content hasn't changed — this
     // prevents Solid's <For> from re-rendering unchanged <Diff> components,
     // which avoids Pierre's full DOM teardown and the scroll reset it causes.

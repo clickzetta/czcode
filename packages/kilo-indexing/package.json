@@ -46,14 +46,15 @@
     "hono": "catalog:",
     "hono-openapi": "catalog:",
     "ignore": "7.0.5",
-    "minimatch": "10.2.5",
+    "minimatch": "10.2.6",
     "openai": "6.27.0",
     "p-limit": "7.3.0",
     "tree-sitter-wasms": "0.1.13",
     "uuid": "14.0.0",
     "web-tree-sitter": "0.25.10",
     "zod": "catalog:",
-    "effect": "catalog:"
+    "effect": "catalog:",
+    "@parcel/watcher": "2.5.1"
   },
   "devDependencies": {
     "@tsconfig/node22": "catalog:",

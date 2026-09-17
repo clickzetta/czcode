@@ -1,17 +1,21 @@
+import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { SessionProjector } from "@opencode-ai/core/session/projector"
 import { NodeFileSystem } from "@effect/platform-node"
 import { describe, expect, spyOn } from "bun:test"
 import { Context, Effect, Layer } from "effect"
 import * as Stream from "effect/Stream"
+import { LLMEvent, type LLMEvent as Event } from "@opencode-ai/llm"
+import { Database } from "@opencode-ai/core/database/database"
 import path from "path"
 import { Agent as AgentSvc } from "../../src/agent/agent"
 import { Bus } from "../../src/bus"
 import { Config } from "../../src/config/config"
 import { RuntimeFlags } from "../../src/effect/runtime-flags"
+import { EventV2Bridge } from "../../src/event-v2-bridge"
 import { Image } from "../../src/image/image"
 import { Permission } from "../../src/permission"
 import { Plugin } from "../../src/plugin"
 import type { Provider } from "../../src/provider/provider"
-import { LLMEvent, Usage } from "@opencode-ai/llm"
 import { ProviderV2 } from "@opencode-ai/core/provider"
 import { ModelV2 } from "@opencode-ai/core/model"
 import { Session } from "../../src/session/session"
@@ -19,17 +23,14 @@ import { LLM } from "../../src/session/llm"
 import { MessageV2 } from "../../src/session/message-v2"
 import { SessionNetwork } from "../../src/session/network"
 import { SessionProcessor } from "../../src/session/processor"
-import { MessageID, PartID, SessionID } from "../../src/session/schema"
+import { MessageID } from "../../src/session/schema"
 import { SessionStatus } from "../../src/session/status"
 import { SessionSummary } from "../../src/session/summary"
 import { Snapshot } from "../../src/snapshot"
 import { SyncEvent } from "../../src/sync"
-import { EventV2Bridge } from "@/event-v2-bridge"
-import { Database } from "@opencode-ai/core/database/database"
-import { Reference } from "@opencode-ai/core/reference"
 import * as Log from "@opencode-ai/core/util/log"
 import * as CrossSpawnSpawner from "@opencode-ai/core/cross-spawn-spawner"
-import { provideTmpdirInstance } from "../fixture/fixture"
+import { provideTmpdirProject } from "../fixture/fixture"
 import { testEffect } from "../lib/effect"
 
 Log.init({ print: false })
@@ -39,7 +40,7 @@ const ref = {
   modelID: ModelV2.ID.make("test-model"),
 }
 
-type Script = Stream.Stream<LLMEvent, unknown>
+type Script = Stream.Stream<Event, unknown>
 
 class TestLLM extends Context.Service<
   TestLLM,
@@ -47,6 +48,8 @@ class TestLLM extends Context.Service<
     readonly push: (stream: Script) => Effect.Effect<void>
   }
 >()("@test/OfflineLLM") {}
+
+class State extends Context.Service<State, { readonly queue: Script[] }>()("@test/OfflineLLMState") {}
 
 function model(): Provider.Model {
   return {
@@ -69,68 +72,72 @@ function model(): Provider.Model {
 }
 
 function usage() {
-  return new Usage({
+  return {
     inputTokens: 10,
     outputTokens: 5,
     totalTokens: 15,
-  })
+  }
 }
 
-const llm = Layer.unwrap(
-  Effect.gen(function* () {
-    const queue: Script[] = []
-    const push = (item: Script) => {
-      queue.push(item)
-      return Effect.void
-    }
-    return Layer.mergeAll(
-      Layer.succeed(
-        LLM.Service,
-        LLM.Service.of({
-          stream: () => {
-            const item = queue.shift() ?? Stream.empty
-            return item
-          },
-        }),
-      ),
-      Layer.succeed(TestLLM, TestLLM.of({ push })),
-    )
-  }),
-)
-
-const status = Layer.mergeAll(SessionStatus.defaultLayer, Bus.layer)
-const infra = Layer.mergeAll(NodeFileSystem.layer, CrossSpawnSpawner.defaultLayer)
-const reference = Layer.mock(Reference.Service, {
-  list: () => Effect.succeed([]),
+const stateNode = LayerNode.make({
+  service: State,
+  layer: Layer.sync(State, () => State.of({ queue: [] })),
+  deps: [],
 })
-const env = SessionProcessor.layer.pipe(
-  Layer.provideMerge(
-    Layer.mergeAll(
-      Session.defaultLayer,
-      Snapshot.defaultLayer,
-      AgentSvc.defaultLayer,
-      Permission.defaultLayer,
-      Plugin.defaultLayer,
-      Config.defaultLayer,
-      RuntimeFlags.layer(),
-      reference,
-      SessionSummary.defaultLayer,
-      Image.defaultLayer,
-      SyncEvent.defaultLayer,
-      EventV2Bridge.defaultLayer,
-      Database.defaultLayer,
-      status,
-      llm,
-    ).pipe(Layer.provideMerge(infra)),
+const llmNode = LayerNode.make({
+  service: LLM.Service,
+  layer: Layer.effect(
+    LLM.Service,
+    Effect.gen(function* () {
+      const state = yield* State
+      return LLM.Service.of({ stream: () => state.queue.shift() ?? Stream.empty })
+    }),
   ),
-  Layer.provide(reference),
-)
+  deps: [stateNode],
+})
+const testNode = LayerNode.make({
+  service: TestLLM,
+  layer: Layer.effect(
+    TestLLM,
+    Effect.gen(function* () {
+      const state = yield* State
+      return TestLLM.of({
+        push: (item) => Effect.sync(() => state.queue.push(item)).pipe(Effect.asVoid),
+      })
+    }),
+  ),
+  deps: [stateNode],
+})
+const root = LayerNode.group([
+  SessionProcessor.node,
+  Session.node,
+  SessionProjector.node,
+  MessageV2.node,
+  Snapshot.node,
+  AgentSvc.node,
+  Permission.node,
+  Plugin.node,
+  Config.node,
+  SessionSummary.node,
+  Image.node,
+  SessionStatus.node,
+  EventV2Bridge.node,
+  Database.node,
+  CrossSpawnSpawner.node,
+  RuntimeFlags.node,
+  LLM.node,
+  testNode,
+])
+const env = LayerNode.compile(root, [
+  [LLM.node, llmNode],
+  [RuntimeFlags.node, RuntimeFlags.layer()],
+]).pipe(Layer.provideMerge(Layer.mergeAll(NodeFileSystem.layer, Bus.layer, SyncEvent.defaultLayer)))
 
 const it = testEffect(env)
 
 describe("session processor network offline", () => {
   it.effect("enters offline state for provider connection message", () =>
-    provideTmpdirInstance(
+    provideTmpdirProject(
       (dir) =>
         Effect.gen(function* () {
           const test = yield* TestLLM

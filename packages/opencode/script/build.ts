@@ -11,7 +11,7 @@ import { createRequire } from "module" // kilocode_change
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const dir = path.resolve(__dirname, "..")
-const require = createRequire(import.meta.url)
+const require = createRequire(import.meta.url) // kilocode_change
 
 process.chdir(dir)
 
@@ -19,57 +19,12 @@ const generated = await import("./generate.ts")
 
 import { Script } from "@opencode-ai/script"
 import pkg from "../package.json"
-import rootPkg from "../../../package.json" // czcode_change - resolve catalog: versions // kilocode_change
 // kilocode_change start
 import { stageBubblewrap } from "./kilocode/bubblewrap"
 import { LanceDBRuntime } from "../src/kilocode/lancedb"
 import { KiloSandboxWorker } from "./kilocode/kilo-sandbox-worker"
 import { KiloSandboxNetwork } from "./kilocode/kilo-sandbox-network"
 // kilocode_change end
-
-// kilocode_change start
-// czcode_change start - resolve catalog: version references
-function resolveVersion(name: string, version: string): string {
-  if (!version.startsWith("catalog:")) return version
-  const catalog = (rootPkg as any).workspaces?.catalog ?? {}
-  return catalog[name] ?? version
-}
-function resolveDep(name: string): string {
-  const raw = (pkg.dependencies as Record<string, string>)[name] ?? (pkg.devDependencies as Record<string, string>)[name] ?? ""
-  return resolveVersion(name, raw)
-}
-// czcode_change end
-// kilocode_change end
-
-// Load migrations from migration directories
-const migrationDirs = (
-  await fs.promises.readdir(path.join(dir, "migration"), {
-    withFileTypes: true,
-  })
-)
-  .filter((entry) => entry.isDirectory() && /^\d{4}\d{2}\d{2}\d{2}\d{2}\d{2}/.test(entry.name))
-  .map((entry) => entry.name)
-  .sort()
-
-const migrations = await Promise.all(
-  migrationDirs.map(async (name) => {
-    const file = path.join(dir, "migration", name, "migration.sql")
-    const sql = await Bun.file(file).text()
-    const match = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/.exec(name)
-    const timestamp = match
-      ? Date.UTC(
-          Number(match[1]),
-          Number(match[2]) - 1,
-          Number(match[3]),
-          Number(match[4]),
-          Number(match[5]),
-          Number(match[6]),
-        )
-      : 0
-    return { sql, timestamp, name }
-  }),
-)
-console.log(`Loaded ${migrations.length} migrations`)
 
 const singleFlag = process.argv.includes("--single")
 const baselineFlag = process.argv.includes("--baseline")
@@ -96,9 +51,46 @@ async function copyTreeSitterWasms(outputDir: string) {
   console.log(`copied ${languageWasmFiles.length + 1} tree-sitter wasm files to ${targetDir}`)
 }
 
+// kilocode_change start
+async function isKiloConsoleUpToDate(app: string, out: string) {
+  const indexHtml = path.join(out, "index.html")
+  if (!fs.existsSync(indexHtml)) return false
+  const outStat = await fs.promises.stat(indexHtml)
+  const inputs = [
+    path.join(app, "src"),
+    path.join(app, "package.json"),
+    path.join(app, "vite.config.ts"),
+    path.join(app, "index.html"),
+    path.resolve(dir, "../kilo-web-ui/src"),
+    path.resolve(dir, "../kilo-indexing/src"),
+    path.resolve(dir, "../kilo-ui/src"),
+    path.resolve(dir, "../ui/src"),
+    path.resolve(dir, "../sdk/js/src"),
+    path.resolve(dir, "../../bun.lock"),
+  ]
+  for (const p of inputs) {
+    if (!fs.existsSync(p)) continue
+    const st = await fs.promises.stat(p)
+    if (st.isDirectory()) {
+      const glob = new Bun.Glob("**/*")
+      for await (const file of glob.scan({ cwd: p })) {
+        const fileStat = await fs.promises.stat(path.join(p, file))
+        if (fileStat.mtimeMs > outStat.mtimeMs) return false
+      }
+    } else if (st.mtimeMs > outStat.mtimeMs) {
+      return false
+    }
+  }
+  return true
+}
+
 async function buildKiloConsole() {
   const app = path.resolve(dir, "../kilo-console")
   const out = path.join(app, "dist")
+  if (await isKiloConsoleUpToDate(app, out)) {
+    console.log(`reusing existing Kilo Console build at ${out}`)
+    return out
+  }
   console.log("building Kilo Console")
   const proc = Bun.spawn([process.execPath, "run", "build"], {
     cwd: app,
@@ -111,6 +103,7 @@ async function buildKiloConsole() {
   if (code !== 0) throw new Error(`Kilo Console build failed with exit code ${code}`)
   return out
 }
+// kilocode_change end
 
 async function copyKiloConsole(input: string, outputDir: string) {
   const target = path.join(outputDir, "console")
@@ -177,6 +170,8 @@ async function smokeModels(binaryPath: string) {
 //   ].join("\n")
 // }
 // kilocode_change end
+
+const treeSitterWorker = await Bun.file(fileURLToPath(import.meta.resolve("@opentui/core/parser.worker"))).text()
 
 const allTargets: {
   os: string
@@ -262,20 +257,20 @@ const targets = singleFlag
     })
   : allTargets
 
-await $`rm -rf dist`
 // kilocode_change start
-const kiloConsoleDist = await buildKiloConsole()
-const kiloSandboxWorker = await KiloSandboxWorker.bundle()
-const kiloSandboxNetwork = await KiloSandboxNetwork.bundle()
+await $`rm -rf dist`
+const [kiloConsoleDist, kiloSandboxWorker, kiloSandboxNetwork] = await Promise.all([
+  buildKiloConsole(),
+  KiloSandboxWorker.bundle(),
+  KiloSandboxNetwork.bundle(),
+])
 // kilocode_change end
 
 const binaries: Record<string, string> = {}
 if (!skipInstall) {
-  // kilocode_change start
-  await $`bun install --os="*" --cpu="*" @opentui/core@${resolveDep("@opentui/core")}` // czcode_change
-  await $`bun install --os="*" --cpu="*" @parcel/watcher@${resolveDep("@parcel/watcher")}` // czcode_change
-  await $`bun install --os="*" --cpu="*" @ff-labs/fff-bun@${resolveDep("@ff-labs/fff-bun")}` // czcode_change
-  // kilocode_change end
+  await $`bun install --os="*" --cpu="*" @opentui/core@${pkg.dependencies["@opentui/core"]}`
+  await $`bun install --os="*" --cpu="*" @parcel/watcher@${pkg.dependencies["@parcel/watcher"]}`
+  await $`bun install --os="*" --cpu="*" @ff-labs/fff-bun@${pkg.dependencies["@ff-labs/fff-bun"]}`
 }
 for (const item of targets) {
   const name = [
@@ -298,23 +293,20 @@ for (const item of targets) {
       : undefined
   // kilocode_change end
 
-  const localPath = path.resolve(dir, "node_modules/@opentui/core/parser.worker.js")
-  const rootPath = path.resolve(dir, "../../node_modules/@opentui/core/parser.worker.js")
-  const parserWorker = fs.realpathSync(fs.existsSync(localPath) ? localPath : rootPath)
   const workerPath = "./src/cli/tui/worker.ts"
+  const treeSitterWorkerPath = "opentui-tree-sitter-worker.js"
   // kilocode_change start
   const sessionExportWorkerPath = "./src/kilocode/session-export/worker.ts"
   const indexingWorkerPath = "./src/kilocode/indexing-worker.ts"
   // kilocode_change end
 
-  // Use platform-specific bunfs root path based on target OS // kilocode_change
   const bunfsRoot = item.os === "win32" ? "B:/~BUN/root/" : "/$bunfs/root/"
-  const workerRelativePath = path.relative(dir, parserWorker).replaceAll("\\", "/")
 
   await Bun.build({
     conditions: ["bun", "node"], // kilocode_change - port Kilo-Org/kilocode#30873; current form from #31566
     tsconfig: "./tsconfig.json",
     plugins: [plugin],
+    // kilocode_change start - skip sourcemaps for release builds (each .js.map adds ~50 MB per target → ~600 MB total)
     sourcemap: Script.release ? "none" : "external",
     external: ["node-gyp", ...LanceDBRuntime.external],
     // kilocode_change end
@@ -335,19 +327,21 @@ for (const item of targets) {
       autoloadTsconfig: true,
       autoloadPackageJson: true,
       target: name.replace(pkg.name, "bun") as any,
-      outfile: `dist/${name}/bin/czcode`, // czcode_change // kilocode_change
+      // kilocode_change start
+      outfile: `dist/${name}/bin/kilo`,
       execArgv: [`--user-agent=kilo/${Script.version}`, "--use-system-ca", "--"],
+      // kilocode_change end
       windows: {},
     },
     // kilocode_change start - packages/app was removed; no embedded web UI
-    files: {},
-    entrypoints: ["./src/index.ts", parserWorker, workerPath, sessionExportWorkerPath, indexingWorkerPath],
+    files: { [treeSitterWorkerPath]: treeSitterWorker },
+    entrypoints: ["./src/index.ts", workerPath, treeSitterWorkerPath, sessionExportWorkerPath, indexingWorkerPath],
     // kilocode_change end
     define: {
       FFF_LIBC: JSON.stringify(item.abi === "musl" ? "musl" : "gnu"),
       KILO_VERSION: `'${Script.version}'`,
       KILO_MODELS_DEV: generated.modelsData,
-      OTUI_TREE_SITTER_WORKER_PATH: bunfsRoot + workerRelativePath,
+      OTUI_TREE_SITTER_WORKER_PATH: bunfsRoot + treeSitterWorkerPath,
       KILO_WORKER_PATH: workerPath,
       // kilocode_change start
       KILO_SESSION_EXPORT_WORKER_PATH: sessionExportWorkerPath,
@@ -385,7 +379,7 @@ for (const item of targets) {
     const interpreter = interpreters[key]
     if (interpreter) {
       try {
-        await $`patchelf --set-interpreter ${interpreter} dist/${name}/bin/czcode`
+        await $`patchelf --set-interpreter ${interpreter} dist/${name}/bin/kilo`
         console.log(`patched interpreter for ${name} -> ${interpreter}`)
       } catch {
         console.warn(`patchelf not available, skipping interpreter fix for ${name}`)
@@ -396,7 +390,7 @@ for (const item of targets) {
 
   // Smoke test: only run if binary is for current platform
   if (item.os === process.platform && item.arch === process.arch && !item.abi) {
-    const binaryPath = `dist/${name}/bin/czcode` // czcode_change // kilocode_change
+    const binaryPath = `dist/${name}/bin/kilo` // kilocode_change
     console.log(`Running smoke test: ${binaryPath} --version`)
     try {
       const versionOutput = await $`${binaryPath} --version`.text()
@@ -458,45 +452,9 @@ for (const item of targets) {
 }
 
 if (Script.release) {
-  // kilocode_change start
-  // czcode_change start — bundle clickzetta-skills into release archives
-  console.log("Downloading clickzetta-skills for bundling...")
-  const skillsTmp = path.resolve("dist", "_skills_tmp")
-  await $`rm -rf ${skillsTmp}`
-  await $`git clone --depth 1 --branch main https://github.com/clickzetta/clickzetta-skills.git ${skillsTmp}`.quiet().nothrow()
-  // Remove .git to save space
-  await $`rm -rf ${skillsTmp}/.git`
-
+  const archives: string[] = [] // kilocode_change
   for (const key of Object.keys(binaries)) {
-    const binDir = `dist/${key}/bin`
-    await $`cp -r ${skillsTmp} ${binDir}/clickzetta-skills`.quiet().nothrow()
-  }
-  await $`rm -rf ${skillsTmp}`
-  console.log("Bundled clickzetta-skills into all platform archives")
-  // czcode_change end
-
-  // czcode_change start — bundle incremental-skills into release archives
-  console.log("Downloading incremental-skills for bundling...")
-  const incSkillsTmp = path.resolve("dist", "_inc_skills_tmp")
-  await $`rm -rf ${incSkillsTmp}`
-  await $`git clone --depth 1 --branch main https://github.com/clickzetta/incremental-skills.git ${incSkillsTmp}`.quiet().nothrow()
-  await $`rm -rf ${incSkillsTmp}/.git`
-  // Only keep the skills/ directory — examples/ pollutes the skill registry
-  await $`rm -rf ${incSkillsTmp}/examples`
-
-  for (const key of Object.keys(binaries)) {
-    const binDir = `dist/${key}/bin`
-    await $`mkdir -p ${binDir}/incremental-skills`.quiet().nothrow()
-    await $`cp -r ${incSkillsTmp}/skills/. ${binDir}/incremental-skills/`.quiet().nothrow()
-  }
-  await $`rm -rf ${incSkillsTmp}`
-  console.log("Bundled incremental-skills into all platform archives")
-  // czcode_change end
-  // kilocode_change end
-
-  const archives: string[] = []
-  for (const key of Object.keys(binaries)) {
-    const archive = key.replace(pkg.name, "czcode") // czcode_change // kilocode_change
+    const archive = key.replace(pkg.name, "kilo") // kilocode_change
     if (key.includes("linux")) {
       // kilocode_change start
       const out = path.resolve("dist", `${archive}.tar.gz`)
@@ -511,7 +469,7 @@ if (Script.release) {
       // kilocode_change end
     }
   }
-  await $`gh release upload v${Script.version} ${archives} --clobber`
+  await $`gh release upload v${Script.version} ${archives} --clobber` // kilocode_change
 }
 
 export { binaries }

@@ -1,14 +1,14 @@
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
-import { httpClient } from "@opencode-ai/core/effect/layer-node-platform"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
+import { httpClient } from "@opencode-ai/core/effect/app-node-platform"
 import { Effect, Layer, Schema, Context, Stream } from "effect"
 import { serviceUse } from "@opencode-ai/core/effect/service-use"
-import { FetchHttpClient, HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http"
+import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http"
 import { withTransientReadRetry } from "@/util/effect-http-client"
 import { errorMessage } from "@/util/error"
 import { ChildProcess } from "effect/unstable/process"
 import { AppProcess } from "@opencode-ai/core/process"
 import path from "path"
-import { EventV2 } from "@opencode-ai/core/event"
 import { makeRuntime } from "@opencode-ai/core/effect/runtime"
 import semver from "semver"
 import { InstallationChannel, InstallationVersion } from "@opencode-ai/core/installation/version"
@@ -21,26 +21,15 @@ import {
   Release as KiloRelease,
   Scoop as KiloScoop,
 } from "@/kilocode/installation"
+import { latest as kiloLatest } from "@/kilocode/installation/latest"
 // kilocode_change end
+import { InstallationEvent } from "@opencode-ai/schema/installation-event"
 
 export type Method = "curl" | "npm" | "yarn" | "pnpm" | "bun" | "brew" | "scoop" | "choco" | "unknown"
 
 export type ReleaseType = "patch" | "minor" | "major"
 
-export const Event = {
-  Updated: EventV2.define({
-    type: "installation.updated",
-    schema: {
-      version: Schema.String,
-    },
-  }),
-  UpdateAvailable: EventV2.define({
-    type: "installation.update-available",
-    schema: {
-      version: Schema.String,
-    },
-  }),
-}
+export const Event = InstallationEvent
 
 export function getReleaseType(current: string, latest: string): ReleaseType {
   const currMajor = semver.major(current)
@@ -82,7 +71,6 @@ export class UpgradeFailedError extends Schema.TaggedErrorClass<UpgradeFailedErr
 }
 
 // Response schemas for external version APIs
-const GitHubRelease = Schema.Struct({ tag_name: Schema.String })
 const NpmPackage = Schema.Struct({ version: Schema.String })
 const BrewFormula = Schema.Struct({
   versions: Schema.Struct({ stable: Schema.String }),
@@ -108,7 +96,7 @@ export class Service extends Context.Service<Service, Interface>()("@opencode/In
 
 export const use = serviceUse(Service)
 
-export const layer: Layer.Layer<Service, never, HttpClient.HttpClient | AppProcess.Service> = Layer.effect(
+const layer: Layer.Layer<Service, never, HttpClient.HttpClient | AppProcess.Service> = Layer.effect(
   Service,
   Effect.gen(function* () {
     const http = yield* HttpClient.HttpClient
@@ -197,18 +185,65 @@ export const layer: Layer.Layer<Service, never, HttpClient.HttpClient | AppProce
         }
       }),
       method: Effect.fn("Installation.method")(function* () {
-        // czcode_change start - czcode uses .czcode/bin and .kilo/bin
-        if (process.execPath.includes(path.join(".czcode", "bin"))) return "curl" as Method
-        if (process.execPath.includes(path.join(".kilo", "bin"))) return "curl" as Method
-        // czcode_change end
+        if (process.execPath.includes(path.join(".kilo", "bin"))) return "curl" as Method // kilocode_change
         if (process.execPath.includes(path.join(".opencode", "bin"))) return "curl" as Method
-        // czcode_change start - czcode only ships GitHub Releases; skip npm/brew/choco/scoop
-        // detection entirely so the upgrade check never queries kilocode's package registries.
-        // Anything not installed to a known curl bin dir resolves to "unknown", which makes
-        // upgrade() skip auto-update and latest() fall through to the clickzetta/czcode source.
         if (process.execPath.includes(path.join(".local", "bin"))) return "curl" as Method
+        const exec = process.execPath.toLowerCase()
+
+        const checks: Array<{
+          name: Method
+          command: () => Effect.Effect<string>
+        }> = [
+          {
+            name: "npm",
+            command: () => text(["npm", "list", "-g", "--depth=0"]),
+          },
+          { name: "yarn", command: () => text(["yarn", "global", "list"]) },
+          {
+            name: "pnpm",
+            command: () => text(["pnpm", "list", "-g", "--depth=0"]),
+          },
+          { name: "bun", command: () => text(["bun", "pm", "ls", "-g"]) },
+          {
+            name: "brew",
+            command: () => text(["brew", "list", "--formula", KiloBrew.formula]),
+          }, // kilocode_change
+          {
+            name: "scoop",
+            command: () => text(["scoop", "list", KiloScoop.name]),
+          }, // kilocode_change
+          {
+            name: "choco",
+            command: () => text(["choco", "list", "--limit-output", KiloChoco.name]),
+          }, // kilocode_change
+        ]
+
+        checks.sort((a, b) => {
+          const aMatches = exec.includes(a.name)
+          const bMatches = exec.includes(b.name)
+          if (aMatches && !bMatches) return -1
+          if (!aMatches && bMatches) return 1
+          return 0
+        })
+
+        for (const check of checks) {
+          const output = yield* check.command()
+          // kilocode_change start
+          const installedName =
+            check.name === "brew"
+              ? KiloBrew.name
+              : check.name === "choco"
+                ? KiloChoco.name
+                : check.name === "scoop"
+                  ? KiloScoop.name
+                  : KiloNpm.name
+          // kilocode_change end
+          if (output.includes(installedName)) {
+            return check.name
+          }
+        }
+
         return "unknown" as Method
-        // czcode_change end
       }),
       latest: Effect.fn("Installation.latest")(function* (installMethod?: Method) {
         const detectedMethod = installMethod || (yield* result.method())
@@ -267,15 +302,7 @@ export const layer: Layer.Layer<Service, never, HttpClient.HttpClient | AppProce
           return data.version
         }
 
-        // czcode_change start - check clickzetta/czcode releases instead of opencode
-        const response = yield* httpOk.execute(
-          HttpClientRequest.get("https://api.github.com/repos/clickzetta/czcode/releases/latest").pipe(
-            HttpClientRequest.acceptJson,
-          ),
-        )
-        const data = yield* HttpClientResponse.schemaBodyJson(GitHubRelease)(response)
-        return data.tag_name.replace(/^v/, "")
-        // czcode_change end
+        return yield* kiloLatest(httpOk, KiloNpm.path, InstallationChannel) // kilocode_change
       }, Effect.orDie),
       upgrade: Effect.fn("Installation.upgrade")(function* (m: Method, target: string) {
         let upgradeResult: { code: number; stdout: string; stderr: string } | undefined
@@ -283,15 +310,20 @@ export const layer: Layer.Layer<Service, never, HttpClient.HttpClient | AppProce
           case "curl":
             upgradeResult = yield* upgradeCurl(target)
             break
-          // czcode_change start - npm/yarn/pnpm/bun not supported, redirect to curl
+          // kilocode_change start
           case "npm":
+            upgradeResult = yield* run(["npm", "install", "-g", `${KiloNpm.name}@${target}`])
+            break
           case "yarn":
+            upgradeResult = yield* run(["yarn", "global", "add", `${KiloNpm.name}@${target}`])
+            break
+          // kilocode_change end
           case "pnpm":
+            upgradeResult = yield* run(["pnpm", "install", "-g", `${KiloNpm.name}@${target}`]) // kilocode_change
+            break
           case "bun":
-            return yield* new UpgradeFailedError({
-              stderr: `czcode 不支持通过 ${m} 升级。\n请使用 curl 方式重新安装最新版本：\nhttps://github.com/clickzetta/czcode/releases`,
-            })
-          // czcode_change end
+            upgradeResult = yield* run(["bun", "install", "-g", `${KiloNpm.name}@${target}`]) // kilocode_change
+            break
           case "brew": {
             const formula = yield* getBrewFormula()
             const env = { HOMEBREW_NO_AUTO_UPDATE: "1" }
@@ -347,14 +379,12 @@ export const layer: Layer.Layer<Service, never, HttpClient.HttpClient | AppProce
   }),
 )
 
-export const defaultLayer = layer.pipe(Layer.provide(FetchHttpClient.layer), Layer.provide(AppProcess.defaultLayer))
+export const node = LayerNode.make({ service: Service, layer: layer, deps: [httpClient, AppProcess.node] })
 
-const { runPromise } = makeRuntime(Service, defaultLayer)
+const { runPromise } = makeRuntime(Service, AppNodeBuilder.build(node))
 
 export const latest = (...args: Parameters<Interface["latest"]>) => runPromise((s) => s.latest(...args))
 export const method = () => runPromise((s) => s.method())
 export const upgrade = (...args: Parameters<Interface["upgrade"]>) => runPromise((s) => s.upgrade(...args))
-
-export const node = LayerNode.make(layer, [httpClient, AppProcess.node])
 
 export * as Installation from "."

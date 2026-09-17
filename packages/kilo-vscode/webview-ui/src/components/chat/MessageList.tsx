@@ -3,9 +3,6 @@
 /**
  * MessageList component
  * Scrollable turn-based message list with virtualization.
- * Each user message is rendered as a VscodeSessionTurn — a custom component that
- * renders all assistant parts as a flat, verbose list with no context grouping,
- * and fully expands sub-agent (task tool) parts inline.
  * Shows recent sessions in the empty state for quick resumption.
  */
 
@@ -21,11 +18,14 @@ import {
   on,
   onCleanup,
 } from "solid-js"
+import { IconButton } from "@kilocode/kilo-ui/icon-button"
 import { Icon } from "@kilocode/kilo-ui/icon"
 import { Spinner } from "@kilocode/kilo-ui/spinner"
+import { relativizeProjectPath } from "@kilocode/kilo-ui/message-part"
 import { createAutoScroll } from "@kilocode/kilo-ui/hooks"
 import { useSession } from "../../context/session"
 import { useServer } from "../../context/server"
+import { useVSCode } from "../../context/vscode"
 import { useLanguage } from "../../context/language"
 import { useI18n } from "@kilocode/kilo-ui/context/i18n"
 import { useProvider } from "../../context/provider"
@@ -36,7 +36,6 @@ import type { ErrorDisplayProps } from "./ErrorDisplay"
 import { RevertBanner } from "./RevertBanner"
 import { AccountSwitcher } from "../shared/AccountSwitcher"
 import { KiloNotifications } from "./KiloNotifications"
-import { WorkingIndicator } from "../shared/WorkingIndicator"
 import { TurnOutcome } from "../shared/TurnOutcome"
 import { QuestionDock } from "./QuestionDock"
 import { Virtualizer, type VirtualizerHandle } from "virtua/solid"
@@ -85,17 +84,25 @@ import {
 import type { Part, QuestionRequest, SuggestionRequest, ToolState } from "../../types/messages"
 
 interface MessageListProps {
-  onSelectSession?: (id: string) => void
+  onSelectSession?: (id: string) => boolean | void
+  isSessionOpen?: (id: string) => boolean
   onShowHistory?: () => void
   onForkMessage?: (sessionId: string, messageId: string) => void
+  onEditMessage?: (sessionID: string, messageID: string) => void
+  onScrollToBottomReady?: (handler: (() => void) | undefined) => void
   /** Non-tool question requests to render inline at the bottom of the message list */
   questions?: () => QuestionRequest[]
   /** Non-tool suggestion requests to render inline at the bottom of the message list */
   suggestions?: () => SuggestionRequest[]
   /** When true (subagent viewer), replace the welcome screen with an initializing indicator */
   readonly?: boolean
+  /** Whether inline questions and suggestions are actionable on this surface. */
+  interactivePrompts?: boolean
+  queuedDisabled?: boolean
+  editDisabled?: boolean
   /** Optionally replace the standard welcome content while the conversation is empty. */
   emptyState?: () => JSX.Element
+  introduction?: boolean
   /** Announce transcript changes as a live log. Disable for multi-session surfaces with concurrent streams. */
   announce?: boolean
   sessionID?: Accessor<string | undefined>
@@ -104,6 +111,7 @@ interface MessageListProps {
 export const MessageList: Component<MessageListProps> = (props) => {
   const session = useSession()
   const server = useServer()
+  const vscode = useVSCode()
   const language = useLanguage()
   const provider = useProvider()
   const i18n = useI18n()
@@ -114,21 +122,6 @@ export const MessageList: Component<MessageListProps> = (props) => {
   // task's result text — indexing it there would produce a phantom match.
   const inAgentManager = !!useWorktreeMode()
 
-  // Mirrors message-part.tsx's own (unexported) relativizeProjectPath/
-  // getDirectory exactly, so the directory text indexed here matches what
-  // ToolMetaLine/ToolFileAccordion actually put on screen.
-  function relativizeProjectPath(path: string, directory?: string) {
-    if (!path) return ""
-    if (!directory) return path
-    if (directory === "/") return path
-    if (directory === "\\") return path
-    if (path === directory) return ""
-    const separator = directory.includes("\\") ? "\\" : "/"
-    const prefix = directory.endsWith(separator) ? directory : directory + separator
-    if (!path.startsWith(prefix)) return path
-    return path.slice(directory.length)
-  }
-
   function getDirectory(path: string | undefined) {
     return relativizeProjectPath(getRawDirectory(path), data.directory)
   }
@@ -136,6 +129,8 @@ export const MessageList: Component<MessageListProps> = (props) => {
   const autoScroll = createAutoScroll({
     working: () => session.status() !== "idle",
   })
+  props.onScrollToBottomReady?.(() => autoScroll.resume())
+  onCleanup(() => props.onScrollToBottomReady?.(undefined))
   const [announcement, setAnnouncement] = createSignal("")
   createEffect(
     (prev: { sid?: string; working: boolean }) => {
@@ -177,12 +172,26 @@ export const MessageList: Component<MessageListProps> = (props) => {
     ),
   )
   const isEmpty = () => turns().length === 0 && !session.loading() && !revert()
+  const introduction = createMemo(() => isEmpty() && !props.readonly && props.introduction)
 
   const activeUserID = createMemo(() =>
-    getActiveUserMessageID(session.messages(), session.statusInfo(), (msg) => session.getParts(msg.id)),
+    getActiveUserMessageID(
+      session.messages(),
+      session.statusInfo(),
+      (msg) => session.getParts(msg.id),
+      session.submitting(),
+    ),
   )
   const queuedIDs = createMemo(
-    () => new Set(queuedUserMessageIDs(session.messages(), session.statusInfo(), (msg) => session.getParts(msg.id))),
+    () =>
+      new Set(
+        queuedUserMessageIDs(
+          session.messages(),
+          session.statusInfo(),
+          (msg) => session.getParts(msg.id),
+          session.submitting(),
+        ),
+      ),
   )
   const rows = createMemo((prev: TranscriptRow[] | undefined) => {
     const active = activeUserID()
@@ -438,16 +447,17 @@ export const MessageList: Component<MessageListProps> = (props) => {
 
   // Matches TaskToolExpanded.tsx (the renderer this webview actually
   // registers for "task", overriding kilo-ui's default) exactly: title is
-  // always `i18n.t("ui.tool.agent", { type })` regardless of status — the
-  // "capitalize" CSS class only changes how it *looks*, the DOM text node
-  // itself is the raw, lowercase subagent_type. The "(N)" child-tool-count
-  // suffix shown there is a live value from session.getSessionToolCount(),
-  // not stored on the part at all, so it can't be indexed from a snapshot —
-  // searching for that count isn't meaningful content anyway.
+  // `i18n.t("ui.tool.agent", { type })` once subagent_type is known, and
+  // `ui.tool.agent.default` while it is still absent. The "capitalize" CSS
+  // class only changes how it *looks*, the DOM text node itself is the raw,
+  // lowercase subagent_type. The "(N)" child-tool-count suffix shown there is
+  // a live value from session.getSessionToolCount(), not stored on the part at
+  // all, so it can't be indexed from a snapshot — searching for that count
+  // isn't meaningful content anyway.
   function taskText(part: Part & { type: "tool" }, state: ToolState): string[] {
     const input = state.input as { subagent_type?: string; description?: string } | undefined
-    const type = input?.subagent_type || part.tool
-    const chunks = [i18n.t("ui.tool.agent", { type })]
+    const type = input?.subagent_type
+    const chunks = [type ? i18n.t("ui.tool.agent", { type }) : i18n.t("ui.tool.agent.default")]
     if (input?.description) chunks.push(input.description)
     // TaskToolExpanded.tsx only shows the raw <task_result> body when there's
     // no live child session to display instead (result() there resolves to
@@ -862,9 +872,8 @@ export const MessageList: Component<MessageListProps> = (props) => {
     const comfortMargin = box.height * 0.35
     const centered = Math.abs(rect.top + rect.height / 2 - (box.top + box.height / 2)) <= comfortMargin
     if (fullyVisible && centered) return
-    const container = range.startContainer
-    const target = container instanceof Element ? container : container?.parentElement
-    target?.scrollIntoView({ block: "center", inline: "nearest" })
+    // Scroll only the transcript, not VS Code's outer webview container.
+    el.scrollBy({ top: rect.top + rect.height / 2 - box.top - el.clientTop - el.clientHeight / 2 })
   }
 
   // Two frames of margin so the virtualizer has settled the DOM for the new
@@ -953,7 +962,7 @@ export const MessageList: Component<MessageListProps> = (props) => {
 
   // Scrolls the transcript to a row by key. Virtualized rows jump through
   // the virtualizer; direct/live/queued rows are mounted, so they use
-  // scrollIntoView. Pauses auto-follow first so the jump isn't snapped back.
+  // the transcript scroller. Pauses auto-follow first so the jump isn't snapped back.
   const jump = (key: string) => {
     autoScroll.pause()
     const index = indexes().get(key)
@@ -970,9 +979,9 @@ export const MessageList: Component<MessageListProps> = (props) => {
     }
     const el = scrollEl()
     const target = el?.querySelector<HTMLElement>(`[data-row-key="${CSS.escape(key)}"]`)
-    if (target) {
+    if (el && target) {
       setPending(undefined)
-      target.scrollIntoView({ block: "start" })
+      el.scrollBy({ top: target.getBoundingClientRect().top - el.getBoundingClientRect().top - el.clientTop })
       return
     }
     const sid = session.currentSessionID()
@@ -999,10 +1008,10 @@ export const MessageList: Component<MessageListProps> = (props) => {
     }
     const el = scrollEl()
     const row = el?.querySelector<HTMLElement>(`[data-row-key="${CSS.escape(target.key)}"]`)
-    if (!row) return
+    if (!el || !row) return
     setPending(undefined)
     autoScroll.pause()
-    row.scrollIntoView({ block: "start" })
+    el.scrollBy({ top: row.getBoundingClientRect().top - el.getBoundingClientRect().top - el.clientTop })
   })
 
   // Clicking a bar in the task timeline scrolls the transcript to that message.
@@ -1193,7 +1202,6 @@ export const MessageList: Component<MessageListProps> = (props) => {
   const setScrollRef = (el: HTMLElement | undefined) => {
     resize?.disconnect()
     setScrollEl(el)
-    autoScroll.scrollRef(el)
     if (!el) return
     refreshLayout()
     resize = new ResizeObserver(refreshLayout)
@@ -1207,6 +1215,12 @@ export const MessageList: Component<MessageListProps> = (props) => {
     document.fonts?.removeEventListener("loadingdone", refreshLayout)
   })
 
+  createEffect(() => {
+    const el = scrollEl()
+    autoScroll.scrollRef(introduction() ? undefined : el)
+    if (introduction() && el) el.scrollTop = 0
+  })
+
   const [pendingRestore, setPendingRestore] = createSignal<string>()
 
   createEffect(
@@ -1217,57 +1231,73 @@ export const MessageList: Component<MessageListProps> = (props) => {
     }),
   )
 
+  // Clicking Show on the session that is already selected leaves
+  // currentSessionID untouched, so the effect above never re-arms. Arm the same
+  // restore pass from the request itself; it resolves to a scroll-to-bottom.
+  createEffect(
+    on(session.scrollBottomID, (id) => {
+      if (id && id === session.currentSessionID()) setPendingRestore(id)
+    }),
+  )
+
   createEffect(() => {
     const id = pendingRestore()
     if (!id || session.loading()) return
     turns().length
-    // Double-rAF: the first frame lets the browser paint the new DOM from
-    // the messagesLoaded batch. The second frame restores scroll position
-    // without forcing a synchronous layout reflow mid-paint.
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (pendingRestore() !== id) return
-        const el = scrollEl()
-        if (!el) return
-        const state = getScroll(id)
-        const anchor = resolveAnchor(state, keys())
-        const handle = virtualizer()
-        if (state?.type === "anchor" && anchor && handle) {
-          handle.scrollToIndex(anchor.index, { offset: anchor.offset })
-          autoScroll.pause()
-          maybeLoadOlder()
-        } else {
-          autoScroll.forceScrollToBottom()
-        }
+      if (pendingRestore() !== id) return
+      const el = scrollEl()
+      if (!el) return
+      if (session.consumeScrollBottom(id)) {
+        autoScroll.forceScrollToBottom()
         setPendingRestore(undefined)
-      })
+        return
+      }
+      const state = getScroll(id)
+      const anchor = resolveAnchor(state, keys())
+      const handle = virtualizer()
+      if (state?.type === "anchor" && anchor && handle) {
+        handle.scrollToIndex(anchor.index, { offset: anchor.offset })
+        autoScroll.pause()
+        maybeLoadOlder()
+      } else {
+        autoScroll.forceScrollToBottom()
+      }
+      setPendingRestore(undefined)
     })
   })
 
   onCleanup(() => save(session.currentSessionID()))
 
   return (
-    <div class="message-list-container">
+    <div class="message-list-container" classList={{ "am-intro-layout": introduction() }}>
       <Show when={props.announce === false}>
         <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">
           {announcement()}
         </div>
       </Show>
       <Show when={isEmpty()}>
-        <div class="welcome-header">
+        <div class="welcome-header" data-slot="welcome-header">
           <AccountSwitcher class="account-switcher-welcome" />
-          <KiloNotifications sessionID={props.sessionID} />
+          <Show when={!props.introduction || props.readonly}>
+            <KiloNotifications sessionID={props.sessionID} />
+          </Show>
         </div>
       </Show>
       <div
         ref={setScrollRef}
         onScroll={handleScroll}
         class="message-list"
+        data-slot="message-list"
         role={props.announce === false ? undefined : "log"}
         aria-live={props.announce === false ? undefined : "polite"}
         aria-busy={props.announce === false && session.status() !== "idle" ? "true" : undefined}
       >
-        <div ref={autoScroll.contentRef} class={isEmpty() ? "message-list-content-empty" : "message-list-content"}>
+        <div
+          ref={autoScroll.contentRef}
+          data-slot="message-list-content"
+          class={isEmpty() ? "message-list-content-empty" : "message-list-content"}
+        >
           <Show when={session.loading()}>
             <div class="message-list-loading" role="status">
               <Spinner />
@@ -1320,11 +1350,18 @@ export const MessageList: Component<MessageListProps> = (props) => {
                       <TranscriptRowView
                         row={row}
                         index={index()}
+                        onSelectSession={props.onSelectSession}
+                        isSessionOpen={props.isSessionOpen}
                         onForkMessage={props.onForkMessage}
+                        onEditMessage={props.onEditMessage}
+                        queuedDisabled={props.queuedDisabled}
+                        editDisabled={props.editDisabled}
                         highlight={highlight}
                         activeSearch={activeKey() === row.key}
                         activeSearchPartID={activeKey() === row.key ? activeMatch()?.partId : undefined}
                         activeSearchPartFile={activeKey() === row.key ? activeMatch()?.partFile : undefined}
+                        readonly={props.readonly}
+                        interactivePrompts={props.interactivePrompts}
                       />
                     )}
                   </Virtualizer>
@@ -1333,11 +1370,18 @@ export const MessageList: Component<MessageListProps> = (props) => {
                   {(key) => (
                     <TranscriptRowView
                       row={lookup().get(key)!}
+                      onSelectSession={props.onSelectSession}
+                      isSessionOpen={props.isSessionOpen}
                       onForkMessage={props.onForkMessage}
+                      onEditMessage={props.onEditMessage}
+                      queuedDisabled={props.queuedDisabled}
+                      editDisabled={props.editDisabled}
                       highlight={highlight}
                       activeSearch={activeKey() === key}
                       activeSearchPartID={activeKey() === key ? activeMatch()?.partId : undefined}
                       activeSearchPartFile={activeKey() === key ? activeMatch()?.partFile : undefined}
+                      readonly={props.readonly}
+                      interactivePrompts={props.interactivePrompts}
                     />
                   )}
                 </For>
@@ -1350,21 +1394,31 @@ export const MessageList: Component<MessageListProps> = (props) => {
               {(row) => (
                 <TranscriptRowView
                   row={row}
+                  onSelectSession={props.onSelectSession}
+                  isSessionOpen={props.isSessionOpen}
+                  onEditMessage={props.onEditMessage}
+                  queuedDisabled={props.queuedDisabled}
+                  editDisabled={props.editDisabled}
                   activeSearch={activeKey() === row.key}
                   activeSearchPartID={activeKey() === row.key ? activeMatch()?.partId : undefined}
                   activeSearchPartFile={activeKey() === row.key ? activeMatch()?.partFile : undefined}
+                  readonly={props.readonly}
+                  interactivePrompts={props.interactivePrompts}
                 />
               )}
             </For>
-            <WorkingIndicator />
             <TurnOutcome />
-            <For each={props.questions?.()}>{(req) => <QuestionDock request={req} />}</For>
-            <For each={props.suggestions?.()}>{(req) => <SuggestBar request={req} />}</For>
+            <Show when={props.interactivePrompts !== false}>
+              <For each={props.questions?.()}>{(req) => <QuestionDock request={req} />}</For>
+              <For each={props.suggestions?.()}>{(req) => <SuggestBar request={req} />}</For>
+            </Show>
           </Show>
         </div>
       </div>
 
       <PromptRail
+        // Editor tabs and Agent Manager have no sidebar edge signal. Keep their rail on the physical right in RTL too.
+        side={vscode.sidebarSide() ?? "right"}
         entries={entries}
         items={items}
         active={() => railActiveKey()}
@@ -1377,7 +1431,9 @@ export const MessageList: Component<MessageListProps> = (props) => {
         onLoadOlder={() => session.loadOlderMessages()}
         onWheel={(deltaY: number) => {
           const el = scrollEl()
-          if (el) el.scrollTop += deltaY
+          if (!el) return
+          if (deltaY < 0 && el.scrollHeight - el.clientHeight > 1) autoScroll.pause()
+          el.scrollTop += deltaY
         }}
         height={height}
         hasOlder={session.hasOlderMessages}
@@ -1386,14 +1442,15 @@ export const MessageList: Component<MessageListProps> = (props) => {
         seeking={() => Boolean(seek())}
       />
 
-      <Show when={autoScroll.userScrolled()}>
-        <button
+      <Show when={!introduction() && autoScroll.userScrolled()}>
+        <IconButton
+          icon="arrow-down-to-line"
+          variant="ghost"
+          size="small"
           class="scroll-to-bottom-button"
           onClick={() => autoScroll.resume()}
           aria-label={language.t("session.messages.scrollToBottom")}
-        >
-          <Icon name="arrow-down-to-line" />
-        </button>
+        />
       </Show>
     </div>
   )

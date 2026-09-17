@@ -194,7 +194,10 @@ export async function runWithMessageConfirmation<T>(
   }
 }
 
-export function sessionToWebview(session: Pick<Session, "id" | "parentID" | "title" | "time" | "summary" | "revert">) {
+export function sessionToWebview(
+  session: Pick<Session, "id" | "parentID" | "title" | "time" | "summary" | "revert" | "metadata">,
+) {
+  const goal = session.metadata?.["kilo.goal"]
   return {
     id: session.id,
     parentID: session.parentID ?? null,
@@ -206,6 +209,26 @@ export function sessionToWebview(session: Pick<Session, "id" | "parentID" | "tit
     // SolidJS store merge never clears the existing revert state.
     revert: session.revert ?? null,
     summary: session.summary ?? null,
+    goal:
+      goal &&
+      typeof goal === "object" &&
+      "text" in goal &&
+      typeof goal.text === "string" &&
+      "active" in goal &&
+      typeof goal.active === "boolean"
+        ? {
+            text: goal.text,
+            active: goal.active,
+            ...("status" in goal &&
+            (goal.status === "active" ||
+              goal.status === "complete" ||
+              goal.status === "blocked" ||
+              goal.status === "paused")
+              ? { status: goal.status }
+              : {}),
+            ...("reason" in goal && typeof goal.reason === "string" ? { reason: goal.reason } : {}),
+          }
+        : null,
   }
 }
 
@@ -234,6 +257,7 @@ export interface SessionRefreshContext {
   sessionDirectories: Map<string, string>
   worktreeDirectories?: () => string[]
   workspaceDirectory: string
+  isCurrent?: () => boolean
   postMessage(message: unknown): void
 }
 
@@ -256,7 +280,7 @@ export async function loadSessions(ctx: SessionRefreshContext): Promise<string |
 
   const sessions = await list(ctx.workspaceDirectory)
   const projectID = sessions[0]?.projectID
-  const worktreeDirs = new Set([...(ctx.worktreeDirectories?.() ?? []), ...ctx.sessionDirectories.values()])
+  const worktreeDirs = new Set(ctx.worktreeDirectories ? ctx.worktreeDirectories() : ctx.sessionDirectories.values())
   const failed = new Set<string>()
   const extra = await Promise.all(
     [...worktreeDirs].map((dir) =>
@@ -275,6 +299,8 @@ export async function loadSessions(ctx: SessionRefreshContext): Promise<string |
       seen.add(s.id)
     }
   }
+
+  if (ctx.isCurrent && !ctx.isCurrent()) return
 
   // Sessions whose worktree directories failed to list — the webview must
   // not delete these during reconciliation since the absence is transient.
@@ -408,7 +434,13 @@ export type WebviewMessage =
       message: Record<string, unknown>
     }
   | { type: "sessionStatus"; sessionID: string; status: string; attempt?: number; message?: string; next?: number }
-  | { type: "sessionTurnClosed"; sessionID: string; reason: "completed" | "error" | "interrupted" | "superseded" }
+  | {
+      type: "sessionTurnClosed"
+      sessionID: string
+      eventID: string
+      reason: "completed" | "error" | "interrupted" | "superseded"
+      parentID?: string
+    }
   | {
       type: "permissionRequest"
       permission: {
@@ -447,7 +479,7 @@ export type WebviewMessage =
   | { type: "sessionUpdated"; session: ReturnType<typeof sessionToWebview> }
   | { type: "sessionDeleted"; sessionID: string }
   | { type: "messageRemoved"; sessionID: string; messageID: string }
-  | { type: "sessionError"; sessionID?: string; error?: unknown }
+  | { type: "sessionError"; eventID: string; sessionID?: string; error?: unknown }
   | {
       type: "sandboxStatus"
       sessionID: string
@@ -552,7 +584,9 @@ export function mapSSEEventToWebviewMessage(event: StreamEvent, sessionID: strin
       return {
         type: "sessionTurnClosed",
         sessionID: event.properties.sessionID,
+        eventID: event.id,
         reason: event.properties.reason,
+        ...(event.properties.parentID ? { parentID: event.properties.parentID } : {}),
       }
     case "permission.asked":
       return {
@@ -617,6 +651,7 @@ export function mapSSEEventToWebviewMessage(event: StreamEvent, sessionID: strin
     case "session.error": {
       return {
         type: "sessionError",
+        eventID: event.id,
         sessionID: event.properties.sessionID,
         error: event.properties.error,
       }
@@ -661,7 +696,10 @@ export function mapCloudSessionMessageToWebviewMessage(message: CloudSessionMess
  * Returns true when the event carries a projectID that does not match the expected one.
  * When expectedProjectID is undefined (not yet resolved), nothing is filtered.
  */
-export function isEventFromForeignProject(event: StreamEvent, expectedProjectID: string | undefined): boolean {
+export function isEventFromForeignProject(
+  event: StreamEvent | SyncPayload,
+  expectedProjectID: string | undefined,
+): boolean {
   if (!expectedProjectID || event.type !== "sync") return false
   if (event.name === "session.created.1" || event.name === "session.deleted.1") {
     return event.data.info.projectID !== expectedProjectID

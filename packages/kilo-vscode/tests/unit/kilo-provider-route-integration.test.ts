@@ -1,5 +1,11 @@
-import { describe, it, expect } from "bun:test"
+import { describe, it, expect, spyOn } from "bun:test"
+import * as vscode from "vscode"
+import * as fs from "fs/promises"
+import * as os from "os"
+import * as path from "path"
 import { ProjectRouteService } from "../../src/agent-manager/project/route"
+import type { DiffViewerProvider } from "../../src/diff/DiffViewerProvider"
+import type { PRReviewCommentData } from "../../src/shared/review-comments"
 
 // vscode mock is provided by the shared preload (tests/setup/vscode-mock.ts)
 const { KiloProvider } = await import("../../src/KiloProvider")
@@ -11,8 +17,9 @@ type SessionGetParams = { sessionID: string; directory: string }
  * session.get records every call so tests can assert which directory was
  * queried. Mirrors the shape used by kilo-provider-session-refresh.test.ts.
  */
-function mockConnection(getImpl?: (p: SessionGetParams) => Promise<unknown>) {
+function mockConnection(getImpl?: (p: SessionGetParams) => Promise<unknown>, vcs = "git") {
   const calls: SessionGetParams[] = []
+  const projectCalls: string[] = []
   const client = {
     session: {
       get: async (p: SessionGetParams) => {
@@ -31,6 +38,13 @@ function mockConnection(getImpl?: (p: SessionGetParams) => Promise<unknown>) {
         }
       },
       list: async () => ({ data: [] }),
+      status: async () => ({ data: {} }),
+    },
+    project: {
+      current: async (p: { directory: string }) => {
+        projectCalls.push(p.directory)
+        return { data: { vcs } }
+      },
     },
     provider: { list: async () => ({ data: { all: [], connected: {}, default: {} } }) },
     app: {
@@ -47,6 +61,7 @@ function mockConnection(getImpl?: (p: SessionGetParams) => Promise<unknown>) {
   let current: typeof client | null = client
   return {
     calls,
+    projectCalls,
     connection: {
       connect: async () => {
         current = client
@@ -61,11 +76,12 @@ function mockConnection(getImpl?: (p: SessionGetParams) => Promise<unknown>) {
       onNotificationDismissed: () => () => undefined,
       onLanguageChanged: () => () => undefined,
       onProfileChanged: () => () => undefined,
-      onMigrationComplete: () => () => undefined,
       onFavoritesChanged: () => () => undefined,
       onModelSelectorExpandedChanged: () => () => undefined,
       onClearPendingPrompts: () => () => undefined,
       registerDirectoryProvider: () => () => undefined,
+      unregisterVisible: () => undefined,
+      unregisterAttached: () => undefined,
       getServerInfo: () => ({ port: 12345 }),
       getServerConfig: () => ({ baseUrl: "http://127.0.0.1:12345", password: "test" }),
       getConnectionState: () => "connected" as const,
@@ -77,11 +93,34 @@ function mockConnection(getImpl?: (p: SessionGetParams) => Promise<unknown>) {
   }
 }
 
+async function withNestedRepo(run: (root: string) => Promise<void>): Promise<void> {
+  const base = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-nested-repo-"))
+  const root = path.join(base, "frontend")
+  await fs.mkdir(root)
+  const result = Bun.spawnSync({ cmd: ["git", "init"], cwd: root, stdout: "pipe", stderr: "pipe" })
+  if (result.exitCode !== 0) throw new Error(Buffer.from(result.stderr).toString())
+  try {
+    await run(root)
+  } finally {
+    await fs.rm(base, { recursive: true, force: true })
+  }
+}
+
 type ProviderInternals = {
   client: unknown
   connectionState: "connecting" | "connected" | "disconnected" | "error"
   initConnectionPromise: Promise<void> | null
+  isWebviewReady: boolean
   webview: { postMessage: (message: unknown) => Promise<unknown> } | null
+  startStatsPolling: () => void
+  contextSessionID: string | undefined
+  checkpoints: Map<string, Promise<void>>
+  sessionStatusMap: Map<string, string>
+  retryAbortControllers: Map<string, AbortController>
+  openChanges: (sessionID?: string, turnID?: string, comment?: PRReviewCommentData) => Promise<void>
+  refreshGitStatus: (directory?: string, sessionID?: string) => Promise<void>
+  refreshGitStatusFromParts: (parts: unknown[], sessionID?: string) => Promise<boolean>
+  refreshSessionDetails: (sessionID: string, dir: string) => void
   handleSendCommand: (
     command: string,
     args: string,
@@ -111,6 +150,258 @@ function connect(internal: ProviderInternals): void {
 }
 
 describe("KiloProvider route integration", () => {
+  const comment: PRReviewCommentData = {
+    id: "thread-one",
+    origin: "pr",
+    author: "reviewer",
+    body: "Keep the selection while loading.",
+    file: "src/selection.ts",
+    line: 4,
+  }
+
+  it("opens PR comments beside a chat tab and sends them back to the originating session", async () => {
+    const { connection } = mockConnection()
+    const provider = new KiloProvider({} as never, connection, undefined, {
+      rootDirectory: () => "/active/root",
+      topBarSurface: "tab",
+    })
+    provider.setSessionDirectory("origin", "/repo/origin")
+    const opened: NonNullable<Parameters<DiffViewerProvider["openFromCommand"]>[0]>[] = []
+    provider.setDiffViewerProvider({ openFromCommand: (args) => opened.push(args) } as DiffViewerProvider)
+    const internal = provider as unknown as ProviderInternals
+    const posted: unknown[] = []
+    internal.webview = { postMessage: async (message) => posted.push(message) }
+    internal.isWebviewReady = true
+    provider.setReviewCommentsHandler(() => {
+      throw new Error("A live origin must not use the fallback")
+    })
+
+    await internal.openChanges("origin", undefined, comment)
+    expect(opened).toHaveLength(1)
+    expect(opened[0]).toMatchObject({ sessionId: "origin", directory: "/repo/origin", beside: true, comment })
+    internal.contextSessionID = "another-session"
+    opened[0]!.onComments?.([comment], true)
+    expect(posted).toContainEqual({
+      type: "appendReviewComments",
+      comments: [comment],
+      autoSend: true,
+      sessionID: "origin",
+    })
+  })
+
+  it.each([
+    ["origin", "origin", true],
+    ["sidebar-pending:draft", undefined, false],
+    ["pending:draft", undefined, false],
+  ] as const)(
+    "keeps PR comment delivery alive after the originating provider is disposed (%s)",
+    async (id, target, send) => {
+      const { connection } = mockConnection()
+      const provider = new KiloProvider({} as never, connection, undefined, {
+        rootDirectory: () => "/active/root",
+      })
+      provider.setSessionDirectory(id, "/repo/origin")
+      const opened: NonNullable<Parameters<DiffViewerProvider["openFromCommand"]>[0]>[] = []
+      const received: unknown[] = []
+      provider.setDiffViewerProvider({ openFromCommand: (args) => opened.push(args) } as DiffViewerProvider)
+      const stable = (comments: unknown[], autoSend: boolean, sessionID?: string, directory?: string) =>
+        received.push({ comments, autoSend, sessionID, directory })
+      provider.setReviewCommentsHandler(stable)
+
+      const internal = provider as unknown as ProviderInternals
+      await internal.openChanges(id, undefined, comment)
+      provider.dispose()
+      expect(provider.canReceiveReviewComments()).toBe(false)
+      opened[0]!.onComments?.([comment], true)
+
+      expect(received).toEqual([{ comments: [comment], autoSend: send, sessionID: target, directory: "/repo/origin" }])
+    },
+  )
+
+  it("does not open a PR comment in an unrelated project for an ambiguous session", async () => {
+    const routes = new ProjectRouteService()
+    routes.registerProject("a", "/repo/a", 1)
+    routes.registerProject("b", "/repo/b", 1)
+    routes.registerSession({ projectId: "a", sessionId: "same" }, "/repo/a", 1)
+    routes.registerSession({ projectId: "b", sessionId: "same" }, "/repo/b", 1)
+    const { connection } = mockConnection()
+    const provider = new KiloProvider({} as never, connection, undefined, {
+      routeService: routes,
+      rootDirectory: () => "/active/root",
+    })
+    const opened: unknown[] = []
+    provider.setDiffViewerProvider({ openFromCommand: (args) => opened.push(args) } as DiffViewerProvider)
+    const internal = provider as unknown as ProviderInternals
+    await internal.openChanges("same", undefined, comment)
+    expect(opened).toEqual([])
+  })
+
+  it("finds a nested Git root when the workspace parent is not a repo", async () => {
+    await withNestedRepo(async (root) => {
+      const source = path.join(root, "src")
+      await fs.mkdir(source)
+      const { connection, projectCalls } = mockConnection(undefined, "none")
+      const provider = new KiloProvider({} as never, connection, undefined, {
+        rootDirectory: () => source,
+      })
+      const internal = provider as unknown as ProviderInternals
+      const sent: unknown[] = []
+      internal.connectionState = "connected"
+      internal.initConnectionPromise = Promise.resolve()
+      internal.isWebviewReady = true
+      internal.startStatsPolling = () => {}
+      internal.webview = { postMessage: async (message) => sent.push(message) }
+
+      await internal.refreshGitStatus(source)
+
+      expect(projectCalls).toEqual([source])
+      expect(sent).toContainEqual({ type: "gitStatus", repo: true })
+    })
+  })
+
+  it("keeps a session's discovered Git root across focus refreshes", async () => {
+    await withNestedRepo(async (root) => {
+      const source = path.join(root, "src")
+      await fs.mkdir(source)
+      const parent = path.dirname(root)
+      const { connection } = mockConnection(undefined, "none")
+      const provider = new KiloProvider({} as never, connection, undefined, {
+        rootDirectory: () => parent,
+      })
+      const internal = provider as unknown as ProviderInternals
+      internal.connectionState = "connected"
+      internal.initConnectionPromise = Promise.resolve()
+      internal.isWebviewReady = true
+      internal.startStatsPolling = () => {}
+      internal.webview = { postMessage: async () => true }
+
+      await internal.refreshGitStatus(source, "s1")
+      const resolved = await fs.realpath(root)
+      expect(provider.getSessionGitDirectory("s1")).toBe(resolved)
+
+      const calls: Array<{ directory?: string; sessionID?: string }> = []
+      internal.refreshGitStatus = async (directory, sessionID) => {
+        calls.push({ directory, sessionID })
+      }
+      internal.contextSessionID = "s1"
+      internal.refreshSessionDetails("s1", parent)
+
+      expect(calls).toEqual([{ directory: resolved, sessionID: "s1" }])
+    })
+  })
+
+  it("keeps the session on its owning repo after tools touch a nested repo", async () => {
+    await withNestedRepo(async (root) => {
+      const nested = path.join(root, "vendor", "lib")
+      await fs.mkdir(nested, { recursive: true })
+      const result = Bun.spawnSync({ cmd: ["git", "init"], cwd: nested, stdout: "pipe", stderr: "pipe" })
+      if (result.exitCode !== 0) throw new Error(Buffer.from(result.stderr).toString())
+
+      const { connection } = mockConnection(undefined, "none")
+      const provider = new KiloProvider({} as never, connection, undefined, {
+        rootDirectory: () => root,
+      })
+      const internal = provider as unknown as ProviderInternals
+      internal.contextSessionID = "s1"
+      internal.startStatsPolling = () => {}
+
+      expect(
+        await internal.refreshGitStatusFromParts(
+          [
+            {
+              type: "tool",
+              tool: "read",
+              state: { status: "completed", input: { filePath: path.join(nested, "readme.md") } },
+            },
+          ],
+          "s1",
+        ),
+      ).toBe(false)
+      expect(provider.getSessionGitDirectory("s1")).toBeUndefined()
+
+      await internal.refreshGitStatusFromParts(
+        [
+          {
+            type: "tool",
+            tool: "edit",
+            state: {
+              status: "completed",
+              metadata: { filediff: { file: path.join(nested, "src.ts") } },
+            },
+          },
+        ],
+        "s1",
+      )
+
+      expect(provider.getSessionGitDirectory("s1")).toBe(await fs.realpath(root))
+    })
+  })
+
+  it("caches an inactive child repo without changing the visible Git status", async () => {
+    await withNestedRepo(async (root) => {
+      const { connection } = mockConnection(undefined, "none")
+      const provider = new KiloProvider({} as never, connection, undefined, {
+        rootDirectory: () => path.dirname(root),
+      })
+      const internal = provider as unknown as ProviderInternals
+      const sent: unknown[] = []
+      internal.contextSessionID = "parent"
+      internal.isWebviewReady = true
+      internal.webview = { postMessage: async (message) => sent.push(message) }
+
+      await internal.refreshGitStatus(root, "child")
+
+      expect(provider.getSessionGitDirectory("child")).toBe(await fs.realpath(root))
+      expect(sent).not.toContainEqual({ type: "gitStatus", repo: true })
+    })
+  })
+
+  it("does no Git work for non-mutating part updates", async () => {
+    await withNestedRepo(async (root) => {
+      const { connection, projectCalls } = mockConnection(undefined, "none")
+      const provider = new KiloProvider({} as never, connection, undefined, {
+        rootDirectory: () => root,
+      })
+      const internal = provider as unknown as ProviderInternals
+      const parts = [
+        { type: "text", text: "chunk" },
+        { type: "reasoning", text: "thought" },
+        { type: "step-start" },
+        { type: "step-finish" },
+        { type: "tool", tool: "read", state: { status: "completed", input: { filePath: "README.md" } } },
+        { type: "tool", tool: "bash", state: { status: "running" } },
+        { type: "tool", tool: "grep", state: { status: "completed" } },
+      ]
+
+      for (const part of parts) {
+        expect(await internal.refreshGitStatusFromParts([part], "s1")).toBe(false)
+      }
+
+      expect(projectCalls).toEqual([])
+      expect(provider.getSessionGitDirectory("s1")).toBeUndefined()
+    })
+  })
+
+  it("checks Git capability in the active project directory", async () => {
+    const { connection, projectCalls } = mockConnection()
+    const provider = new KiloProvider({} as never, connection, undefined, {
+      rootDirectory: () => "/workspace/parent/project-b",
+      projectQualifier: () => ({ projectId: "project-b" }),
+    })
+    const internal = provider as unknown as ProviderInternals
+    const sent: unknown[] = []
+    internal.connectionState = "connected"
+    internal.initConnectionPromise = Promise.resolve()
+    internal.isWebviewReady = true
+    internal.startStatsPolling = () => {}
+    internal.webview = { postMessage: async (message) => sent.push(message) }
+
+    await internal.refreshGitStatus()
+
+    expect(projectCalls).toEqual(["/workspace/parent/project-b"])
+    expect(sent).toContainEqual({ type: "gitStatus", repo: true })
+  })
+
   it("resolves a unique Local session route to its exact project root", async () => {
     const routes = new ProjectRouteService()
     routes.registerProject("a", "/repo/a", 1)
@@ -279,6 +570,119 @@ describe("KiloProvider route integration", () => {
       (m) => typeof m === "object" && m !== null && (m as { type?: string }).type === "sendMessageFailed",
     )
     expect(failed, "expected a sendMessageFailed message for the ambiguous share command").toBeTruthy()
+  })
+
+  function goal(error?: string) {
+    const { connection } = mockConnection()
+    const calls: unknown[] = []
+    const sent: unknown[] = []
+    const client = connection.getClient()
+    client.session.command = async (input) => {
+      calls.push(input)
+      return (
+        error
+          ? { error, response: new Response(null, { status: 409 }) }
+          : {
+              data: {
+                parts: [
+                  { type: "text", text: "Goal paused" },
+                  { type: "reasoning", text: "hidden" },
+                ],
+              },
+            }
+      ) as Awaited<ReturnType<typeof client.session.command>>
+    }
+    const internal = new KiloProvider({} as never, connection, undefined, {
+      rootDirectory: () => "/goal/worktree",
+    }) as unknown as ProviderInternals
+    connect(internal)
+    internal.isWebviewReady = true
+    internal.webview = { postMessage: async (message) => sent.push(message) }
+    return { internal, calls, sent }
+  }
+
+  it.each([
+    { args: "Fix failing tests", control: false },
+    { args: "resume", control: false },
+    { args: "", control: true },
+    { args: "pause", control: true },
+    { args: "clear", control: true },
+  ])(
+    "waits for checkpoints before starting or resuming goals but sends controls immediately: %j",
+    async ({ args, control }) => {
+      const { internal, calls, sent } = goal()
+      const pending = Promise.withResolvers<void>()
+      const retry = new AbortController()
+      internal.checkpoints.set("goal-session", pending.promise)
+      internal.retryAbortControllers.set("goal-session", retry)
+      internal.sessionStatusMap.set("goal-session", "busy")
+      const notice = spyOn(vscode.window, "showInformationMessage").mockResolvedValue(undefined)
+      try {
+        const send = internal.handleSendCommand(
+          "goal",
+          args,
+          "goal-message",
+          "goal-session",
+          undefined,
+          "test",
+          "selected",
+          "ask",
+          "high",
+        )
+        await Promise.resolve()
+        await Promise.resolve()
+        expect(calls).toHaveLength(control ? 1 : 0)
+        if (!control) {
+          expect(sent).not.toContainEqual({ type: "sessionCommandCompleted", messageID: "goal-message" })
+          pending.resolve()
+        }
+        await send
+        expect(calls).toHaveLength(1)
+        expect(calls.at(0)).toMatchObject({
+          sessionID: "goal-session",
+          directory: "/goal/worktree",
+          command: "goal",
+          arguments: args,
+          model: control ? undefined : "test/selected",
+          agent: control ? undefined : "ask",
+          variant: control ? undefined : "high",
+        })
+        expect(sent).toContainEqual({ type: "sessionCommandCompleted", messageID: "goal-message" })
+        expect(sent).not.toContainEqual(expect.objectContaining({ type: "sessionStatus" }))
+        expect(internal.sessionStatusMap.get("goal-session")).toBe("busy")
+        expect(internal.retryAbortControllers.get("goal-session")).toBe(retry)
+        expect(notice.mock.calls).toEqual(args ? [] : [["Goal paused"]])
+      } finally {
+        pending.resolve()
+        notice.mockRestore()
+      }
+    },
+  )
+
+  it("does not resume a goal when the pending checkpoint fails", async () => {
+    const { internal, calls, sent } = goal()
+    const pending = Promise.withResolvers<void>()
+    internal.checkpoints.set("goal-session", pending.promise)
+    const send = internal.handleSendCommand("goal", "resume", "goal-message", "goal-session")
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(calls).toHaveLength(0)
+    pending.reject(new Error("Checkpoint failed"))
+    await send
+    expect(calls).toHaveLength(0)
+    expect(sent).toContainEqual(
+      expect.objectContaining({ type: "sendMessageFailed", messageID: "goal-message", error: "Checkpoint failed" }),
+    )
+    expect(sent).not.toContainEqual({ type: "sessionCommandCompleted", messageID: "goal-message" })
+  })
+
+  it("reports goal command errors without marking an active run idle", async () => {
+    const { internal, sent } = goal("Goal is unavailable")
+    internal.sessionStatusMap.set("goal-session", "busy")
+    await internal.handleSendCommand("goal", "resume", undefined, "goal-session")
+    expect(sent).toContainEqual(expect.objectContaining({ type: "sendMessageFailed", error: "Goal is unavailable" }))
+    expect(sent).not.toContainEqual(expect.objectContaining({ type: "sessionStatus" }))
+    expect(internal.sessionStatusMap.get("goal-session")).toBe("busy")
   })
 
   it("runs a share command on a unique session route against its exact directory", async () => {

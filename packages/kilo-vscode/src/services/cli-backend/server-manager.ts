@@ -6,7 +6,7 @@ import * as path from "path"
 import * as vscode from "vscode"
 import { resolveLocalBwrapEnv, resolveTreeSitterEnv } from "./cli-resources"
 import { t } from "./i18n"
-import { parseServerPort } from "./server-utils"
+import { scanServerPort } from "./server-utils"
 
 export interface ServerInstance {
   port: number
@@ -15,9 +15,10 @@ export interface ServerInstance {
 }
 
 const STARTUP_TIMEOUT_SECONDS = 30
+const STARTUP_OUTPUT_LIMIT = 1024
 
 type WorkspaceFolderLike = { uri: { fsPath: string } }
-type ServerExitListener = (code: number | null) => void
+type ServerExitListener = (code: number | null, signal: NodeJS.Signals | null) => void
 
 export function resolveServerCwd(folders: readonly WorkspaceFolderLike[] | undefined, storage: string): string {
   return folders?.[0]?.uri.fsPath ?? storage
@@ -29,7 +30,16 @@ export function resolveIndexingEnv(folders: readonly WorkspaceFolderLike[] | und
 }
 
 export function resolveManagedServerEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
-  return { ...env, KILO_DISABLE_CHANNEL_DB: "true" }
+  return {
+    ...env,
+    KILO_DISABLE_CHANNEL_DB: "true",
+    // VS Code does not consume the backend's file.watcher.updated events.
+    KILO_EXPERIMENTAL_DISABLE_FILEWATCHER: "true",
+  }
+}
+
+export function resolveClaudeMigrationEnv(env: NodeJS.ProcessEnv, enabled: boolean): string {
+  return env.KILO_EXPERIMENTAL_CLAUDE_MIGRATION ?? String(enabled)
 }
 
 export class ServerManager {
@@ -39,6 +49,7 @@ export class ServerManager {
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly onExit?: ServerExitListener,
+    private readonly env?: () => Promise<Record<string, string>>,
   ) {}
 
   /**
@@ -84,10 +95,15 @@ export class ServerManager {
     console.log("[Kilo New] ServerManager: 📄 CLI isFile:", stat.isFile())
     console.log("[Kilo New] ServerManager: 📄 CLI mode (octal):", (stat.mode & 0o777).toString(8))
 
+    const extraEnv = await this.env?.()
     return new Promise((resolve, reject) => {
       console.log("[Kilo New] ServerManager: 🎬 Spawning CLI process:", cliPath, ["serve", "--port", "0"])
       const cfg = vscode.workspace.getConfiguration("kilo-code.new")
       const claudeCompat = cfg.get<boolean>("claudeCodeCompat", false)
+      const claudeMigration = resolveClaudeMigrationEnv(
+        { ...process.env, ...(extraEnv ?? {}) },
+        cfg.get<boolean>("experimental.claudeMigration", false),
+      )
       // Pin cwd so the CLI doesn't inherit the extension host's cwd ("/" under F5 debug)
       // or "$HOME" in empty VS Code windows.
       const folders = vscode.workspace.workspaceFolders
@@ -150,6 +166,8 @@ export class ServerManager {
           ...(!claudeCompat && { KILO_DISABLE_CLAUDE_CODE: "true" }),
           ...resolveTreeSitterEnv(this.context.extensionPath),
           ...bwrapEnv,
+          ...extraEnv,
+          KILO_EXPERIMENTAL_CLAUDE_MIGRATION: claudeMigration,
         },
         stdio: ["ignore", "pipe", "pipe"],
         detached: true,
@@ -157,13 +175,16 @@ export class ServerManager {
       console.log("[Kilo New] ServerManager: 📦 Process spawned with PID:", serverProcess.pid)
 
       let resolved = false
+      let output = ""
       const stderrLines: string[] = []
 
       serverProcess.stdout?.on("data", (data: Buffer) => {
-        const output = data.toString()
-        console.log("[Kilo New] ServerManager: 📥 CLI Server stdout:", output)
+        const chunk = data.toString()
+        console.log("[Kilo New] ServerManager: 📥 CLI Server stdout:", chunk)
 
-        const port = parseServerPort(output)
+        const state = scanServerPort(output, chunk, STARTUP_OUTPUT_LIMIT)
+        output = state.output
+        const port = state.port
         if (port !== null && !resolved) {
           resolved = true
           console.log("[Kilo New] ServerManager: 🎯 Port detected:", port)
@@ -177,25 +198,36 @@ export class ServerManager {
         stderrLines.push(errorOutput)
       })
 
-      serverProcess.on("error", (error) => {
-        console.error("[Kilo New] ServerManager: ❌ Process error:", error)
+      serverProcess.on("error", (err: NodeJS.ErrnoException) => {
+        console.error("[Kilo New] ServerManager: ❌ Process error:", err)
         if (!resolved) {
-          reject(error)
+          const spawnErr = err as NodeJS.ErrnoException & { spawnargs?: string[] }
+          const code = err.code || err.name || "UNKNOWN"
+          const header = t("server.spawnFailed", { code })
+          const lines = [
+            `Error: ${err.message}`,
+            ...(err.code ? [`Code: ${err.code}`] : []),
+            ...(err.errno !== undefined ? [`Errno: ${err.errno}`] : []),
+            ...(err.syscall ? [`Syscall: ${err.syscall}`] : []),
+            ...(err.path ? [`Path: ${err.path}`] : []),
+            ...(Array.isArray(spawnErr.spawnargs) ? [`Spawn args: ${JSON.stringify(spawnErr.spawnargs)}`] : []),
+          ]
+          const { userMessage, userDetails } = toErrorMessage(header, [...lines, ...stderrLines], cliPath)
+          reject(new ServerStartupError(userMessage, userDetails))
         }
       })
 
-      serverProcess.on("exit", (code) => {
-        console.log("[Kilo New] ServerManager: 🛑 Process exited with code:", code)
+      serverProcess.on("exit", (code, signal) => {
+        console.warn("[Kilo New] ServerManager: 🛑 Process exited:", { code, signal })
         if (this.instance?.process === serverProcess) {
           this.instance = null
-          this.onExit?.(code)
+          this.onExit?.(code, signal)
         }
         if (!resolved) {
-          const { userMessage, userDetails } = toErrorMessage(
-            t("server.processExited", { code: code ?? "null" }),
-            stderrLines,
-            cliPath,
-          )
+          const msg = signal
+            ? t("server.processSignaled", { signal })
+            : t("server.processExited", { code: code ?? "unknown" })
+          const { userMessage, userDetails } = toErrorMessage(msg, stderrLines, cliPath)
           reject(new ServerStartupError(userMessage, userDetails))
         }
       })
