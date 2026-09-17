@@ -22,7 +22,6 @@ import type {
   SnapshotFileDiff,
   ConsoleState,
   BackgroundProcessInfo, // kilocode_change
-  InteractiveTerminalSnapshot, // kilocode_change
   IndexingStatus, // kilocode_change
 } from "@kilocode/sdk/v2"
 import { createStore, produce, reconcile } from "solid-js/store"
@@ -37,8 +36,10 @@ import { batch, createEffect, on, onMount } from "solid-js" // kilocode_change
 import path from "path"
 import { useKV } from "./kv"
 import { handleSuggestionEvent } from "@/kilocode/suggestion/tui/sync" // kilocode_change
-import { appendTerminalOutput } from "@/kilocode/interactive-terminal/output" // kilocode_change
+import { at, recent, slot } from "../kilocode/message-order" // kilocode_change
 import { useToast } from "../ui/toast" // kilocode_change
+import { usePermission } from "./permission"
+import { GoalSync } from "@/kilocode/cli/cmd/tui/goal-sync" // kilocode_change
 
 const emptyConsoleState: ConsoleState = {
   consoleManagedProviders: [],
@@ -67,6 +68,7 @@ export const {
   init: () => {
     const startup = useTuiStartup()
     const kv = useKV()
+    const permission = usePermission()
     const [store, setStore] = createStore<{
       status: "loading" | "partial" | "complete"
       provider: Provider[]
@@ -101,10 +103,7 @@ export const {
       todo: {
         [sessionID: string]: Todo[]
       }
-      // kilocode_change start
-      background_process: Record<string, BackgroundProcessInfo[]>
-      interactive_terminal: Record<string, InteractiveTerminalSnapshot[]>
-      // kilocode_change end
+      background_process: Record<string, BackgroundProcessInfo[]> // kilocode_change
       message: {
         [sessionID: string]: Message[]
       }
@@ -130,7 +129,7 @@ export const {
       },
       console_state: emptyConsoleState,
       capabilities: {
-        experimentalBackgroundSubagents: false,
+        experimentalBackgroundSubagents: true, // kilocode_change - background subagents are enabled by default
       },
       provider_auth: {},
       config: {},
@@ -149,7 +148,6 @@ export const {
       session_diff: {},
       todo: {},
       background_process: {}, // kilocode_change
-      interactive_terminal: {}, // kilocode_change
       message: {},
       part: {},
       lsp: [],
@@ -164,6 +162,7 @@ export const {
     const project = useProject()
     const sdk = useSDK()
     const toast = useToast() // kilocode_change
+    GoalSync.watch(sdk, project.workspace.current, store, (fn) => setStore(produce(fn))) // kilocode_change
 
     // kilocode_change start
     function evict(sessionID: string) {
@@ -178,7 +177,6 @@ export const {
           const processes = draft.background_process[sessionID]?.filter((item) => item.lifetime === "persistent")
           if (processes?.length) draft.background_process[sessionID] = processes
           else delete draft.background_process[sessionID]
-          delete draft.interactive_terminal[sessionID]
           delete draft.permission[sessionID]
           delete draft.question[sessionID]
           delete draft.suggestion[sessionID]
@@ -197,7 +195,6 @@ export const {
 
     const fullSyncedSessions = new Set<string>()
     const deleted = new Set<string>() // kilocode_change
-    const terminalDeleted = new Set<string>() // kilocode_change
     let syncedWorkspace = project.workspace.current() // kilocode_change
     let vcsVersion = 0 // kilocode_change
     const syncingSessions = new Map<string, Promise<void>>()
@@ -225,14 +222,12 @@ export const {
         .then((x) => (x.data ?? []).toSorted((a, b) => a.id.localeCompare(b.id)))
     }
 
-    event.subscribe((event, { workspace }) => {
+    event.subscribe((event, { directory, workspace }) => {
       switch (event.type) {
         case "server.instance.disposed":
           // kilocode_change start
           deleted.clear()
-          terminalDeleted.clear()
           setStore("background_process", {})
-          setStore("interactive_terminal", {})
           // kilocode_change end
           void bootstrap()
           break
@@ -253,6 +248,15 @@ export const {
 
         case "permission.asked": {
           const request = event.properties
+          if (permission.mode === "auto") {
+            void sdk.client.permission.reply({
+              requestID: request.id,
+              reply: "once",
+              directory,
+              workspace,
+            })
+            break
+          }
           const requests = store.permission[request.sessionID]
           if (!requests) {
             setStore("permission", request.sessionID, [request])
@@ -438,49 +442,6 @@ export const {
           )
           break
         }
-        case "interactive_terminal.updated": {
-          const info = event.properties.info
-          terminalDeleted.delete(info.id)
-          const list = store.interactive_terminal[info.sessionID] ?? []
-          const match = search(list, info.id, (item) => item.info.id)
-          if (match.found) setStore("interactive_terminal", info.sessionID, match.index, "info", reconcile(info))
-          if (!match.found)
-            setStore(
-              "interactive_terminal",
-              info.sessionID,
-              produce((draft) => draft.splice(match.index, 0, { info, output: "", cursor: 0 })),
-            )
-          break
-        }
-        case "interactive_terminal.data": {
-          const list = store.interactive_terminal[event.properties.sessionID]
-          if (!list) break
-          const match = search(list, event.properties.terminalID, (item) => item.info.id)
-          if (!match.found) break
-          setStore(
-            "interactive_terminal",
-            event.properties.sessionID,
-            match.index,
-            produce((draft) => {
-              draft.output = appendTerminalOutput(draft.output, event.properties.data)
-              draft.cursor = event.properties.cursor
-            }),
-          )
-          break
-        }
-        case "interactive_terminal.deleted": {
-          terminalDeleted.add(event.properties.terminalID)
-          const list = store.interactive_terminal[event.properties.sessionID]
-          if (!list) break
-          const match = search(list, event.properties.terminalID, (item) => item.info.id)
-          if (match.found)
-            setStore(
-              "interactive_terminal",
-              event.properties.sessionID,
-              produce((draft) => draft.splice(match.index, 1)),
-            )
-          break
-        }
         // kilocode_change end
 
         case "message.updated": {
@@ -490,7 +451,7 @@ export const {
             setStore("message", event.properties.info.sessionID, [event.properties.info])
             break
           }
-          const result = search(messages, event.properties.info.id, (m) => m.id)
+          const result = slot(messages, event.properties.info) // kilocode_change - order by created time, ids wrap
           if (result.found) {
             setStore("message", event.properties.info.sessionID, result.index, reconcile(event.properties.info))
             break
@@ -526,7 +487,7 @@ export const {
         case "message.removed": {
           touchMessage(event.properties.sessionID, event.properties.messageID)
           const messages = store.message[event.properties.sessionID]
-          const result = search(messages, event.properties.messageID, (m) => m.id)
+          const result = at(messages, event.properties.messageID) // kilocode_change - list is time-ordered, not id-sorted
           if (result.found) {
             setStore(
               "message",
@@ -669,7 +630,7 @@ export const {
             setStore("message", info.sessionID, [info])
             break
           }
-          const match = search(messages, info.id, (item) => item.id)
+          const match = slot(messages, info) // kilocode_change - order by created time, ids wrap
           if (match.found) {
             setStore("message", info.sessionID, match.index, reconcile(info))
             break
@@ -699,7 +660,7 @@ export const {
           touchMessage(event.data.sessionID, event.data.messageID)
           const messages = store.message[event.data.sessionID]
           if (!messages) break
-          const match = search(messages, event.data.messageID, (item) => item.id)
+          const match = at(messages, event.data.messageID) // kilocode_change - list is time-ordered, not id-sorted
           if (!match.found) break
           setStore(
             "message",
@@ -755,9 +716,7 @@ export const {
       if (workspace !== syncedWorkspace) {
         fullSyncedSessions.clear()
         deleted.clear()
-        terminalDeleted.clear()
         setStore("background_process", {})
-        setStore("interactive_terminal", {})
         syncedWorkspace = workspace
       }
       // kilocode_change end
@@ -822,7 +781,13 @@ export const {
               setStore("provider", reconcile(providers.providers))
               setStore("provider_default", reconcile(providers.default))
               setStore("provider_next", reconcile(providerList))
-              setStore("capabilities", "experimentalBackgroundSubagents", capabilities?.backgroundSubagents === true)
+              // kilocode_change start - fail closed when the backend omits the capability
+              setStore(
+                "capabilities",
+                "experimentalBackgroundSubagents",
+                capabilities?.backgroundSubagents === true,
+              )
+              // kilocode_change end
               setStore("console_state", reconcile(consoleState))
               setStore("agent", reconcile(agents))
               setStore("config", reconcile(config))
@@ -858,15 +823,6 @@ export const {
               }
               for (const list of Object.values(next)) list.sort((a, b) => a.id.localeCompare(b.id))
               setStore("background_process", reconcile(next))
-            }),
-            sdk.client.interactiveTerminal.list({ workspace }).then((result) => {
-              const next: Record<string, InteractiveTerminalSnapshot[]> = {}
-              for (const item of result.data ?? []) {
-                if (terminalDeleted.has(item.info.id)) continue
-                ;(next[item.info.sessionID] ??= []).push(item)
-              }
-              for (const list of Object.values(next)) list.sort((a, b) => a.info.id.localeCompare(b.info.id))
-              setStore("interactive_terminal", reconcile(next))
             }),
             // kilocode_change end
             sdk.client.session.status({ workspace }).then((x) => {
@@ -997,9 +953,11 @@ export const {
                     (message) => tracker.messages.has(message.id) && !infos.some((item) => item.id === message.id),
                   ),
                 )
-                const removed = infos.slice(0, -100)
-                const visible = infos.slice(-100)
+                // kilocode_change start - window by created time so wrapped ids stay visible
+                const visible = recent(infos)
                 const visibleIDs = new Set(visible.map((message) => message.id))
+                const removed = infos.filter((message) => !visibleIDs.has(message.id))
+                // kilocode_change end
                 for (const message of messages.data ?? []) {
                   if (!visibleIDs.has(message.info.id)) {
                     delete draft.part[message.info.id]

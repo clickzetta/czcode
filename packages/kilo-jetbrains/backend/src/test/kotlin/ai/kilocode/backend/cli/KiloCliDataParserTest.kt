@@ -7,7 +7,7 @@ import ai.kilocode.rpc.dto.AgentConfigPatchDto
 import ai.kilocode.rpc.dto.CompactionPatchDto
 import ai.kilocode.rpc.dto.ConfigDto
 import ai.kilocode.rpc.dto.ConfigPatchDto
-import ai.kilocode.rpc.dto.ConfigUpdateDto
+import ai.kilocode.rpc.dto.EditorContextDto
 import ai.kilocode.rpc.dto.McpConfigDto
 import ai.kilocode.rpc.dto.PermissionAlwaysRulesDto
 import ai.kilocode.rpc.dto.PermissionReplyDto
@@ -19,6 +19,7 @@ import ai.kilocode.rpc.dto.PartSourceTextDto
 import ai.kilocode.rpc.dto.PromptDto
 import ai.kilocode.rpc.dto.PromptPartDto
 import ai.kilocode.rpc.dto.QuestionReplyDto
+import ai.kilocode.rpc.dto.SessionChangeKindDto
 import ai.kilocode.rpc.dto.SkillsPatchDto
 import ai.kilocode.rpc.dto.WatcherPatchDto
 import org.junit.jupiter.api.Nested
@@ -415,6 +416,45 @@ class KiloCliDataParserTest {
         }
 
         @Test
+        fun `parseChatEvent - tool part parses typed approval metadata`() {
+            val data = globalEvent("""
+                "type": "message.part.updated",
+                "properties": {
+                    "sessionID": "ses_1",
+                    "part": {
+                        "id": "part_bash",
+                        "sessionID": "ses_1",
+                        "messageID": "msg_1",
+                        "type": "tool",
+                        "tool": "bash",
+                        "callID": "call_bash",
+                        "state": {
+                            "status": "completed",
+                            "input": { "command": "pwd" },
+                            "metadata": {
+                                "approval": {
+                                    "source": "global",
+                                    "rule": { "permission": "bash", "pattern": "pwd", "action": "allow" },
+                                    "outsideWorkspace": true,
+                                    "outsideWorkspacePath": "/tmp/project"
+                                }
+                            }
+                        }
+                    }
+                }
+            """)
+
+            val result = KiloCliDataParser.parseChatEvent("message.part.updated", data) as ChatEventDto.PartUpdated
+
+            assertEquals("global", result.part.approval?.source)
+            assertEquals("bash", result.part.approval?.rulePermission)
+            assertEquals("pwd", result.part.approval?.rulePattern)
+            assertEquals("allow", result.part.approval?.ruleAction)
+            assertEquals(true, result.part.approval?.outsideWorkspace)
+            assertEquals("/tmp/project", result.part.approval?.outsideWorkspacePath)
+        }
+
+        @Test
         fun `parseChatEvent - empty top metadata todos overrides fallback todos`() {
             val data = globalEvent("""
                 "type": "message.part.updated",
@@ -691,7 +731,7 @@ class KiloCliDataParserTest {
                             "messageID": "msg_rollback",
                             "partID": "prt_rollback",
                             "snapshot": "snap_rollback",
-                            "diff": "diff --git a/file b/file"
+                            "diff": "diff --git a/src/A.kt b/src/A.kt\n--- a/src/A.kt\n+++ b/src/A.kt\n@@ -1 +1,2 @@\n-old\n+new\n+more\ndiff --git a/src/Old.kt b/src/Old.kt\ndeleted file mode 100644\n--- a/src/Old.kt\n+++ /dev/null\n@@ -1 +0,0 @@\n-gone"
                         }
                     }
                 }
@@ -705,6 +745,13 @@ class KiloCliDataParserTest {
             assertEquals(2, result.session.summary?.files)
             assertEquals("msg_rollback", result.session.revert?.messageID)
             assertEquals("prt_rollback", result.session.revert?.partID)
+            assertEquals(2, result.session.revert?.diffs?.size)
+            assertEquals("src/A.kt", result.session.revert?.diffs?.get(0)?.file)
+            assertEquals(2, result.session.revert?.diffs?.get(0)?.additions)
+            assertEquals(1, result.session.revert?.diffs?.get(0)?.deletions)
+            assertEquals("modified", result.session.revert?.diffs?.get(0)?.status)
+            assertEquals("src/Old.kt", result.session.revert?.diffs?.get(1)?.file)
+            assertEquals("deleted", result.session.revert?.diffs?.get(1)?.status)
         }
 
         @Test
@@ -1071,6 +1118,76 @@ class KiloCliDataParserTest {
             assertEquals("req_xyz", result.second.requestID)
         }
 
+        // ---- parseSessionChange ----
+
+        @Test
+        fun `parseSessionChange - created carries the session directory`() {
+            val data = sessionLifecycle("session.created", "ses_new", "/repo/.kilo/worktrees/feature", "Fix the bug")
+            val result = KiloCliDataParser.parseSessionChange("session.created", data)
+            assertNotNull(result)
+            assertEquals("ses_new", result.id)
+            assertEquals("/repo/.kilo/worktrees/feature", result.directory)
+            assertEquals(SessionChangeKindDto.CREATED, result.kind)
+        }
+
+        @Test
+        fun `parseSessionChange - updated and deleted map to their kinds`() {
+            val updated = KiloCliDataParser.parseSessionChange(
+                "session.updated",
+                sessionLifecycle("session.updated", "ses_1", "/repo", "Renamed"),
+            )
+            val deleted = KiloCliDataParser.parseSessionChange(
+                "session.deleted",
+                sessionLifecycle("session.deleted", "ses_1", "/repo", "Renamed"),
+            )
+            assertEquals(SessionChangeKindDto.UPDATED, updated?.kind)
+            assertEquals(SessionChangeKindDto.DELETED, deleted?.kind)
+        }
+
+        @Test
+        fun `parseSessionChange - falls back to the info id when sessionID is absent`() {
+            val data = globalEvent("""
+                "type": "session.created",
+                "properties": {
+                    "info": { "id": "ses_from_info", "directory": "/repo", "title": "T" }
+                }
+            """)
+            assertEquals("ses_from_info", KiloCliDataParser.parseSessionChange("session.created", data)?.id)
+        }
+
+        @Test
+        fun `parseSessionChange - ignores unrelated types and unusable payloads`() {
+            // Wrong event type.
+            assertNull(
+                KiloCliDataParser.parseSessionChange(
+                    "session.status",
+                    sessionLifecycle("session.status", "ses_1", "/repo", "T"),
+                ),
+            )
+            // No directory to scope on.
+            assertNull(
+                KiloCliDataParser.parseSessionChange(
+                    "session.created",
+                    globalEvent("""
+                        "type": "session.created",
+                        "properties": { "info": { "id": "ses_1", "title": "T" } }
+                    """),
+                ),
+            )
+            // No info at all.
+            assertNull(
+                KiloCliDataParser.parseSessionChange(
+                    "session.created",
+                    globalEvent("""
+                        "type": "session.created",
+                        "properties": { "sessionID": "ses_1" }
+                    """),
+                ),
+            )
+            // Malformed JSON.
+            assertNull(KiloCliDataParser.parseSessionChange("session.created", "not json"))
+        }
+
         // ---- parsePermissionRequests / parseQuestionRequests ----
 
         @Test
@@ -1354,6 +1471,38 @@ class KiloCliDataParserTest {
             val result = KiloCliDataParser.parseSession(raw)
             assertEquals("ses_min", result.id)
             assertNull(result.summary)
+            assertNull(result.share)
+        }
+
+        @Test
+        fun `parseSession - reads the share url`() {
+            val raw = """{
+                "id": "ses_shared",
+                "projectID": "proj_1",
+                "directory": "/tmp",
+                "title": "Shared",
+                "version": "1",
+                "time": { "created": 0.0, "updated": 0.0 },
+                "share": { "url": "https://app.kilo.ai/s/tok" }
+            }"""
+
+            assertEquals("https://app.kilo.ai/s/tok", KiloCliDataParser.parseSession(raw).share?.url)
+        }
+
+        @Test
+        fun `parseSession - ignores a blank or absent share url`() {
+            fun session(share: String) = """{
+                "id": "ses_x",
+                "projectID": "proj_1",
+                "directory": "/tmp",
+                "title": "T",
+                "version": "1",
+                "time": { "created": 0.0, "updated": 0.0 }
+                $share
+            }"""
+
+            assertNull(KiloCliDataParser.parseSession(session(""", "share": { "url": "" }""")).share)
+            assertNull(KiloCliDataParser.parseSession(session(""", "share": {}""")).share)
         }
 
         // ---- parseMessages ----
@@ -1492,6 +1641,7 @@ class KiloCliDataParserTest {
                 "info": {
                     "id": "m1", "sessionID": "s1", "role": "assistant",
                     "time": { "created": 1.0, "completed": 2.0 },
+                    "finish": "unknown",
                     "tokens": { "input": 100, "output": 50, "reasoning": 10, "cache": { "read": 20, "write": 5 } },
                     "cost": 0.005
                 },
@@ -1506,6 +1656,7 @@ class KiloCliDataParserTest {
             assertEquals(10L, info.tokens?.reasoning)
             assertEquals(20L, info.tokens?.cacheRead)
             assertEquals(5L, info.tokens?.cacheWrite)
+            assertEquals("unknown", info.finish)
             assertEquals(0.005, info.cost)
             assertEquals(2.0, info.time.completed)
         }
@@ -1817,7 +1968,7 @@ class KiloCliDataParserTest {
         @Test
         fun `parseCommands - maps name, description, source, and hints`() {
             val raw = """[
-                {"name":"init","description":"guided AGENTS.md setup","template":"static body","hints":["${'$'}ARGUMENTS"],"source":"command"},
+                {"name":"init","description":"guided AGENTS.md setup","agent":"reviewer","model":"anthropic/claude-sonnet-4-6","variant":"high","template":"static body","hints":["${'$'}ARGUMENTS"],"source":"command","subtask":true},
                 {"name":"mcp-tool","template":"","hints":["${'$'}1","${'$'}2"],"source":"mcp"}
             ]"""
 
@@ -1826,8 +1977,12 @@ class KiloCliDataParserTest {
             assertEquals(2, result.size)
             assertEquals("init", result[0].name)
             assertEquals("guided AGENTS.md setup", result[0].description)
+            assertEquals("reviewer", result[0].agent)
+            assertEquals("anthropic/claude-sonnet-4-6", result[0].model)
+            assertEquals("high", result[0].variant)
             assertEquals("command", result[0].source)
             assertEquals(listOf("\$ARGUMENTS"), result[0].hints)
+            assertEquals(true, result[0].subtask)
             assertEquals("mcp", result[1].source)
             assertEquals(listOf("\$1", "\$2"), result[1].hints)
         }
@@ -1878,6 +2033,8 @@ class KiloCliDataParserTest {
         fun `parsePathState - extracts state from valid path response`() {
             val raw = """{"home":"/home/user","state":"/home/user/.local/state/kilo","config":"/home/user/.config/kilo","worktree":"/project","directory":"/project"}"""
             assertEquals("/home/user/.local/state/kilo", KiloCliDataParser.parsePathState(raw))
+            assertEquals("/home/user/.config/kilo", KiloCliDataParser.parsePathConfig(raw))
+            assertEquals("/home/user", KiloCliDataParser.parsePathHome(raw))
         }
 
         @Test
@@ -1943,6 +2100,25 @@ class KiloCliDataParserTest {
             )
             val result = KiloCliDataParser.buildPromptJson(prompt)
             assertEquals("""{"parts":[{"type":"text","text":"Hi"}],"noReply":true}""", result)
+        }
+
+        @Test
+        fun `buildPromptJson - with editor context`() {
+            val prompt = PromptDto(
+                parts = listOf(PromptPartDto("text", "Hi")),
+                editorContext = EditorContextDto(
+                    activeFile = "src/App.kt",
+                    visibleFiles = listOf("src/App.kt"),
+                    openTabs = listOf("src/App.kt", "src/Other.kt"),
+                ),
+            )
+
+            val result = KiloCliDataParser.buildPromptJson(prompt)
+
+            assertEquals(
+                """{"parts":[{"type":"text","text":"Hi"}],"editorContext":{"visibleFiles":["src/App.kt"],"openTabs":["src/App.kt","src/Other.kt"],"activeFile":"src/App.kt"}}""",
+                result,
+            )
         }
 
         @Test
@@ -2129,29 +2305,6 @@ class KiloCliDataParserTest {
             assertEquals("""{"messageID":"m\"\\1","partID":"p\"\\1"}""", result)
         }
 
-        // ---- buildConfigPartial ----
-
-        @Test
-        fun `buildConfigPartial - model only`() {
-            val result = KiloCliDataParser.buildConfigPartial(ConfigUpdateDto(model = "anthropic/claude-4"))
-            assertEquals("""{"model":"anthropic/claude-4"}""", result)
-        }
-
-        @Test
-        fun `buildConfigPartial - agent and temperature`() {
-            val result = KiloCliDataParser.buildConfigPartial(
-                ConfigUpdateDto(agent = "code", temperature = 0.7)
-            )
-            assertTrue(result.contains(""""default_agent":"code""""))
-            assertTrue(result.contains(""""agent":{"code":{"temperature":0.7}}"""))
-        }
-
-        @Test
-        fun `buildConfigPartial - empty update`() {
-            val result = KiloCliDataParser.buildConfigPartial(ConfigUpdateDto())
-            assertEquals("{}", result)
-        }
-
         @Test
         fun `buildConfigPatch - top-level model set`() {
             val patch = ConfigPatchDto(values = linkedMapOf("model" to "anthropic/claude"))
@@ -2291,12 +2444,6 @@ class KiloCliDataParserTest {
         fun `buildConfigPatch - escapes special characters`() {
             val patch = ConfigPatchDto(values = linkedMapOf("model" to "kilo/a\\b\"c"))
             assertEquals("{\"model\":\"kilo/a\\\\b\\\"c\"}", KiloCliDataParser.buildConfigPatch(patch))
-        }
-
-        @Test
-        fun `buildConfigPartial - temperature without agent defaults to ask`() {
-            val result = KiloCliDataParser.buildConfigPartial(ConfigUpdateDto(temperature = 0.5))
-            assertTrue(result.contains(""""agent":{"ask":{"temperature":0.5}}"""))
         }
 
         // ---- buildPermissionReplyJson ----
@@ -2721,6 +2868,21 @@ class KiloCliDataParserTest {
     /** Wrap payload content in a GlobalEvent structure. */
     private fun globalEvent(payload: String): String =
         """{"directory":"/tmp","payload":{$payload}}"""
+
+    private fun sessionLifecycle(type: String, id: String, dir: String, title: String): String = globalEvent("""
+        "type": "$type",
+        "properties": {
+            "sessionID": "$id",
+            "info": {
+                "id": "$id",
+                "projectID": "prj",
+                "directory": "$dir",
+                "title": "$title",
+                "version": "1",
+                "time": { "created": 1.0, "updated": 2.0 }
+            }
+        }
+    """)
 
     private fun messageUpdated(id: String, role: String): String = globalEvent("""
         "type": "message.updated",

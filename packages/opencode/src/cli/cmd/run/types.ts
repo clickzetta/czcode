@@ -1,4 +1,4 @@
-// Shared type vocabulary for the direct interactive mode (`run --interactive`).
+// Shared type vocabulary for the direct interactive mode (`opencode --mini`).
 //
 // Direct mode uses a split-footer terminal layout: immutable scrollback for the
 // session transcript, and a mutable footer for prompt input, status, and
@@ -12,7 +12,6 @@
 //       → footer.ts queues commits and patches the footer view
 //         → OpenTUI split-footer renderer writes to terminal
 import type { KiloClient, PermissionRequest, QuestionRequest, ToolPart } from "@kilocode/sdk/v2"
-import type { RunInteractiveTerminalSnapshot } from "@/kilocode/cli/cmd/run/types" // kilocode_change
 import type { TuiConfig } from "@opencode-ai/tui/config"
 
 export type RunFilePart = {
@@ -175,7 +174,6 @@ export type FooterView =
   | { type: "prompt" }
   | { type: "permission"; request: PermissionRequest }
   | { type: "question"; request: QuestionRequest }
-  | { type: "interactive_terminal"; terminal: RunInteractiveTerminalSnapshot } // kilocode_change
 
 export type FooterPromptRoute =
   | { type: "composer" }

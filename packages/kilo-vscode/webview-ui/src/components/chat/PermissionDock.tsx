@@ -13,6 +13,7 @@ import { Component, For, Show, createEffect, createMemo, createSignal, onCleanup
 import { Button } from "@kilocode/kilo-ui/button"
 import { DockPrompt } from "@kilocode/kilo-ui/dock-prompt"
 import { Icon } from "@kilocode/kilo-ui/icon"
+import { IconButton } from "@kilocode/kilo-ui/icon-button"
 import { Tooltip } from "@kilocode/kilo-ui/tooltip"
 import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
@@ -36,7 +37,12 @@ let rulesExpandedPreference = false
 export const PermissionDock: Component<{
   request: PermissionRequest
   responding: boolean
-  onDecide: (response: "once" | "reject", approvedAlways: string[], deniedAlways: string[]) => void
+  onDecide: (
+    permissionID: string,
+    response: "once" | "reject",
+    approvedAlways: string[],
+    deniedAlways: string[],
+  ) => void
 }> = (props) => {
   const session = useSession()
   const language = useLanguage()
@@ -62,6 +68,7 @@ export const PermissionDock: Component<{
   }
   const text = (rule: string) => (command() ? label(rule) : describeRule(props.request.toolName, rule, language.t))
   const external = () => props.request.toolName === "external_directory"
+  const sandboxEscalation = () => props.request.toolName === "sandbox_escalation"
   const cmdDescription = () => {
     const val = props.request.args?.description
     return typeof val === "string" && val.length > 0 ? val : undefined
@@ -129,6 +136,7 @@ export const PermissionDock: Component<{
   }
 
   const title = () => {
+    if (sandboxEscalation()) return language.t("notification.permission.titleSandboxEscalation")
     const skill = props.request.args?.skill
     if (skillShell() && typeof skill === "string" && skill.length > 0)
       // Escape the untrusted skill name so bidi/control chars can't reorder the header text.
@@ -143,7 +151,7 @@ export const PermissionDock: Component<{
   const submit = (response: "once" | "reject") => {
     if (props.responding) return
     const { approved, denied } = collectRules()
-    props.onDecide(response, approved, denied)
+    props.onDecide(props.request.id, response, approved, denied)
     focusPrompt()
   }
 
@@ -245,28 +253,32 @@ export const PermissionDock: Component<{
                         <div data-slot="permission-rule-row" data-decision={decision(index())}>
                           <div data-slot="permission-rule-actions">
                             <Tooltip value={approveTooltip(index())} placement="top">
-                              <button
+                              <IconButton
+                                icon="check-small"
+                                variant="ghost"
+                                size="small"
                                 data-slot="permission-rule-toggle"
-                                data-variant="approve"
+                                tone="success"
                                 data-active={decision(index()) === "approved" ? "" : undefined}
+                                aria-pressed={decision(index()) === "approved"}
                                 disabled={props.responding}
                                 onClick={() => toggleRule(index(), "approved")}
                                 aria-label={approveTooltip(index())}
-                              >
-                                <Icon name="check-small" size="small" />
-                              </button>
+                              />
                             </Tooltip>
                             <Tooltip value={denyTooltip(index())} placement="top">
-                              <button
+                              <IconButton
+                                icon="close-small"
+                                variant="ghost"
+                                size="small"
                                 data-slot="permission-rule-toggle"
-                                data-variant="deny"
+                                tone="danger"
                                 data-active={decision(index()) === "denied" ? "" : undefined}
+                                aria-pressed={decision(index()) === "denied"}
                                 disabled={props.responding}
                                 onClick={() => toggleRule(index(), "denied")}
                                 aria-label={denyTooltip(index())}
-                              >
-                                <Icon name="close-small" size="small" />
-                              </button>
+                              />
                             </Tooltip>
                           </div>
                           <code data-slot="permission-rule" data-wrap={external() ? "" : undefined} title={text(rule)}>
@@ -287,72 +299,70 @@ export const PermissionDock: Component<{
           </Show>
         }
       >
-        <Show
-          when={skillShellCommands().length > 0}
-          fallback={
-            <>
-              <Show when={cmdDescription()}>{(desc) => <div data-slot="permission-hint">{desc()}</div>}</Show>
-              <Show when={command()}>
-                {(cmd) => <PermissionCommand command={cmd()} plain={props.request.args.heredoc === true} />}
-              </Show>
+        {/* Everything above the buttons scrolls: a long command or a large diff must never
+            push Allow/Deny out of the clipped chat view. */}
+        <div data-slot="permission-scroll">
+          {/* Pierre's virtualizer uses the scroll root's first child as its content
+              container, so keep all variable-height permission content in one wrapper. */}
+          <div data-slot="permission-scroll-content">
+            <Show
+              when={skillShellCommands().length > 0}
+              fallback={
+                <>
+                  <Show when={cmdDescription()}>
+                    {(desc) => (
+                      <div data-slot="permission-hint" data-wrap>
+                        {desc()}
+                      </div>
+                    )}
+                  </Show>
+                  <Show when={command()}>
+                    {(cmd) => <PermissionCommand command={cmd()} plain={props.request.args.heredoc === true} />}
+                  </Show>
 
-              {(() => {
-                const desc = description()
-                if (!desc)
-                  return !command() && toolDescription() ? (
-                    <div data-slot="permission-hint">{toolDescription()}</div>
-                  ) : null
-                if (desc.kind === "single")
-                  return (
-                    <div
-                      data-slot="permission-hint"
-                      data-wrap={external() ? "" : undefined}
-                      title={external() ? desc.text : undefined}
-                    >
-                      {desc.text}
-                    </div>
-                  )
-                return (
-                  <div data-slot="permission-patterns">
-                    <span data-slot="permission-patterns-title">{desc.title}</span>
-                    <For each={desc.paths}>{(path) => <code data-slot="permission-pattern">{path}</code>}</For>
-                  </div>
-                )
-              })()}
-            </>
-          }
-        >
-          {/* Verbatim commands (args.commands), control-char/bidi-escaped so the displayed command matches execution. */}
-          <For each={skillShellCommands()}>{(cmd) => <PermissionCommand command={displaySkillCommand(cmd)} />}</For>
-        </Show>
+                  {(() => {
+                    const desc = description()
+                    if (!desc)
+                      return !command() && toolDescription() ? (
+                        <div data-slot="permission-hint">{toolDescription()}</div>
+                      ) : null
+                    if (desc.kind === "single")
+                      return (
+                        <div
+                          data-slot="permission-hint"
+                          data-wrap={external() ? "" : undefined}
+                          title={external() ? desc.text : undefined}
+                        >
+                          {desc.text}
+                        </div>
+                      )
+                    return (
+                      <div data-slot="permission-patterns">
+                        <span data-slot="permission-patterns-title">{desc.title}</span>
+                        <For each={desc.paths}>{(path) => <code data-slot="permission-pattern">{path}</code>}</For>
+                      </div>
+                    )
+                  })()}
+                </>
+              }
+            >
+              {/* Verbatim commands (args.commands), control-char/bidi-escaped so the displayed command matches execution. */}
+              <For each={skillShellCommands()}>{(cmd) => <PermissionCommand command={displaySkillCommand(cmd)} />}</For>
+            </Show>
 
-        <Show when={diffs().length > 0}>
-          <div data-slot="permission-diffs" data-count={diffs().length}>
-            <For each={diffs()}>{(diff) => <PermissionDiff filediff={diff} />}</For>
+            <Show when={diffs().length > 0}>
+              <div data-slot="permission-diffs" data-count={diffs().length}>
+                <For each={diffs()}>{(diff) => <PermissionDiff filediff={diff} />}</For>
+              </div>
+            </Show>
           </div>
-        </Show>
+        </div>
 
         <div data-slot="permission-actions">
-          <Button
-            variant="primary"
-            size="small"
-            onClick={() => {
-              const { approved, denied } = collectRules()
-              props.onDecide("once", approved, denied)
-            }}
-            disabled={props.responding}
-          >
+          <Button variant="primary" size="small" onClick={() => submit("once")} disabled={props.responding}>
             {language.t("ui.permission.allowOnce")}
           </Button>
-          <Button
-            variant="ghost"
-            size="small"
-            onClick={() => {
-              const { approved, denied } = collectRules()
-              props.onDecide("reject", approved, denied)
-            }}
-            disabled={props.responding}
-          >
+          <Button variant="ghost" size="small" onClick={() => submit("reject")} disabled={props.responding}>
             {language.t("ui.permission.deny")}
           </Button>
         </div>

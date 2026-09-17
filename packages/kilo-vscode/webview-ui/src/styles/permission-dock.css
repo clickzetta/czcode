@@ -2,9 +2,20 @@
    Permission Dock (VS Code overrides)
    ============================================ */
 
+[data-component="permission-shortcuts"] {
+  /* Title row + Allow/Deny row + tray. The card never shrinks below this, and
+     the composer column reserves the same space (see chat-layout.css) so a
+     shrinking card can never overlap the prompt input below. */
+  --permission-card-min-height: 11em;
+}
+
 [data-component="dock-prompt"][data-kind="permission"] {
   animation: permission-slide-in 0.3s ease-out;
   margin: 12px;
+  /* The card shrinks with the chat view, but never below its minimum: the
+     scroll area collapses first, so the buttons stay reachable even in a very
+     short panel. */
+  min-height: var(--permission-card-min-height, 11em);
   border: 1px solid
     color-mix(in srgb, var(--vscode-editorWarning-foreground, #cca700) 40%, var(--vscode-panel-border, transparent));
   border-radius: 0.25rem;
@@ -43,6 +54,15 @@
     color: var(--text-weak, var(--vscode-descriptionForeground));
   }
 
+  /* Both keep their full height inside [data-slot="permission-scroll"]: they have
+     their own clipped or hidden-scrollbar boxes, so shrinking them would cut text
+     off instead of letting the scroll area scroll. */
+  [data-slot="permission-command"],
+  [data-slot="permission-patterns"] {
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+
   [data-slot="permission-command"] {
     position: relative;
     min-width: 0;
@@ -76,30 +96,14 @@
   }
 
   [data-slot="permission-command-copy"] {
-    all: unset;
     position: absolute;
     top: 6px;
     right: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    border-radius: 3px;
-    cursor: pointer;
-    color: var(--vscode-icon-foreground, var(--vscode-foreground));
     opacity: 0;
     transition: opacity 0.15s ease;
 
-    &:hover {
-      background: var(--vscode-toolbar-hoverBackground);
-      opacity: 1;
-    }
-
     &:focus-visible {
       opacity: 1;
-      outline: 1px solid var(--vscode-focusBorder);
-      outline-offset: 1px;
     }
   }
 
@@ -111,6 +115,7 @@
     font-size: var(--kilo-font-size-12);
 
     &[data-wrap] {
+      white-space: pre-wrap;
       overflow-wrap: anywhere;
       word-break: normal;
     }
@@ -135,16 +140,45 @@
     word-break: break-all;
   }
 
+  /* The only scroll region of the card. It shrinks before anything else, so the
+     description, command and diffs stay reachable by scrolling while the header
+     and the Allow/Deny row keep their space no matter how tall the diff is or
+     how little room the chat view has left. */
+  [data-slot="permission-scroll"] {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: 420px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* Pierre's virtualizer treats the scroll root's first child as its content
+     container. Keep the variable-height permission content together so nested
+     descriptions do not become the virtualizer's content root. */
+  [data-slot="permission-scroll-content"] {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    gap: 4px;
+    min-height: min-content;
+  }
+
   [data-slot="permission-diffs"] {
     display: flex;
     flex-direction: column;
     gap: 8px;
     margin: 8px 0;
-    max-height: 420px;
-    overflow: auto;
+    flex-shrink: 0;
+    min-height: 0;
   }
 
+  /* Keeps its own height when the card shrinks. The file card clips its content
+     (overflow: hidden), so shrinking it would hide the diff instead of scrolling
+     [data-slot="permission-scroll"]. */
   [data-slot="permission-diff"] {
+    flex-shrink: 0;
     margin: 8px 0;
     border: 1px solid var(--border-weak-base);
     border-radius: 4px;
@@ -212,7 +246,10 @@
     flex-shrink: 0;
   }
 
-  [data-slot="permission-diff-content"] {
+  /* With a single file the card scrolls as part of [data-slot="permission-scroll"],
+     so there is only one scrollbar. With several files each one keeps its own cap,
+     otherwise the last file sits thousands of pixels down the list. */
+  [data-slot="permission-diffs"]:not([data-count="1"]) [data-slot="permission-diff-content"] {
     max-height: 300px;
     overflow: auto;
   }
@@ -346,43 +383,9 @@
     align-items: center;
     gap: 2px;
     flex-shrink: 0;
-    /* Pull 3px left to align the 16px icon inside the 22px toggle button
+    /* Pull 2px left to align the 16px icon inside the 20px toggle button
        with the chevron icon in the "Permission rules" header above. */
-    margin-left: -3px;
-  }
-
-  [data-slot="permission-rule-toggle"] {
-    all: unset;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    border-radius: 4px;
-    cursor: pointer;
-    color: var(--text-weak, var(--vscode-descriptionForeground));
-    transition:
-      color 0.1s,
-      background-color 0.1s;
-
-    &:hover:not(:disabled) {
-      background-color: var(--surface-interactive-hover, var(--vscode-list-hoverBackground));
-    }
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: default;
-    }
-
-    &[data-variant="approve"][data-active] {
-      color: var(--text-success, var(--vscode-testing-iconPassed, #5cb85c));
-      background-color: color-mix(in srgb, var(--vscode-testing-iconPassed, #5cb85c) 15%, transparent);
-    }
-
-    &[data-variant="deny"][data-active] {
-      color: var(--text-error, var(--vscode-errorForeground, #f44));
-      background-color: color-mix(in srgb, var(--vscode-errorForeground, #f44) 15%, transparent);
-    }
+    margin-left: -2px;
   }
 
   [data-slot="permission-footer"] {
@@ -399,6 +402,8 @@
     gap: 8px;
     justify-content: flex-start;
     padding: 4px 0 8px;
+    /* Never shrink or scroll away: this row is the only way to answer the ask. */
+    flex-shrink: 0;
   }
 
   [data-slot="permission-actions"] > [data-component="button"][data-variant="primary"] {

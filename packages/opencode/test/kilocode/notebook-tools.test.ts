@@ -1,3 +1,4 @@
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { describe, expect, test } from "bun:test"
 import { Agent } from "@/agent/agent"
 import { Notebook } from "@/kilocode/notebook/service"
@@ -42,7 +43,7 @@ const notebook = Layer.mock(Notebook.Service, {
     })
   },
 })
-const it = testEffect(Layer.mergeAll(notebook, Agent.defaultLayer, Truncate.defaultLayer))
+const it = testEffect(Layer.mergeAll(notebook, AppNodeBuilder.build(Agent.node), AppNodeBuilder.build(Truncate.node)))
 
 function context(asks: Parameters<Tool.Context["ask"]>[0][]): Tool.Context {
   return {
@@ -161,10 +162,13 @@ test("uses dedicated VS Code notebook permission defaults only when enabled", ()
   const prev = process.env.KILO_CLIENT
   try {
     process.env.KILO_CLIENT = "vscode"
-    const disabled = KiloAgent.prepare({}).defaultsPatch
+    const disabled = KiloAgent.prepare({}, { experimentalSharedAgentBoard: false }).defaultsPatch
     expect(disabled.some((rule) => rule.permission.startsWith("notebook_"))).toBe(false)
 
-    const rules = KiloAgent.prepare({ experimental: { native_notebook_tools: true } }).defaultsPatch
+    const rules = KiloAgent.prepare(
+      { experimental: { native_notebook_tools: true } },
+      { experimentalSharedAgentBoard: false },
+    ).defaultsPatch
     expect(rules.findLast((rule) => rule.permission === "notebook_read")?.action).toBe("ask")
     expect(rules.findLast((rule) => rule.permission === "notebook_edit")?.action).toBe("ask")
     expect(rules.findLast((rule) => rule.permission === "notebook_execute")?.action).toBe("ask")

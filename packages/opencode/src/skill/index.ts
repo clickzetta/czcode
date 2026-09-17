@@ -1,6 +1,5 @@
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
 import path from "path"
-import { pathToFileURL } from "url"
 import { Effect, Layer, Context, Schema } from "effect"
 import { NamedError } from "@opencode-ai/core/util/error"
 import type { Agent } from "@/agent/agent"
@@ -18,8 +17,10 @@ import { Discovery } from "./discovery"
 import { BUILTIN_SKILLS } from "../kilocode/skills/builtin" // kilocode_change
 import { primaryPaths } from "../kilocode/primary-worktree" // kilocode_change
 import { Git } from "@/git" // kilocode_change
+import { ClaudeMigration } from "@/kilocode/config/claude-migration" // kilocode_change
 import { isRecord } from "@/util/record"
 import { Flag } from "@opencode-ai/core/flag/flag" // kilocode_change
+import { escapeHtml } from "@/util/html"
 import { trustedInProject } from "../kilocode/skill/trust" // kilocode_change
 
 const CLAUDE_EXTERNAL_DIR = ".claude"
@@ -210,9 +211,13 @@ const discoverSkills = Effect.fnUntraced(function* (
   const state: ScanState = { matches: new Map(), dirs: new Set() } // kilocode_change
   const projectRoot = worktree === "/" ? directory : worktree // kilocode_change - project substitution boundary
 
+  // kilocode_change start - settle the one-time global Claude handoff before scanning external skills
+  if (Flag.KILO_EXPERIMENTAL_CLAUDE_MIGRATION || ClaudeMigration.hasAttempt()) yield* config.getGlobal()
+  // kilocode_change end
+
   const externalDirs: string[] = []
   if (!disableExternalSkills) {
-    if (!disableClaudeCodeSkills) externalDirs.push(CLAUDE_EXTERNAL_DIR)
+    if (!disableClaudeCodeSkills && !ClaudeMigration.globalHandoff()) externalDirs.push(CLAUDE_EXTERNAL_DIR)
     externalDirs.push(AGENTS_EXTERNAL_DIR)
 
     for (const dir of externalDirs) {
@@ -222,10 +227,11 @@ const discoverSkills = Effect.fnUntraced(function* (
     }
 
     // kilocode_change start
+    const projectDirs = disableClaudeCodeSkills ? [AGENTS_EXTERNAL_DIR] : [CLAUDE_EXTERNAL_DIR, AGENTS_EXTERNAL_DIR]
     const local = yield* fsys
-      .up({ targets: externalDirs, start: directory, stop: projectRoot })
+      .up({ targets: projectDirs, start: directory, stop: projectRoot })
       .pipe(Effect.catch(() => Effect.succeed([] as string[])))
-    const fallbacks = yield* primaryPaths(directory, worktree, externalDirs) // kilocode_change
+    const fallbacks = yield* primaryPaths(directory, worktree, projectDirs) // kilocode_change
     const upDirs = [...fallbacks, ...local]
     // kilocode_change end
 
@@ -317,7 +323,7 @@ const loadSkills = Effect.fnUntraced(function* (
 
 export class Service extends Context.Service<Service, Interface>()("@opencode/Skill") {}
 
-export const layer = Layer.effect(
+const layer = Layer.effect(
   Service,
   Effect.gen(function* () {
     const discovery = yield* Discovery.Service
@@ -381,18 +387,6 @@ export const layer = Layer.effect(
   }),
 )
 
-// kilocode_change start - preserve the concrete layer type across Kilo's Agent/Skill cycle
-export const defaultLayer: Layer.Layer<Service> = layer.pipe(
-  // kilocode_change end
-  Layer.provide(Git.defaultLayer), // kilocode_change
-  Layer.provide(Discovery.defaultLayer),
-  Layer.provide(Config.defaultLayer),
-  Layer.provide(EventV2Bridge.defaultLayer),
-  Layer.provide(FSUtil.defaultLayer),
-  Layer.provide(Global.layer),
-  Layer.provide(RuntimeFlags.defaultLayer),
-)
-
 export function fmt(list: Info[], opts: { verbose: boolean }) {
   const described = list.filter((skill) => skill.description !== undefined)
   if (described.length === 0) return "No skills are currently available."
@@ -405,7 +399,7 @@ export function fmt(list: Info[], opts: { verbose: boolean }) {
           "  <skill>",
           `    <name>${skill.name}</name>`,
           `    <description>${skill.description}</description>`,
-          `    <location>${pathToFileURL(skill.location).href}</location>`,
+          `    <location>${escapeHtml(skill.location)}</location>`,
           "  </skill>",
         ]),
       "</available_skills>",
@@ -420,14 +414,10 @@ export function fmt(list: Info[], opts: { verbose: boolean }) {
   ].join("\n")
 }
 
-export const node = LayerNode.make(layer, [
-  Discovery.node,
-  Config.node,
-  EventV2Bridge.node,
-  FSUtil.node,
-  Global.node,
-  RuntimeFlags.node,
-  Git.node, // kilocode_change
-])
+export const node = LayerNode.make({
+  service: Service,
+  layer: layer,
+  deps: [Discovery.node, Config.node, EventV2Bridge.node, FSUtil.node, Global.node, RuntimeFlags.node, Git.node], // kilocode_change
+})
 
 export * as Skill from "."

@@ -1,3 +1,5 @@
+import { cloudProviderDict } from "./cloud-provider"
+
 export const anacondaDesktopDict = {
   "provider.anaconda.title.connect": "Підключити Anaconda Desktop",
   "provider.anaconda.title.manage": "Керувати Anaconda Desktop",
@@ -52,9 +54,28 @@ export const anacondaDesktopDict = {
 } as const
 
 export const dict = {
+  "session.goal.complete": "Завершено (за повідомленням моделі)",
+  "session.goal.blocked": "Заблоковано",
+  "session.goal.restart": "Перезапустити ціль",
   ...anacondaDesktopDict,
+  ...cloudProviderDict,
+  "task.swarm.title": "Дошка",
+  "task.swarm.refresh": "Оновити",
+  "task.swarm.reset": "Скинути дошку",
+  "task.swarm.resetTitle": "Скинути цю дошку?",
+  "task.swarm.resetDescription":
+    "Очистити видимі повідомлення? Розмови й поточні завдання залишаться без змін. Агенти можуть публікувати нові повідомлення.",
+  "task.swarm.loading": "Завантаження дошки...",
+  "task.swarm.failed": "Не вдалося завантажити або скинути дошку. Спробуйте оновити її.",
 
   "command.provider.connect": "Підключити провайдера",
+
+  "session.activity.waiting": "Очікується відповідь або підтвердження.",
+  "session.activity.error": "Помилка або втрата з'єднання.",
+  "session.activity.retry": "Автоматична повторна спроба.",
+  "session.activity.busy": "Виконується.",
+  "session.activity.done": "Хід завершено.",
+  "session.activity.idle": "Не запущено.",
 
   "command.session.new": "Нова сесія",
   "command.session.show.changes": "Показати зміни",
@@ -74,30 +95,6 @@ export const dict = {
   "revert.disabled.agentBusy": "Зачекайте завершення агента",
   "command.session.compact": "Стиснути сесію",
   "command.session.export": "Експортувати запис сеансу",
-
-  "agentRequirements.skill.installed": "Встановлено",
-  "agentRequirements.skill.checkFailed": "Не вдалося перевірити навичку",
-  "agentRequirements.skill.missing": "Не встановлено",
-  "agentRequirements.mcp.connected": "Підключено",
-  "agentRequirements.mcp.checkFailed": "Не вдалося перевірити MCP",
-  "agentRequirements.mcp.missing": "Не підключено",
-  "agentRequirements.extension.installed": "Встановлено",
-  "agentRequirements.extension.checkFailed": "Не вдалося перевірити розширення VS Code",
-  "agentRequirements.extension.missing": "Не встановлено",
-  "agentRequirements.extension.description": "Встановіть відсутні розширення у VS Code.",
-  "agentRequirements.group.skills": "Навички",
-  "agentRequirements.group.mcps": "MCP",
-  "agentRequirements.group.extensions": "Розширення VS Code",
-  "agentRequirements.blocked.title": "Передумови агента {{agent}}",
-  "agentRequirements.blocked.description": "Цьому агенту потрібні такі інструменти, перш ніж він зможе працювати.",
-  "agentRequirements.prompt.blocked": "Спочатку завершіть необхідні перевірки, щоб використати цього агента",
-  "agentRequirements.action.openMarketplace": "Відкрити Marketplace",
-  "agentRequirements.error.unknownAgent": "Вибраного агента не знайдено.",
-  "agentRequirements.error.malformedDeclaration": "Цей агент має недійсну декларацію вимог.",
-  "agentRequirements.error.discoveryFailed": "Kilo не зміг перевірити доступні навички.",
-  "agentRequirements.error.mcpStatusFailed": "Kilo не зміг перевірити стан сервера MCP.",
-  "agentRequirements.error.scopeMismatch": "Ця перевірка вимог агента більше не активна.",
-  "agentRequirements.error.requestFailed": "Kilo не зміг перевірити вимоги агента.",
 
   "dialog.provider.search.placeholder": "Пошук провайдера",
   "dialog.provider.empty": "Провайдерів не знайдено",
@@ -163,6 +160,7 @@ export const dict = {
   "model.group.auto": "Автоматичні моделі",
   "model.group.recommended": "Рекомендовані",
   "model.group.favorites": "Обране",
+  "model.group.mostUsed": "Найчастіше використовувані",
   "model.favorite.add": "Додати до обраного",
   "model.favorite.remove": "Видалити з обраного",
   "model.preview.label.released": "Випущено",
@@ -195,8 +193,11 @@ export const dict = {
   "common.saving": "Збереження...",
   "common.default": "За замовчуванням",
 
+  "prompt.worktrees.title": "Робочі дерева",
+  "prompt.worktrees.search": "Пошук робочих дерев",
   "prompt.thinking.tooltip": "Зусилля міркування",
   "prompt.action.send": "Надіслати",
+  "prompt.action.continue": "Продовжити",
   "prompt.action.send.blocked": "Спочатку дайте відповідь або закрийте очікуюче питання",
   "prompt.action.send.recording": "Транскрибувати та надіслати",
   "prompt.action.stop": "Зупинити",
@@ -207,7 +208,6 @@ export const dict = {
   "prompt.action.autoApprove.enabled": "Автоматичне схвалення увімкнено. Запити дозволів схвалюватимуться автоматично.",
   "prompt.action.autoApprove.disabled":
     "Автоматичне схвалення вимкнено. Натисніть, щоб автоматично схвалювати запити дозволів.",
-  "prompt.action.resetModel": "Скинути модель до стандартної",
   "prompt.action.enhanceDescription":
     "Кнопка 'Покращити запит' допомагає вдосконалити ваш запит, надаючи додатковий контекст, уточнення або перефразування. Введіть запит тут і натисніть кнопку ще раз, щоб побачити, як це працює.",
   "prompt.action.sandbox.enable": "Увімкнути пісочницю",
@@ -229,6 +229,8 @@ export const dict = {
     "Натисніть, щоб обмежити запис у файлову систему. Доступ до мережі залишиться дозволеним відповідно до налаштувань пісочниці.",
 
   "speechToText.tooltip.start": "Почати голосове введення з Kilo Gateway",
+  "speechToText.tooltip.shortcut":
+    "Торкніться кнопки або натисніть Cmd/Ctrl+K, щоб почати чи зупинити запис; утримуйте кнопку під час мовлення, а потім відпустіть її, щоб транскрибувати й надіслати.",
   "speechToText.tooltip.starting": "Запуск мікрофона... Поки що не говоріть.",
   "speechToText.tooltip.stop": "Зупинити захоплення звуку",
   "speechToText.tooltip.transcribing": "Транскрибування... Натисніть, щоб скасувати.",
@@ -268,6 +270,7 @@ export const dict = {
   "notification.permission.title": "Потрібен дозвіл",
   "notification.permission.titleSubagent": "Потрібен дозвіл (підагент)",
   "notification.permission.titleSkillShell": "Виконати команди оболонки з навички «{{skill}}»?",
+  "notification.permission.titleSandboxEscalation": "Дозволити операцію Git за межами пісочниці?",
   "ui.permission.manageAutoApprove": "Керувати правилами автоматичного схвалення",
   "ui.permission.doomLoop.prompt":
     "Виявлено потенційний цикл під час роботи інструмента {{tool}}. Продовжити виконання?",
@@ -304,6 +307,7 @@ export const dict = {
   "ui.approval.source.yolo": "режимом автосхвалення (YOLO)",
   "ui.approval.source.session": "правилом автосхвалення сесії",
   "ui.approval.source.default": "за замовчуванням",
+  "ui.approval.outsideWorkspace": "(за межами вашого робочого простору: {{file}})",
 
   "session.tab.review": "Огляд",
   "session.review.filesChanged": "{{count}} файлів змінено",
@@ -314,6 +318,14 @@ export const dict = {
   "session.messages.loadEarlier": "Завантажити попередні повідомлення",
   "session.messages.loading": "Завантаження повідомлень...",
 
+  "sidebar.topBar.label": "Навігація Kilo Code",
+  "sidebar.topBar.newTask": "Нове завдання",
+  "sidebar.topBar.history": "Історія",
+  "sidebar.topBar.agentManager": "Agent Manager",
+  "sidebar.topBar.kiloClaw": "KiloClaw",
+  "sidebar.topBar.marketplace": "Маркетплейс",
+  "sidebar.topBar.profile": "Профіль",
+  "sidebar.topBar.settings": "Налаштування",
   "sidebar.session.newSession": "Нова сесія",
   "sidebar.session.newSession.tooltip": "Почати нову розмову, зберігши поточну сесію незмінною.",
   "sidebar.session.newWorktree": "Нове Worktree",
@@ -434,45 +446,8 @@ export const dict = {
   "provider.custom.models.name.placeholder": "Відображувана назва",
   "provider.custom.models.reasoning.label": "Міркування",
   "provider.custom.models.modalities.image": "Зображення",
-  "provider.custom.models.variants.label": "Варіанти",
-  "provider.custom.models.variants.add": "Додати варіант",
-  "provider.custom.models.variants.remove": "Видалити варіант",
-  "provider.custom.models.variants.name.label": "Ім'я",
-  "provider.custom.models.variants.name.placeholder": "напр. thinking",
-  "provider.custom.models.variants.option.unset": "(не встановлено)",
-  "provider.custom.models.variants.enableThinking.label": "Увімкнути мислення (напр. Alibaba)",
-  "provider.custom.models.variants.enableThinking.placeholder": "enable_thinking",
-  "provider.custom.models.variants.enableThinking.true": "true",
-  "provider.custom.models.variants.enableThinking.false": "false",
-  "provider.custom.models.variants.thinking.label": "Тип мислення (напр. Z.ai)",
-  "provider.custom.models.variants.thinking.placeholder": "thinking",
-  "provider.custom.models.variants.thinking.enabled": "enabled",
-  "provider.custom.models.variants.thinking.disabled": "disabled",
-  "provider.custom.models.variants.thinking.adaptive": "adaptive",
-  "provider.custom.models.variants.splitReasoning.label": "Split reasoning (required for e.g. MiniMax)",
-  "provider.custom.models.variants.splitReasoning.placeholder": "reasoning_split",
-  "provider.custom.models.variants.splitReasoning.true": "true",
-  "provider.custom.models.variants.splitReasoning.false": "false",
-  "provider.custom.models.variants.chatTemplateArgs.label":
-    "Увімкнути мислення через аргументи шаблону чату (напр. Hugging Face)",
-  "provider.custom.models.variants.chatTemplateArgs.placeholder": "chat_template_args",
-  "provider.custom.models.variants.chatTemplateArgs.true": "true",
-  "provider.custom.models.variants.chatTemplateArgs.false": "false",
-  "provider.custom.models.variants.reasoningEffort.label": "Зусилля міркування",
-  "provider.custom.models.variants.reasoningEffort.placeholder": "reasoningEffort",
-  "provider.custom.models.variants.reasoningEffort.none": "none",
-  "provider.custom.models.variants.reasoningEffort.minimal": "minimal",
-  "provider.custom.models.variants.reasoningEffort.low": "low",
-  "provider.custom.models.variants.reasoningEffort.medium": "medium",
-  "provider.custom.models.variants.reasoningEffort.high": "high",
-  "provider.custom.models.variants.reasoningEffort.xhigh": "xhigh",
-  "provider.custom.models.variants.outputEffort.label": "Output effort (e.g. Anthropic)",
-  "provider.custom.models.variants.outputEffort.placeholder": "effort",
-  "provider.custom.models.variants.outputEffort.low": "low",
-  "provider.custom.models.variants.outputEffort.medium": "medium",
-  "provider.custom.models.variants.outputEffort.high": "high",
-  "provider.custom.models.variants.outputEffort.xhigh": "xhigh",
-  "provider.custom.models.variants.outputEffort.max": "max",
+  "provider.custom.models.toggleReasoning": "Перемкнути міркування для всіх",
+  "provider.custom.models.toggleImages": "Перемкнути зображення для всіх",
   "provider.custom.models.remove": "Видалити модель",
   "provider.custom.models.add": "Додати модель",
   "provider.custom.models.fetch.authError": "Автентифікація не вдалася. Перевірте API-ключ вище і спробуйте ще раз.",
@@ -486,6 +461,7 @@ export const dict = {
   "provider.custom.models.fetch.search": "Пошук моделей\u2026",
   "provider.custom.models.fetch.add": "Додати {{count}} моделей",
   "provider.custom.edit.title": "Редагувати провайдера",
+  "provider.custom.edit.advanced": "Редагувати розширені налаштування у файлі конфігурації JSON",
   "provider.custom.headers.label": "Заголовки (необов'язково)",
   "provider.custom.headers.key.label": "Заголовок",
   "provider.custom.headers.key.placeholder": "Назва-заголовка",
@@ -646,10 +622,49 @@ export const dict = {
   "profile.action.login": "Увійти через Kilo Code",
   "profile.balance.title": "Баланс",
   "profile.balance.refresh": "Оновити баланс",
+  "profile.usage.title": "Плани та використання",
+  "profile.usage.description": "Квота й баланси поточного плану",
+  "profile.usage.refresh": "Оновити дані про використання провайдерів",
+  "profile.usage.empty": "Джерел даних про використання провайдерів не виявлено.",
+  "profile.usage.source.direct": "Напряму",
+  "profile.usage.state.stale": "Показано останні оновлені дані про використання.",
+  "profile.usage.state.unavailable": "Дані про використання недоступні.",
+  "profile.usage.plan.pastDue": "План: Платіж прострочено",
+  "profile.usage.plan.canceling": "План: Скасування наприкінці періоду",
+  "profile.usage.plan.unknown": "План: Статус невідомий",
+  "profile.usage.action.manage": "Керувати",
+  "profile.usage.action.managePlan": "Керування {{plan}}",
+  "profile.usage.routing": "Оплата плану активна. Маршрутизація через Kilo Gateway {{state}}.",
+  "profile.usage.routingState.disabled": "вимкнена",
+  "profile.usage.routingState.missing": "відсутня",
+  "profile.usage.routingState.replaced": "замінена",
+  "profile.usage.routingState.unknown": "невідома",
+  "profile.usage.window.used": "Використано {{value}}",
+  "profile.usage.window.remaining": "Залишилося {{value}}",
+  "profile.usage.window.remainingOf": "Залишилося {{value}} з {{limit}}",
+  "profile.usage.window.usedOf": "Використано {{value}} з {{limit}}",
+  "profile.usage.window.quota": "Квота",
+  "profile.usage.window.daily": "Денна квота",
+  "profile.usage.window.weekly": "Тижнева квота",
+  "profile.usage.window.monthly": "Місячна квота",
+  "profile.usage.window.hours": "{{count}}-годинна квота",
+  "profile.usage.window.days": "{{count}}-денна квота",
+  "profile.usage.window.weeks": "{{count}}-тижнева квота",
+  "profile.usage.window.months": "{{count}}-місячна квота",
+  "profile.usage.window.shared": "Спільна",
+  "profile.usage.window.scoped": "{{resource}} · {{period}}",
+  "profile.usage.reset": "Скидається {{date}}",
+  "profile.usage.status.unknown": "Невідомо",
+  "profile.usage.status.unlimited": "Без обмежень",
+  "profile.usage.status.notInPlan": "Не входить до плану",
+  "profile.usage.status.exhausted": "Вичерпано",
   "profile.action.dashboard": "Панель керування",
   "profile.action.topUp": "Поповнити",
   "profile.pass.subscribe": "Отримайте Kilo Pass, щоб додати кредити та заробляти бонуси",
   "profile.pass.bonus": "Бонус",
+  "profile.pass.usage": "Використання за цей місяць",
+  "profile.pass.paid": "Оплачено",
+  "profile.pass.meter": "Щомісячне використання Kilo Pass",
   "profile.pass.renews": "Поновлюється",
   "profile.action.logout": "Вийти",
 
@@ -734,6 +749,14 @@ export const dict = {
   "session.outcome.interrupted": "Хід перервано",
   "session.outcome.error": "Хід не вдався",
   "session.outcome.finish": "Причина завершення: {{reason}}",
+  "session.goal.label": "Мета",
+  "prompt.goal.set": "Задати мету",
+  "prompt.goal.start": "Почати роботу над метою",
+  "session.goal.active": "Активна",
+  "session.goal.paused": "Призупинена",
+  "session.goal.pause": "Пауза",
+  "session.goal.resume": "Продовжити",
+  "session.goal.clear": "Очистити мету",
   "session.costAlert.header": "Сповіщення про вартість сесії",
   "session.costAlert.continue": "Продовжити",
   "session.costAlert.question":
@@ -834,7 +857,17 @@ export const dict = {
   "settings.notifications.enable.title": "Увімкнути звукові сповіщення",
   "settings.notifications.enable.description":
     "Відтворювати звуки, коли сеанси завершуються, виникає помилка або потрібна ваша відповідь",
+  "settings.notifications.workbench.title": "Увімкнути сповіщення VS Code",
+  "settings.notifications.workbench.description":
+    "Показувати сповіщення VS Code, коли Kilo завершує завдання або потрібна ваша відповідь",
+  "settings.notifications.os.title": "Увімкнути сповіщення операційної системи",
+  "settings.notifications.os.description":
+    "Показувати нативні сповіщення операційної системи, коли Kilo завершує завдання або потрібна ваша відповідь, а VS Code неактивний.",
   "settings.notifications.testSound": "Тест",
+  "settings.notifications.testOS": "Тест",
+  "settings.notifications.testOS.testing": "Надсилання тестового сповіщення…",
+  "settings.notifications.testOS.success": "Тестове сповіщення надіслано.",
+  "settings.notifications.testOS.error": "Не вдалося надіслати тестове сповіщення",
   "settings.notifications.sound.default": "За замовчуванням",
   "settings.notifications.sound.system": "Системний",
   "settings.notifications.sound.description":
@@ -851,11 +884,11 @@ export const dict = {
   "settings.experimental.lsp.description": "Увімкнути інтеграцію з мовним сервером",
   "settings.experimental.batch.title": "Пакетний інструмент",
   "settings.experimental.batch.description": "Увімкнути пакетну обробку кількох викликів інструментів",
-  "settings.experimental.codebaseSearch.title": "Пошук по кодовій базі",
-  "settings.experimental.codebaseSearch.description":
-    "Увімкнути пошук природною мовою на основі ШІ по всій кодовій базі",
   "settings.experimental.imageGeneration.title": "Генерація зображень",
   "settings.experimental.imageGeneration.description": "Увімкнути генерацію зображень за допомогою ШІ",
+  "settings.experimental.sharedAgentBoard.title": "Kilo Swarm",
+  "settings.experimental.sharedAgentBoard.description":
+    "Надайте спільну дошку головному сеансу та його субагентам, які виконують завдання, включно з вкладеними субагентами. Використовуйте її для паралельних спроб знайти розв'язання або взаємодоповнювальної роботи, а не для кожного завдання.",
   "settings.experimental.imageGenerationModel.title": "Модель зображень",
   "settings.experimental.imageGenerationModel.description": "Модель генерації зображень",
   "settings.experimental.imageGenerationModel.placeholder": "За замовчуванням (Auto Router)",
@@ -876,19 +909,19 @@ export const dict = {
 
   "settings.sandboxing.allowedHosts.title": "Дозволені мережеві адреси",
   "settings.sandboxing.allowedHosts.description":
-    "DNS-вузли та порти призначення для ізольованого proxy-трафіку HTTP і HTTPS. GitHub CLI та HTTPS Git зазвичай потребують github.com:443 і api.github.com:443. Зміни застосовуються до нових сеансів.",
+    "DNS-вузли та порти призначення для ізольованого proxy-трафіку HTTP і HTTPS. GitHub CLI та HTTPS Git зазвичай потребують github.com:443 і api.github.com:443.",
   "settings.sandboxing.writablePaths.title": "Додаткові шляхи для запису",
   "settings.sandboxing.writablePaths.description":
     "Додаткові шляхи файлової системи, у які дозволено запис у пісочниці (наприклад, /tmp, /var/log). Вони об'єднуються зі шляхами запису за замовчуванням, коли пісочниця активна.",
-  "settings.experimental.swePruner.title": "SWE-Pruner",
-  "settings.experimental.swePruner.description":
-    "Увімкнути SWE-Pruner: обрізання з урахуванням завдання великих виводів інструментів читання, пошуку та оболонки, кероване фокус-питанням, наданим агентом",
-  "settings.experimental.swePrunerModel.title": "Модель SWE-Pruner",
-  "settings.experimental.swePrunerModel.description":
-    "Модель для обрізання виводу інструментів; за замовчуванням — налаштована мала модель",
   "settings.experimental.multiProject.title": "Мультипроєктний Agent Manager",
+  "settings.experimental.claudeMigration.title": "Міграція Claude Code",
+  "settings.experimental.claudeMigration.description":
+    "Одноразово імпортуйте підтримувані глобальні інструкції CLAUDE.md, прості навички та вимкнені визначення MCP. Оригінальні файли Claude не змінюються; після ввімкнення перезапустіть бекенд.",
   "settings.experimental.multiProject.description":
     "Увімкніть керування сеансами та робочими деревами в кількох репозиторіях в Agent Manager. Поточний репозиторій робочого простору завжди є проєктом за замовчуванням.",
+  "settings.experimental.taskModelSelection.title": "Вибір моделі субагента Task",
+  "settings.experimental.taskModelSelection.description":
+    "Дозволяє явно вибирати модель, провайдера та рівень міркування для субагентів Task.",
   "settings.experimental.mcpTimeout.title": "Тайм-аут MCP (мс)",
   "settings.experimental.mcpTimeout.description": "Тайм-аут у мілісекундах для запитів до MCP-сервера",
   "settings.experimental.remote.title": "Керування Remote",
@@ -953,6 +986,9 @@ export const dict = {
   "settings.agentBehaviour.instructionFiles": "Додаткові файли інструкцій",
   "settings.agentBehaviour.instructionFiles.description":
     "Шляхи до додаткових файлів інструкцій, що включаються до системного запиту",
+  "settings.agentBehaviour.pushFixes.title": "Надсилати виправлення запиту на злиття",
+  "settings.agentBehaviour.pushFixes.description":
+    "Коли ви надсилаєте агенту помилки CI або коментарі ревʼю із запиту на злиття або оновлюєте робоче дерево з базової гілки, попросити його зробити коміт і push, щоб запит на злиття оновився. Запити дозволів і далі діють. Вимкніть, щоб робити коміти вручну.",
   "settings.agentBehaviour.claudeCompat.heading": "Сумісність з Claude Code",
   "settings.agentBehaviour.claudeCompat.title": "Завантажувати файли Claude Code",
   "settings.agentBehaviour.claudeCompat.description":
@@ -984,6 +1020,9 @@ export const dict = {
     "Власних команд не налаштовано. Додайте команди до opencode.json, щоб вони з'явилися тут.",
   "settings.agentBehaviour.workflows.detail.description": "Опис",
   "settings.agentBehaviour.workflows.detail.template": "Шаблон",
+  "settings.agentBehaviour.workflows.model": "модель",
+  "settings.agentBehaviour.workflows.variant": "варіант",
+  "settings.agentBehaviour.workflows.modelDescription": "Глобальне перевизначення моделі",
 
   "settings.autoApprove.description":
     "Визначте, як виконуються інструменти. Більшість інструментів за замовчуванням — Дозволити. doom_loop та external_directory за замовчуванням — Запитувати.",
@@ -1030,6 +1069,10 @@ export const dict = {
   "settings.context.autoCompaction.title": "Автоматичне стиснення",
   "settings.context.autoCompaction.description": "Автоматично стискати контекст до досягнення ліміту",
   "settings.context.compaction.title": "Стискання",
+  "settings.context.compactionModel.title": "Модель стискання",
+  "settings.context.compactionModel.description":
+    "Модель, що використовується для автоматичного та ручного стискання. Залиште поле порожнім, щоб використовувати модель чату. Вартість, швидкість і якість підсумку залежать від моделі.",
+  "settings.context.compactionModel.useChatModel": "Використовувати модель чату",
   "settings.context.compactionLimit.title": "Ліміт автоматичного стискання",
   "settings.context.compactionLimit.description":
     "Стискати, коли контекст досягає цього відсотка вікна моделі. Залиште порожнім, щоб використовувати лише буфер безпеки.",
@@ -1080,19 +1123,28 @@ export const dict = {
   "settings.display.shiftTabCycle.title": "Перемикати зусилля міркування за допомогою Shift+Tab",
   "settings.display.shiftTabCycle.description":
     "Натисніть Shift+Tab у полі введення запиту, щоб перейти до наступного рівня зусиль міркування. Вимкніть цю опцію, щоб зберегти Shift+Tab для навігації фокусом за допомогою клавіатури.",
-  "settings.display.terminalCommand.title": "Terminal Command Blocks",
-  "settings.display.terminalCommand.description": "Choose whether terminal command blocks start expanded or collapsed.",
-  "settings.display.terminalCommand.expanded": "Expanded",
-  "settings.display.terminalCommand.collapsed": "Collapsed",
+  "settings.display.terminalCommand.title": "Блоки команд термінала",
+  "settings.display.terminalCommand.description":
+    "Виберіть, чи будуть блоки команд термінала спочатку розгорнутими чи згорнутими.",
+  "settings.display.terminalCommand.expanded": "Розгорнуті",
+  "settings.display.terminalCommand.collapsed": "Згорнуті",
   "settings.display.codeEdit.title": "Блоки редагування коду",
   "settings.display.codeEdit.description":
     "Виберіть, чи будуть блоки редагування коду та відмінностей спочатку розгорнутими чи згорнутими.",
   "settings.display.codeEdit.expanded": "Розгорнуті",
   "settings.display.codeEdit.collapsed": "Згорнуті",
+  "settings.display.mcpTool.title": "Блоки MCP та загальних інструментів",
+  "settings.display.mcpTool.description":
+    "Виберіть, чи будуть блоки MCP та загальних інструментів спочатку розгорнутими чи згорнутими.",
+  "settings.display.mcpTool.expanded": "Розгорнуті",
+  "settings.display.mcpTool.collapsed": "Згорнуті",
 
-  "settings.display.tokenThroughput.title": "Show Token Throughput",
+  "settings.display.tokenThroughput.title": "Показувати пропускну здатність токенів",
   "settings.display.tokenThroughput.description":
-    "Display the text-generation rate (tokens/sec) on the latest assistant message and in the task header. Hidden by default to keep the chat uncluttered.",
+    "Показувати швидкість генерації тексту (tokens/sec) в останньому повідомленні асистента та в заголовку завдання. Показується за замовчуванням; вимкніть цей параметр, щоб за потреби її приховати.",
+  "settings.display.autoApprovalReason.title": "Показувати причину автосхвалення",
+  "settings.display.autoApprovalReason.description":
+    "Показує рядок біля викликів інструментів, що пояснює, чому їх автоматично схвалено (відповідне правило, стандартне значення агента, режим YOLO тощо).",
 
   "chat.throughput.tooltip":
     "Average {{speed}} tokens/s for this turn. Includes output and reasoning tokens; excludes tool execution and waiting time.",
@@ -1127,59 +1179,16 @@ export const dict = {
   "question.summary": "{{n}} з {{total}} питань",
   "common.review": "Переглянути",
 
-  // legacy-migration start
-  "settings.legacyMigration.link": "Перенести зі старої версії",
-  "settings.aboutKiloCode.legacyMigration.title": "Перенесення зі старої версії",
-  "settings.aboutKiloCode.legacyMigration.description":
-    "Перенести налаштування з попередньої версії Kilo Code, включаючи API-ключі провайдерів та стандартну модель.",
   "settings.aboutKiloCode.rooImport.description": "Імпортувати історію розмов з інсталяції Roo Code.",
   "settings.aboutKiloCode.rooImport.button": "Імпортувати сесії з Roo Code",
 
-  // Screen 1 — What's New
-  "migration.whatsNew.title": "Що нового в Kilo Code",
-  "migration.whatsNew.badge": "Бета",
-  "migration.whatsNew.subtitle": "Ми відбудували розширення на більш швидкій та ефективній основі.",
-  "migration.whatsNew.features.performance.title": "Швидша продуктивність агента",
-  "migration.whatsNew.features.performance.detail":
-    "Паралельні виклики інструментів і підагенти дозволяють агенту робити більше одночасно — щоб ви більше створювали, а менше спостерігали.",
-  "migration.whatsNew.features.interface.title": "Спрощений інтерфейс",
-  "migration.whatsNew.features.interface.detail": "Менше відволікань, легше і швидше читати.",
-  "migration.whatsNew.features.agentManager.title": "Менеджер агентів",
-  "migration.whatsNew.features.agentManager.detail":
-    "Єдиний інтерфейс для запуску кількох агентів паралельно, кожен у власному робочому дереві — стежте за прогресом, перемикайте контекст і переглядайте зміни з одного місця.",
-  "migration.whatsNew.features.foundation.title": "Спільна основа",
-  "migration.whatsNew.features.foundation.detail":
-    "Малий та ефективний ядерний модуль у кожному продукті Kilo. Знайомий досвід незалежно від того, як ви вважаєте за краще працювати.",
-  "migration.whatsNew.blogLink": "Читати повне оголошення",
-  "migration.whatsNew.docsLink": "Що нового та часті запитання",
-  "migration.whatsNew.continue": "Продовжити",
-
-  // Screen 2 — Migrate Settings
-  "migration.migrate.title": "Перенесіть свої налаштування",
-  "migration.migrate.subtitle": "Ми знайшли налаштування з попередньої версії. Ось що можна перенести.",
+  "migration.roo.button": "Імпортувати сесії",
+  "migration.roo.empty": "Сесій Roo Code не знайдено.",
   "migration.migrate.selectLabel": "Вибрати для перенесення",
   "migration.migrate.chatHistory": "Сесії чату та історія",
-  "migration.migrate.button": "Перенести налаштування",
-  "migration.migrate.skip": "Пропустити",
-  "migration.migrate.keysDetected": "Виявлено {{count}} ключів",
-  "migration.migrate.serversConfigured": "Налаштовано {{count}} серверів",
-  "migration.migrate.modesFound": "Знайдено {{count}} режимів",
-  "migration.migrate.nothingToMigrate": "У старих налаштуваннях нічого для перенесення не знайдено.",
-
-  // Migrate — item labels
-  "migration.select.providers": "API-ключі провайдерів",
-  "migration.select.mcpServers": "MCP-сервери",
-  "migration.select.customModes": "Власні режими / агенти",
-  "migration.select.defaultModel": "Стандартна модель",
-  "migration.select.autoApproval": "Автоматичне схвалення",
-  "migration.select.language": "Мова інтерфейсу",
-  "migration.select.autocomplete": "Налаштування автодоповнення",
 
   // Migrate — completion
   "migration.complete.summary": "{{success}} з {{total}} елементів успішно перенесено.",
-  "migration.complete.cleanup": "Видалити старі дані налаштувань",
-  "migration.complete.cleanupDescription":
-    "Це видалить старі налаштування зі сховища VS Code. Ви не зможете повторно запустити це перенесення.",
   "migration.complete.done": "Готово",
   "migration.migrate.sessionsDetected": "Знайдено {{count}} сесій",
   "migration.error.continue": "Продовжити",
@@ -1213,12 +1222,29 @@ export const dict = {
   "migration.sessionFormat.unknownDate": "Невідома дата",
   "migration.sessionFormat.unknown": "Невідомо",
   "migration.sessionFormat.unknownError": "Невідома помилка",
-  // legacy-migration end
 
   "error.details.show": "Деталі",
 
   "task.todos.progress": "{{done}} з {{total}} завдань виконано",
   "task.todos.allDone": "{{count}} завдань виконано",
+  "task.backgroundAgents.running.one": "1 фоновий агент",
+  "task.backgroundAgents.running.many": "Фонових агентів: {{count}}",
+  "task.backgroundAgents.more": "+{{count}} ще",
+  "task.backgroundAgents.open": "Відкрити фонового агента",
+  "task.backgroundAgents.openAll": "Відкрити всіх фонових агентів",
+  "task.backgroundAgents.cancel": "Зупинити",
+  "task.backgroundAgents.continueInBackground": "Продовжити у фоні",
+  "task.backgroundAgents.waiting": "Фоновому агенту потрібен ваш ввід",
+  "task.backgroundAgents.needsInput": "Потрібен ввід",
+  "task.backgroundAgents.dismiss": "Сховати",
+  "task.backgroundAgents.clearFinished": "Очистити завершені",
+  "task.backgroundAgents.summary": "Працює {{running}} із {{total}} фонових агентів",
+  "task.backgroundAgents.status.running": "Виконується",
+  "task.backgroundAgents.status.completed": "Завершено",
+  "task.backgroundAgents.status.cancelled": "Скасовано",
+  "task.backgroundAgents.status.error": "Помилка",
+  "task.backgroundAgents.untitled": "Фоновий агент",
+  "task.backgroundAgents.stopAll": "Зупинити всіх ({{count}})",
 
   "settings.saveBar.unsavedChanges": "Незбережені зміни",
   "settings.saveBar.discard": "Скасувати",

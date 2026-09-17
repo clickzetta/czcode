@@ -3,52 +3,35 @@ import { $ } from "bun"
 import fs from "fs/promises"
 import path from "path"
 import { eq } from "drizzle-orm"
-import { Effect, Layer } from "effect"
+import { Effect } from "effect"
 import { MoveSession } from "@opencode-ai/core/control-plane/move-session"
 import { Database } from "@opencode-ai/core/database/database"
-import { FSUtil } from "@opencode-ai/core/fs-util"
-import { Git } from "@opencode-ai/core/git"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
+import { LayerNode } from "@opencode-ai/core/effect/layer-node"
 import { EventV2 } from "@opencode-ai/core/event"
 import { Project } from "@opencode-ai/core/project"
 import { ProjectTable } from "@opencode-ai/core/project/sql"
 import { ProjectDirectories } from "@opencode-ai/core/project/directories"
 import { AbsolutePath } from "@opencode-ai/core/schema"
 import { SessionV2 } from "@opencode-ai/core/session"
-import { SessionExecution } from "@opencode-ai/core/session/execution"
 import { SessionProjector } from "@opencode-ai/core/session/projector"
 import { SessionTable } from "@opencode-ai/core/session/sql"
 import { SessionStore } from "@opencode-ai/core/session/store"
 import { tmpdir } from "./fixture/tmpdir"
 import { testEffect } from "./lib/effect"
 
-const database = Database.layerFromPath(":memory:")
-const events = EventV2.layer.pipe(Layer.provide(database))
-const directories = ProjectDirectories.layer.pipe(Layer.provide(database), Layer.provide(events))
-const projector = SessionProjector.layer.pipe(Layer.provide(database), Layer.provide(events))
-const project = Project.layer.pipe(
-  Layer.provide(database),
-  Layer.provide(FSUtil.defaultLayer),
-  Layer.provide(Git.defaultLayer),
-  Layer.provide(directories),
-)
-const store = SessionStore.layer.pipe(Layer.provide(database))
-const sessions = SessionV2.layer.pipe(
-  Layer.provide(database),
-  Layer.provide(events),
-  Layer.provide(project),
-  Layer.provide(store),
-  Layer.provide(SessionExecution.noopLayer),
-)
-const layer = MoveSession.layer.pipe(
-  Layer.provide(database),
-  Layer.provide(FSUtil.defaultLayer),
-  Layer.provide(Git.defaultLayer),
-  Layer.provide(events),
-  Layer.provide(project),
-  Layer.provide(sessions),
-)
 const it = testEffect(
-  Layer.mergeAll(layer, database, events, directories, project, projector, store, SessionExecution.noopLayer, sessions),
+  AppNodeBuilder.build(
+    LayerNode.group([
+      MoveSession.node,
+      Database.node,
+      EventV2.node,
+      ProjectDirectories.node,
+      Project.node,
+      SessionProjector.node,
+      SessionStore.node,
+    ]),
+  ),
 )
 
 function abs(input: string) {
@@ -249,4 +232,63 @@ describe("MoveSession", () => {
       expect(yield* Effect.promise(() => fs.readFile(path.join(source, "untracked.txt"), "utf8"))).toBe("unrelated\n")
     }),
   )
+
+  // kilocode_change start - regression test for skipping the source resolve when moveChanges is false
+  it.live("moves a session without transferring changes when moveChanges is false", () =>
+    Effect.gen(function* () {
+      const root = yield* Effect.acquireRelease(
+        Effect.promise(() => tmpdir()),
+        (dir) => Effect.promise(() => dir[Symbol.asyncDispose]()),
+      )
+      yield* Effect.promise(() => initRepo(root.path))
+      const source = abs(yield* Effect.promise(() => fs.realpath(root.path)))
+      const destination = abs(`${root.path}-move-no-changes`)
+      yield* Effect.addFinalizer(() =>
+        Effect.promise(() => fs.rm(destination, { recursive: true, force: true })).pipe(Effect.ignore),
+      )
+      yield* Effect.promise(() => $`git worktree add --detach ${destination} HEAD`.cwd(root.path).quiet())
+      const moved = abs(yield* Effect.promise(() => fs.realpath(destination)))
+      yield* Effect.promise(() => fs.writeFile(path.join(source, "tracked.txt"), "changed\n"))
+      yield* Effect.promise(() => fs.writeFile(path.join(source, "untracked.txt"), "new\n"))
+
+      const projectID = (yield* Project.Service.use((service) => service.resolve(source))).id
+      const sessionID = SessionV2.ID.make("ses_move_no_changes")
+      const { db } = yield* Database.Service
+      yield* db
+        .insert(ProjectTable)
+        .values({ id: projectID, worktree: source, sandboxes: [], time_created: 1, time_updated: 1 })
+        .run()
+        .pipe(Effect.orDie)
+      yield* db
+        .insert(SessionTable)
+        .values({
+          id: sessionID,
+          project_id: projectID,
+          slug: "move-no-changes",
+          directory: source,
+          title: "move no changes",
+          version: "test",
+          time_created: 1,
+          time_updated: 1,
+        })
+        .run()
+        .pipe(Effect.orDie)
+
+      yield* MoveSession.Service.use((service) =>
+        service.moveSession({ sessionID, destination: { directory: moved }, moveChanges: false }),
+      )
+
+      expect(yield* Effect.promise(() => fs.readFile(path.join(source, "tracked.txt"), "utf8"))).toBe("changed\n")
+      expect(yield* Effect.promise(() => Bun.file(path.join(source, "untracked.txt")).exists())).toBe(true)
+      expect(yield* Effect.promise(() => fs.readFile(path.join(moved, "tracked.txt"), "utf8"))).toBe("initial\n")
+      expect(
+        yield* db
+          .select({ directory: SessionTable.directory, path: SessionTable.path })
+          .from(SessionTable)
+          .where(eq(SessionTable.id, sessionID))
+          .get(),
+      ).toEqual({ directory: moved, path: "" })
+    }),
+  )
+  // kilocode_change end
 })

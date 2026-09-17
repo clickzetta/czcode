@@ -1,3 +1,4 @@
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { afterEach, expect } from "bun:test"
 import { Cause, Effect, Exit, Layer } from "effect"
 import path from "path"
@@ -15,19 +16,19 @@ import { Provider } from "../../src/provider/provider"
 import { Skill } from "../../src/skill"
 import { Truncate } from "../../src/tool/truncate"
 import { MCP } from "../../src/mcp" // kilocode_change
-import { LocationServiceMap } from "@opencode-ai/core/location-layer"
+import { LocationServiceMap } from "@opencode-ai/core/location-services"
+import { InstanceBootstrap } from "../../src/project/bootstrap-service"
+import { InstanceBootstrap as InstanceBootstrapNode } from "../../src/project/bootstrap"
 
 const agentLayer = (flags: Partial<RuntimeFlags.Info> = {}) =>
-  Agent.layer.pipe(
-    Layer.provide(Plugin.defaultLayer),
-    Layer.provide(Provider.defaultLayer),
-    Layer.provide(Auth.defaultLayer),
-    Layer.provide(Config.defaultLayer),
-    Layer.provide(Skill.defaultLayer),
-    Layer.provide(Layer.mock(MCP.Service)({})), // kilocode_change
-    Layer.provide(LocationServiceMap.layer), // kilocode_change
-    Layer.provide(RuntimeFlags.layer(flags)),
-  )
+  AppNodeBuilder.build(Agent.node, [
+    [MCP.node, Layer.mock(MCP.Service)({})], // kilocode_change
+    [RuntimeFlags.node, RuntimeFlags.layer(flags)],
+    [
+      InstanceBootstrapNode.node,
+      Layer.succeed(InstanceBootstrap.Service, InstanceBootstrap.Service.of({ run: Effect.void })),
+    ],
+  ])
 
 const it = testEffect(agentLayer())
 const scout = testEffect(agentLayer({ experimentalScout: true })) // kilocode_change
@@ -77,7 +78,6 @@ it.instance("build agent has correct default properties", () =>
     expect(evalPerm(build, "bash")).toBe("ask")
     expect(evalPerm(build, "repo_clone")).toBe("deny")
     expect(evalPerm(build, "repo_overview")).toBe("deny")
-    expect(evalPerm(build, "interactive_terminal")).toBe("allow") // kilocode_change
   }),
 )
 
@@ -87,7 +87,6 @@ it.instance("plan agent denies edits except .opencode/plans/*", () =>
     expect(plan).toBeDefined()
     // Wildcard is denied
     expect(evalPerm(plan, "edit")).toBe("deny")
-    expect(evalPerm(plan, "interactive_terminal")).toBe("deny") // kilocode_change
     // But specific path is allowed
     expect(Permission.evaluate("edit", ".opencode/plans/foo.md", plan!.permission).action).toBe("allow")
   }),
@@ -130,7 +129,6 @@ it.instance("explore agent denies edit and write", () =>
     expect(evalPerm(explore, "edit")).toBe("deny")
     expect(evalPerm(explore, "write")).toBe("deny")
     expect(evalPerm(explore, "todowrite")).toBe("deny")
-    expect(evalPerm(explore, "interactive_terminal")).toBe("deny") // kilocode_change
   }),
 )
 

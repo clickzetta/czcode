@@ -41,6 +41,19 @@ await KiloLog.init() // kilocode_change - keep compatibility logs off the TUI te
 // czcode_change end
 Heap.start()
 
+// kilocode_change start - keep upstream's keep-alive intent but never swallow the error silently
+const onUnhandledRejection = (error: unknown) => {
+  console.error("worker unhandledRejection", error)
+}
+
+const onUncaughtException = (error: Error) => {
+  console.error("worker uncaughtException", error)
+}
+// kilocode_change end
+
+process.on("unhandledRejection", onUnhandledRejection)
+process.on("uncaughtException", onUncaughtException)
+
 // Subscribe to global events and forward them via RPC
 GlobalBus.on("event", (event) => {
   Rpc.emit("global.event", event)
@@ -54,6 +67,8 @@ const runShutdown = createWorkerShutdown({
   dispose: () => InstanceRuntime.disposeAllInstances(),
   stopServer: async () => {
     if (server) await server.stop(true)
+    process.off("unhandledRejection", onUnhandledRejection)
+    process.off("uncaughtException", onUncaughtException)
   },
 })
 // kilocode_change end
