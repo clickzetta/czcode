@@ -1,3 +1,4 @@
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { afterEach, describe, expect, test } from "bun:test"
 import { Deferred, Effect, Fiber, Layer, Stream } from "effect"
 import * as Sink from "effect/Sink"
@@ -22,13 +23,13 @@ const encoder = new TextEncoder()
 const it = testEffect(Layer.empty)
 const shell = testEffect(
   Layer.mergeAll(
-    CrossSpawnSpawner.defaultLayer,
-    FSUtil.defaultLayer,
-    Plugin.defaultLayer,
-    Truncate.defaultLayer,
-    Config.defaultLayer,
-    Agent.defaultLayer,
-    RuntimeFlags.defaultLayer,
+    AppNodeBuilder.build(CrossSpawnSpawner.node),
+    AppNodeBuilder.build(FSUtil.node),
+    AppNodeBuilder.build(Plugin.node),
+    AppNodeBuilder.build(Truncate.node),
+    AppNodeBuilder.build(Config.node),
+    AppNodeBuilder.build(Agent.node),
+    AppNodeBuilder.build(RuntimeFlags.node),
   ),
 )
 
@@ -95,18 +96,14 @@ describe("CommandTimeout", () => {
             state.killed = true
           }),
       })
-      const fiber = yield* CommandTimeout.drain(child, Effect.never, "shell command terminated").pipe(
-        Effect.forkChild,
-      )
+      const fiber = yield* CommandTimeout.drain(child, Effect.never, "shell command terminated").pipe(Effect.forkChild)
       yield* Effect.yieldNow
 
       yield* TestClock.adjust("24 millis")
       expect(state.killed).toBe(false)
       yield* TestClock.adjust("1 millis")
       expect(state.killed).toBe(true)
-      expect(yield* Fiber.join(fiber)).toBe(
-        "shell command terminated after exceeding environment timeout 25 ms.",
-      )
+      expect(yield* Fiber.join(fiber)).toBe("shell command terminated after exceeding environment timeout 25 ms.")
     }),
   )
 

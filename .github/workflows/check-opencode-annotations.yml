@@ -6,18 +6,25 @@ on:
       - ".github/**"
       - "github/**"
       - "packages/extensions/**"
+      - "packages/kilo-*/**"
+      - "packages/*/src/kilocode/**"
+      - "packages/*/src/kilo-*/**"
+      - "packages/plugin-atomic-chat/**"
       - "packages/opencode/**"
       - "packages/script/**"
       - "packages/shared/**"
       - "packages/storybook/**"
       - "packages/ui/**"
       - "script/**"
+      - "package.json"
+      - "bun.lock"
+      - "!packages/kilo-jetbrains/**"
   workflow_dispatch:
 
 jobs:
   check-annotations:
-    name: Check kilocode_change / czcode_change annotations
-    if: github.repository == 'clickzetta/czcode' # czcode_change
+    name: Check kilocode_change annotations
+    if: github.repository == 'Kilo-Org/kilocode'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6 # kilocode_change
@@ -30,14 +37,7 @@ jobs:
       - name: Check kilocode_change annotations in shared upstream files
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          # czcode_change start - skip annotation check for upstream merge PRs
-          if [[ "$PR_TITLE" == merge:* || "$PR_TITLE" == "merge: upstream"* ]]; then
-            echo "Upstream merge PR detected ('$PR_TITLE') — skipping annotation check."
-            exit 0
-          fi
-          # czcode_change end
           if [ -n "$BASE_SHA" ]; then
             bun run script/check-opencode-annotations.ts --base "$BASE_SHA"
           else
@@ -47,6 +47,16 @@ jobs:
       # kilocode_change start
       - name: Check Effect Promise facade allowlist
         run: bun run script/check-opencode-promise-facades.ts
+
+      - name: Check domain architecture boundaries and ratchets
+        run: bun run script/check-architecture.ts
+
+      - name: Test the Kilo duplication ratchet
+        working-directory: packages/script
+        run: bun test ./tests/check-kilocode-duplication.test.ts
+
+      - name: Check Kilo-owned code duplication
+        run: bun run check:duplication
 
       - name: Check model tool network boundary
         run: bun run script/check-model-tool-network.ts

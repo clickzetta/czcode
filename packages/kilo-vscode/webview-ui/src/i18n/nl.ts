@@ -1,3 +1,5 @@
+import { cloudProviderDict } from "./cloud-provider"
+
 export const anacondaDesktopDict = {
   "provider.anaconda.title.connect": "Anaconda Desktop verbinden",
   "provider.anaconda.title.manage": "Anaconda Desktop beheren",
@@ -52,9 +54,28 @@ export const anacondaDesktopDict = {
 } as const
 
 export const dict = {
+  "session.goal.complete": "Voltooid (gemeld door het model)",
+  "session.goal.blocked": "Geblokkeerd",
+  "session.goal.restart": "Doel opnieuw starten",
   ...anacondaDesktopDict,
+  ...cloudProviderDict,
+  "task.swarm.title": "Bord",
+  "task.swarm.refresh": "Vernieuwen",
+  "task.swarm.reset": "Bord resetten",
+  "task.swarm.resetTitle": "Dit bord resetten?",
+  "task.swarm.resetDescription":
+    "Zichtbare berichten wissen? Gesprekken en lopende taken blijven ongewijzigd. Agenten kunnen nieuwe berichten plaatsen.",
+  "task.swarm.loading": "Bord laden...",
+  "task.swarm.failed": "Het bord kon niet worden geladen of gereset. Probeer het te vernieuwen.",
 
   "command.provider.connect": "Provider verbinden",
+
+  "session.activity.waiting": "Wachten op een antwoord of goedkeuring.",
+  "session.activity.error": "Fout of verbinding verbroken.",
+  "session.activity.retry": "Automatisch opnieuw proberen.",
+  "session.activity.busy": "In uitvoering.",
+  "session.activity.done": "Beurt voltooid.",
+  "session.activity.idle": "Niet actief.",
 
   "command.session.new": "Nieuwe sessie",
   "command.session.show.changes": "Wijzigingen tonen",
@@ -74,31 +95,6 @@ export const dict = {
   "revert.disabled.agentBusy": "Wacht tot de agent klaar is",
   "command.session.compact": "Sessie comprimeren",
   "command.session.export": "Sessietranscript exporteren",
-
-  "agentRequirements.skill.installed": "Geïnstalleerd",
-  "agentRequirements.skill.checkFailed": "De skillcontrole is mislukt",
-  "agentRequirements.skill.missing": "Niet geïnstalleerd",
-  "agentRequirements.mcp.connected": "Verbonden",
-  "agentRequirements.mcp.checkFailed": "De MCP-controle is mislukt",
-  "agentRequirements.mcp.missing": "Niet verbonden",
-  "agentRequirements.extension.installed": "Geïnstalleerd",
-  "agentRequirements.extension.checkFailed": "De controle van de VS Code-extensie is mislukt",
-  "agentRequirements.extension.missing": "Niet geïnstalleerd",
-  "agentRequirements.extension.description": "Installeer de ontbrekende extensies in VS Code.",
-  "agentRequirements.group.skills": "Skills",
-  "agentRequirements.group.mcps": "MCP’s",
-  "agentRequirements.group.extensions": "VS Code-extensies",
-  "agentRequirements.blocked.title": "Vereisten voor agent {{agent}}",
-  "agentRequirements.blocked.description":
-    "Deze agent heeft de volgende tools nodig voordat deze kan worden uitgevoerd.",
-  "agentRequirements.prompt.blocked": "Voltooi eerst de vereiste controles om deze agent te gebruiken",
-  "agentRequirements.action.openMarketplace": "Marketplace openen",
-  "agentRequirements.error.unknownAgent": "De geselecteerde agent kon niet worden gevonden.",
-  "agentRequirements.error.malformedDeclaration": "Deze agent heeft een ongeldige vereistenverklaring.",
-  "agentRequirements.error.discoveryFailed": "Kilo kon de beschikbare skills niet controleren.",
-  "agentRequirements.error.mcpStatusFailed": "Kilo kon de MCP-serverstatus niet controleren.",
-  "agentRequirements.error.scopeMismatch": "Deze controle van agentvereisten is niet meer actief.",
-  "agentRequirements.error.requestFailed": "Kilo kon de agentvereisten niet controleren.",
 
   "dialog.provider.search.placeholder": "Providers zoeken",
   "dialog.provider.empty": "Geen providers gevonden",
@@ -164,6 +160,7 @@ export const dict = {
   "model.group.auto": "Automatische modellen",
   "model.group.recommended": "Aanbevolen",
   "model.group.favorites": "Favorieten",
+  "model.group.mostUsed": "Meest gebruikt",
   "model.favorite.add": "Toevoegen aan favorieten",
   "model.favorite.remove": "Verwijderen uit favorieten",
   "model.preview.label.released": "Uitgebracht",
@@ -196,12 +193,16 @@ export const dict = {
   "common.saving": "Bezig met opslaan...",
   "common.default": "Standaard",
 
+  "prompt.worktrees.title": "Worktrees",
+  "prompt.worktrees.search": "Worktrees doorzoeken",
   "prompt.thinking.tooltip": "Redeneringsinspanning",
   "prompt.action.send": "Verzenden",
+  "prompt.action.continue": "Doorgaan",
   "prompt.action.send.blocked": "Beantwoord of negeer eerst de openstaande vraag",
   "prompt.action.send.recording": "Transcriberen en verzenden",
   "prompt.action.stop": "Stop",
   "prompt.action.enhance": "Prompt verbeteren",
+  "prompt.paste.expand": "Klik om geplakte tekst uit te vouwen",
   "prompt.action.indexing": "Indexeringsinstellingen",
   "prompt.action.autoApprove.enable": "Automatisch goedkeuren inschakelen",
   "prompt.action.autoApprove.disable": "Automatisch goedkeuren uitschakelen",
@@ -209,7 +210,6 @@ export const dict = {
     "Automatisch goedkeuren is ingeschakeld. Toestemmingsverzoeken worden automatisch goedgekeurd.",
   "prompt.action.autoApprove.disabled":
     "Automatisch goedkeuren is uitgeschakeld. Klik om toestemmingsverzoeken automatisch goed te keuren.",
-  "prompt.action.resetModel": "Model terugzetten naar standaard",
   "prompt.action.enhanceDescription":
     "De knop 'Prompt verbeteren' helpt je prompt te verbeteren door extra context, verduidelijking of herformulering te bieden. Typ hier een prompt en klik nogmaals op de knop om te zien hoe het werkt.",
   "prompt.action.sandbox.enable": "Sandbox inschakelen",
@@ -232,7 +232,9 @@ export const dict = {
   "prompt.action.sandbox.description.disabledNetworkAllowed":
     "Klik om schrijfbewerkingen in het bestandssysteem te beperken. Netwerktoegang blijft toegestaan volgens je sandboxinstellingen.",
 
-  "speechToText.tooltip.start": "Spraakinvoer starten met Kilo Gateway",
+  "speechToText.tooltip.start": "Spraakinvoer starten",
+  "speechToText.tooltip.shortcut":
+    "Tik of druk op Cmd/Ctrl+K om de opname te starten of te stoppen; houd de knop ingedrukt terwijl je spreekt en laat deze los om te transcriberen en te verzenden.",
   "speechToText.tooltip.starting": "Microfoon wordt gestart... Wacht nog even met spreken.",
   "speechToText.tooltip.stop": "Audio vastleggen stoppen",
   "speechToText.tooltip.transcribing": "Transcriberen... Klik om te annuleren.",
@@ -270,7 +272,11 @@ export const dict = {
   "notification.permission.title": "Toestemming vereist",
   "notification.permission.titleSubagent": "Toestemming vereist (subagent)",
   "notification.permission.titleSkillShell": "Shell-opdrachten uit vaardigheid “{{skill}}” uitvoeren?",
+  "notification.permission.titleSandboxEscalation": "Git-bewerking buiten de sandbox toestaan?",
   "ui.permission.manageAutoApprove": "Beheer automatisch goedkeuren regels",
+  "ui.permission.reject": "Weigeren",
+  "ui.permission.feedbackPlaceholder": "Vertel Kilo wat het anders moet doen",
+  "ui.permission.feedbackHint": "Enter om te weigeren, Esc om te annuleren",
   "ui.permission.doomLoop.prompt": "Mogelijke lus gedetecteerd voor het hulpmiddel {{tool}}. Doorgaan met uitvoeren?",
   "ui.permission.doomLoop.rule": "Doorgaan met {{tool}}-aanroepen",
   "ui.permission.rule.addToAllowed": "Toevoegen aan toegestane lijst",
@@ -305,6 +311,7 @@ export const dict = {
   "ui.approval.source.yolo": "door de automatische goedkeuringsmodus (YOLO)",
   "ui.approval.source.session": "door een sessie-automatische-goedkeuringsregel",
   "ui.approval.source.default": "standaard",
+  "ui.approval.outsideWorkspace": "(buiten je werkruimte: {{file}})",
 
   "session.tab.review": "Beoordelen",
   "session.review.filesChanged": "{{count}} bestanden gewijzigd",
@@ -315,6 +322,13 @@ export const dict = {
   "session.messages.loadEarlier": "Eerdere berichten laden",
   "session.messages.loading": "Berichten laden...",
 
+  "sidebar.topBar.label": "Kilo Code-navigatie",
+  "sidebar.topBar.newTask": "Nieuwe Taak",
+  "sidebar.topBar.history": "Geschiedenis",
+  "sidebar.topBar.agentManager": "Agent Manager",
+  "sidebar.topBar.marketplace": "Marketplace",
+  "sidebar.topBar.profile": "Profiel",
+  "sidebar.topBar.settings": "Instellingen",
   "sidebar.session.newSession": "Nieuwe Sessie",
   "sidebar.session.newSession.tooltip": "Start een nieuw gesprek terwijl je de huidige sessie intact houdt.",
   "sidebar.session.newWorktree": "Nieuwe Worktree",
@@ -411,6 +425,7 @@ export const dict = {
   "settings.providers.tag.other": "Overige",
   "settings.providers.connected.environmentDescription": "Gekoppeld via je omgevingsvariabelen",
   "settings.providers.action.signInChatGPT": "Inloggen met ChatGPT",
+  "settings.providers.action.changeApiKey": "API-sleutel wijzigen",
   "settings.providers.custom.description": "Voeg een aangepaste provider toe via basis-URL.",
 
   "provider.custom.title": "Aangepaste provider",
@@ -435,45 +450,8 @@ export const dict = {
   "provider.custom.models.name.placeholder": "Weergavenaam",
   "provider.custom.models.reasoning.label": "Redeneren",
   "provider.custom.models.modalities.image": "Afbeelding",
-  "provider.custom.models.variants.label": "Varianten",
-  "provider.custom.models.variants.add": "Variant toevoegen",
-  "provider.custom.models.variants.remove": "Variant verwijderen",
-  "provider.custom.models.variants.name.label": "Naam",
-  "provider.custom.models.variants.name.placeholder": "bijv. thinking",
-  "provider.custom.models.variants.option.unset": "(niet ingesteld)",
-  "provider.custom.models.variants.enableThinking.label": "Denken inschakelen (bijv. Alibaba)",
-  "provider.custom.models.variants.enableThinking.placeholder": "enable_thinking",
-  "provider.custom.models.variants.enableThinking.true": "true",
-  "provider.custom.models.variants.enableThinking.false": "false",
-  "provider.custom.models.variants.thinking.label": "Denktype (bijv. Z.ai)",
-  "provider.custom.models.variants.thinking.placeholder": "thinking",
-  "provider.custom.models.variants.thinking.enabled": "enabled",
-  "provider.custom.models.variants.thinking.disabled": "disabled",
-  "provider.custom.models.variants.thinking.adaptive": "adaptive",
-  "provider.custom.models.variants.splitReasoning.label": "Split reasoning (required for e.g. MiniMax)",
-  "provider.custom.models.variants.splitReasoning.placeholder": "reasoning_split",
-  "provider.custom.models.variants.splitReasoning.true": "true",
-  "provider.custom.models.variants.splitReasoning.false": "false",
-  "provider.custom.models.variants.chatTemplateArgs.label":
-    "Nadenken inschakelen via chat template args (bijv. Hugging Face)",
-  "provider.custom.models.variants.chatTemplateArgs.placeholder": "chat_template_args",
-  "provider.custom.models.variants.chatTemplateArgs.true": "true",
-  "provider.custom.models.variants.chatTemplateArgs.false": "false",
-  "provider.custom.models.variants.reasoningEffort.label": "Redeneerinspanning",
-  "provider.custom.models.variants.reasoningEffort.placeholder": "reasoningEffort",
-  "provider.custom.models.variants.reasoningEffort.none": "none",
-  "provider.custom.models.variants.reasoningEffort.minimal": "minimal",
-  "provider.custom.models.variants.reasoningEffort.low": "low",
-  "provider.custom.models.variants.reasoningEffort.medium": "medium",
-  "provider.custom.models.variants.reasoningEffort.high": "high",
-  "provider.custom.models.variants.reasoningEffort.xhigh": "xhigh",
-  "provider.custom.models.variants.outputEffort.label": "Output effort (e.g. Anthropic)",
-  "provider.custom.models.variants.outputEffort.placeholder": "effort",
-  "provider.custom.models.variants.outputEffort.low": "low",
-  "provider.custom.models.variants.outputEffort.medium": "medium",
-  "provider.custom.models.variants.outputEffort.high": "high",
-  "provider.custom.models.variants.outputEffort.xhigh": "xhigh",
-  "provider.custom.models.variants.outputEffort.max": "max",
+  "provider.custom.models.toggleReasoning": "Redeneren voor alle modellen in-/uitschakelen",
+  "provider.custom.models.toggleImages": "Afbeelding voor alle modellen in-/uitschakelen",
   "provider.custom.models.remove": "Model verwijderen",
   "provider.custom.models.add": "Model toevoegen",
   "provider.custom.models.fetch.authError":
@@ -488,6 +466,7 @@ export const dict = {
   "provider.custom.models.fetch.search": "Modellen zoeken\u2026",
   "provider.custom.models.fetch.add": "{{count}} model(len) toevoegen",
   "provider.custom.edit.title": "Provider bewerken",
+  "provider.custom.edit.advanced": "Geavanceerde instellingen bewerken in het JSON-configuratiebestand",
   "provider.custom.headers.label": "Headers (optioneel)",
   "provider.custom.headers.key.label": "Header",
   "provider.custom.headers.key.placeholder": "Header-Naam",
@@ -649,10 +628,50 @@ export const dict = {
   "profile.action.login": "Inloggen met Kilo Code",
   "profile.balance.title": "Saldo",
   "profile.balance.refresh": "Saldo vernieuwen",
+  "profile.usage.title": "Abonnementen en gebruik",
+  "profile.usage.description": "Quota en saldi van het huidige abonnement",
+  "profile.usage.refresh": "Providergebruik vernieuwen",
+  "profile.usage.empty": "Geen bronnen voor providergebruik gedetecteerd.",
+  "profile.usage.source.direct": "Direct",
+  "profile.usage.state.stale": "De laatst bijgewerkte gebruiksgegevens worden weergegeven.",
+  "profile.usage.state.unavailable": "Gebruiksgegevens niet beschikbaar.",
+  "profile.usage.state.empty": "Geen gebruikslimieten gemeld.",
+  "profile.usage.plan.pastDue": "Abonnement: Betaling achterstallig",
+  "profile.usage.plan.canceling": "Abonnement: Wordt aan het einde van de periode opgezegd",
+  "profile.usage.plan.unknown": "Abonnement: Status onbekend",
+  "profile.usage.action.manage": "Beheren",
+  "profile.usage.action.managePlan": "{{plan}} beheren",
+  "profile.usage.routing": "De abonnementsfacturering is actief. Kilo Gateway-routering is {{state}}.",
+  "profile.usage.routingState.disabled": "uitgeschakeld",
+  "profile.usage.routingState.missing": "afwezig",
+  "profile.usage.routingState.replaced": "vervangen",
+  "profile.usage.routingState.unknown": "onbekend",
+  "profile.usage.window.used": "{{value}} gebruikt",
+  "profile.usage.window.remaining": "{{value}} resterend",
+  "profile.usage.window.remainingOf": "{{value}} van {{limit}} resterend",
+  "profile.usage.window.usedOf": "{{value}} van {{limit}} gebruikt",
+  "profile.usage.window.quota": "Quotum",
+  "profile.usage.window.daily": "Dagelijks quotum",
+  "profile.usage.window.weekly": "Wekelijks quotum",
+  "profile.usage.window.monthly": "Maandelijks quotum",
+  "profile.usage.window.hours": "Quotum per {{count}} uur",
+  "profile.usage.window.days": "Quotum per {{count}} dagen",
+  "profile.usage.window.weeks": "Quotum per {{count}} weken",
+  "profile.usage.window.months": "Quotum per {{count}} maanden",
+  "profile.usage.window.shared": "Gedeeld",
+  "profile.usage.window.scoped": "{{resource}} · {{period}}",
+  "profile.usage.reset": "Wordt op {{date}} gereset",
+  "profile.usage.status.unknown": "Onbekend",
+  "profile.usage.status.unlimited": "Onbeperkt",
+  "profile.usage.status.notInPlan": "Niet in abonnement",
+  "profile.usage.status.exhausted": "Opgebruikt",
   "profile.action.dashboard": "Dashboard",
   "profile.action.topUp": "Opwaarderen",
   "profile.pass.subscribe": "Schaf Kilo Pass aan om tegoed toe te voegen en bonussen te verdienen",
   "profile.pass.bonus": "Bonus",
+  "profile.pass.usage": "Verbruik deze maand",
+  "profile.pass.paid": "Betaald",
+  "profile.pass.meter": "Maandelijks Kilo Pass-verbruik",
   "profile.pass.renews": "Vernieuwt",
   "profile.action.logout": "Uitloggen",
 
@@ -738,6 +757,14 @@ export const dict = {
   "session.outcome.interrupted": "Beurt onderbroken",
   "session.outcome.error": "Beurt mislukt",
   "session.outcome.finish": "Voltooiingsreden: {{reason}}",
+  "session.goal.label": "Doel",
+  "prompt.goal.set": "Doel instellen",
+  "prompt.goal.start": "Doel starten",
+  "session.goal.active": "Actief",
+  "session.goal.paused": "Gepauzeerd",
+  "session.goal.pause": "Pauzeren",
+  "session.goal.resume": "Hervatten",
+  "session.goal.clear": "Doel wissen",
   "session.costAlert.header": "Sessiekostenwaarschuwing",
   "session.costAlert.continue": "Doorgaan",
   "session.costAlert.question":
@@ -811,7 +838,7 @@ export const dict = {
   "settings.agentBehaviour.subtab.skills": "Skills",
 
   "settings.browser.description":
-    "Indien ingeschakeld kan de AI agent interactie hebben met webpagina's — navigeren, klikken, typen en screenshots maken. Er wordt een Chrome-venster geopend zodat je de agent aan het werk kunt zien.",
+    "Configureer ingebouwde browserautomatisering mogelijk gemaakt door Playwright. Kilo kan in je sessies door webpagina's navigeren, ermee werken en schermafbeeldingen maken.",
   "settings.browser.enable.title": "Browserautomatisering inschakelen",
   "settings.browser.enable.description": "Registreer de Playwright MCP-server bij de CLI backend.",
   "settings.browser.systemChrome.title": "Gebruik Systeem Chrome",
@@ -842,7 +869,17 @@ export const dict = {
   "settings.notifications.enable.title": "Geluidsmeldingen inschakelen",
   "settings.notifications.enable.description":
     "Geluiden afspelen wanneer sessies worden voltooid, er een fout optreedt of uw invoer vereist is",
+  "settings.notifications.workbench.title": "VS Code-meldingen inschakelen",
+  "settings.notifications.workbench.description":
+    "VS Code-meldingen tonen wanneer Kilo een taak voltooit of uw invoer vereist",
+  "settings.notifications.os.title": "Besturingssysteemmeldingen inschakelen",
+  "settings.notifications.os.description":
+    "Systeemeigen meldingswaarschuwingen tonen wanneer Kilo een taak voltooit of uw invoer vereist terwijl VS Code niet actief is.",
   "settings.notifications.testSound": "Testen",
+  "settings.notifications.testOS": "Testen",
+  "settings.notifications.testOS.testing": "Testmelding wordt verzonden…",
+  "settings.notifications.testOS.success": "Testmelding verzonden.",
+  "settings.notifications.testOS.error": "Testmelding mislukt",
   "settings.notifications.sound.default": "Standaard",
   "settings.notifications.sound.system": "Systeem",
   "settings.notifications.sound.description":
@@ -859,17 +896,28 @@ export const dict = {
   "settings.experimental.lsp.description": "Schakel language server protocol integratie in",
   "settings.experimental.batch.title": "Batch Tool",
   "settings.experimental.batch.description": "Schakel batching van meerdere tool calls in",
-  "settings.experimental.codebaseSearch.title": "Codebase Zoeken",
-  "settings.experimental.codebaseSearch.description":
-    "Schakel AI-aangedreven zoeken in natuurlijke taal door je codebase in",
   "settings.experimental.imageGeneration.title": "Afbeeldingsgeneratie",
   "settings.experimental.imageGeneration.description": "AI-afbeeldingsgeneratie inschakelen",
+  "settings.agentBehaviour.sharedAgentBoard.title": "Kilo Swarm",
+  "settings.agentBehaviour.sharedAgentBoard.description":
+    "Deel een bord tussen een hoofdsessie en de subagenten die haar taken uitvoeren, inclusief geneste subagenten. Gebruik het voor parallelle oplossingspogingen of werkzaamheden die elkaar aanvullen, niet voor elke taak.",
   "settings.experimental.imageGenerationModel.title": "Afbeeldingsmodel",
   "settings.experimental.imageGenerationModel.description": "Afbeeldingsgeneratiemodel",
   "settings.experimental.imageGenerationModel.placeholder": "Standaard (Auto Router)",
 
+  "settings.models.speechToTextModel.customDescription":
+    "Model-ID die naar uw eigen transcriptie-eindpunt wordt gestuurd, bijvoorbeeld whisper-1.",
+  "settings.models.speechToTextModel.customPlaceholder": "whisper-1",
+  "settings.models.speechToTextBaseUrl.title": "Spraak-naar-tekst-basis-URL",
+  "settings.models.speechToTextBaseUrl.description":
+    "Gebruik een OpenAI-compatibele transcriptie-API in plaats van Kilo Gateway. Modellen worden gelezen van /models en audio gaat naar /audio/transcriptions. Laat leeg om Kilo Gateway te gebruiken.",
+  "settings.models.speechToTextBaseUrl.placeholder": "https://api.openai.com/v1",
+  "settings.models.speechToTextApiKey.title": "Spraak-naar-tekst-API-sleutel",
+  "settings.models.speechToTextApiKey.description":
+    "Bearer-token dat naar de eigen transcriptie-basis-URL wordt gestuurd. Opgeslagen in uw Kilo-configuratiebestand.",
+  "settings.models.speechToTextApiKey.placeholder": "sk-...",
   "settings.models.speechToText.disabledDescription":
-    "Schakel de Kilo-provider in en meld u aan om Speech to Text te gebruiken. Speech to Text wordt momenteel alleen ondersteund met Kilo Gateway.",
+    "Schakel de Kilo-provider in en meld u aan om Speech to Text te gebruiken, of stel hieronder een eigen transcriptie-basis-URL in.",
   "settings.models.speechToTextModel.title": "Spraak-naar-tekst-model",
   "settings.models.speechToTextModel.description": "Kies het Kilo Gateway-transcriptiemodel voor spraakinvoer.",
   "settings.experimental.nativeNotebookTools.title": "Native notebooktools",
@@ -885,19 +933,19 @@ export const dict = {
 
   "settings.sandboxing.allowedHosts.title": "Toegestane netwerkbestemmingen",
   "settings.sandboxing.allowedHosts.description":
-    "DNS-host- en poortbestemmingen voor HTTP- en HTTPS-proxyverkeer in een sandbox. GitHub CLI en HTTPS Git hebben doorgaans github.com:443 en api.github.com:443 nodig. Wijzigingen gelden voor nieuwe sessies.",
+    "DNS-host- en poortbestemmingen voor HTTP- en HTTPS-proxyverkeer in een sandbox. GitHub CLI en HTTPS Git hebben doorgaans github.com:443 en api.github.com:443 nodig.",
   "settings.sandboxing.writablePaths.title": "Extra schrijfbare paden",
   "settings.sandboxing.writablePaths.description":
     "Extra bestandssysteempaden waar de sandbox schrijftoestemming voor geeft (bijv. /tmp, /var/log). Deze worden samengevoegd met de standaard schrijfbare paden wanneer de sandbox actief is.",
-  "settings.experimental.swePruner.title": "SWE-Pruner",
-  "settings.experimental.swePruner.description":
-    "SWE-Pruner inschakelen: taakgericht snoeien van grote uitvoer van lees-, zoek- en shelltools, gestuurd door een focusvraag van de agent",
-  "settings.experimental.swePrunerModel.title": "SWE-Pruner-model",
-  "settings.experimental.swePrunerModel.description":
-    "Model dat wordt gebruikt om tooluitvoer te snoeien; standaard het geconfigureerde kleine model",
   "settings.experimental.multiProject.title": "Multi-project Agent Manager",
+  "settings.experimental.claudeMigration.title": "Claude Code-migratie",
+  "settings.experimental.claudeMigration.description":
+    "Importeer ondersteunde globale CLAUDE.md-instructies, eenvoudige vaardigheden en uitgeschakelde MCP-definities één keer. Originele Claude-bestanden blijven ongewijzigd; herstart de backend na inschakelen.",
   "settings.experimental.multiProject.description":
     "Schakel het beheren van sessies en worktrees over meerdere repositories in Agent Manager in. De huidige workspace-repository is altijd het standaardproject.",
+  "settings.experimental.taskModelSelection.title": "Task-subagentmodel selecteren",
+  "settings.experimental.taskModelSelection.description":
+    "Sta toe dat je expliciet een model, provider en redeneerinspanning kiest voor Task-subagents.",
   "settings.experimental.mcpTimeout.title": "MCP Timeout (ms)",
   "settings.experimental.mcpTimeout.description": "Timeout voor MCP-serververzoeken in milliseconden",
   "settings.experimental.remote.title": "Remote-bediening",
@@ -963,6 +1011,9 @@ export const dict = {
   "settings.agentBehaviour.instructionFiles": "Aanvullende Instructiebestanden",
   "settings.agentBehaviour.instructionFiles.description":
     "Paden naar aanvullende instructiebestanden die zijn opgenomen in de systeem prompt",
+  "settings.agentBehaviour.pushFixes.title": "Pull request-fixes pushen",
+  "settings.agentBehaviour.pushFixes.description":
+    "Wanneer je CI-fouten of reviewopmerkingen van een pull request naar de agent stuurt, of een worktree bijwerkt vanaf de basis, vraag de agent dan te committen en te pushen zodat de pull request wordt bijgewerkt. Toestemmingsvragen blijven gelden. Schakel uit om handmatig te committen.",
   "settings.agentBehaviour.claudeCompat.heading": "Claude Code-compatibiliteit",
   "settings.agentBehaviour.claudeCompat.title": "Claude Code-bestanden laden",
   "settings.agentBehaviour.claudeCompat.description":
@@ -996,6 +1047,9 @@ export const dict = {
     "Geen aangepaste commando's geconfigureerd. Voeg commando's toe aan opencode.json om ze hier te zien.",
   "settings.agentBehaviour.workflows.detail.description": "Beschrijving",
   "settings.agentBehaviour.workflows.detail.template": "Sjabloon",
+  "settings.agentBehaviour.workflows.model": "model",
+  "settings.agentBehaviour.workflows.variant": "variant",
+  "settings.agentBehaviour.workflows.modelDescription": "Globale modeloverride",
 
   "settings.autoApprove.description":
     "Definieer hoe tools mogen worden uitgevoerd. De meeste tools staan standaard op Toestaan. doom_loop en external_directory staan standaard op Vragen.",
@@ -1044,6 +1098,12 @@ export const dict = {
   "settings.context.autoCompaction.title": "Automatische Compactie",
   "settings.context.autoCompaction.description": "Context automatisch compacteren voordat deze de limiet bereikt",
   "settings.context.compaction.title": "Compactie",
+  "settings.context.compactionModel.title": "Compactiemodel",
+  "settings.context.compactionModel.description":
+    "Model dat wordt gebruikt voor automatische en handmatige compactie. Laat dit leeg om het chatmodel te gebruiken. Kosten, snelheid en de kwaliteit van de samenvatting hangen af van het model.",
+  "settings.context.compactionModel.useChatModel": "Chatmodel gebruiken",
+  "settings.context.compactionModel.hint":
+    "Om te kiezen welk model wordt gebruikt voor compactie, zie de Modellen-instellingen.",
   "settings.context.compactionLimit.title": "Limiet voor automatisch compacteren",
   "settings.context.compactionLimit.description":
     "Compacteer wanneer de context dit percentage van het modelvenster bereikt. Laat leeg om alleen de veiligheidsbuffer te gebruiken.",
@@ -1088,25 +1148,37 @@ export const dict = {
   "settings.display.username.description": "Aangepaste gebruikersnaam weergegeven in gesprekken",
   "settings.display.fontSize.title": "Lettergrootte",
   "settings.display.fontSize.description": "Pas de lettergrootte van de Kilo webview UI onafhankelijk van VS Code aan.",
-  "settings.display.reasoningAutoCollapse.title": "Redenering automatisch inklappen",
-  "settings.display.reasoningAutoCollapse.description":
-    "Klapt redeneerblokken in nadat de agent klaar is met schrijven. Laat uitgeschakeld om redenering uitgeklapt te houden, tenzij je die handmatig inklapt.",
+  "settings.display.reasoningDisplay.title": "Redeneringsblokken",
+  "settings.display.reasoningDisplay.description":
+    "Kies hoe redeneringsblokken starten. Uitgeklapt toont de volledige tekst, Voorbeeld beperkt het tot een kort, scrollbaar voorbeeld, en Kop toont alleen de titel en streamingindicator totdat je het opent.",
+  "settings.display.reasoningDisplay.expanded": "Uitgeklapt",
+  "settings.display.reasoningDisplay.preview": "Voorbeeld",
+  "settings.display.reasoningDisplay.headline": "Kop",
   "settings.display.shiftTabCycle.title": "Doorloop niveaus van redeneringsinspanning met Shift+Tab",
   "settings.display.shiftTabCycle.description":
     "Druk op Shift+Tab in een promptinvoerveld om naar het volgende niveau van redeneringsinspanning te gaan. Schakel dit uit om Shift+Tab te behouden voor focusnavigatie via het toetsenbord.",
-  "settings.display.terminalCommand.title": "Terminal Command Blocks",
-  "settings.display.terminalCommand.description": "Choose whether terminal command blocks start expanded or collapsed.",
-  "settings.display.terminalCommand.expanded": "Expanded",
-  "settings.display.terminalCommand.collapsed": "Collapsed",
+  "settings.display.terminalCommand.title": "Terminalopdrachtblokken",
+  "settings.display.terminalCommand.description":
+    "Kies of terminalopdrachtblokken standaard uitgeklapt of ingeklapt zijn.",
+  "settings.display.terminalCommand.expanded": "Uitgeklapt",
+  "settings.display.terminalCommand.collapsed": "Ingeklapt",
   "settings.display.codeEdit.title": "Blokken met codebewerkingen",
   "settings.display.codeEdit.description":
     "Kies of blokken met codebewerkingen en verschillen standaard uitgeklapt of ingeklapt zijn.",
   "settings.display.codeEdit.expanded": "Uitgeklapt",
   "settings.display.codeEdit.collapsed": "Ingeklapt",
+  "settings.display.mcpTool.title": "Blokken met MCP- en algemene tools",
+  "settings.display.mcpTool.description":
+    "Kies of blokken met MCP- en algemene tools standaard uitgeklapt of ingeklapt zijn.",
+  "settings.display.mcpTool.expanded": "Uitgeklapt",
+  "settings.display.mcpTool.collapsed": "Ingeklapt",
 
-  "settings.display.tokenThroughput.title": "Show Token Throughput",
+  "settings.display.tokenThroughput.title": "Tokendoorvoer weergeven",
   "settings.display.tokenThroughput.description":
-    "Display the text-generation rate (tokens/sec) on the latest assistant message and in the task header. Hidden by default to keep the chat uncluttered.",
+    "Toon de tekstgeneratiesnelheid (tokens/sec) in het meest recente assistentbericht en in de taakkoptekst. Wordt standaard weergegeven; schakel deze instelling uit om de snelheid indien nodig te verbergen.",
+  "settings.display.autoApprovalReason.title": "Reden voor automatische goedkeuring weergeven",
+  "settings.display.autoApprovalReason.description":
+    "Toont een regel bij tool-aanroepen die uitlegt waarom ze automatisch zijn goedgekeurd (overeenkomende regel, agentstandaard, YOLO-modus, enz.).",
 
   "chat.throughput.tooltip":
     "Average {{speed}} tokens/s for this turn. Includes output and reasoning tokens; excludes tool execution and waiting time.",
@@ -1142,59 +1214,16 @@ export const dict = {
   "question.summary": "{{n}} van de {{total}} vragen",
   "common.review": "Beoordelen",
 
-  // legacy-migration start
-  "settings.legacyMigration.link": "Migreer van Legacy Versie",
-  "settings.aboutKiloCode.legacyMigration.title": "Legacy Migratie",
-  "settings.aboutKiloCode.legacyMigration.description":
-    "Migreer instellingen van een eerdere installatie van Kilo Code, inclusief provider API-sleutels en standaard model.",
   "settings.aboutKiloCode.rooImport.description": "Importeer gespreksgeschiedenis van een Roo Code installatie.",
   "settings.aboutKiloCode.rooImport.button": "Sessies importeren uit Roo Code",
 
-  // Screen 1 — What's New
-  "migration.whatsNew.title": "Wat is er Nieuw in Kilo Code",
-  "migration.whatsNew.subtitle": "We hebben de extensie opnieuw opgebouwd op een snellere, efficiëntere basis.",
-  "migration.whatsNew.features.performance.title": "Snellere Agent Prestaties",
-  "migration.whatsNew.features.performance.detail":
-    "Parallelle tool calls en subagents laten je agent meer tegelijk aanpakken — zodat je minder tijd besteedt aan wachten en meer tijd aan releasen.",
-  "migration.whatsNew.features.interface.title": "Gestroomlijnde Interface",
-  "migration.whatsNew.features.interface.detail": "Minder afleiding, makkelijker en sneller te lezen.",
-  "migration.whatsNew.features.agentManager.title": "Agentenbeheer",
-  "migration.whatsNew.features.agentManager.detail":
-    "Een uniforme interface voor het parallel uitvoeren van meerdere agents, elk op zijn eigen worktree — monitor de voortgang, wissel van context en bekijk wijzigingen op één plek.",
-  "migration.whatsNew.features.foundation.title": "Gedeelde Basis",
-  "migration.whatsNew.features.foundation.detail":
-    "Één kleine, efficiënte kern voor elk Kilo-product. Een vertrouwde ervaring, hoe je ook wilt werken.",
-  "migration.whatsNew.blogLink": "Lees de volledige aankondiging",
-  "migration.whatsNew.docsLink": "Wat is er nieuw & veelgestelde vragen",
-  "migration.whatsNew.continue": "Doorgaan",
-
-  // Screen 2 — Migrate Settings
-  "migration.migrate.title": "Migreer Je Instellingen",
-  "migration.migrate.subtitle":
-    "We hebben instellingen gevonden van je vorige installatie. Hier is wat we kunnen overzetten.",
+  "migration.roo.button": "Sessies importeren",
+  "migration.roo.empty": "Geen Roo Code-sessies gevonden.",
   "migration.migrate.selectLabel": "Selecteer wat je wilt migreren",
   "migration.migrate.chatHistory": "Chatsessies & Geschiedenis",
-  "migration.migrate.button": "Migreer Instellingen",
-  "migration.migrate.skip": "Overslaan",
-  "migration.migrate.keysDetected": "{{count}} sleutels gedetecteerd",
-  "migration.migrate.serversConfigured": "{{count}} server(s) geconfigureerd",
-  "migration.migrate.modesFound": "{{count}} modus(sen) gevonden",
-  "migration.migrate.nothingToMigrate": "Er is niets om te migreren gevonden in de oude instellingen.",
-
-  // Migrate — item labels (reused from old select keys)
-  "migration.select.providers": "Provider API-sleutels",
-  "migration.select.mcpServers": "MCP Servers",
-  "migration.select.customModes": "Aangepaste Modi / Agents",
-  "migration.select.defaultModel": "Standaard Model",
-  "migration.select.autoApproval": "Automatische Goedkeuring",
-  "migration.select.language": "UI Taal",
-  "migration.select.autocomplete": "Automatisch Aanvullen Instellingen",
 
   // Migrate — completion
   "migration.complete.summary": "{{success}} van de {{total}} items succesvol gemigreerd.",
-  "migration.complete.cleanup": "Verwijder oude instellingendata",
-  "migration.complete.cleanupDescription":
-    "Dit verwijdert de oude instellingen uit de VS Code-opslag. U zult deze migratie niet opnieuw kunnen uitvoeren.",
   "migration.complete.done": "Klaar",
   "migration.migrate.sessionsDetected": "{{count}} sessies gedetecteerd",
   "migration.error.continue": "Doorgaan",
@@ -1228,12 +1257,29 @@ export const dict = {
   "migration.sessionFormat.unknownDate": "Onbekende datum",
   "migration.sessionFormat.unknown": "Onbekend",
   "migration.sessionFormat.unknownError": "Onbekende fout",
-  // legacy-migration end
 
   "error.details.show": "Details",
 
   "task.todos.progress": "{{done}}/{{total}} to-do's voltooid",
   "task.todos.allDone": "{{count}} to-do's voltooid",
+  "task.backgroundAgents.running.one": "1 achtergrondagent",
+  "task.backgroundAgents.running.many": "{{count}} achtergrondagenten",
+  "task.backgroundAgents.more": "+{{count}} meer",
+  "task.backgroundAgents.open": "Achtergrondagent openen",
+  "task.backgroundAgents.openAll": "Alle achtergrondagenten openen",
+  "task.backgroundAgents.cancel": "Stoppen",
+  "task.backgroundAgents.continueInBackground": "Doorgaan op de achtergrond",
+  "task.backgroundAgents.waiting": "Een achtergrondagent heeft je invoer nodig",
+  "task.backgroundAgents.needsInput": "Invoer vereist",
+  "task.backgroundAgents.dismiss": "Negeren",
+  "task.backgroundAgents.clearFinished": "Voltooide wissen",
+  "task.backgroundAgents.summary": "{{running}} van {{total}} achtergrondagenten actief",
+  "task.backgroundAgents.status.running": "Actief",
+  "task.backgroundAgents.status.completed": "Voltooid",
+  "task.backgroundAgents.status.cancelled": "Geannuleerd",
+  "task.backgroundAgents.status.error": "Fout",
+  "task.backgroundAgents.untitled": "Achtergrondagent",
+  "task.backgroundAgents.stopAll": "Alles stoppen ({{count}})",
 
   "settings.saveBar.unsavedChanges": "Niet-opgeslagen wijzigingen",
   "settings.saveBar.discard": "Verwerpen",
@@ -1303,6 +1349,18 @@ export const dict = {
     "Bestanden die door Kilo tijdens de huidige sessie zijn gewijzigd, gebaseerd op snapshots per beurt. Wordt gereset bij het starten van een nieuwe sessie.",
   "diffViewer.group.session": "Sessie",
   "diffViewer.group.git": "Git",
+  "diffViewer.comment.saveLocal": "Lokaal opslaan",
+  "diffViewer.comment.sendToAgent": "Naar agent sturen",
+  "diffViewer.comment.postToGithub": "Op GitHub plaatsen",
+  "diffViewer.comment.loadFailed": "De wijzigingen van de pull request konden niet worden geladen.",
+  "diffViewer.comment.unavailable": "Deze regel is niet beschikbaar in de huidige snapshot van de pull request.",
+  "diffViewer.comment.prContext": "PR #{{number}}",
+  "diffViewer.comment.openPR": "Pull request openen",
+  "diffViewer.comment.localChanges": "Lokale wijzigingen",
+  "diffViewer.comment.prChanges": "PR-wijzigingen",
+  "diffViewer.comment.sendToKilo": "Naar Kilo sturen",
+  "diffViewer.comment.sendToGithub": "Naar GitHub #{{number}} sturen",
+  "diffViewer.comment.chooseDestination": "Bestemming kiezen",
   "diffViewer.notice.snapshotsDisabled":
     "Snapshots zijn uitgeschakeld voor deze repository. Bewerk je configuratiebestanden om de sessiewijzigingen weer te geven.",
 
@@ -1324,5 +1382,11 @@ export const dict = {
   "chat.search.close": "Zoeken sluiten",
   "chat.search.invalidRegex": "Ongeldige reguliere expressie",
   "chat.search.noResults": "Geen resultaten",
+  "settings.experimental.browserAutomation.title": "Geïntegreerde browser",
+  "settings.experimental.browserAutomation.description":
+    "Toon voorbeelden van lokale applicaties in Agent Manager en stel de tool browser_open beschikbaar aan Agent Manager-sessies.",
+  "settings.experimental.browserAutomation.systemChrome.title": "Gebruik Systeem Chrome",
+  "settings.experimental.browserAutomation.systemChrome.description":
+    "Gebruik de geïnstalleerde Google Chrome voor de geïntegreerde browser. Schakel dit alleen uit als er al een compatibele Playwright Chromium-browser is geïnstalleerd.",
   "chat.search.searchingHistory": "Eerdere berichten doorzoeken…",
 }

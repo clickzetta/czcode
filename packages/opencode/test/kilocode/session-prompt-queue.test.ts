@@ -1,10 +1,11 @@
 import path from "path"
-import { afterAll, beforeAll, describe, expect, test } from "bun:test"
+import { afterAll, beforeAll, describe, expect, setDefaultTimeout, test } from "bun:test"
 import { Effect } from "effect"
 import fs from "fs/promises"
 import os from "os"
 import { Bus } from "../../src/bus"
 import { AppRuntime } from "../../src/effect/app-runtime"
+import { makeRuntime } from "../../src/effect/run-service"
 import { InstanceRef } from "../../src/effect/instance-ref"
 import { KiloSessionCompaction } from "@/kilocode/session/compaction"
 import { KiloSessionPromptQueue } from "@/kilocode/session/prompt-queue"
@@ -12,23 +13,29 @@ import { KiloSession } from "@/kilocode/session"
 import { Suggestion } from "../../src/kilocode/suggestion"
 import { ProviderV2 } from "@opencode-ai/core/provider"
 import { ModelV2 } from "@opencode-ai/core/model"
+import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { SessionProjector } from "@opencode-ai/core/session/projector"
 import { InstanceStore } from "../../src/project/instance-store"
-import { provide as withInstanceProvide } from "../../src/kilocode/instance"
+import { provideTestInstance } from "../fixture/fixture"
 import { Session } from "../../src/session/session"
 import { MessageV2 } from "../../src/session/message-v2"
 import { SessionCompaction } from "../../src/session/compaction"
 import { SessionPrompt } from "../../src/session/prompt"
 import { MessageID, SessionID } from "../../src/session/schema"
 import * as Log from "@opencode-ai/core/util/log"
-import { disposeTestRuntime, provideInstance, provideTestInstance, testInstanceStoreLayer, tmpdir } from "../fixture/fixture"
+import { disposeTestRuntime, provideInstance, testInstanceStoreLayer, tmpdir } from "../fixture/fixture"
 import { Flag } from "@opencode-ai/core/flag/flag"
 import { remove as cleanup } from "./cleanup"
 import { pollWithTimeout } from "../lib/effect"
 
 Log.init({ print: false })
+setDefaultTimeout(15_000)
 
 const previous = Flag.KILO_DB
 const dbfile = path.join(os.tmpdir(), `kilo-prompt-queue-${process.pid}-${crypto.randomUUID()}.db`)
+const layer = LayerNode.compile(LayerNode.group([Session.node, SessionProjector.node]))
+const prompt = LayerNode.compile(LayerNode.group([SessionPrompt.node, SessionProjector.node]))
+const runtime = makeRuntime(Session.Service, layer)
 
 beforeAll(async () => {
   await fs.rm(dbfile, { force: true })
@@ -36,6 +43,7 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
+  await runtime.dispose()
   await AppRuntime.dispose()
   await disposeTestRuntime()
   Flag.KILO_DB = previous
@@ -49,13 +57,13 @@ const store = {
 
 const sessions = {
   create: (input?: Parameters<Session.Interface["create"]>[0]) =>
-    Effect.runPromise(Session.Service.use((svc) => svc.create(input)).pipe(Effect.provide(Session.defaultLayer))),
+    runtime.runPromise((svc) => svc.create(input)),
   messages: (input: Parameters<Session.Interface["messages"]>[0]) =>
-    Effect.runPromise(Session.Service.use((svc) => svc.messages(input)).pipe(Effect.provide(Session.defaultLayer))),
+    runtime.runPromise((svc) => svc.messages(input)),
   updateMessage: <T extends MessageV2.Info>(msg: T) =>
-    Effect.runPromise(Session.Service.use((svc) => svc.updateMessage(msg)).pipe(Effect.provide(Session.defaultLayer))),
+    runtime.runPromise((svc) => svc.updateMessage(msg)),
   updatePart: <T extends MessageV2.Part>(part: T) =>
-    Effect.runPromise(Session.Service.use((svc) => svc.updatePart(part)).pipe(Effect.provide(Session.defaultLayer))),
+    runtime.runPromise((svc) => svc.updatePart(part)),
 }
 
 function line(input: unknown) {
@@ -121,7 +129,7 @@ function hasText(msg: MessageV2.WithParts, text: string) {
 function scoped<T>(dir: string, fn: (prompt: SessionPrompt.Interface) => Promise<T>) {
   return Effect.runPromise(
     SessionPrompt.Service.use((prompt) => Effect.promise(() => fn(prompt))).pipe(
-      Effect.provide(SessionPrompt.defaultLayer),
+      Effect.provide(prompt),
       provideInstance(dir),
       Effect.provide(testInstanceStoreLayer),
       Effect.scoped,
@@ -315,7 +323,7 @@ describe("session prompt queue", () => {
     // scope() hides that marker, runLoop never processes the compaction task and
     // instead retries the same oversized request until compaction is exhausted.
     await using tmp = await tmpdir({ git: true })
-    await withInstanceProvide({
+    await provideTestInstance({
       directory: tmp.path,
       fn: async () => {
         const session = await sessions.create({ title: "Queued compaction regression" })
@@ -465,7 +473,7 @@ describe("session prompt queue", () => {
         },
       })
 
-      await withInstanceProvide({
+      await provideTestInstance({
         directory: tmp.path,
         fn: async () =>
           scoped(tmp.path, async (prompt) => {
@@ -547,7 +555,7 @@ describe("session prompt queue", () => {
     } finally {
       server.stop(true)
     }
-  })
+  }, 30_000)
 
   test("closes a queued-handoff turn as superseded, not interrupted", async () => {
     const ready = Promise.withResolvers<void>()
@@ -749,11 +757,15 @@ describe("session prompt queue", () => {
         },
       })
 
-      await withInstanceProvide({
+      await provideTestInstance({
         directory: tmp.path,
         fn: async () =>
           scoped(tmp.path, async (prompt) => {
             const session = await sessions.create({ title: "Queued cancel regression" })
+            const closed = Promise.withResolvers<KiloSession.CloseReason>()
+            const off = Bus.subscribe(KiloSession.Event.TurnClose, (event) => {
+              if (event.properties.sessionID === session.id) closed.resolve(event.properties.reason)
+            })
             const first = Effect.runPromise(
               prompt.prompt({
                 sessionID: session.id,
@@ -796,6 +808,7 @@ describe("session prompt queue", () => {
             // not leak as an unhandled rejection, but still require rejects to be
             // interrupt-shaped (not an unrelated provider/session failure).
             const settled = await Promise.allSettled([first, second, third])
+            expect(await closed.promise.finally(off)).toBe("interrupted")
             for (const r of settled) {
               if (r.status === "rejected") expect(String(r.reason)).toMatch(/interrupt/i)
             }
@@ -830,7 +843,7 @@ describe("session prompt queue", () => {
     const dismissed = Promise.withResolvers<void>()
     await using tmp = await tmpdir({ git: true })
 
-    await withInstanceProvide({
+    await provideTestInstance({
       directory: tmp.path,
       fn: async () =>
         scoped(tmp.path, async (prompt) => {
@@ -879,7 +892,7 @@ describe("session prompt queue", () => {
     // hasFollowup=true and reject synchronously, before any pending entry or
     // Shown event is published.
     await using tmp = await tmpdir({ git: true })
-    await withInstanceProvide({
+    await provideTestInstance({
       directory: tmp.path,
       fn: async () => {
         const sessionID = SessionID.make("ses_auto_suggestion")
@@ -1015,7 +1028,7 @@ describe("session prompt queue", () => {
     } finally {
       server.stop(true)
     }
-  }, 10_000)
+  }, 30_000)
 
   test("drop returns false for the actively running prompt", async () => {
     const sessionID = SessionID.make("session_drop_active")

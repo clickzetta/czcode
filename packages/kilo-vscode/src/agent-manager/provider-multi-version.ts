@@ -2,10 +2,16 @@ import { getErrorMessage } from "../kilo-provider-utils"
 import { PLATFORM } from "./constants"
 import type { ProjectContext } from "./project/context"
 import type { AgentManagerInMessage } from "./types"
-import { versionedName } from "./branch-name"
+import { sanitizeBranchName, versionedName } from "./branch-name"
 import { resolveVersionModels, buildInitialMessages, type CreatedVersion } from "./multi-version"
 import { ensureSandbox } from "./sandbox-bootstrap"
-import type { LifecycleHost } from "./provider-lifecycle"
+import { beginBoot, prepareSession, removeWorktreeSnapshot, type LifecycleHost } from "./provider-lifecycle"
+import { plan } from "./creation-plan"
+import { Timing } from "./creation-timing"
+import { Semaphore } from "./semaphore"
+import type { WorktreeCreationFailure } from "./worktree-create"
+
+const PROVISION_CONCURRENCY = 2
 
 /**
  * Multi-version creation needs the lifecycle capabilities plus three provider
@@ -19,8 +25,8 @@ export interface MultiVersionHost extends LifecycleHost {
 }
 
 /**
- * Create N worktrees with one session each (optionally one model per version),
- * then fan the initial prompt out to every created session. State is reached
+ * Create N worktrees, provision their sessions with bounded concurrency, then
+ * send each initial prompt as soon as that session is ready. State is reached
  * through the project context; everything else goes through the host.
  */
 export async function createMultiVersion(
@@ -34,7 +40,7 @@ export async function createMultiVersion(
   const agent = msg.agent
   const files = msg.files
   const baseBranch = msg.baseBranch
-  const branchName = msg.branchName?.trim() || undefined
+  const branchName = msg.branchName || undefined
 
   const fallback = msg.providerID && msg.modelID ? { providerID: msg.providerID, modelID: msg.modelID } : undefined
   const resolved = resolveVersionModels(msg.modelAllocations, fallback, Number(msg.versions) || 1)
@@ -50,34 +56,60 @@ export async function createMultiVersion(
   // Notify webview that multi-version creation has started
   host.post({
     type: "agentManager.multiVersionProgress",
+    projectId: ctx.id,
     status: "creating",
     total: versions,
     completed: 0,
     groupId,
   })
 
-  // Phase 1: Create all worktrees + sessions first
+  // Phase 1: finish every shared-repository Git mutation before setup scripts
+  // or agents can run their own Git commands in the new worktrees.
   const created: CreatedVersion[] = []
+  const failures: WorktreeCreationFailure[] = []
 
-  for (let i = 0; i < versions; i++) {
-    const version = await createVersion(ctx, host, {
-      index: i,
-      versions,
-      groupId,
-      baseBranch,
-      branchName,
-      worktreeName,
-      models,
-      providerID,
-      modelID,
-      sandbox: msg.sandbox,
-    })
-    if (!version) continue
-    created.push(version)
+  const specs = Array.from({ length: versions }, (_, index) => ({
+    index,
+    versions,
+    groupId,
+    baseBranch,
+    branchName,
+    worktreeName,
+    models,
+    providerID,
+    modelID,
+    sandbox: msg.sandbox,
+  }))
+  const prepared: PreparedVersion[] = []
+  for (const spec of specs) {
+    const version = await prepareVersion(host, spec, failures)
+    if (version) prepared.push(version)
+  }
 
-    // Update progress
+  // Phase 2: Git creation is complete, so independent setup/session pipelines
+  // can overlap without racing the shared worktree metadata mutation.
+  const provision = async (version: PreparedVersion) => {
+    const ready = await provisionVersion(ctx, host, version, (session) =>
+      sendInitialPrompt(
+        host,
+        ctx.id,
+        session,
+        models,
+        { providerID, modelID },
+        {
+          text,
+          agent,
+          variant: msg.variant,
+          files,
+        },
+      ),
+    )
+    if (!ready) return
+    created.push(ready)
+
     host.post({
       type: "agentManager.multiVersionProgress",
+      projectId: ctx.id,
       status: "creating",
       total: versions,
       completed: created.length,
@@ -85,12 +117,13 @@ export async function createMultiVersion(
     })
   }
 
-  // Phase 2: Send the initial prompt to all sessions, or clear busy state if no text.
-  await sendInitialPrompts(host, created, models, { providerID, modelID }, { text, agent, variant: msg.variant, files })
+  const gate = new Semaphore(PROVISION_CONCURRENCY)
+  await Promise.all(prepared.map((version) => gate.run(() => provision(version))))
 
   // Notify completion
   host.post({
     type: "agentManager.multiVersionProgress",
+    projectId: ctx.id,
     status: "done",
     total: versions,
     completed: created.length,
@@ -98,7 +131,8 @@ export async function createMultiVersion(
   })
 
   if (created.length === 0) {
-    host.error(`Failed to create any of the ${versions} multi-version worktrees.`)
+    const failure = failures.find((item) => item.code === "no_commits")
+    host.error(failure?.message ?? `Failed to create any of the ${versions} multi-version worktrees.`)
   }
 
   host.log(`Multi-version creation complete: ${created.length}/${versions} versions`)
@@ -118,34 +152,83 @@ interface VersionSpec {
   sandbox: boolean | undefined
 }
 
-/** Create one version's worktree + session and wire it into state and the webview. */
-async function createVersion(
-  ctx: ProjectContext,
+interface PreparedVersion {
+  spec: VersionSpec
+  wt: NonNullable<Awaited<ReturnType<MultiVersionHost["createOnDisk"]>>>
+}
+
+/** Create one version's worktree while the shared-repository Git barrier is active. */
+async function prepareVersion(
   host: MultiVersionHost,
   spec: VersionSpec,
-): Promise<CreatedVersion | null> {
+  failures: WorktreeCreationFailure[],
+): Promise<PreparedVersion | null> {
   host.log(`Creating worktree ${spec.index + 1}/${spec.versions}`)
 
   const version = versionedName(spec.branchName || spec.worktreeName, spec.index, spec.versions)
+  // Display names retain automatic slugging; explicit Git branches stay literal.
+  const branch = spec.branchName ? version.branch : sanitizeBranchName(version.branch ?? "") || undefined
   const wt = await host.createOnDisk({
     groupId: spec.groupId,
     baseBranch: spec.baseBranch,
-    branchName: version.branch,
+    branchName: branch,
     name: version.branch,
     label: version.label,
+    onError: (failure) => failures.push(failure),
   })
   if (!wt) {
     host.log(`Failed to create worktree for version ${spec.index + 1}`)
     return null
   }
+  return { spec, wt }
+}
 
-  await host.runSetup(wt.result.path, wt.result.branch, wt.worktree.id)
+/** Set up one prepared worktree, create its session, and expose it to the UI. */
+async function provisionVersion(
+  ctx: ProjectContext,
+  host: MultiVersionHost,
+  prepared: PreparedVersion,
+  initial: (created: CreatedVersion) => void,
+): Promise<CreatedVersion | null> {
+  const { spec, wt } = prepared
+  const timing = Timing.start(`create ${wt.result.branch} v${spec.index + 1}`, host.log)
 
-  const session = await host.createSession(wt.result.path, wt.result.branch, wt.worktree.id)
+  const provisioned = await prepareSession(
+    plan({ setupScript: host.hasScript() }),
+    async (early) => {
+      await host.runSetup(wt.result.path, wt.result.branch, wt.worktree.id, early)
+      timing.mark("setup")
+    },
+    () => {
+      const boot = beginBoot(() => host.metadata(host.client(), wt.result.path), timing)
+      return host.createSession(wt.result.path, wt.result.branch, wt.worktree.id, boot, timing)
+    },
+  )
+  const { session, ready, done } = provisioned
   if (!session) {
-    ctx.peekState()?.removeWorktree(wt.worktree.id)
-    await ctx.worktreeManager().removeWorktree(wt.result.path)
+    await done
+    let releasePtyCleanup: () => void
+    try {
+      releasePtyCleanup = await host.acquirePtyCleanup(wt.result.path)
+    } catch (error) {
+      host.log("Failed to remove worktree PTYs:", error)
+      timing.mark("cleanup")
+      timing.end()
+      return null
+    }
+    try {
+      await ctx.worktreeManager().removeWorktree(wt.result.path, wt.result.branch)
+      await removeWorktreeSnapshot(host, ctx.root, wt.result.path)
+      ctx.peekState()?.removeWorktree(wt.worktree.id)
+      host.push()
+    } catch (error) {
+      host.log("Failed to remove worktree after session creation failed:", error)
+    } finally {
+      releasePtyCleanup()
+    }
     host.log(`Failed to create session for version ${spec.index + 1}`)
+    timing.mark("cleanup")
+    timing.end()
     return null
   }
 
@@ -154,14 +237,21 @@ async function createVersion(
   if (!spec.branchName && !spec.worktreeName && host.autoName().enabled) {
     state.armAutoName(wt.worktree.id, session.id)
   }
+  timing.mark("state")
 
   // Sandbox must match the user's choice before this session is exposed or
   // receives its initial prompt. A failed reconciliation aborts this version.
-  if (spec.sandbox !== undefined && !(await reconcileSandbox(host, spec, wt, session.id))) return null
+  if (spec.sandbox !== undefined && !(await reconcileSandbox(host, spec, wt, session.id))) {
+    await done
+    timing.mark("cleanup")
+    timing.end()
+    return null
+  }
 
   host.register(session.id, wt.result.path)
   host.notifyReady(session.id, wt.result, wt.worktree.id)
   host.sessions.register(session)
+  timing.mark("ready")
 
   // Set the per-version model immediately so the UI selector reflects
   // the correct model as soon as the worktree appears, before Phase 2.
@@ -172,12 +262,28 @@ async function createVersion(
   if (earlyProviderID && earlyModelID) {
     host.post({
       type: "agentManager.setSessionModel",
+      projectId: ctx.id,
       sessionId: session.id,
       providerID: earlyProviderID,
       modelID: earlyModelID,
     })
   }
 
+  const result: CreatedVersion = {
+    worktreeId: wt.worktree.id,
+    sessionId: session.id,
+    path: wt.result.path,
+    branch: wt.result.branch,
+    parentBranch: wt.result.parentBranch,
+    versionIndex: spec.index,
+  }
+  await ready
+  try {
+    initial(result)
+  } finally {
+    await done
+  }
+  const span = timing.end()
   host.capture("Agent Manager Session Started", {
     source: PLATFORM,
     sessionId: session.id,
@@ -187,17 +293,12 @@ async function createVersion(
     version: spec.index + 1,
     totalVersions: spec.versions,
     groupId: spec.groupId,
+    durationMs: span.total,
+    ...span.phases,
   })
   host.log(`Version ${spec.index + 1} worktree ready: session=${session.id}`)
 
-  return {
-    worktreeId: wt.worktree.id,
-    sessionId: session.id,
-    path: wt.result.path,
-    branch: wt.result.branch,
-    parentBranch: wt.result.parentBranch,
-    versionIndex: spec.index,
-  }
+  return result
 }
 
 /** Reconcile the sandbox preference for one version; rolls the worktree back on failure. */
@@ -229,10 +330,11 @@ async function reconcileSandbox(
   }
 }
 
-/** Fan the initial prompt out to every created session, throttled between sends. */
-async function sendInitialPrompts(
+/** Send one version's initial prompt as soon as its session is ready. */
+function sendInitialPrompt(
   host: MultiVersionHost,
-  created: CreatedVersion[],
+  projectId: string,
+  created: CreatedVersion,
   models: VersionSpec["models"],
   resolved: { providerID: string | undefined; modelID: string | undefined },
   input: {
@@ -241,22 +343,16 @@ async function sendInitialPrompts(
     variant: string | undefined
     files: Extract<AgentManagerInMessage, { type: "agentManager.createMultiVersion" }>["files"]
   },
-): Promise<void> {
-  const messages = buildInitialMessages(created, models, resolved, input.text, input.agent, input.variant, input.files)
-  for (let i = 0; i < messages.length; i++) {
-    const msg = messages[i]!
-    if (input.text) {
-      host.log(`Sending initial message to version ${i + 1} (session=${msg.sessionId})`)
-      host.promptName({
-        sessionID: msg.sessionId,
-        text: input.text,
-        providerID: msg.providerID,
-        modelID: msg.modelID,
-      })
-    }
-    host.post({ type: "agentManager.sendInitialMessage", ...msg })
-    if (input.text && i < messages.length - 1) {
-      await new Promise((resolve) => setTimeout(resolve, 300))
-    }
+): void {
+  const msg = buildInitialMessages([created], models, resolved, input.text, input.agent, input.variant, input.files)[0]!
+  if (input.text) {
+    host.log(`Sending initial message to version ${created.versionIndex + 1} (session=${msg.sessionId})`)
+    host.promptName({
+      sessionID: msg.sessionId,
+      text: input.text,
+      providerID: msg.providerID,
+      modelID: msg.modelID,
+    })
   }
+  host.post({ type: "agentManager.sendInitialMessage", projectId, ...msg })
 }

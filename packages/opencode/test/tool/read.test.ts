@@ -1,5 +1,6 @@
 import { PermissionV1 } from "@opencode-ai/core/v1/permission"
 import { afterEach, describe, expect } from "bun:test"
+import { LayerNode } from "@opencode-ai/core/effect/layer-node"
 import { Cause, Effect, Exit, Layer, Stream } from "effect"
 import path from "path"
 import { Agent } from "../../src/agent/agent"
@@ -36,7 +37,7 @@ const ctx = {
   sessionID: SessionID.make("ses_test"),
   messageID: MessageID.make("msg_test"),
   callID: "",
-  agent: "code",
+  agent: "code", // kilocode_change
   abort: AbortSignal.any([]),
   messages: [],
   metadata: () => Effect.void,
@@ -44,14 +45,16 @@ const ctx = {
 }
 
 const readLayer = (flags: Partial<RuntimeFlags.Info> = {}) =>
-  Layer.mergeAll(
-    Agent.defaultLayer,
-    FSUtil.defaultLayer,
-    CrossSpawnSpawner.defaultLayer,
-    Instruction.defaultLayer,
-    LSP.defaultLayer,
-    Ripgrep.defaultLayer,
-    Truncate.defaultLayer,
+  LayerNode.compile(
+    LayerNode.group([
+      Agent.node,
+      FSUtil.node,
+      CrossSpawnSpawner.node,
+      Instruction.node,
+      LSP.node,
+      Ripgrep.node,
+      Truncate.node,
+    ]),
   )
 
 const it = testEffect(Layer.mergeAll(readLayer(), testInstanceStoreLayer))
@@ -267,7 +270,9 @@ describe("tool.read env file permissions", () => {
     ["environment.ts", false],
   ]
 
+  // kilocode_change start - renamed from "build" to "code"
   for (const agentName of ["code", "plan"] as const) {
+    // kilocode_change end
     describe(`agent=${agentName}`, () => {
       for (const [filename, shouldAsk] of cases) {
         it.live(`${filename} asks=${shouldAsk}`, () =>

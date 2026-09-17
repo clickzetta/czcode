@@ -1,7 +1,6 @@
 #!/usr/bin/env bun
 /**
  * Configuration for upstream merge automation
- * czcode_change: upstream is Kilo-Org/kilocode (not anomalyco/opencode)
  */
 
 export interface PackageMapping {
@@ -71,8 +70,6 @@ export const defaultConfig: MergeConfig = {
     "PRIVACY.md",
     "SECURITY.md",
     "AGENTS.md",
-    // czcode_change: CLAUDE.md is czcode-specific, never take upstream version
-    "CLAUDE.md",
     // GitHub workflows - MANUAL REVIEW (can break CI/CD)
     ".github/workflows/publish.yml",
     ".github/workflows/close-stale-prs.yml",
@@ -124,8 +121,6 @@ export const defaultConfig: MergeConfig = {
     ".github/workflows/deploy.yml",
     ".github/workflows/docs-update.yml",
     ".github/workflows/docs-locale-sync.yml",
-    // czcode_change: czcode watches kilocode releases, not opencode directly
-    ".github/workflows/watch-opencode-releases.yml",
     // Workflows deleted in Kilo (replaced or no longer needed)
     ".github/workflows/close-prs.yml",
     ".github/workflows/opencode.yml",
@@ -140,8 +135,14 @@ export const defaultConfig: MergeConfig = {
     "nix/opencode.nix",
     // opencode CLI bin (Kilo uses its own build output)
     "packages/opencode/bin/opencode",
+    // Kilo does not ship upstream's embedded web UI command.
+    "packages/opencode/src/cli/cmd/web.ts",
     // Removed prompt file
     "packages/opencode/src/session/prompt/build-switch.txt",
+    // Upstream app translation automation targets products and binaries Kilo does not ship
+    "script/translate-app.ts",
+    "script/translate-app.test.ts",
+    "script/translate-app.md",
     // Vouch files (Kilo doesn't use Vouch).
     // Upstream currently ships VOUCHED.td (typo extension). The glob covers both
     // the current .td file and any future .md rename without another merge breaking.
@@ -174,15 +175,13 @@ export const defaultConfig: MergeConfig = {
     "github/bun.lock",
     "github/sst-env.d.ts",
     "github/.gitignore",
-    // czcode_change: VSCode visual-regression screenshots (Git LFS objects). czcode
-    // does not run VSCode visual regression tests, and these LFS blobs live only in
-    // upstream's LFS store — pulling them into czcode fails push with GH008. Skip them.
-    "packages/kilo-docs/public/img/screenshot-tests/**",
   ],
 
   // Files that should take upstream version and apply Kilo branding transforms
   // These are files with only branding differences, no logic changes
   takeTheirsAndTransform: [
+    // Model-facing prompts that need Kilo product identity and documentation links
+    "packages/opencode/src/session/prompt/meta.txt",
     // UI components
     "packages/ui/src/components/**/*.tsx",
     "packages/ui/src/context/**/*.tsx",
@@ -213,7 +212,6 @@ export const defaultConfig: MergeConfig = {
     "nix/hashes.json",
   ],
 
-  // czcode_change start - kiloDirectories: preserve czcode-specific packages
   kiloDirectories: [
     "packages/opencode/src/kilocode",
     "packages/opencode/test/kilocode",
@@ -224,10 +222,8 @@ export const defaultConfig: MergeConfig = {
     "packages/kilo-ui",
     "packages/kilo-docs",
     "packages/kilo-i18n",
-    "packages/czcode-lakehouse",
     "script/upstream",
   ],
-  // czcode_change end
 
   excludePatterns: [
     "**/node_modules/**",

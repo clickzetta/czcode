@@ -1,20 +1,24 @@
+import { LayerNode } from "@opencode-ai/core/effect/layer-node"
 import { describe, expect, test } from "bun:test"
-import { Effect, Layer, ManagedRuntime } from "effect"
+import { Effect, ManagedRuntime } from "effect"
 import path from "path"
 import { Agent } from "../../src/agent/agent"
 import { PlanFile } from "../../src/kilocode/plan-file"
 import { Instance } from "../../src/kilocode/instance"
-import { provide as withInstanceProvide } from "../../src/kilocode/instance"
+import { provideTestInstance } from "../fixture/fixture"
 import { Session } from "../../src/session/session"
 import { MessageID, PartID } from "../../src/session/schema"
 import { ProviderV2 } from "@opencode-ai/core/provider"
 import { ModelV2 } from "@opencode-ai/core/model"
+import { SessionProjector } from "@opencode-ai/core/session/projector"
 import { PlanExitTool } from "../../src/tool/plan"
 import { Tool } from "../../src/tool/tool"
 import { Truncate } from "../../src/tool/truncate"
-import { provideTestInstance, tmpdir } from "../fixture/fixture"
+import { tmpdir } from "../fixture/fixture"
 
-const rt = ManagedRuntime.make(Layer.mergeAll(Agent.defaultLayer, Session.defaultLayer, Truncate.defaultLayer))
+const rt = ManagedRuntime.make(
+  LayerNode.compile(LayerNode.group([Agent.node, Session.node, SessionProjector.node, Truncate.node])),
+)
 
 async function init() {
   return rt.runPromise(
@@ -28,7 +32,7 @@ async function init() {
 describe("PlanFile", () => {
   test("plan_exit accepts custom paths from plan agent", async () => {
     await using tmp = await tmpdir({ git: true })
-    await withInstanceProvide({
+    await provideTestInstance({
       directory: tmp.path,
       fn: async () => {
         const session = await rt.runPromise(Session.Service.use((svc) => svc.create({})))
@@ -430,7 +434,7 @@ describe("PlanFile", () => {
 
   test("rejects custom plan paths outside the worktree", async () => {
     await using tmp = await tmpdir({ git: true })
-    await withInstanceProvide({
+    await provideTestInstance({
       directory: tmp.path,
       fn: async () => {
         expect(PlanFile.resolve("../../etc/shadow", Instance.current)).toBeUndefined()

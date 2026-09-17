@@ -41,6 +41,7 @@ process.env["KILO_MODELS_PATH"] = path.join(import.meta.dir, "tool", "fixtures",
 process.env["KILO_EXPERIMENTAL_EVENT_SYSTEM"] = "true"
 process.env["KILO_EXPERIMENTAL_WORKSPACES"] = "true"
 process.env["KILO_EXPERIMENTAL_DISABLE_FILEWATCHER"] ??= "true" // kilocode_change - see test.yml: per-instance watchers are too heavy/racy for unit tests; watcher tests opt back in
+process.env["KILO_SNAPSHOT_MATERIALIZE_IDLE_MS"] ??= "0" // kilocode_change - snapshot tests wait for materialization; the idle deferral test opts back in
 
 // Set test home directory to isolate tests from user's actual home directory
 // This prevents tests from picking up real user configs/skills from ~/.claude/skills
@@ -96,3 +97,22 @@ const { installMemoryRuntime } = await import("../src/kilocode/memory/runtime") 
 
 initProjectors()
 installMemoryRuntime() // kilocode_change
+
+// kilocode_change start - fail closed: unit tests must never open a disk database. Both DB
+// path resolvers (core Database.path and the v1 client in src/storage/db.ts) honor KILO_DB
+// verbatim when it is ":memory:", so asserting the resolved core path after all preload
+// imports catches env mutations, import-order regressions, and channel/absolute fallbacks
+// that would silently point tests at the real database under ~/.local/share/kilo.
+// (Do not name the database file here: database-reset-safety.test.ts scans test sources
+// for the file name next to removal calls, and this file legitimately contains fs.rm.)
+if (process.env["KILO_DB"] !== ":memory:") {
+  throw new Error(`unit test preload: KILO_DB must be ":memory:", got "${process.env["KILO_DB"]}"`)
+}
+{
+  const { Database } = await import("@opencode-ai/core/database/database")
+  const resolved = Database.path()
+  if (resolved !== ":memory:") {
+    throw new Error(`unit test preload: database path must resolve to ":memory:", got "${resolved}"`)
+  }
+}
+// kilocode_change end

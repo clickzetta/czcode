@@ -4,7 +4,6 @@ import ai.kilocode.client.session.model.Tool
 import ai.kilocode.client.session.model.ToolExecState
 import ai.kilocode.client.session.model.toolKind
 import ai.kilocode.client.session.ui.style.SessionUiStyle
-import ai.kilocode.client.session.views.base.SecondarySessionPartView
 import ai.kilocode.client.session.views.tool.EditToolView
 import ai.kilocode.client.session.views.tool.ReadToolView
 import ai.kilocode.client.session.views.tool.ToolView
@@ -14,7 +13,10 @@ import com.intellij.openapi.diff.DiffColors
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.util.Disposer
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.intellij.ui.EditorTextField
+import com.intellij.ui.HyperlinkLabel
 import com.intellij.ui.components.JBLabel
+import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import kotlinx.serialization.json.addJsonObject
@@ -24,6 +26,7 @@ import kotlinx.serialization.json.put
 import java.awt.Component
 import java.awt.Container
 import java.awt.event.MouseEvent
+import java.awt.image.BufferedImage
 import javax.swing.AbstractButton
 
 @Suppress("UnstableApiUsage")
@@ -40,9 +43,7 @@ class EditToolViewTest : BasePlatformTestCase() {
     fun `test edit tool shows Edit title and clickable file link`() {
         val opened = mutableListOf<String>()
         val view = track(EditToolView(tool(), openFile = { href, _ -> opened.add(href) }))
-        val base: Any = view
 
-        assertTrue(base is SecondarySessionPartView)
         assertTrue(view.labelText().contains("Edit"))
         assertTrue(view.linkVisible())
         assertEquals("App.kt", view.linkLabel())
@@ -127,6 +128,7 @@ class EditToolViewTest : BasePlatformTestCase() {
 
         // The per-file header renders one changes badge per file (plus the aggregate header badge).
         assertEquals(3, badges(view).size)
+        diffScrolls(view).forEach(::assertFullWidthRoundedDiff)
 
         click(fileLinks.first { it.text!!.contains("A.kt") }, 1)
         assertEquals(listOf("src/A.kt"), opened)
@@ -212,6 +214,7 @@ class EditToolViewTest : BasePlatformTestCase() {
         assertTrue(view.codeEditors().single().text.contains("new1"))
         assertFalse(view.codeEditors().single().text.contains("+new1"))
         assertFalse(view.codeEditors().single().text.contains("-old"))
+        assertFullWidthRoundedDiff(diffScrolls(view).single())
     }
 
     fun `test edit body strips patch metadata headers`() {
@@ -372,6 +375,59 @@ class EditToolViewTest : BasePlatformTestCase() {
         assertNull(view.headerPopup())
     }
 
+    fun `test large single-file edit shows overflow placeholder instead of editors`() {
+        val fired = mutableListOf<List<DiffFileDto>>()
+        val view = track(EditToolView(tool().also {
+            it.metadata = mapOf("filediff" to fileDiff(2100, 0, bigPatch(2100)))
+        }))
+        view.setDiffOpener({ files, _, _ -> fired.add(files) }, "ses")
+
+        view.toggle()
+
+        assertTrue(view.isExpanded())
+        // The large diff is not rendered as an embedded editor; a placeholder link opens the diff tab.
+        assertTrue(view.codeEditors().isEmpty())
+        hyperlinks(view).single().doClick()
+        assertEquals(1, fired.single().size)
+        // Copy still yields the full diff even though it is not previewed inline.
+        assertTrue(view.markdown().contains("+line0"))
+    }
+
+    fun `test large single-file edit popup defers to the diff tab`() {
+        val fired = mutableListOf<List<DiffFileDto>>()
+        val view = track(EditToolView(tool().also {
+            it.metadata = mapOf("filediff" to fileDiff(2100, 0, bigPatch(2100)))
+        }, { _, _ -> }, null, { files, _, _ -> fired.add(files) }, "ses"))
+        val body = view.headerPopup()!!.build()
+
+        try {
+            assertTrue(editors(body.component).isEmpty())
+            hyperlinks(body.component).single().doClick()
+            assertEquals(1, fired.single().size)
+        } finally {
+            Disposer.dispose(body.disposable)
+        }
+    }
+
+    fun `test large multi-file patch shows overflow placeholder instead of editors`() {
+        val fired = mutableListOf<List<DiffFileDto>>()
+        val view = track(EditToolView(tool().also {
+            it.input = emptyMap()
+            it.metadata = mapOf("files" to filesMeta(
+                FileChange("src/A.kt", 1100, 0, bigHunk(1100)),
+                FileChange("src/B.kt", 1100, 0, bigHunk(1100)),
+            ))
+        }))
+        view.setDiffOpener({ files, _, _ -> fired.add(files) }, "ses")
+
+        view.toggle()
+
+        assertTrue(view.isExpanded())
+        assertTrue(view.codeEditors().isEmpty())
+        hyperlinks(view).single().doClick()
+        assertEquals(2, fired.single().size)
+    }
+
     fun `test view factory routes write tools to edit tool view`() {
         assertTrue(ViewFactory.create(tool(), openFile = { _, _ -> }) is EditToolView)
         assertTrue(ViewFactory.create(write("write"), openFile = { _, _ -> }) is EditToolView)
@@ -448,6 +504,54 @@ class EditToolViewTest : BasePlatformTestCase() {
     private fun badges(root: Container): List<DiffStatBadge> = root.components.flatMap { child ->
         val nested = if (child is Container) badges(child) else emptyList()
         if (child is DiffStatBadge) nested + child else nested
+    }
+
+    private fun hyperlinks(root: Container): List<HyperlinkLabel> = root.components.flatMap { child ->
+        val nested = if (child is Container) hyperlinks(child) else emptyList()
+        if (child is HyperlinkLabel) nested + child else nested
+    }
+
+    private fun editors(root: Container): List<EditorTextField> = root.components.flatMap { child ->
+        val nested = if (child is Container) editors(child) else emptyList()
+        if (child is EditorTextField) nested + child else nested
+    }
+
+    private fun diffScrolls(root: Container): List<JBScrollPane> = root.components.flatMap { child ->
+        val nested = if (child is Container) diffScrolls(child) else emptyList()
+        if (child is JBScrollPane && child.viewport.view is EditorTextField) nested + child else nested
+    }
+
+    private fun assertFullWidthRoundedDiff(pane: JBScrollPane) {
+        val border = pane.border.getBorderInsets(pane)
+        val viewport = pane.viewportBorder.getBorderInsets(pane)
+        assertEquals(0, border.top)
+        assertEquals(0, border.left)
+        assertEquals(0, border.bottom)
+        assertEquals(0, border.right)
+        assertEquals(0, viewport.left)
+        assertEquals(0, viewport.right)
+        assertFalse("diff pane paints its own rounded background", pane.isOpaque)
+
+        pane.setSize(40, 40)
+        val image = BufferedImage(40, 40, BufferedImage.TYPE_INT_ARGB)
+        val graphics = image.createGraphics()
+        pane.paint(graphics)
+        graphics.dispose()
+        assertEquals("rounded corner lets the backdrop show", 0, image.getRGB(0, 0) ushr 24)
+        assertEquals(SessionUiStyle.Colors.codeBlockBackground().rgb, image.getRGB(20, 20))
+    }
+
+    // Patches whose line count clears SessionUiStyle.View.Tool.DIFF_MAX_LINES so the body overflows.
+    private fun bigPatch(lines: Int): String = buildString {
+        append("--- src/App.kt\n")
+        append("+++ src/App.kt\n")
+        append("@@ -0,0 +1,").append(lines).append(" @@\n")
+        repeat(lines) { append("+line").append(it).append('\n') }
+    }
+
+    private fun bigHunk(lines: Int): String = buildString {
+        append("@@ -0,0 +1,").append(lines).append(" @@\n")
+        repeat(lines) { append("+x").append(it).append('\n') }
     }
 
     private fun openDiffButton(view: EditToolView): AbstractButton =

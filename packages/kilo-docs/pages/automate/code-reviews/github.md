@@ -39,7 +39,6 @@ The GitHub App requests the following permissions:
    - **Review Style** — Strict, Balanced, or Lenient
    - **Repository Selection** — All repositories or select specific ones
    - **Focus Areas** — Security, performance, bugs, style, testing, documentation
-   - **Max Review Time** — 5 to 30 minutes
    - **Use REVIEW.md** — Load repository-specific review guidance, including sub-agent usage, from the base branch
 4. Click **Save Configuration**
 
@@ -80,20 +79,25 @@ When a review triggers:
 
 The repository list is synced from GitHub and can be refreshed from the configuration page.
 
+### Per-repository overrides
+
+Turn automated reviews on or off for an individual repository to override the installation default. For example, disable a noisy repository or enable one repository while the default is off. Repositories with reviews disabled do not start automated reviews for incoming pull requests.
+
 ## Troubleshooting
 
 ### Reviews are not triggering
 
 1. Verify the GitHub App is installed and has access to the repository
-2. Check that the Review Agent is **enabled** in the Code Reviews configuration
+2. Check that reviews are enabled by the installation default or a per-repository override
 3. Ensure the repository is in the allowed list (if using "Selected repositories" mode)
-4. Confirm the PR is not a draft
+4. Check that a per-repository override has not disabled reviews
+5. Confirm the PR is not a draft
 
 ### Reviews are failing
 
 - Check the Code Reviews page for error details on specific reviews
 - Ensure you have sufficient Kilo Code credits
-- Very large PRs may time out — try increasing the max review time
+- Very large PRs may time out — consider splitting the change into smaller PRs
 
 ### The GitHub App is missing permissions
 

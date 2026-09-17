@@ -1,9 +1,258 @@
 const esbuild = require("esbuild")
+const os = require("os")
 const path = require("path")
-const { solidPlugin } = require("esbuild-plugin-solid")
+const fs = require("fs")
+const crypto = require("crypto")
+const core = require("@babel/core")
+const solid = require("babel-preset-solid")
+const ts = require("@babel/preset-typescript")
+const playwright = require("./script/playwright-runtime")
 
 const production = process.argv.includes("--production")
 const watch = process.argv.includes("--watch")
+
+/**
+ * Cache transformed Solid JSX files in memory and on disk to avoid
+ * re-parsing and re-transforming unchanged files across builds and webviews.
+ *
+ * Entries are content addressed and live in the OS temp dir, so every git
+ * worktree of this repo shares one cache and a fresh Agent Manager worktree
+ * starts warm instead of re-transforming every JSX file on its first build.
+ * A small per-worktree index maps a path to the entry recorded for it, so an
+ * unchanged file costs one stat instead of a read and a hash. See the notes
+ * on the index below.
+ */
+const solidCacheDir = path.join(os.tmpdir(), `kilo-vscode-esbuild-solid-${process.getuid?.() ?? "user"}`)
+const solidMemCache = new Map()
+
+// Cache entries are read by the bundler, so they are only used when the
+// current user owns a directory that other users cannot write to, reached
+// without following a link. os.tmpdir() is world writable on Linux, where
+// another local user could pre-create this path, as a directory to poison or
+// as a symlink that redirects the chmod and the sweep into another
+// directory. An untrusted path falls back to memory only.
+const diskCache = (() => {
+  try {
+    fs.mkdirSync(solidCacheDir, { recursive: true, mode: 0o700 })
+    // lstat, not stat: stat follows a symlink and would inspect the target.
+    const st = fs.lstatSync(solidCacheDir)
+    if (st.isSymbolicLink() || !st.isDirectory()) {
+      throw new Error("cache path is not a real directory")
+    }
+    if (typeof process.getuid === "function" && st.uid !== process.getuid()) {
+      throw new Error(`directory is owned by uid ${st.uid}`)
+    }
+    const temp = fs.realpathSync(os.tmpdir())
+    if (fs.realpathSync(solidCacheDir) !== path.join(temp, path.basename(solidCacheDir))) {
+      throw new Error("cache path escapes the temp dir")
+    }
+    // mkdir does not change the mode of an existing directory.
+    if (process.platform !== "win32" && (st.mode & 0o077) !== 0) {
+      fs.chmodSync(solidCacheDir, 0o700)
+    }
+    return true
+  } catch (err) {
+    console.warn("[esbuild] ignoring unusable solid cache directory, using memory cache only", err)
+    return false
+  }
+})()
+
+// Reclaim disk cache files that are no longer useful: temp files left behind
+// by a build killed between writing and renaming, and entries old enough to
+// be considered superseded. Entries are content addressed and recomputed on
+// a miss, so removing them is always safe. One unreadable file must not
+// abort the sweep. This runs at most once a day: the directory is shared by
+// every worktree and retains entries for 30 days, so sweeping on every build
+// would charge every build for a directory that keeps growing.
+if (diskCache) {
+  const stamp = path.join(solidCacheDir, ".sweep")
+  const period = 24 * 60 * 60 * 1000
+  const due = (() => {
+    try {
+      return Date.now() - fs.statSync(stamp).mtimeMs > period
+    } catch (err) {
+      if (err.code !== "ENOENT") console.warn("[esbuild] could not read the sweep stamp", err)
+      return true
+    }
+  })()
+
+  if (due) {
+    const now = Date.now()
+    const age = { ".tmp": 60 * 60 * 1000, ".js": 30 * 24 * 60 * 60 * 1000, ".json": 30 * 24 * 60 * 60 * 1000 }
+    const sweep = (file) => {
+      const limit = age[path.extname(file)]
+      if (limit === undefined) return
+      const full = path.join(solidCacheDir, file)
+      try {
+        if (now - fs.statSync(full).mtimeMs > limit) fs.rmSync(full, { force: true })
+      } catch (err) {
+        console.warn("[esbuild] could not reclaim a solid cache file", full, err)
+      }
+    }
+
+    try {
+      fs.readdirSync(solidCacheDir).forEach(sweep)
+      fs.writeFileSync(stamp, "")
+    } catch (err) {
+      console.warn("[esbuild] could not sweep the solid cache directory", err)
+    }
+  }
+}
+
+// Deriving a content-addressed key needs the source text, but reading every
+// file on every build is wasteful. Remember the key recorded for a path while
+// its size and mtime are unchanged, the same trust a size-and-mtime cache
+// uses, and keep the index per worktree so worktrees never contend on it.
+// The entry a key points at is still content addressed, so sharing one cache
+// between worktrees stays exact.
+const indexPath = path.join(
+  solidCacheDir,
+  `index-${crypto.createHash("sha256").update(__dirname).digest("hex").slice(0, 16)}.json`,
+)
+const index = new Map()
+
+if (diskCache) {
+  try {
+    const saved = JSON.parse(fs.readFileSync(indexPath, "utf8"))
+    for (const [file, value] of Object.entries(saved ?? {})) {
+      if (!value || typeof value !== "object") continue
+      if (typeof value.mtime !== "number" || typeof value.size !== "number") continue
+      if (typeof value.ctime !== "number" || typeof value.key !== "string") continue
+      index.set(file, { mtime: value.mtime, size: value.size, ctime: value.ctime, key: value.key })
+    }
+  } catch (err) {
+    if (err.code !== "ENOENT") console.warn("[esbuild] ignoring unusable solid cache index", err)
+  }
+}
+
+// The index persists between builds: it is seeded from the previous run and
+// topped up with the keys this run recorded. Entries whose file no longer
+// exists are dropped on save, so renames and deletions do not accumulate.
+function saveIndex() {
+  if (!diskCache || index.size === 0) return
+  for (const file of index.keys()) {
+    if (!fs.existsSync(file)) index.delete(file)
+  }
+  const tmp = `${indexPath}.${process.pid}.tmp`
+  try {
+    fs.writeFileSync(tmp, JSON.stringify(Object.fromEntries(index)))
+    fs.renameSync(tmp, indexPath)
+  } catch (err) {
+    fs.rmSync(tmp, { force: true })
+    console.warn("[esbuild] could not save the solid cache index", err)
+  }
+}
+
+process.on("exit", saveIndex)
+
+// Version of a package as resolved from another package's directory, so the
+// cache key follows the transitive dependency that does the actual transform.
+function version(name, from) {
+  const dir = path.dirname(require.resolve(`${from}/package.json`))
+  try {
+    return require(require.resolve(`${name}/package.json`, { paths: [dir] })).version || ""
+  } catch (err) {
+    console.warn(`[esbuild] could not resolve ${name} from ${from}`, err)
+    return ""
+  }
+}
+
+const buildScriptHash = crypto
+  .createHash("sha256")
+  .update(fs.readFileSync(__filename, "utf8"))
+  .update(require("@babel/core/package.json").version || "")
+  .update(require("babel-preset-solid/package.json").version || "")
+  .update(version("babel-plugin-jsx-dom-expressions", "babel-preset-solid"))
+  .update(require("@babel/preset-typescript/package.json").version || "")
+  .update(version("@babel/plugin-transform-typescript", "@babel/preset-typescript"))
+  .digest("hex")
+  .slice(0, 8)
+
+// Content key for one source file. The transform output depends only on the
+// file name (for the inline source map), the source text, and the toolchain.
+function key(source, file) {
+  const { name, ext } = path.parse(file)
+  return crypto
+    .createHash("sha256")
+    .update(name + ext)
+    .update("\0")
+    .update(source)
+    .update("\0")
+    .update(buildScriptHash)
+    .digest("hex")
+}
+
+const cachedSolidPlugin = {
+  name: "esbuild:solid-cached",
+  setup(build) {
+    build.onLoad({ filter: /\.(t|j)sx$/ }, async (args) => {
+      const st = fs.statSync(args.path)
+      const recorded = index.get(args.path)
+      // Trust a recorded key only when the file is older than the coarsest
+      // filesystem mtime granularity and its metadata has not moved since the
+      // key was recorded. ctime changes on every write and cannot be set by
+      // tools that preserve mtime, such as cp -p or rsync -t, so a restored
+      // file is read again. Anything not trusted is hashed as before.
+      const settled = Date.now() - st.mtimeMs > 3000
+      const known =
+        settled &&
+        recorded !== undefined &&
+        recorded.mtime === st.mtimeMs &&
+        recorded.ctime === st.ctimeMs &&
+        recorded.size === st.size
+      // Read the file only when its key is not already recorded, so an
+      // unchanged file costs one stat instead of a read and a hash.
+      const source = known ? undefined : fs.readFileSync(args.path, "utf8")
+      const cacheKey = known ? recorded.key : key(source, args.path)
+      if (!known) index.set(args.path, { mtime: st.mtimeMs, size: st.size, ctime: st.ctimeMs, key: cacheKey })
+
+      const memHit = solidMemCache.get(cacheKey)
+      if (memHit) return { contents: memHit, loader: "js" }
+
+      const diskPath = path.join(solidCacheDir, cacheKey + ".js")
+
+      if (diskCache && fs.existsSync(diskPath)) {
+        try {
+          const diskCode = fs.readFileSync(diskPath, "utf8")
+          solidMemCache.set(cacheKey, diskCode)
+          return { contents: diskCode, loader: "js" }
+        } catch (err) {
+          console.warn("[esbuild] cache read failed, rebuilding", diskPath, err)
+        }
+      }
+
+      const result = await core.transformAsync(source ?? fs.readFileSync(args.path, "utf8"), {
+        presets: [
+          [solid, {}],
+          [ts, {}],
+        ],
+        filename: path.basename(args.path),
+        sourceMaps: "inline",
+      })
+
+      if (result?.code === void 0 || result.code === null) {
+        throw new Error("No result was provided from Babel")
+      }
+
+      if (solidMemCache.size > 2000) solidMemCache.clear()
+      solidMemCache.set(cacheKey, result.code)
+      if (diskCache) {
+        // Write through a temp file and rename so a concurrent build in
+        // another worktree never reads a partially written entry.
+        const tmp = `${diskPath}.${process.pid}.${crypto.randomUUID()}.tmp`
+        try {
+          fs.writeFileSync(tmp, result.code)
+          fs.renameSync(tmp, diskPath)
+        } catch (err) {
+          fs.rmSync(tmp, { force: true })
+          console.warn("[esbuild] cache write failed", diskPath, err)
+        }
+      }
+
+      return { contents: result.code, loader: "js" }
+    })
+  },
+}
 
 /**
  * Force all solid-js imports (from kilo-ui and the webview) to resolve to
@@ -123,7 +372,7 @@ const svgSpritePlugin = {
   name: "svg-sprite-inline",
   setup(build) {
     build.onLoad({ filter: /sprite\.svg$/ }, (args) => {
-      const content = require("fs").readFileSync(args.path, "utf8")
+      const content = fs.readFileSync(args.path, "utf8")
       return {
         contents: `
           const svg = ${JSON.stringify(content)};
@@ -160,69 +409,8 @@ const cssPackageResolvePlugin = {
   },
 }
 
-function createBrowserWebviewContext(entryPoint, outfile) {
-  return esbuild.context({
-    entryPoints: [entryPoint],
-    bundle: true,
-    format: "iife",
-    minify: production,
-    sourcemap: !production,
-    sourcesContent: false,
-    platform: "browser",
-    outfile,
-    logLevel: "silent",
-    loader: {
-      ".woff": "file",
-      ".woff2": "file",
-      ".ttf": "file",
-    },
-    plugins: [
-      solidDedupePlugin,
-      pierreWorkerAliasPlugin,
-      markdownWorkerUrlPlugin,
-      svgSpritePlugin,
-      cssPackageResolvePlugin,
-      solidPlugin(),
-      esbuildProblemMatcherPlugin,
-    ],
-  })
-}
-
-// Bundle Pierre's Shiki worker into a single self-contained asset that the
-// webviews load off the main thread for syntax highlighting.
-function createShikiWorkerContext() {
-  return esbuild.context({
-    entryPoints: ["kilo-shiki-worker"],
-    bundle: true,
-    format: "iife",
-    minify: production,
-    sourcemap: !production,
-    sourcesContent: false,
-    platform: "browser",
-    outfile: "dist/shiki-worker.js",
-    logLevel: "silent",
-    plugins: [shikiWorkerEntryPlugin, esbuildProblemMatcherPlugin],
-  })
-}
-
-function createMarkdownShikiWorkerContext() {
-  return esbuild.context({
-    entryPoints: [path.join(__dirname, "..", "ui", "src", "components", "markdown-shiki.worker.ts")],
-    bundle: true,
-    format: "esm",
-    minify: production,
-    sourcemap: !production,
-    sourcesContent: false,
-    platform: "browser",
-    outfile: "dist/markdown-shiki-worker.js",
-    logLevel: "silent",
-    plugins: [esbuildProblemMatcherPlugin],
-  })
-}
-
-async function main() {
-  // Build extension
-  const extensionCtx = await esbuild.context({
+function getExtensionConfig() {
+  return {
     entryPoints: ["src/extension.ts"],
     bundle: true,
     format: "cjs",
@@ -239,68 +427,130 @@ async function main() {
     outfile: "dist/extension.js",
     external: ["vscode"],
     logLevel: "silent",
-    plugins: [esbuildProblemMatcherPlugin],
-  })
+    plugins: [playwright, ...(watch ? [esbuildProblemMatcherPlugin] : [])],
+  }
+}
 
-  // Build Agent Manager webview (SolidJS, shares components with sidebar)
-  const agentManagerCtx = await createBrowserWebviewContext(
-    "webview-ui/agent-manager/index.tsx",
-    "dist/agent-manager.js",
+function getWebviewsConfig() {
+  return {
+    entryPoints: {
+      "agent-manager": "webview-ui/agent-manager/index.tsx",
+      marketplace: "webview-ui/marketplace/index.tsx",
+      "diff-viewer": "webview-ui/diff-viewer/index.tsx",
+      documents: "webview-ui/documents/index.tsx",
+      "diff-virtual": "webview-ui/diff-virtual/index.tsx",
+      webview: "webview-ui/src/index.tsx",
+    },
+    outdir: "dist",
+    bundle: true,
+    format: "iife",
+    minify: production,
+    sourcemap: !production,
+    sourcesContent: false,
+    platform: "browser",
+    logLevel: "silent",
+    loader: {
+      ".woff": "file",
+      ".woff2": "file",
+      ".ttf": "file",
+    },
+    plugins: [
+      solidDedupePlugin,
+      pierreWorkerAliasPlugin,
+      markdownWorkerUrlPlugin,
+      svgSpritePlugin,
+      cssPackageResolvePlugin,
+      cachedSolidPlugin,
+      ...(watch ? [esbuildProblemMatcherPlugin] : []),
+    ],
+  }
+}
+
+function getShikiWorkerConfig() {
+  return {
+    entryPoints: ["kilo-shiki-worker"],
+    bundle: true,
+    format: "iife",
+    minify: production,
+    sourcemap: !production,
+    sourcesContent: false,
+    platform: "browser",
+    outfile: "dist/shiki-worker.js",
+    logLevel: "silent",
+    plugins: [shikiWorkerEntryPlugin, ...(watch ? [esbuildProblemMatcherPlugin] : [])],
+  }
+}
+
+function getMarkdownShikiWorkerConfig() {
+  return {
+    entryPoints: [path.join(__dirname, "..", "ui", "src", "components", "markdown-shiki.worker.ts")],
+    bundle: true,
+    format: "esm",
+    minify: production,
+    sourcemap: !production,
+    sourcesContent: false,
+    platform: "browser",
+    outfile: "dist/markdown-shiki-worker.js",
+    logLevel: "silent",
+    plugins: watch ? [esbuildProblemMatcherPlugin] : [],
+  }
+}
+
+function notices() {
+  const deps = {
+    "playwright-core": ["LICENSE", "NOTICE", "ThirdPartyNotices.txt"],
+    "chromium-bidi": ["LICENSE"],
+  }
+  for (const [name, files] of Object.entries(deps)) {
+    const root = path.dirname(require.resolve(`${name}/package.json`))
+    const dir = path.join(__dirname, "dist", "licenses", name)
+    fs.mkdirSync(dir, { recursive: true })
+    for (const file of files) fs.copyFileSync(path.join(root, file), path.join(dir, file))
+  }
+}
+
+/**
+ * The DotLottie player defaults to a CDN for its WASM renderer. Ship the copy from
+ * `@lottiefiles/dotlottie-web` next to the webview bundles so the animated Kilo logo never
+ * reaches the network (the webview CSP blocks it anyway).
+ */
+function wasm() {
+  const root = path.dirname(require.resolve("@lottiefiles/dotlottie-web/package.json"))
+  fs.mkdirSync(path.join(__dirname, "dist"), { recursive: true })
+  fs.copyFileSync(
+    path.join(root, "dist", "dotlottie-player.wasm"),
+    path.join(__dirname, "dist", "dotlottie-player.wasm"),
   )
+}
 
-  // Build KiloClaw webview (SolidJS, standalone chat panel)
-  const kiloClawCtx = await createBrowserWebviewContext("webview-ui/kiloclaw/index.tsx", "dist/kiloclaw.js")
-
-  // Build Marketplace webview (SolidJS, standalone catalog panel)
-  const marketplaceCtx = await createBrowserWebviewContext("webview-ui/marketplace/index.tsx", "dist/marketplace.js")
-
-  // Build Diff Viewer webview (SolidJS, reuses Agent Manager diff components)
-  const diffViewerCtx = await createBrowserWebviewContext("webview-ui/diff-viewer/index.tsx", "dist/diff-viewer.js")
-
-  // Build Diff Virtual webview (lightweight single-file diff for permission approval)
-  const diffVirtualCtx = await createBrowserWebviewContext("webview-ui/diff-virtual/index.tsx", "dist/diff-virtual.js")
-
-  // Build webview
-  const webviewCtx = await createBrowserWebviewContext("webview-ui/src/index.tsx", "dist/webview.js")
-
-  // Build the shared Shiki highlighting worker asset
-  const shikiWorkerCtx = await createShikiWorkerContext()
-  const markdownShikiWorkerCtx = await createMarkdownShikiWorkerContext()
+async function main() {
+  notices()
+  wasm()
+  const extensionConfig = getExtensionConfig()
+  const webviewsConfig = getWebviewsConfig()
+  const shikiWorkerConfig = getShikiWorkerConfig()
+  const markdownShikiWorkerConfig = getMarkdownShikiWorkerConfig()
 
   if (watch) {
+    const [extensionCtx, webviewsCtx, shikiWorkerCtx, markdownShikiWorkerCtx] = await Promise.all([
+      esbuild.context(extensionConfig),
+      esbuild.context(webviewsConfig),
+      esbuild.context(shikiWorkerConfig),
+      esbuild.context(markdownShikiWorkerConfig),
+    ])
+
     await Promise.all([
       extensionCtx.watch(),
-      webviewCtx.watch(),
-      agentManagerCtx.watch(),
-      diffViewerCtx.watch(),
-      diffVirtualCtx.watch(),
-      kiloClawCtx.watch(),
-      marketplaceCtx.watch(),
+      webviewsCtx.watch(),
       shikiWorkerCtx.watch(),
       markdownShikiWorkerCtx.watch(),
     ])
   } else {
     await Promise.all([
-      extensionCtx.rebuild(),
-      webviewCtx.rebuild(),
-      agentManagerCtx.rebuild(),
-      kiloClawCtx.rebuild(),
-      marketplaceCtx.rebuild(),
-      diffViewerCtx.rebuild(),
-      diffVirtualCtx.rebuild(),
-      shikiWorkerCtx.rebuild(),
-      markdownShikiWorkerCtx.rebuild(),
-    ])
-    await Promise.all([
-      extensionCtx.dispose(),
-      webviewCtx.dispose(),
-      agentManagerCtx.dispose(),
-      diffViewerCtx.dispose(),
-      diffVirtualCtx.dispose(),
-      kiloClawCtx.dispose(),
-      marketplaceCtx.dispose(),
-      shikiWorkerCtx.dispose(),
-      markdownShikiWorkerCtx.dispose(),
+      esbuild.build(extensionConfig),
+      esbuild.build(webviewsConfig),
+      esbuild.build(shikiWorkerConfig),
+      esbuild.build(markdownShikiWorkerConfig),
     ])
   }
 }

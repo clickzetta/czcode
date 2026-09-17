@@ -1,14 +1,15 @@
 import path from "path"
+import fs from "fs/promises"
 import { xdgData, xdgCache, xdgConfig, xdgState } from "xdg-basedir"
 import os from "os"
 import { Context, Effect, Layer } from "effect"
 import { Flock } from "./util/flock"
 import { markNoIndex } from "./kilocode/spotlight" // kilocode_change
-import { ensureRealDir } from "./kilocode/global" // kilocode_change
+import { ensureRealDir, resolveState } from "./kilocode/global" // kilocode_change
 import { Flag } from "./flag/flag"
-import { LayerNode } from "./effect/layer-node"
+import { makeGlobalNode } from "./effect/app-node"
 
-const app = "czcode" // czcode_change
+const app = "kilo" // kilocode_change
 // kilocode_change start
 // Defensively strip newline characters from the resolved XDG paths.
 // If `$HOME` (or any `$XDG_*_HOME` override) has a trailing newline in
@@ -21,14 +22,14 @@ const clean = (p: string | undefined) => p?.replace(/[\r\n]+/g, "")
 const data = path.join(clean(xdgData)!, app)
 const cache = path.join(clean(xdgCache)!, app)
 const config = path.join(clean(xdgConfig)!, app)
-const state = path.join(clean(xdgState)!, app)
+const preferred = path.join(clean(xdgState)!, app)
+const state = await resolveState(preferred, process.env.XDG_STATE_HOME ? undefined : path.join(data, "state"))
 // kilocode_change end
 const tmp = path.join(os.tmpdir(), app)
 
 const paths = {
-  // Allow override via CZCODE_TEST_HOME for test isolation
   get home() {
-    return (process.env.CZCODE_TEST_HOME || process.env.KILO_TEST_HOME || os.homedir()).trim() // czcode_change — defensive trim, see above
+    return (process.env.KILO_TEST_HOME ?? os.homedir()).trim() // kilocode_change — defensive trim, see above
   },
   data,
   bin: path.join(cache, "bin"),
@@ -47,7 +48,6 @@ Flock.setGlobal({ state })
 await Promise.all([
   ensureRealDir(Path.data), // kilocode_change
   ensureRealDir(Path.config), // kilocode_change
-  ensureRealDir(Path.state), // kilocode_change
   ensureRealDir(Path.tmp), // kilocode_change
   ensureRealDir(Path.log), // kilocode_change
   ensureRealDir(Path.bin), // kilocode_change
@@ -87,13 +87,12 @@ export function make(input: Partial<Interface> = {}): Interface {
   }
 }
 
-export const layer = Layer.effect(
+const layer = Layer.effect(
   Service,
   Effect.sync(() => Service.of(make())),
 )
 
-export const defaultLayer = layer
-export const node = LayerNode.make(layer, [])
+export const node = makeGlobalNode({ service: Service, layer: layer, deps: [] })
 
 export const layerWith = (input: Partial<Interface>) =>
   Layer.effect(

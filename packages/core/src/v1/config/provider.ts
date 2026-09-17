@@ -6,6 +6,11 @@ import { PositiveInt } from "../../schema"
 
 export const ModelStatus = Schema.Literals(["alpha", "beta", "deprecated", "active"])
 
+const InterleavedField = Schema.Union([
+  Schema.Literals(["reasoning", "reasoning_content", "reasoning_text"]),
+  Schema.String,
+])
+
 export const Model = Schema.Struct({
   id: Schema.optional(Schema.String),
   name: Schema.optional(Schema.String),
@@ -20,9 +25,10 @@ export const Model = Schema.Struct({
   tool_call: Schema.optional(Schema.Boolean),
   interleaved: Schema.optional(
     Schema.Union([
-      Schema.Literal(true),
+      Schema.Boolean,
+      InterleavedField,
       Schema.Struct({
-        field: Schema.Literals(["reasoning", "reasoning_content", "reasoning_details"]),
+        field: InterleavedField,
       }),
     ]),
   ),
@@ -68,6 +74,7 @@ export const Model = Schema.Struct({
     Schema.Record(
       Schema.String,
       Schema.NullOr(
+        // kilocode_change - allow null values so removed variants can be deleted via stripNulls on save
         Schema.StructWithRest(
           Schema.Struct({
             disabled: Schema.optional(Schema.Boolean).annotate({ description: "Disable this variant for the model" }),
@@ -122,6 +129,6 @@ export const Info = Schema.Struct({
       [Schema.Record(Schema.String, Schema.Any)],
     ),
   ),
-  models: Schema.optional(Schema.Record(Schema.String, Schema.NullOr(Model))),
+  models: Schema.optional(Schema.Record(Schema.String, Schema.NullOr(Model))), // kilocode_change - allow null values so removed models can be deleted via stripNulls on save
 }).annotate({ identifier: "ProviderConfig" })
 export type Info = Schema.Schema.Type<typeof Info>

@@ -51,6 +51,9 @@ function EditBody(props: { request: PermissionRequest }) {
   const ft = createMemo(() => filetype(filepath()))
   const scrollAcceleration = createMemo(() => getScrollAcceleration(config))
   const hunks = createMemo(() => splitDiffHunks(diff())) // kilocode_change
+  // kilocode_change start - a nonempty header-only patch has no hunks; show a fallback instead of a blank viewer
+  const changed = createMemo(() => /^@@/m.test(diff()))
+  // kilocode_change end
 
   return (
     <box flexDirection="column" gap={1}>
@@ -67,34 +70,36 @@ function EditBody(props: { request: PermissionRequest }) {
         >
           {/* kilocode_change start */}
           <box flexDirection="column">
-            <For each={hunks()}>
-              {(hunk, i) => (
-                <>
-                  <Show when={i() > 0}>
-                    <text fg={theme.textMuted}>...</text>
-                  </Show>
-                  <diff
-                    diff={hunk}
-                    view={view()}
-                    filetype={ft()}
-                    syntaxStyle={syntax()}
-                    showLineNumbers={true}
-                    width="100%"
-                    wrapMode="word"
-                    fg={theme.text}
-                    addedBg={theme.diffAddedBg}
-                    removedBg={theme.diffRemovedBg}
-                    contextBg={theme.diffContextBg}
-                    addedSignColor={theme.diffHighlightAdded}
-                    removedSignColor={theme.diffHighlightRemoved}
-                    lineNumberFg={theme.diffLineNumber}
-                    lineNumberBg={theme.diffContextBg}
-                    addedLineNumberBg={theme.diffAddedLineNumberBg}
-                    removedLineNumberBg={theme.diffRemovedLineNumberBg}
-                  />
-                </>
-              )}
-            </For>
+            <Show when={changed()} fallback={<text fg={theme.textMuted}>No changes to review</text>}>
+              <For each={hunks()}>
+                {(hunk, i) => (
+                  <>
+                    <Show when={i() > 0}>
+                      <text fg={theme.textMuted}>...</text>
+                    </Show>
+                    <diff
+                      diff={hunk}
+                      view={view()}
+                      filetype={ft()}
+                      syntaxStyle={syntax()}
+                      showLineNumbers={true}
+                      width="100%"
+                      wrapMode="word"
+                      fg={theme.text}
+                      addedBg={theme.diffAddedBg}
+                      removedBg={theme.diffRemovedBg}
+                      contextBg={theme.diffContextBg}
+                      addedSignColor={theme.diffHighlightAdded}
+                      removedSignColor={theme.diffHighlightRemoved}
+                      lineNumberFg={theme.diffLineNumber}
+                      lineNumberBg={theme.diffContextBg}
+                      addedLineNumberBg={theme.diffAddedLineNumberBg}
+                      removedLineNumberBg={theme.diffRemovedLineNumberBg}
+                    />
+                  </>
+                )}
+              </For>
+            </Show>
           </box>
           {/* kilocode_change end */}
         </scrollbox>
@@ -137,8 +142,16 @@ export function PermissionPrompt(props: { request: PermissionRequest; directory?
     stage: "permission" as PermissionStage,
   })
   const pathFormatter = usePathFormatter()
-
-  const session = createMemo(() => sync.data.session.find((s) => s.id === props.request.sessionID))
+  // kilocode_change start - interrupt rejects directly, returning to the normal prompt's exit confirmation
+  const interrupt = () => {
+    void sdk.client.permission.reply({
+      reply: "reject",
+      requestID: props.request.id,
+      directory: props.directory,
+      workspace: project.workspace.current(),
+    })
+  }
+  // kilocode_change end
 
   const input = createMemo(() => {
     const tool = props.request.tool
@@ -200,6 +213,7 @@ export function PermissionPrompt(props: { request: PermissionRequest; directory?
       </Match>
       <Match when={store.stage === "reject"}>
         <RejectPrompt
+          onInterrupt={interrupt} // kilocode_change
           onConfirm={(message) => {
             void sdk.client.permission.reply({
               reply: "reject",
@@ -334,6 +348,27 @@ export function PermissionPrompt(props: { request: PermissionRequest; directory?
               }
             }
 
+            // kilocode_change start - show sandbox escalation details and keep approval one-shot
+            if (permission === "sandbox_escalation") {
+              const meta = props.request.metadata ?? {}
+              const command = normalizeUrls(
+                typeof data.command === "string" ? data.command : typeof meta.command === "string" ? meta.command : "",
+              )
+              return {
+                icon: "!",
+                title: "Allow Git operation outside the sandbox?",
+                body: (
+                  <box paddingLeft={1} flexDirection="column">
+                    <Show when={command}>
+                      <text fg={theme.text}>{"$ " + command}</text>
+                    </Show>
+                    <text fg={theme.textMuted}>This approval applies to this command only.</text>
+                  </box>
+                ),
+              }
+            }
+            // kilocode_change end
+
             if (permission === "task") {
               const type = typeof data.subagent_type === "string" ? data.subagent_type : "Unknown"
               const desc = typeof data.description === "string" ? data.description : ""
@@ -463,11 +498,12 @@ export function PermissionPrompt(props: { request: PermissionRequest; directory?
           )
 
           // kilocode_change start - skill shell batches are never persisted: only Allow / Reject
-          const options: Record<string, string> = props.request.metadata?.["skillShell"]
-            ? { once: "Allow", reject: "Reject" }
-            : props.request.metadata?.[ConfigProtection.DISABLE_ALWAYS_KEY]
-              ? { once: "Allow once", reject: "Reject" }
-              : { once: "Allow once", always: "Allow always", reject: "Reject" }
+          const options: Record<string, string> =
+            props.request.metadata?.["skillShell"] || props.request.metadata?.["sandboxEscalation"]
+              ? { once: "Allow", reject: "Reject" }
+              : props.request.metadata?.[ConfigProtection.DISABLE_ALWAYS_KEY]
+                ? { once: "Allow once", reject: "Reject" }
+                : { once: "Allow once", always: "Allow always", reject: "Reject" }
           // kilocode_change end
 
           const body = (
@@ -477,6 +513,7 @@ export function PermissionPrompt(props: { request: PermissionRequest; directory?
               body={current.body}
               /* kilocode_change */ options={options}
               escapeKey="reject"
+              onInterrupt={interrupt} // kilocode_change
               fullscreen
               onSelect={(option) => {
                 if (option === "always") {
@@ -484,16 +521,9 @@ export function PermissionPrompt(props: { request: PermissionRequest; directory?
                   return
                 }
                 if (option === "reject") {
-                  if (session()?.parentID) {
-                    setStore("stage", "reject")
-                    return
-                  }
-                  void sdk.client.permission.reply({
-                    reply: "reject",
-                    requestID: props.request.id,
-                    directory: props.directory,
-                    workspace: project.workspace.current(),
-                  })
+                  // kilocode_change start - every reject collects optional feedback, matching the direct-mode footer
+                  setStore("stage", "reject")
+                  // kilocode_change end
                   return
                 }
                 void sdk.client.permission.reply({
@@ -514,7 +544,9 @@ export function PermissionPrompt(props: { request: PermissionRequest; directory?
   )
 }
 
-function RejectPrompt(props: { onConfirm: (message: string) => void; onCancel: () => void }) {
+// kilocode_change start - separate interruption from cancelling feedback
+function RejectPrompt(props: { onConfirm: (message: string) => void; onCancel: () => void; onInterrupt: () => void }) {
+  // kilocode_change end
   let input: TextareaRenderable
   const { theme } = useTheme()
   const tuiConfig = useTuiConfig()
@@ -525,11 +557,11 @@ function RejectPrompt(props: { onConfirm: (message: string) => void; onCancel: (
     commands: [
       {
         name: "app.exit",
-        title: "Cancel permission rejection",
+        // kilocode_change start - interrupt without entering or cancelling the feedback stage
+        title: "Reject permission",
         category: "Permission",
-        run() {
-          props.onCancel()
-        },
+        run: props.onInterrupt,
+        // kilocode_change end
       },
     ],
     bindings: [
@@ -601,6 +633,7 @@ function Prompt<const T extends Record<string, string>>(props: {
   body: JSX.Element
   options: T
   escapeKey?: keyof T
+  onInterrupt?: () => void // kilocode_change
   fullscreen?: boolean
   onSelect: (option: keyof T) => void
 }) {
@@ -620,12 +653,14 @@ function Prompt<const T extends Record<string, string>>(props: {
     commands: [
       {
         name: "app.exit",
+        // kilocode_change start - preserve direct rejection rather than exiting the app
         title: "Reject permission",
         category: "Permission",
         run() {
-          if (!props.escapeKey) return
-          props.onSelect(props.escapeKey)
+          if (props.onInterrupt) return props.onInterrupt()
+          if (props.escapeKey) props.onSelect(props.escapeKey)
         },
+        // kilocode_change end
       },
       {
         name: "permission.prompt.fullscreen",

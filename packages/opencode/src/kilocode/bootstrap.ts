@@ -12,14 +12,17 @@ import { SessionSummary } from "@/session/summary"
 import { SessionExport } from "@/kilocode/session-export"
 import { createWorkspaceProvider } from "@/kilocode/session-export/workspace-provider"
 import { Instance } from "@/kilocode/instance"
+import { InstanceRef } from "@/effect/instance-ref"
 import { Identity } from "@kilocode/kilo-telemetry"
 import { MemoryLifecycle } from "@/kilocode/memory/turn"
 import { MemoryService } from "@kilocode/kilo-memory/effect/service"
 import { MemoryEvents } from "@/kilocode/memory/events"
 import { installMemoryRuntime } from "@/kilocode/memory/runtime"
 import { KiloToolRegistry } from "@/kilocode/tool/registry"
+import { Wakeup } from "@/kilocode/wakeup"
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
 import { KilocodeWatcher } from "@/kilocode/watcher"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder" // kilocode_change
 
 const log = Log.create({ service: "kilocode-bootstrap" })
 
@@ -42,6 +45,7 @@ export namespace KilocodeBootstrap {
       const provider = yield* Provider.Service
       const memory = yield* MemoryService.Service
       const watcher = yield* KilocodeWatcher.Service
+      const wake = yield* Wakeup.Service
 
       const init = Effect.fn("KilocodeBootstrap.init")(function* () {
         yield* watcher.init()
@@ -54,6 +58,16 @@ export namespace KilocodeBootstrap {
         yield* bus.subscribeCallback(MemoryEvents.Updated, (evt) =>
           KiloToolRegistry.invalidateMemoryEnabled(evt.properties.directory),
         )
+        // Re-arm this directory's persisted wakeups on every instance start: overdue ones
+        // fire immediately, the rest get their timers. A failure must not block bootstrap.
+        const inst = yield* InstanceRef
+        if (inst) {
+          yield* wake.adopt(inst.directory).pipe(
+            Effect.catchCause((cause) =>
+              Effect.sync(() => log.warn("wakeup adopt failed", { err: Cause.squash(cause) })),
+            ),
+          )
+        }
         // Session export bootstrap.
         yield* Effect.gen(function* () {
           if (!SessionExport.enabled) return
@@ -99,25 +113,31 @@ export namespace KilocodeBootstrap {
     Layer.provide([
       KiloSessions.defaultLayer,
       Session.defaultLayer,
-      SessionSummary.defaultLayer,
-      Provider.defaultLayer,
+      AppNodeBuilder.build(SessionSummary.node),
+      AppNodeBuilder.build(Provider.node),
       MemoryService.layer,
       Bus.defaultLayer,
       KilocodeWatcher.defaultLayer,
+      AppNodeBuilder.build(Wakeup.node),
     ]),
   )
 
-  const memory = LayerNode.make(MemoryService.layer, [])
-  const watcher = LayerNode.make(KilocodeWatcher.defaultLayer, [])
+  const memory = LayerNode.make({ service: MemoryService.Service, layer: MemoryService.layer, deps: [] })
+  const watcher = LayerNode.make({ service: KilocodeWatcher.Service, layer: KilocodeWatcher.defaultLayer, deps: [] })
   export const node = LayerNode.suspend(() =>
-    LayerNode.make(layer, [
-      KiloSessions.node,
-      Session.node,
-      SessionSummary.node,
-      Provider.node,
-      memory,
-      Bus.node,
-      watcher,
-    ]),
+    LayerNode.make({
+      service: Service,
+      layer,
+      deps: [
+        KiloSessions.node,
+        Session.node,
+        SessionSummary.node,
+        Provider.node,
+        memory,
+        Bus.node,
+        watcher,
+        Wakeup.node,
+      ],
+    }),
   )
 }

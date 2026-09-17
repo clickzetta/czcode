@@ -11,7 +11,6 @@ import { SessionID, MessageID, PartID } from "./schema"
 import { SessionRunState } from "./run-state"
 import { SessionSummary } from "./summary"
 import { KiloSessionRevert } from "@/kilocode/session/revert" // kilocode_change
-import { Telemetry, TelemetryEvent } from "@kilocode/kilo-telemetry" // czcode_change
 
 export const RevertInput = Schema.Struct({
   sessionID: SessionID,
@@ -28,7 +27,7 @@ export interface Interface {
 
 export class Service extends Context.Service<Service, Interface>()("@opencode/SessionRevert") {}
 
-export const layer = Layer.effect(
+const layer = Layer.effect(
   Service,
   Effect.gen(function* () {
     const sessions = yield* Session.Service
@@ -119,9 +118,6 @@ export const layer = Layer.effect(
               diffs: summaryDiffs,
             },
           })
-          // czcode_change start — passive ALHF signal: user reverted AI output
-          Telemetry.track(TelemetryEvent.SESSION_REVERTED, { sessionID: input.sessionID })
-          // czcode_change end
         }),
       )
       // kilocode_change end
@@ -201,26 +197,18 @@ export const layer = Layer.effect(
   }),
 )
 
-export const defaultLayer = Layer.suspend(() =>
-  layer.pipe(
-    Layer.provide(SessionRunState.defaultLayer),
-    Layer.provide(Session.defaultLayer),
-    Layer.provide(Snapshot.defaultLayer),
-    Layer.provide(Storage.defaultLayer),
-    Layer.provide(EventV2Bridge.defaultLayer),
-    Layer.provide(SessionSummary.defaultLayer),
-    Layer.provide(Config.defaultLayer), // kilocode_change
-  ),
-)
-
-export const node = LayerNode.make(layer, [
-  Session.node,
-  Snapshot.node,
-  Storage.node,
-  EventV2Bridge.node,
-  SessionSummary.node,
-  SessionRunState.node,
-  Config.node, // kilocode_change
-])
+export const node = LayerNode.make({
+  service: Service,
+  layer: layer,
+  deps: [
+    Session.node,
+    Snapshot.node,
+    Storage.node,
+    EventV2Bridge.node,
+    SessionSummary.node,
+    SessionRunState.node,
+    Config.node, // kilocode_change
+  ],
+})
 
 export * as SessionRevert from "./revert"

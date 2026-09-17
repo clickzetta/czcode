@@ -3,6 +3,7 @@ import { buildPreviewPath, getPreviewCommand, getPreviewDir, parseImage, trimEnt
 import { escapeGlob, isAbsolutePath } from "../path-utils"
 import { validateFiles } from "./file-links"
 import type { DiffVirtualFile, DiffVirtualProvider } from "../DiffVirtualProvider"
+import { isPRReviewComment, parseReview, type PRReviewCommentData } from "../shared/review-comments"
 
 type EditorOpenMessage = {
   type?: string
@@ -11,6 +12,11 @@ type EditorOpenMessage = {
   column?: number
   content?: string
   language?: string
+  sessionID?: string
+}
+
+function isMarkdownFile(file: string): boolean {
+  return /\.(md|mdx|markdown)$/i.test(file)
 }
 
 function openExternal(url: unknown): void {
@@ -23,6 +29,16 @@ function openDiffVirtual(provider: DiffVirtualProvider | undefined, diff: unknow
   const file = diff as DiffVirtualFile
   file.initialDiffStyle = initialDiffStyle === "split" ? "split" : "unified"
   provider.open(file)
+}
+
+function openReview(
+  message: EditorOpenMessage & { comment?: unknown },
+  open?: (comment: PRReviewCommentData, sessionID?: string) => void,
+): void {
+  if (typeof message.content !== "string") return
+  if (message.sessionID !== undefined && typeof message.sessionID !== "string") return
+  const comment = parseReview({ version: 1, comments: [message.comment] }, message.content)?.comments[0]
+  if (comment && isPRReviewComment(comment)) open?.(comment, message.sessionID)
 }
 
 function previewImage(dir: vscode.Uri | undefined, dataUrl: string, filename: string): void {
@@ -71,16 +87,29 @@ export function handleEditorAction(
     filename?: string
     id?: string
     paths?: string[]
+    comment?: unknown
   },
   opts: {
-    dir: () => string
+    dir: (sessionID?: string) => string
     diff?: DiffVirtualProvider
+    openMarkdown?: (file: string, sessionID?: string) => boolean
+    openPRComment?: (comment: PRReviewCommentData, sessionID?: string) => void
     storage?: vscode.Uri
     post?: (msg: unknown) => void
   },
 ): boolean {
+  if (message.type === "openPRComment") {
+    openReview(message, opts.openPRComment)
+    return true
+  }
   if (message.type === "openFile") {
-    if (message.filePath) openFile(opts.dir(), message.filePath, message.line, message.column)
+    // Resolve the directory from the session the file reference was rendered
+    // for (when the webview provides it), not whatever session happens to be
+    // current — mirrors the validateFiles case below.
+    if (message.filePath) {
+      if (isMarkdownFile(message.filePath) && opts.openMarkdown?.(message.filePath, message.sessionID)) return true
+      openFile(opts.dir(message.sessionID), message.filePath, message.line, message.column)
+    }
     return true
   }
   if (message.type === "openContent") {
@@ -92,7 +121,11 @@ export function handleEditorAction(
     const paths = message.paths
     if (id && paths && opts.post) {
       const post = opts.post
-      validateFiles(opts.dir(), paths).then(
+      // Resolve the directory from the session id the webview validated the
+      // candidates against, not whatever session happens to be current when
+      // this message is processed (avoids validating against the wrong
+      // worktree during an Agent Manager session switch).
+      validateFiles(opts.dir(message.sessionID), paths).then(
         (existing) => post({ type: "validateFilesResult", id, existing }),
         (err) => console.error("[Kilo New] KiloProvider: validateFiles failed:", err),
       )

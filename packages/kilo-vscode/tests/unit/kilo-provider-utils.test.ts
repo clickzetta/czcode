@@ -21,6 +21,7 @@ import type {
   Event,
   EventSessionStatus,
   EventSessionTurnClose,
+  EventSessionError,
   EventSandboxStatusChanged,
   EventPermissionAsked,
   EventPermissionReplied,
@@ -164,7 +165,42 @@ describe("sessionToWebview", () => {
     const result = sessionToWebview(makeSession())
     expect(result.revert).toBeNull()
     expect(result.summary).toBeNull()
+    expect(result.goal).toBeNull()
   })
+
+  it.each([true, false])("projects the saved goal with active=%s", (active) => {
+    const goal = { text: "Fix the failing tests", active }
+    const result = sessionToWebview(makeSession({ metadata: { "kilo.goal": goal, unrelated: "private" } }))
+    expect(result.goal).toEqual(goal)
+    expect(result).not.toHaveProperty("metadata")
+  })
+
+  it("clears the saved goal through JSON serialization and a session merge", () => {
+    const saved = sessionToWebview(makeSession({ metadata: { "kilo.goal": { text: "Fix tests", active: true } } }))
+    const cleared = JSON.parse(JSON.stringify(sessionToWebview(makeSession({ metadata: {} }))))
+    expect({ ...saved, ...cleared }.goal).toBeNull()
+  })
+
+  it.each(["active", "complete", "blocked", "paused"] as const)(
+    "carries %s goal state and report through JSON",
+    (status) => {
+      const goal = {
+        text: "Fix tests",
+        status,
+        active: status === "active",
+        reason: "Reported by the working model, not independently verified.",
+      }
+      const result = sessionToWebview(makeSession({ metadata: { "kilo.goal": goal } }))
+      expect(JSON.parse(JSON.stringify(result)).goal).toEqual(goal)
+    },
+  )
+
+  it.each([null, "text", { text: 1, active: true }, { text: "Goal" }, { text: "Goal", active: "true" }])(
+    "ignores invalid goal metadata %j",
+    (goal) => {
+      expect(sessionToWebview(makeSession({ metadata: { "kilo.goal": goal } })).goal).toBeNull()
+    },
+  )
 
   it("preserves the workspace restoration outcome from a revert response", () => {
     const session = {
@@ -172,115 +208,6 @@ describe("sessionToWebview", () => {
       revert: { messageID: "msg-1", workspace: "snapshots-disabled" as const },
     }
     expect(sessionToWebview(session).revert).toMatchObject({ workspace: "snapshots-disabled" })
-  })
-})
-
-describe("applySessionPatch", () => {
-  it("applies values without dropping unrelated session fields", () => {
-    const session = makeSession({
-      workspaceID: "workspace-1",
-      cost: 1,
-      tokens: { input: 1, output: 2, reasoning: 3, cache: { read: 4, write: 5 } },
-    })
-
-    const result = applySessionPatch(session, { title: "Updated", cost: 2, time: { updated: 1700002000000 } })
-
-    expect(result.title).toBe("Updated")
-    expect(result.cost).toBe(2)
-    expect(result.workspaceID).toBe("workspace-1")
-    expect(result.tokens).toEqual(session.tokens)
-    expect(result.time).toEqual({ created: 1700000000000, updated: 1700002000000 })
-  })
-
-  it("clears optional fields when the patch contains null", () => {
-    const session = makeSession({
-      workspaceID: "workspace-1",
-      summary: { additions: 1, deletions: 2, files: 3 },
-      cost: 4,
-      tokens: { input: 1, output: 2, reasoning: 3, cache: { read: 4, write: 5 } },
-      share: { url: "https://example.com" },
-      agent: "code",
-      model: { id: "model-1", providerID: "provider-1" },
-      permission: [],
-      revert: { messageID: "msg-1" },
-      time: { created: 1, updated: 2, compacting: 3, archived: 4 },
-    })
-
-    const result = applySessionPatch(session, {
-      workspaceID: null,
-      summary: null,
-      cost: null,
-      tokens: null,
-      share: { url: null },
-      agent: null,
-      model: null,
-      permission: null,
-      revert: null,
-      time: { compacting: null, archived: null },
-    })
-
-    expect(result.workspaceID).toBeUndefined()
-    expect(result.summary).toBeUndefined()
-    expect(result.cost).toBeUndefined()
-    expect(result.tokens).toBeUndefined()
-    expect(result.share).toBeUndefined()
-    expect(result.agent).toBeUndefined()
-    expect(result.model).toBeUndefined()
-    expect(result.permission).toBeUndefined()
-    expect(result.revert).toBeUndefined()
-    expect(result.time).toEqual({ created: 1, updated: 2 })
-  })
-
-  it("ignores null patches for required session fields", () => {
-    const session = makeSession()
-    const result = applySessionPatch(session, {
-      slug: null,
-      projectID: null,
-      directory: null,
-      title: null,
-      version: null,
-      time: { created: null, updated: null },
-    })
-
-    expect(result.slug).toBe(session.slug)
-    expect(result.projectID).toBe(session.projectID)
-    expect(result.directory).toBe(session.directory)
-    expect(result.title).toBe(session.title)
-    expect(result.version).toBe(session.version)
-    expect(result.time).toEqual(session.time)
-  })
-
-  it("does not mutate the original session", () => {
-    const session = makeSession({ revert: { messageID: "msg-1" }, time: { created: 1, updated: 2, compacting: 3 } })
-
-    applySessionPatch(session, { revert: null, time: { updated: 4, compacting: null } })
-
-    expect(session.revert).toEqual({ messageID: "msg-1" })
-    expect(session.time).toEqual({ created: 1, updated: 2, compacting: 3 })
-  })
-})
-
-describe("sessionPatchToWebview", () => {
-  it("converts relevant patch timestamps and preserves explicit clears", () => {
-    const result = sessionPatchToWebview("sess-1", {
-      parentID: null,
-      summary: null,
-      revert: null,
-      time: { created: 1700000000000, updated: 1700001000000 },
-    })
-
-    expect(result).toEqual({
-      id: "sess-1",
-      parentID: null,
-      summary: null,
-      revert: null,
-      createdAt: new Date(1700000000000).toISOString(),
-      updatedAt: new Date(1700001000000).toISOString(),
-    })
-  })
-
-  it("omits fields not present in the patch", () => {
-    expect(sessionPatchToWebview("sess-1", { cost: 2 })).toEqual({ id: "sess-1" })
   })
 })
 
@@ -474,14 +401,54 @@ describe("mapSSEEventToWebviewMessage", () => {
     })
   })
 
-  it("maps session.turn.close to its terminal reason", () => {
+  it("maps session.turn.close with its event identity and terminal reason", () => {
     const event: EventSessionTurnClose = {
       id: "evt-turn",
       type: "session.turn.close",
       properties: { sessionID: "sess-1", reason: "interrupted" },
     }
     const msg = mapSSEEventToWebviewMessage(event, "sess-1")
-    expect(msg).toEqual({ type: "sessionTurnClosed", sessionID: "sess-1", reason: "interrupted" })
+    expect(msg).toEqual({ type: "sessionTurnClosed", sessionID: "sess-1", eventID: "evt-turn", reason: "interrupted" })
+  })
+
+  it("forwards the parent session ID when a child turn closes", () => {
+    const event: EventSessionTurnClose = {
+      id: "evt-child-turn",
+      type: "session.turn.close",
+      properties: { sessionID: "child", parentID: "parent", reason: "completed" },
+    }
+
+    expect(mapSSEEventToWebviewMessage(event, "child")).toEqual({
+      type: "sessionTurnClosed",
+      sessionID: "child",
+      eventID: "evt-child-turn",
+      reason: "completed",
+      parentID: "parent",
+    })
+  })
+
+  it("maps session errors with their event identity and message", () => {
+    const event: EventSessionError = {
+      id: "evt-error",
+      type: "session.error",
+      properties: {
+        sessionID: "sess-1",
+        error: {
+          name: "APIError",
+          data: {
+            message: "prompt_cache_breakpoint is not supported on this model",
+            isRetryable: false,
+          },
+        },
+      },
+    }
+
+    expect(mapSSEEventToWebviewMessage(event, "sess-1")).toEqual({
+      type: "sessionError",
+      eventID: "evt-error",
+      sessionID: "sess-1",
+      error: event.properties.error,
+    })
   })
 
   it("maps permission.asked to permissionRequest", () => {

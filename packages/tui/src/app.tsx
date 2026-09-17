@@ -1,4 +1,5 @@
 import { render, TimeToFirstDraw, useRenderer, useTerminalDimensions } from "@opentui/solid"
+import { registerOpencodeSpinner } from "./component/register-spinner"
 import { createDefaultOpenTuiKeymap } from "@opentui/keymap/opentui"
 import { Deferred, Effect } from "effect"
 import { Global } from "@opencode-ai/core/global"
@@ -9,7 +10,7 @@ import { ExitProvider, useExit } from "./context/exit"
 import type { Exit } from "./context/exit" // kilocode_change
 import { EpilogueProvider } from "./context/epilogue"
 import * as Selection from "./util/selection"
-import { createCliRenderer, MouseButton, type CliRenderer } from "@opentui/core"
+import { createCliRenderer, MouseButton } from "@opentui/core"
 import { RouteProvider, useRoute } from "./context/route"
 import {
   Switch,
@@ -37,11 +38,14 @@ import { SDKProvider, useSDK } from "./context/sdk"
 import { StartupLoading } from "./component/startup-loading"
 import { SyncProvider, useSync } from "./context/sync"
 import { DataProvider } from "./context/data"
+import { LocationProvider } from "./context/location"
 import { LocalProvider, useLocal } from "./context/local"
+import { PermissionProvider } from "./context/permission"
 import { DialogModel } from "./component/dialog-model"
 import { useConnected } from "./component/use-connected"
 import { DialogMcp } from "./component/dialog-mcp"
 import { DialogStatus } from "./component/dialog-status"
+import { DialogDebug } from "./component/dialog-debug"
 import { DialogThemeList } from "./component/dialog-theme-list"
 import { DialogHelp } from "./ui/dialog-help"
 import { DialogAgent } from "./component/dialog-agent"
@@ -89,6 +93,8 @@ import * as KiloApp from "@/kilocode/cli/cmd/tui/app" // kilocode_change
 import { kitty, resetTerminalState } from "@/kilocode/cli/cmd/tui/util/terminal" // kilocode_change
 import { hasDisplay } from "@/kilocode/cli/cmd/tui/util/display" // kilocode_change
 
+registerOpencodeSpinner()
+
 const appGlobalBindingCommands = [
   "session.list",
   "session.new",
@@ -119,11 +125,13 @@ const appBindingCommands = [
   "provider.connect",
   "console.org.switch",
   "opencode.status",
+  "opencode.debug",
   "theme.switch",
   "theme.switch_mode",
   "theme.mode.lock",
   "help.show",
   "docs.open",
+  "diff.open",
   "workspace.list",
   "app.debug",
   "app.console",
@@ -189,21 +197,23 @@ export const run = Effect.fn("Tui.run")(function* (input: TuiInput) {
     Effect.gen(function* () {
       const keyboard = kitty() // kilocode_change
       const renderer = yield* Effect.acquireRelease(
-        Effect.tryPromise(() =>
-          createCliRenderer({
-            externalOutputMode: "passthrough",
-            targetFps: 60,
-            gatherStats: false,
-            exitOnCtrlC: false,
-            ...(keyboard ? { useKittyKeyboard: {} } : {}), // kilocode_change
-            autoFocus: false,
-            openConsoleOnError: false,
-            useMouse: !Flag.KILO_DISABLE_MOUSE && input.config.mouse,
-            consoleOptions: {
-              keyBindings: [{ name: "y", ctrl: true, action: "copy-selection" }],
-            },
-          }),
-        ),
+        Effect.tryPromise({
+          try: () =>
+            createCliRenderer({
+              externalOutputMode: "passthrough",
+              targetFps: 60,
+              gatherStats: false,
+              exitOnCtrlC: false,
+              ...(keyboard ? { useKittyKeyboard: {} } : {}), // kilocode_change
+              autoFocus: false,
+              openConsoleOnError: false,
+              useMouse: !Flag.KILO_DISABLE_MOUSE && input.config.mouse,
+              consoleOptions: {
+                keyBindings: [{ name: "y", ctrl: true, action: "copy-selection" }],
+              },
+            }),
+          catch: (error) => (error instanceof Error ? error : new Error(String(error))),
+        }),
         (renderer) =>
           Effect.sync(() => {
             destroyRenderer(renderer)
@@ -305,36 +315,40 @@ export const run = Effect.fn("Tui.run")(function* (input: TuiInput) {
                                           headers={input.headers}
                                           events={input.events}
                                         >
-                                          <ProjectProvider>
-                                            <SyncProvider>
-                                              <DataProvider>
-                                                <ThemeProvider mode={mode}>
-                                                  <LocalProvider>
-                                                    <PromptStashProvider>
-                                                      <DialogProvider>
-                                                        {/* kilocode_change start */}
-                                                        <NudgeProvider>
-                                                          <FrecencyProvider>
-                                                            <PromptHistoryProvider>
-                                                              <PromptRefProvider>
-                                                                <EditorContextProvider>
-                                                                  <App
-                                                                    onSnapshot={input.onSnapshot}
-                                                                    pluginHost={input.pluginHost}
-                                                                  />
-                                                                </EditorContextProvider>
-                                                              </PromptRefProvider>
-                                                            </PromptHistoryProvider>
-                                                          </FrecencyProvider>
-                                                        </NudgeProvider>
-                                                        {/* kilocode_change end */}
-                                                      </DialogProvider>
-                                                    </PromptStashProvider>
-                                                  </LocalProvider>
-                                                </ThemeProvider>
-                                              </DataProvider>
-                                            </SyncProvider>
-                                          </ProjectProvider>
+                                          <PermissionProvider>
+                                            <ProjectProvider>
+                                              <SyncProvider>
+                                                <DataProvider>
+                                                  <ThemeProvider mode={mode}>
+                                                    <LocalProvider>
+                                                      <PromptStashProvider>
+                                                        <DialogProvider>
+                                                          {/* kilocode_change start */}
+                                                          <NudgeProvider>
+                                                            <FrecencyProvider>
+                                                              <PromptHistoryProvider>
+                                                                <PromptRefProvider>
+                                                                  <EditorContextProvider>
+                                                                    <LocationProvider>
+                                                                      <App
+                                                                        onSnapshot={input.onSnapshot}
+                                                                        pluginHost={input.pluginHost}
+                                                                      />
+                                                                    </LocationProvider>
+                                                                  </EditorContextProvider>
+                                                                </PromptRefProvider>
+                                                              </PromptHistoryProvider>
+                                                            </FrecencyProvider>
+                                                          </NudgeProvider>
+                                                          {/* kilocode_change end */}
+                                                        </DialogProvider>
+                                                      </PromptStashProvider>
+                                                    </LocalProvider>
+                                                  </ThemeProvider>
+                                                </DataProvider>
+                                              </SyncProvider>
+                                            </ProjectProvider>
+                                          </PermissionProvider>
                                         </SDKProvider>
                                       </PluginRuntimeProvider>
                                     </KiloApp.KiloTuiConfig.Provider>
@@ -443,7 +457,7 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
 
     await clipboard
       .write?.(text)
-      .then(() => toast.show({ message: "Copied to clipboard", variant: "info", duration: 2000 })) // czcode_change - auto-dismiss
+      .then(() => toast.show({ message: "Copied to clipboard", variant: "info" }))
       .catch(toast.error)
 
     renderer.clearSelection()
@@ -454,8 +468,10 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
     kv.get("paste_summary_enabled", !sync.data.config.experimental?.disable_paste_summary),
   )
 
+  // kilocode_change start
   KiloApp.useSessionEffects({ route, sdk, sync })
   KiloApp.useTuiConfigHotReload()
+  // kilocode_change end
 
   // Update terminal window title based on current route and session
   createEffect(() => {
@@ -616,6 +632,7 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
         category: "Workspace",
         hidden: !Flag.KILO_EXPERIMENTAL_WORKSPACES,
         slashName: "workspaces",
+        slashAliases: ["worktree", "worktrees"], // kilocode_change - `kilo --worktree` worktrees are workspaces too
         run: () => {
           dialog.replace(() => <DialogWorkspaceList />)
         },
@@ -769,6 +786,15 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
         slashName: "status",
         run: () => {
           dialog.replace(() => <DialogStatus />)
+        },
+        category: "System",
+      },
+      {
+        name: "opencode.debug",
+        title: "View debug info",
+        slashName: "debug",
+        run: () => {
+          dialog.replace(() => <DialogDebug />)
         },
         category: "System",
       },
@@ -943,6 +969,24 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
           dialog.clear()
         },
       },
+      // kilocode_change - titled by scope. This toggles the in-memory mode that `--auto`/`--yolo`
+      // seed, which lasts for the TUI process and survives switching sessions. It is also the only
+      // way to leave that mode without restarting; Kilo's `permission.allow_everything`
+      // (kilocode/cli/cmd/tui/app.tsx) saves a global rule instead. Consolidating the two is a
+      // follow-up that has to cover VS Code and JetBrains as well.
+      {
+        name: "permission.mode",
+        title:
+          local.permission.mode === "auto"
+            ? "Disable auto-approve for this TUI run"
+            : "Enable auto-approve for this TUI run",
+        desc: "Auto-approve permission prompts until you exit the TUI, nothing is saved", // kilocode_change
+        category: "System",
+        run: () => {
+          local.permission.toggle()
+          dialog.clear()
+        },
+      },
     ].map((command) => ({
       namespace: "palette",
       ...command,
@@ -972,7 +1016,7 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
     bindings: tuiConfig.keybinds.gather("app_exit", ["app.exit"]),
   }))
 
-  KiloApp.init()
+  KiloApp.init() // kilocode_change
 
   event.on("tui.command.execute", (evt, { workspace }) => {
     if (workspace !== project.workspace.current()) return
@@ -1063,7 +1107,7 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
     await DialogAlert.show(
       dialog,
       "Update Complete",
-      `Successfully updated to ${KiloApp.APP_NAME} v${result.data.version}. Please restart the application.`,
+      `Successfully updated to ${KiloApp.APP_NAME} v${result.data.version}. Please restart the application.`, // kilocode_change
     )
 
     void exit()
@@ -1109,14 +1153,6 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
                 {(_) => <Session />}
               </Show>
             </Match>
-            <Match when={route.data.type === "kiloclaw"}>
-              <KiloApp.KiloClawView />
-            </Match>
-            {/* czcode_change start */}
-            <Match when={route.data.type === "singclaw"}>
-              <KiloApp.SingClawView context={(route.data as any).context} returnTo={(route.data as any).returnTo} />
-            </Match>
-            {/* czcode_change end */}
           </Switch>
           {plugin()}
         </box>

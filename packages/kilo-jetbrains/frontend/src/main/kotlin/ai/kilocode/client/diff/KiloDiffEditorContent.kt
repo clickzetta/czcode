@@ -48,7 +48,9 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.concurrency.annotations.RequiresEdt
+import com.intellij.util.ui.Centerizer
 import com.intellij.util.ui.JBUI
+import com.intellij.util.ui.tree.TreeUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -67,6 +69,8 @@ import javax.swing.JPanel
 import javax.swing.ScrollPaneConstants
 import javax.swing.JViewport
 import javax.swing.JTree
+import javax.swing.event.TreeExpansionEvent
+import javax.swing.event.TreeExpansionListener
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreeCellRenderer
@@ -88,6 +92,13 @@ internal fun buildDiffEditor(
 
 internal val DIFF_FILE_KEY: Key<String> = Key.create("kilo.diff.file")
 
+/** Pane labels for a comparison [source]: committed base/HEAD, uncommitted HEAD/working tree, or a session diff's original/modified. */
+internal fun diffLabels(source: String?): Pair<String, String> = when (source) {
+    "branch" -> KiloBundle.message("diff.editor.side.base") to KiloBundle.message("diff.editor.side.head")
+    "local" -> KiloBundle.message("diff.editor.side.head") to KiloBundle.message("diff.editor.side.working")
+    else -> KiloBundle.message("diff.editor.side.original") to KiloBundle.message("diff.editor.side.modified")
+}
+
 internal class DiffEditorView(
     private val project: Project,
     private val params: Map<String, String>,
@@ -98,11 +109,12 @@ internal class DiffEditorView(
     private val load: ((DiffEditorData) -> Unit) -> Job,
     private val replace: (DiffEditorData) -> Unit,
 ) : Disposable {
+    private val start = normalize(initial)
     private val disposed = AtomicBoolean(false)
     private val outdated = AtomicBoolean(false)
     private val refreshing = AtomicBoolean(false)
-    private val tree = buildFileTree(initial)
-    private val badge = DiffStatBadge(0, 0, inset = UiStyle.Gap.pad())
+    private val tree = buildFileTree(start)
+    private val badge = DiffStatBadge(0, 0, inset = UiStyle.Gap.PAD)
     private val splitter = OnePixelSplitter(false, 0.25f)
     private val select = Debouncer<Int>(scope, parent) { show(it) }
     private val banner = EditorNotificationPanel(EditorNotificationPanel.Status.Warning).apply {
@@ -114,12 +126,12 @@ internal class DiffEditorView(
         add(banner, BorderLayout.NORTH)
         add(splitter, BorderLayout.CENTER)
     }
-    private var files = initial
+    private var files = start
     private var branch = branch
     private var syncing = false
-    private var requested: String? = initial.firstOrNull()?.file
+    private var requested: String? = start.firstOrNull()?.file
     private var refreshJob: Job? = null
-    private var processor = processor(initial, selected(initial.firstOrNull()?.file))
+    private var processor = processor(start, selected(start.firstOrNull()?.file))
     private val openFileAction = object : DumbAwareAction(
         KiloBundle.message("diff.editor.openFile"),
         KiloBundle.message("diff.editor.openFile"),
@@ -155,11 +167,11 @@ internal class DiffEditorView(
         // disposes the old processor on each refresh, and registering under parent would leak a
         // removal hook (holding the dead processor) for every refresh across the editor's lifetime.
         processor.addListener(DiffRequestProcessorListener { syncTree() }, processor)
-        splitter.firstComponent = buildTreePanel(tree, initial, badge, processor.component, ::refresh)
+        splitter.firstComponent = buildTreePanel(tree, start, badge, processor.component, ::refresh)
         splitter.secondComponent = processor.component
         processor.updateRequest()
-        applyBadge(initial)
-        select(initial.firstOrNull()?.file)
+        applyBadge(start)
+        select(start.firstOrNull()?.file)
         listen()
     }
 
@@ -174,24 +186,25 @@ internal class DiffEditorView(
 
     @RequiresEdt
     fun applyFiles(next: List<DiffFileDto>, nextBranch: String? = branch) {
-        if (same(files, next) && branch == nextBranch) return
+        val items = normalize(next)
+        if (same(files, items) && branch == nextBranch) return
         val path = selectedFile()?.file ?: activePath() ?: files.firstOrNull()?.file
-        val index = selected(path, next)
+        val index = selected(path, items)
         val old = processor
-        files = next
+        files = items
         branch = nextBranch
-        requested = next.getOrNull(index)?.file
-        tree.model = buildFileModel(next)
+        requested = items.getOrNull(index)?.file
+        tree.model = buildFileModel(items)
         expandAll(tree)
-        processor = processor(next, index)
+        processor = processor(items, index)
         Disposer.register(parent, processor)
         processor.addListener(DiffRequestProcessorListener { syncTree() }, processor)
-        splitter.firstComponent = buildTreePanel(tree, next, badge, processor.component, ::refresh)
+        splitter.firstComponent = buildTreePanel(tree, items, badge, processor.component, ::refresh)
         splitter.secondComponent = processor.component
         processor.updateRequest()
         Disposer.dispose(old)
-        applyBadge(next)
-        select(next.getOrNull(index)?.file)
+        applyBadge(items)
+        select(items.getOrNull(index)?.file)
         root.revalidate()
         root.repaint()
     }
@@ -200,7 +213,7 @@ internal class DiffEditorView(
     internal fun refresh() {
         if (disposed.get() || project.isDisposed) return
         if (!refreshing.compareAndSet(false, true)) return
-        saveDocuments()
+        if (params["source"] != "branch" && params["source"] != "local") saveDocuments()
         outdated.set(false)
         banner.isVisible = false
         root.revalidate()
@@ -302,12 +315,7 @@ internal class DiffEditorView(
         }
     }
 
-    private fun labels(): Pair<String, String> {
-        if (params["source"] == "branch") {
-            return KiloBundle.message("diff.editor.side.base") to KiloBundle.message("diff.editor.side.current")
-        }
-        return KiloBundle.message("diff.editor.side.original") to KiloBundle.message("diff.editor.side.modified")
-    }
+    private fun labels(): Pair<String, String> = diffLabels(params["source"])
 
     private fun syncTree() {
         if (disposed.get()) return
@@ -360,6 +368,22 @@ internal class DiffEditorView(
 
     private fun same(a: List<DiffFileDto>, b: List<DiffFileDto>): Boolean = a == b
 
+    private fun normalize(files: List<DiffFileDto>): List<DiffFileDto> = files.map { file -> file.copy(file = display(file.file)) }
+
+    private fun display(file: String): String {
+        val dir = params["directory"] ?: return file
+        val root = clean(dir) ?: return file
+        return try {
+            val raw = Path.of(file)
+            if (!raw.isAbsolute) return file
+            val path = raw.normalize()
+            if (!path.startsWith(root)) return file
+            root.relativize(path).toString().replace('\\', '/')
+        } catch (_: InvalidPathException) {
+            file
+        }
+    }
+
     private fun clean(dir: String): Path? = try {
         Path.of(dir).normalize()
     } catch (_: InvalidPathException) {
@@ -405,10 +429,10 @@ private class Debouncer<T>(
     }
 }
 
+/** Centered on both axes, matching the connecting and failed states rendered into the same slot. */
 @RequiresEdt
-internal fun emptyChangesComponent(): JComponent = JPanel(BorderLayout()).apply {
-    add(com.intellij.ui.components.JBLabel(KiloBundle.message("diff.editor.empty")), BorderLayout.CENTER)
-}
+internal fun emptyChangesComponent(): JComponent =
+    Centerizer(JBLabel(KiloBundle.message("diff.editor.empty")), Centerizer.TYPE.BOTH)
 
 private fun buildFileTree(files: List<DiffFileDto>): Tree {
     val tree = DiffTree(buildFileModel(files)).apply {
@@ -421,15 +445,49 @@ private fun buildFileTree(files: List<DiffFileDto>): Tree {
         val node = path.lastPathComponent as? DefaultMutableTreeNode
         (node?.userObject as? Node)?.name.orEmpty()
     }
+    // A folder row hides its rolled-up badge while expanded, so its preferred width depends on
+    // expansion state. JTree only invalidates cached path bounds on model changes, not on
+    // expand/collapse, so a collapsed folder would keep its narrower expanded-state bounds and the
+    // re-shown badge would squeeze the name until an unrelated re-measure. Invalidate the layout
+    // cache on a user toggle so the row re-measures. invalidateCacheAndRepaint is UI-scoped (whole
+    // tree), so [bulkToggle] suppresses this during expand/collapse-all and invalidates once at the
+    // end — otherwise a bulk op would re-measure the whole tree per row. Registered after the initial
+    // expandAll (already fully expanded, nothing to re-measure).
     expandAll(tree)
+    tree.addTreeExpansionListener(object : TreeExpansionListener {
+        override fun treeExpanded(event: TreeExpansionEvent) = onToggle()
+        override fun treeCollapsed(event: TreeExpansionEvent) = onToggle()
+        private fun onToggle() { if (!tree.bulk) TreeUtil.invalidateCacheAndRepaint(tree.ui) }
+    })
     return tree
 }
 
 private fun buildFileModel(files: List<DiffFileDto>): DefaultTreeModel {
     val root = DefaultMutableTreeNode(Node("", "", true, null))
     for (file in files) addFile(root, file)
+    compact(root)
     updateStats(root)
     return DefaultTreeModel(root)
+}
+
+// Collapse chains of single-child directories into one node (e.g. "pkg/ui/list") so the tree
+// doesn't nest through directories that never branch, mirroring the IDE's compact directories.
+private fun compact(node: DefaultMutableTreeNode) {
+    val item = node.userObject as? Node
+    if (item != null && item.file == null && item.path.isNotEmpty()) {
+        while (node.childCount == 1) {
+            val parent = node.userObject as? Node ?: break
+            val child = node.getChildAt(0) as? DefaultMutableTreeNode ?: break
+            val kid = child.userObject as? Node ?: break
+            if (kid.file != null) break
+            node.userObject = Node("${parent.name}/${kid.name}", kid.path, true, null)
+            node.removeAllChildren()
+            while (child.childCount > 0) node.add(child.getChildAt(0) as DefaultMutableTreeNode)
+        }
+    }
+    for (i in 0 until node.childCount) {
+        compact(node.getChildAt(i) as? DefaultMutableTreeNode ?: continue)
+    }
 }
 
 private fun buildTreePanel(tree: Tree, files: List<DiffFileDto>, badge: DiffStatBadge, target: JComponent, refresh: () -> Unit): JComponent {
@@ -464,7 +522,7 @@ private fun buildTreePanel(tree: Tree, files: List<DiffFileDto>, badge: DiffStat
             JBScrollPane(tree).apply {
                 border = JBUI.Borders.empty()
                 viewportBorder = JBUI.Borders.empty()
-                horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
+                horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED
             },
             BorderLayout.CENTER,
         )
@@ -483,7 +541,7 @@ private fun fileCount(count: Int): String = KiloBundle.message(
     count,
 )
 
-private fun expandAll(tree: Tree) {
+private fun expandAll(tree: Tree) = bulkToggle(tree) {
     var i = 0
     while (i < tree.rowCount) {
         tree.expandRow(i)
@@ -491,8 +549,24 @@ private fun expandAll(tree: Tree) {
     }
 }
 
-private fun collapseAll(tree: Tree) {
+private fun collapseAll(tree: Tree) = bulkToggle(tree) {
     for (i in tree.rowCount - 1 downTo 0) tree.collapseRow(i)
+}
+
+/**
+ * Run a bulk expand/collapse without firing the per-row layout-cache invalidation. Each toggle would
+ * otherwise invalidate the whole tree (invalidateCacheAndRepaint is UI-scoped), making a bulk op
+ * O(rows^2) to re-measure. Suppress the toggle listener for the loop and invalidate once at the end.
+ */
+private fun bulkToggle(tree: Tree, action: () -> Unit) {
+    val diff = tree as? DiffTree
+    diff?.bulk = true
+    try {
+        action()
+    } finally {
+        diff?.bulk = false
+    }
+    TreeUtil.invalidateCacheAndRepaint(tree.ui)
 }
 
 private fun addFile(root: DefaultMutableTreeNode, file: DiffFileDto) {
@@ -549,6 +623,9 @@ private class Node(val name: String, val path: String, val dir: Boolean, val fil
 }
 
 private class DiffTree(model: TreeModel) : Tree(model) {
+    /** Set while a bulk expand/collapse runs so the toggle listener skips its per-row invalidation. */
+    var bulk = false
+
     override fun getBackground(): Color = JBUI.CurrentTheme.ToolWindow.background()
 
     override fun getScrollableTracksViewportHeight(): Boolean {
@@ -584,9 +661,12 @@ private class Renderer : JPanel(BorderLayout()), TreeCellRenderer {
         val name = item?.name?.ifBlank { item.path }.orEmpty()
         val color = item?.file?.let(::fileStatus)?.color
         if (color == null) text.append(name) else text.append(name, SimpleTextAttributes(SimpleTextAttributes.STYLE_PLAIN, color))
-        val changed = item != null && (item.additions != 0 || item.deletions != 0)
-        badge.isVisible = changed
-        if (changed) badge.update(item.additions, item.deletions)
+        // A folder's badge rolls up its descendants' stats, which is only meaningful while the
+        // folder is collapsed. Once expanded the child rows carry their own badges, so hide the
+        // folder aggregate to avoid duplicating the numbers. Leaf files always show their badge.
+        val show = item != null && (item.additions != 0 || item.deletions != 0) && !(item.dir && expanded)
+        badge.isVisible = show
+        if (show) badge.update(item.additions, item.deletions)
         return this
     }
 }

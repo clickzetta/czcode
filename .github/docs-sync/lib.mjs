@@ -9,8 +9,15 @@
 import { spawnSync } from "node:child_process"
 import fs from "node:fs"
 
-const API = "https://api.github.com"
+// Test hook: DOCS_SYNC_API_BASE points the API at a local stub server. The workflow
+// never sets it — only selftests do.
+const API = process.env.DOCS_SYNC_API_BASE || "https://api.github.com"
 const MAX_RETRIES = 3
+
+// Reasoning effort passed to every `kilo run` as `--variant`. The workflow sets
+// DOCS_SYNC_VARIANT (default "max"); scripts fall back to max so a local run or a
+// caller that forgets the env still gets the intended effort.
+export const REASONING_VARIANT = process.env.DOCS_SYNC_VARIANT || "max"
 
 export function token() {
   const t = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
@@ -26,14 +33,16 @@ export function repo() {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
-export async function api(path, { method = "GET", body } = {}) {
+export async function api(path, { method = "GET", body, auth } = {}) {
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     let res
     try {
       res = await fetch(`${API}${path}`, {
         method,
         headers: {
-          authorization: `Bearer ${token()}`,
+          // `auth` names a token for a repository this job does not own (the
+          // cloud repo); callers that omit it authenticate as this repo.
+          authorization: `Bearer ${auth ?? token()}`,
           accept: "application/vnd.github+json",
           "x-github-api-version": "2022-11-28",
           "user-agent": "kilo-docs-sync-bot",

@@ -16,6 +16,12 @@ export interface WorktreeBusyState {
   branch?: string
 }
 
+/** Why a worktree cannot be polled, as classified by the extension's health reconcile. */
+export type WorktreeHealthState = NonNullable<AgentManagerStateMessage["worktreeHealth"]>[string]
+
+/** A directory under `.kilo/worktrees/` that no worktree claims, and whether it still holds a checkout. */
+export type OrphanDirectory = NonNullable<AgentManagerStateMessage["orphanDirectories"]>[number]
+
 /** Local session tab ids owned by one project. */
 export function createStoreTabs(initial: string[] = []) {
   const [ids, setIds] = createSignal<string[]>(initial)
@@ -51,11 +57,20 @@ export function createProjectStore(id: string, opts: { tabs?: string[] } = {}) {
     get: (sel: string) => memory()[sel],
     set: (sel: string, tab: string) => setMemory((prev) => (prev[sel] === tab ? prev : { ...prev, [sel]: tab })),
   }
+  /** Last session tab to restore after leaving a central terminal. */
+  const [sessionMemory, setSessionMemory] = createSignal<Record<string, string>>({})
+  const sessionRestore = {
+    all: sessionMemory,
+    get: (sel: string) => sessionMemory()[sel],
+    set: (sel: string, tab: string) => setSessionMemory((prev) => (prev[sel] === tab ? prev : { ...prev, [sel]: tab })),
+  }
 
   const [worktrees, setWorktrees] = field<WorktreeState[]>([])
   const [managedSessions, setManagedSessions] = field<ManagedSessionState[]>([])
   const [sections, setSections] = field<SectionState[]>([])
   const [staleWorktreeIds, setStaleWorktreeIds] = field<Set<string>>(new Set())
+  const [worktreeHealth, setWorktreeHealth] = field<Record<string, WorktreeHealthState>>({})
+  const [orphanDirectories, setOrphanDirectories] = field<OrphanDirectory[]>([])
   const [tabOrder, setTabOrder] = field<Record<string, string[]>>({})
   const [worktreeOrder, setWorktreeOrder] = field<string[]>([])
   const [sessionsCollapsed, setSessionsCollapsed] = field<boolean | undefined>(undefined)
@@ -72,15 +87,19 @@ export function createProjectStore(id: string, opts: { tabs?: string[] } = {}) {
     setWorktrees(state.worktrees)
     setManagedSessions(state.sessions)
     setStaleWorktreeIds(new Set(state.staleWorktreeIds ?? []))
+    setWorktreeHealth(state.worktreeHealth ?? {})
+    setOrphanDirectories(state.orphanDirectories ?? [])
     setSections(state.sections ?? [])
     if (state.tabOrder) setTabOrder(state.tabOrder)
     if (state.worktreeOrder) setWorktreeOrder(state.worktreeOrder)
     if ("defaultBaseBranch" in state) setDefaultBaseBranch(state.defaultBaseBranch || undefined)
     setRunScriptConfigured(state.runScriptConfigured === true)
     if (state.sessionsCollapsed !== undefined) setSessionsCollapsed(state.sessionsCollapsed)
-    const runs: Record<string, RunStatus> = {}
-    for (const item of state.runStatuses ?? []) runs[item.worktreeId] = item
-    setRunStatuses(runs)
+    if (state.runStatuses) {
+      const runs: Record<string, RunStatus> = {}
+      for (const item of state.runStatuses) runs[item.worktreeId] = item
+      setRunStatuses(runs)
+    }
     // Reconcile busy flags with the worktree list (deleted worktrees drop out).
     const ids = new Set(state.worktrees.map((wt) => wt.id))
     setBusy((prev) => {
@@ -94,6 +113,7 @@ export function createProjectStore(id: string, opts: { tabs?: string[] } = {}) {
     tabs,
     applyState,
     tabMemory,
+    sessionRestore,
     worktrees,
     setWorktrees,
     managedSessions,
@@ -102,6 +122,10 @@ export function createProjectStore(id: string, opts: { tabs?: string[] } = {}) {
     setSections,
     staleWorktreeIds,
     setStaleWorktreeIds,
+    worktreeHealth,
+    setWorktreeHealth,
+    orphanDirectories,
+    setOrphanDirectories,
     tabOrder,
     setTabOrder,
     worktreeOrder,

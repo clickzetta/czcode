@@ -45,9 +45,10 @@ import {
   autoSummary,
   buildTriggerLabel,
   sanitizeName,
+  mostUsedModels,
+  rankModelSearch,
 } from "./model-selector-utils"
 import { ModelPreview } from "./ModelPreview"
-import { searchMatch } from "../../utils/search-match"
 
 // ---------------------------------------------------------------------------
 // Row / group key helpers — single source of truth for key formatting
@@ -57,6 +58,7 @@ const CLEAR_KEY = "clear"
 const FAVORITES_KEY = "favorites"
 const AUTO_KEY = "auto"
 const RECOMMENDED_KEY = "recommended"
+const MOST_USED_KEY = "most-used"
 
 function modelKey(providerID: string, modelID: string) {
   return `${providerID}/${modelID}`
@@ -82,7 +84,7 @@ interface ModelRow {
 
 interface ModelGroup {
   key: string
-  label: string
+  label?: string
   rows: ModelRow[]
 }
 
@@ -134,6 +136,16 @@ export interface ModelSelectorBaseProps {
   label?: string
   /** Additional accessible context for this model setting. */
   description?: string
+  /** Only respond to picker events from this prompt scope. */
+  trigger?: string
+  /** Disable this prompt-scoped selector while a permission owns the prompt. */
+  blocked?: boolean
+  /**
+   * Force the compact list layout. Used by inline `@` model references, where
+   * there is no current model for the preview pane and picking is a one-click,
+   * insert-only action. The persisted chat-selector preference is not changed.
+   */
+  collapsed?: boolean
 }
 
 export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
@@ -156,10 +168,16 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
 
   const [open, setOpen] = createSignal(false)
   // Shared, host-persisted expand/collapse preference (see VSCodeProvider).
-  const expanded = vscode.getModelSelectorExpanded
-  const setExpanded = vscode.setModelSelectorExpanded
+  // Inline `@` model references force the compact layout and must not read or
+  // write that preference.
+  const preferExpanded = vscode.getModelSelectorExpanded
+  const expanded = () => !props.collapsed && preferExpanded()
+  const setExpanded = (value: boolean) => {
+    if (props.collapsed) return
+    vscode.setModelSelectorExpanded(value)
+  }
   const [search, setSearch] = createSignal("")
-  const [debouncedSearch, setDebouncedSearch] = createSignal("")
+  const hasSearch = () => search().trim().length > 0
   const [selectedKey, setSelectedKey] = createSignal(CLEAR_KEY)
   const [browsing, setBrowsing] = createSignal(false)
   const [navigating, setNavigating] = createSignal(false)
@@ -181,6 +199,10 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
   let listRef: HTMLDivElement | undefined
   let bodyRef: HTMLDivElement | undefined
   let previewTimer: ReturnType<typeof setTimeout> | undefined
+  let scrollFrame: number | undefined
+  let pointerX: number | undefined
+  let pointerY: number | undefined
+  let previousSearch: string | undefined
   const [virtualizer, setVirtualizer] = createSignal<VirtualizerHandle>()
   const [pointer, setPointer] = createSignal(true)
 
@@ -223,22 +245,17 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
   const hasProviders = () => visibleModels().length > 0
   const canOpen = () => hasProviders() || ((props.allowClear ?? false) && !!props.value)
 
-  // Debounce search input to avoid re-filtering on every keystroke
-  createEffect(() => {
-    const q = search()
-    const t = setTimeout(() => setDebouncedSearch(q), 250)
-    onCleanup(() => clearTimeout(t))
-  })
-
   // Flat filtered list for keyboard navigation
   const filtered = createMemo(() => {
-    const q = debouncedSearch().trim()
+    const q = search().trim()
     if (!q) {
       return visibleModels()
     }
-    return visibleModels().filter(
-      (m) => searchMatch(q, m.name) || searchMatch(q, m.id) || searchMatch(q, m.providerName),
-    )
+    return rankModelSearch(visibleModels(), q, {
+      usage: session?.modelUsageHistory(),
+      favorites: new Set(session?.favoriteModels().map((item) => modelKey(item.providerID, item.modelID))),
+      recent: session?.recentModels(),
+    })
   })
 
   // Live set of favorited keys — drives star icon visual state (filled vs outline).
@@ -251,7 +268,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
 
   const favoriteModels = createMemo(() => {
     if (props.favorites === false) return []
-    if (!session || debouncedSearch()) return []
+    if (!session || hasSearch()) return []
     const map = new Map(visibleModels().map((m) => [modelKey(m.providerID, m.id), m]))
     const list = session
       .favoriteModels()
@@ -269,11 +286,28 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
   const groups = createMemo<ModelGroup[]>(() => {
     const autos: EnrichedModel[] = []
     const recommended: EnrichedModel[] = []
+    const mostUsed: EnrichedModel[] = []
     const map = new Map<string, EnrichedModel[]>()
 
+    if (!hasSearch() && session) {
+      mostUsed.push(
+        ...mostUsedModels(
+          visibleModels().filter((model) => !isAuto(model) && model.recommendedIndex === undefined),
+          session.modelUsageHistory(),
+          favoriteKeys(),
+        ),
+      )
+    }
+
     for (const m of filtered()) {
-      if (isAuto(m)) {
+      if (isAuto(m) && m.recommendedIndex !== undefined) {
         autos.push(m)
+        continue
+      }
+      if (
+        !hasSearch() &&
+        mostUsed.some((item) => modelKey(item.providerID, item.id) === modelKey(m.providerID, m.id))
+      ) {
         continue
       }
       if (m.recommendedIndex !== undefined) {
@@ -330,6 +364,18 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
       })
     }
 
+    if (mostUsed.length > 0) {
+      result.push({
+        key: MOST_USED_KEY,
+        label: language.t("model.group.mostUsed"),
+        rows: mostUsed.map((m) => ({
+          key: rowKey("model", m.providerID, m.id),
+          kind: "model",
+          model: m,
+        })),
+      })
+    }
+
     const rest: ModelGroup[] = [...map.entries()]
       .sort(([a], [b]) => providerSortKey(a) - providerSortKey(b))
       .map(([id, list]) => {
@@ -345,11 +391,24 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
         }
       })
 
+    if (hasSearch()) {
+      if (filtered().length === 0) return []
+      return [
+        {
+          key: "search-results",
+          rows: filtered().map((m) => ({
+            key: rowKey("model", m.providerID, m.id),
+            kind: "model",
+            model: m,
+          })),
+        },
+      ]
+    }
+
     return [...result, ...rest]
   })
 
-  // Collapse state is honored even during search so users can skip past
-  // large providers (e.g. Kilo Gateway) without scrolling through every match.
+  // Search results are flattened so matching provider variants stay adjacent.
   const isGroupOpen = (key: string) => !collapsed().has(key)
 
   function toggleGroup(key: string) {
@@ -368,7 +427,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
 
   const rows = createMemo<ModelRow[]>(() => {
     const c = collapsed()
-    const list = groups().flatMap((g) => (c.has(g.key) ? [] : g.rows))
+    const list = groups().flatMap((g) => (hasSearch() || !c.has(g.key) ? g.rows : []))
     if (!props.allowClear) return list
     return [{ key: CLEAR_KEY, kind: "clear" }, ...list]
   })
@@ -377,6 +436,10 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
     const result: ModelNode[] = []
     if (props.allowClear) result.push({ key: CLEAR_KEY, kind: "row", row: { key: CLEAR_KEY, kind: "clear" } })
     for (const group of groups()) {
+      if (hasSearch()) {
+        result.push(...group.rows.map((row) => ({ key: row.key, kind: "row" as const, row, group })))
+        continue
+      }
       result.push({ key: groupKey(group.key), kind: "group", group })
       if (!isGroupOpen(group.key)) continue
       result.push(...group.rows.map((row) => ({ key: row.key, kind: "row" as const, row, group })))
@@ -400,7 +463,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
     if (!m) return props.allowClear ? CLEAR_KEY : defaultKey()
     const key = modelKey(m.providerID, m.id)
     const favorite = favoriteKey(m)
-    if (!debouncedSearch() && favoriteKeys().has(key) && rowMap().has(favorite)) return favorite
+    if (!hasSearch() && favoriteKeys().has(key) && rowMap().has(favorite)) return favorite
     return canonicalKey(m)
   }
   const chosen = (row: ModelRow) => {
@@ -453,25 +516,36 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
   // which would cause star/unstar to reset selection mid-interaction.
   // Falls back to defaultKey when the active model is filtered out.
   createEffect(() => {
+    const query = search()
     const list = filtered()
+    const searchChanged = query !== previousSearch
+    previousSearch = query
     untrack(() => {
       const active = activeModel()
       const canon = active ? canonicalKey(active) : null
       const match = list[0]
       const first = match ? canonicalKey(match) : null
       const next =
-        canon && rowMap().has(canon)
-          ? canon
-          : first && rowMap().has(first)
-            ? first
-            : props.allowClear
-              ? CLEAR_KEY
-              : defaultKey()
+        hasSearch() && first
+          ? first
+          : canon && rowMap().has(canon)
+            ? canon
+            : first && rowMap().has(first)
+              ? first
+              : props.allowClear
+                ? CLEAR_KEY
+                : defaultKey()
       setSelectedKey(next)
-      setBrowsing(!!debouncedSearch() && nodeMap().has(next))
+      setBrowsing(hasSearch() && (!!first || props.allowClear === true))
       setNavigating(false)
       setPreActiveKey(next)
       setPreviewKey(next)
+      if (!open() || !searchChanged) return
+      if (scrollFrame !== undefined) cancelAnimationFrame(scrollFrame)
+      scrollFrame = requestAnimationFrame(() => {
+        scrollFrame = undefined
+        scrollRow(next, "nearest")
+      })
     })
   })
 
@@ -500,25 +574,39 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
     setBrowsing(false)
     setNavigating(false)
     setSearch("")
-    setDebouncedSearch("")
     clearTimeout(previewTimer)
+    if (scrollFrame !== undefined) cancelAnimationFrame(scrollFrame)
+    scrollFrame = undefined
   })
 
   // Register before the popover mounts so programmatic slash-command opens
   // always restore the prompt before the popover's own Escape handler runs.
-  const onTrigger = () => setOpen(true)
+  const onTrigger = (event: Event) => {
+    const source = (event as CustomEvent<{ source?: string }>).detail?.source
+    if (source !== props.trigger || props.blocked) return
+    setOpen(true)
+  }
   const onEscape = (e: KeyboardEvent) => {
     if (!open() || e.key !== "Escape") return
     e.preventDefault()
     e.stopImmediatePropagation()
     cancel()
   }
-  window.addEventListener("openModelPicker", onTrigger)
-  window.addEventListener("keydown", onEscape, true)
+  createEffect(() => {
+    if (props.blocked) {
+      setOpen(false)
+      return
+    }
+    window.addEventListener("openModelPicker", onTrigger)
+    window.addEventListener("keydown", onEscape, true)
+    onCleanup(() => {
+      window.removeEventListener("openModelPicker", onTrigger)
+      window.removeEventListener("keydown", onEscape, true)
+    })
+  })
   onCleanup(() => {
-    window.removeEventListener("openModelPicker", onTrigger)
-    window.removeEventListener("keydown", onEscape, true)
     clearTimeout(previewTimer)
+    if (scrollFrame !== undefined) cancelAnimationFrame(scrollFrame)
   })
 
   function pick(model: EnrichedModel) {
@@ -550,6 +638,20 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
   function schedulePreview(key: string | null) {
     clearTimeout(previewTimer)
     previewTimer = setTimeout(() => setPreviewKey(key), 200)
+  }
+
+  function pointerMove(e: MouseEvent) {
+    const target = e.target
+    if (!(target instanceof Element)) return
+    const item = target.closest<HTMLElement>('[role="treeitem"][data-key]')
+    const key = item?.dataset.key
+    if (!key) return
+    const moved = pointerX !== undefined && pointerY !== undefined && (e.clientX !== pointerX || e.clientY !== pointerY)
+    pointerX = e.clientX
+    pointerY = e.clientY
+    if (!moved) return
+    setPointer(true)
+    setSelectedKey(key)
   }
 
   function scrollRow(key: string | null | undefined, block: ScrollLogicalPosition = "nearest") {
@@ -585,9 +687,10 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
   }
 
   function horizontal(step: -1 | 1) {
+    if (hasSearch()) return
     const node = nodeMap().get(selectedKey())
     if (!node) return
-    if (node.kind === "group" && node.group) {
+    if (node.kind === "group" && node.group && node.group.label) {
       if (step === -1 && isGroupOpen(node.group.key)) {
         toggleGroup(node.group.key)
         return
@@ -695,7 +798,6 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
     buildTriggerLabel(
       activeModel()?.name,
       activeModel()?.providerID,
-      activeModel()?.providerName,
       props.value,
       props.allowClear ?? false,
       props.clearLabel ?? "",
@@ -738,13 +840,16 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
           deferDismiss={props.deferDismiss}
           portal={props.portal}
           open={open()}
-          onOpenChange={setOpen}
+          onOpenChange={(value) => {
+            if (value && props.blocked) return
+            setOpen(value)
+          }}
           triggerAs={Button}
           triggerProps={{
             variant: "secondary",
             size: "normal",
             get disabled() {
-              return !canOpen()
+              return props.blocked || !canOpen()
             },
             get ["aria-label"]() {
               return controlLabel()
@@ -808,6 +913,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
                     placeholder={language.t("dialog.model.search.placeholder")}
                     value={search()}
                     onInput={(e) => {
+                      setPointer(false)
                       setBrowsing(false)
                       setNavigating(false)
                       setSearch(e.currentTarget.value)
@@ -820,33 +926,44 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
                       }
                     }}
                   />
-                  <Tooltip
-                    value={expanded() ? language.t("dialog.model.collapse") : language.t("dialog.model.expand")}
-                    placement="top"
-                  >
-                    <IconButton
-                      icon={expanded() ? "collapse" : "expand"}
-                      size="small"
-                      variant="ghost"
-                      aria-label={expanded() ? language.t("dialog.model.collapse") : language.t("dialog.model.expand")}
-                      aria-expanded={expanded()}
-                      aria-controls={previewID}
-                      onClick={() => {
-                        if (expanded()) {
-                          setPreActiveKey(null)
-                          setPreviewKey(null)
+                  <Show when={!props.collapsed}>
+                    <Tooltip
+                      value={expanded() ? language.t("dialog.model.collapse") : language.t("dialog.model.expand")}
+                      placement="top"
+                    >
+                      <IconButton
+                        icon={expanded() ? "collapse" : "expand"}
+                        size="small"
+                        variant="ghost"
+                        aria-label={
+                          expanded() ? language.t("dialog.model.collapse") : language.t("dialog.model.expand")
                         }
-                        setExpanded(!expanded())
-                        requestAnimationFrame(() => {
-                          searchRef?.focus()
-                          scrollRow(preActiveKey() ?? selectedKey(), "nearest")
-                        })
-                      }}
-                    />
-                  </Tooltip>
+                        aria-expanded={expanded()}
+                        aria-controls={previewID}
+                        onClick={() => {
+                          if (expanded()) {
+                            setPreActiveKey(null)
+                            setPreviewKey(null)
+                          }
+                          setExpanded(!expanded())
+                          requestAnimationFrame(() => {
+                            searchRef?.focus()
+                            scrollRow(preActiveKey() ?? selectedKey(), "nearest")
+                          })
+                        }}
+                      />
+                    </Tooltip>
+                  </Show>
                 </div>
 
-                <div id={listID} class="model-selector-list" role="tree" aria-label={label()} ref={listRef}>
+                <div
+                  id={listID}
+                  class="model-selector-list"
+                  role="tree"
+                  aria-label={label()}
+                  ref={listRef}
+                  onMouseMove={pointerMove}
+                >
                   <Show when={groups().length === 0}>
                     <div class="model-selector-empty" role="status" aria-live="polite">
                       {language.t("dialog.model.empty")}
@@ -871,16 +988,13 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
                             return (
                               <div
                                 id={optionID(key)}
+                                data-key={key}
                                 class={`model-selector-group-label${props.allowClear || group.key !== groups()[0]?.key ? " model-selector-group-label--divided" : ""}${isSelected(key) ? " selected" : ""}${isSelected(key) && !pointer() ? " keyboard-focused" : ""}`}
                                 role="treeitem"
                                 aria-level={1}
                                 aria-expanded={shown()}
                                 onMouseDown={(e) => e.preventDefault()}
                                 onClick={() => toggleGroup(group.key)}
-                                onMouseMove={() => setPointer(true)}
-                                onMouseEnter={() => {
-                                  if (pointer()) setSelectedKey(key)
-                                }}
                               >
                                 <svg
                                   class={`model-selector-group-chevron${shown() ? "" : " model-selector-group-chevron--collapsed"}`}
@@ -893,7 +1007,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
                                   <path d="M4 6l4 5 4-5H4z" />
                                 </svg>
                                 <span>{group.label}</span>
-                                <Show when={!shown() && !!debouncedSearch()}>
+                                <Show when={!shown() && hasSearch()}>
                                   <span class="model-selector-group-match-dot" aria-hidden="true" />
                                 </Show>
                               </div>
@@ -906,15 +1020,12 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
                             return (
                               <div
                                 id={optionID(CLEAR_KEY)}
+                                data-key={CLEAR_KEY}
                                 class={`model-selector-item${isSelected(CLEAR_KEY) && !pointer() ? " keyboard-focused" : ""}${isSelected(CLEAR_KEY) ? " selected" : ""}${!props.value?.providerID ? " active" : ""}`}
                                 role="treeitem"
                                 aria-level={1}
                                 aria-selected={!props.value?.providerID}
                                 onClick={() => pickClear()}
-                                onMouseMove={() => setPointer(true)}
-                                onMouseEnter={() => {
-                                  if (pointer()) setSelectedKey(CLEAR_KEY)
-                                }}
                               >
                                 <span class="model-selector-item-name" style={{ "font-style": "italic", opacity: 0.7 }}>
                                   {props.clearLabel ?? language.t("dialog.model.notSet")}
@@ -928,7 +1039,6 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
                           const hovered = () => isSelected(row.key)
                           const preActive = () => isPreActive(row.key)
                           const starred = () => favoriteKeys().has(modelKey(model.providerID, model.id))
-                          const showProvider = () => row.kind === "favorite"
                           const showSelect = () => expanded() && preActive() && !isActive(model)
                           const starLabel = () =>
                             `${starred() ? language.t("model.favorite.remove") : language.t("model.favorite.add")}: ${sanitizeName(model.name)}`
@@ -939,6 +1049,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
                             >
                               <div
                                 id={optionID(row.key)}
+                                data-key={row.key}
                                 class={`model-selector-item${(hovered() && !pointer()) || preActive() ? " keyboard-focused" : ""}${hovered() || preActive() ? " selected" : ""}${chosen(row) ? " active" : ""}`}
                                 role="treeitem"
                                 aria-level={2}
@@ -954,10 +1065,6 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
                                 }}
                                 onDblClick={() => {
                                   if (expanded()) selectRow(row)
-                                }}
-                                onMouseMove={() => setPointer(true)}
-                                onMouseEnter={() => {
-                                  if (pointer()) setSelectedKey(row.key)
                                 }}
                               >
                                 <div class="model-selector-item-left">
@@ -1002,9 +1109,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
                                       </Show>
                                     </span>
                                   </Show>
-                                  <Show when={showProvider()}>
-                                    <span class="model-selector-item-provider-tag">{model.providerName}</span>
-                                  </Show>
+                                  <span class="model-selector-item-provider-tag">{model.providerName}</span>
                                 </div>
                               </div>
                               <Show when={session && props.favorites !== false}>
@@ -1069,6 +1174,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
 
 interface ModelSelectorProps {
   sessionID?: Accessor<string | undefined>
+  blocked?: boolean
 }
 
 export const ModelSelector: Component<ModelSelectorProps> = (props) => {
@@ -1078,6 +1184,7 @@ export const ModelSelector: Component<ModelSelectorProps> = (props) => {
   return (
     <ModelSelectorBase
       value={session.selected(id())}
+      blocked={props.blocked}
       onSelect={(providerID, modelID) => {
         session.selectModel(providerID, modelID, id())
       }}

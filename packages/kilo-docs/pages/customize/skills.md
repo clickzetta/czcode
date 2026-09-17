@@ -100,21 +100,26 @@ You can configure extra skill locations and remote skill URLs in your `kilo.json
 
 The `skills.paths` key accepts absolute paths, `~/` home-relative paths, or paths relative to the project root. The `skills.urls` key accepts URLs to remote skill directories that serve an `index.json` manifest.
 
+A path that starts with `/` or `\` but has no drive letter, such as `/.github/skills`, is tried as an absolute path first. If that directory does not exist, Kilo resolves it relative to the project root instead, so `/.github/skills` and `.github/skills` load the same repository skills. Skills loaded through this fallback are treated as project skills.
+
 The remote server must serve an `index.json` file at the URL path with the following structure:
 
 ```json
 {
   "skills": [
-    { "name": "skill-name", "files": ["SKILL.md", "references/file.md"] }
+    { "name": "skill-name", "version": "2", "files": ["SKILL.md", "references/file.md"] }
   ]
 }
 ```
 
 Each skill object contains:
 - `name`: The skill name (must match the directory name)
+- `version`: Optional version string for refreshing cached skill files
 - `files`: Array of files to fetch for this skill (must include `SKILL.md`)
 
 Files are downloaded from `{url}/{skill-name}/{file}` paths.
+
+When you change a remote skill's contents or file list, also change its `version`. On the next skill rediscovery (`/reload` or a new session), Kilo downloads the complete new version before atomically replacing the cached directory. If any download fails, Kilo keeps the previous cached version.
 
 {% /tab %}
 {% tab label="CLI" %}
@@ -169,21 +174,26 @@ You can configure extra skill locations and remote skill URLs in your `kilo.json
 
 The `skills.paths` key accepts absolute paths, `~/` home-relative paths, or paths relative to the project root. The `skills.urls` key accepts URLs to remote skill directories that serve an `index.json` manifest.
 
+A path that starts with `/` or `\` but has no drive letter, such as `/.github/skills`, is tried as an absolute path first. If that directory does not exist, Kilo resolves it relative to the project root instead, so `/.github/skills` and `.github/skills` load the same repository skills. Skills loaded through this fallback are treated as project skills.
+
 The remote server must serve an `index.json` file at the URL path with the following structure:
 
 ```json
 {
   "skills": [
-    { "name": "skill-name", "files": ["SKILL.md", "references/file.md"] }
+    { "name": "skill-name", "version": "2", "files": ["SKILL.md", "references/file.md"] }
   ]
 }
 ```
 
 Each skill object contains:
 - `name`: The skill name (must match the directory name)
+- `version`: Optional version string for refreshing cached skill files
 - `files`: Array of files to fetch for this skill (must include `SKILL.md`)
 
 Files are downloaded from `{url}/{skill-name}/{file}` paths.
+
+When you change a remote skill's contents or file list, also change its `version`. On the next skill rediscovery (`/reload` or a new session), Kilo downloads the complete new version before atomically replacing the cached directory. If any download fails, Kilo keeps the previous cached version.
 
 {% /tab %}
 {% /tabs %}
@@ -214,10 +224,14 @@ If you need a skill to only apply in certain situations, write a clear and speci
 
 When multiple skills share the same name, project-level skills (`.kilo/skills/`) take precedence over global skills (`~/.kilo/skills/`). Skills from compatibility directories (`.claude/skills/`, `.agents/skills/`) and additional configured paths are loaded alongside project and global skills.
 
+Every loaded skill is also available as a slash command. The `/` menu lists skills in a separate **Skills** group. When a skill shares its name with a custom command or MCP prompt, the command keeps `/name` and the skill is listed as `/name:skill`, so both stay reachable.
+
 {% /tab %}
 {% tab label="CLI" %}
 
 When multiple skills share the same name, project-level skills (`.kilo/skills/`) take precedence over global skills (`~/.kilo/skills/`). Skills from compatibility directories (`.claude/skills/`, `.agents/skills/`) and additional configured paths are loaded alongside project and global skills.
+
+Every loaded skill is also available as a slash command. When a skill shares its name with a custom command or MCP prompt, the command keeps `/name` and the skill is offered as `/name:skill` in autocomplete, so both stay reachable.
 
 {% /tab %}
 {% /tabs %}
@@ -331,6 +345,29 @@ my-skill/
 ```
 
 These additional files can be referenced from your skill's instructions, allowing the agent to read documentation, execute scripts, or use templates as needed.
+
+## Shell commands in skills
+
+A `SKILL.md` body can embed shell commands with the `` !`command` `` syntax. When the agent loads the skill, each command runs and its standard output replaces the placeholder before the skill content reaches the model, grounding the skill in live data:
+
+```markdown
+---
+name: repo-status
+description: Summarize the current state of the repository
+---
+
+The working tree currently contains:
+
+!`git status --short`
+```
+
+Because the agent decides when to load a skill, embedded commands never run silently:
+
+- **Trusted skills only** — commands execute only in skills from trusted locations: global skills (such as `~/.kilo/skills/`, `~/.agents/skills/`, and `~/.claude/skills/`), skills built into Kilo Code, and absolute skill paths declared in global config. Project skills (`.kilo/skills/` in a repository) and skills fetched from remote URLs never execute commands; their placeholders are replaced with a marker noting the skill is untrusted.
+- **Approval required** — when the agent loads a trusted skill containing commands, every command in the file is listed in a single permission prompt before anything runs. Approving runs all of them; rejecting aborts the skill load. This prompt appears even when bash commands are otherwise auto-approved, and a deny rule on any command still blocks it.
+- **Kill switch** — set the `KILO_DISABLE_SKILL_SHELL` environment variable to disable embedded command execution entirely.
+
+Commands run in the project directory with a per-command timeout, and output is truncated before inlining. Placeholders inside fenced code blocks are treated as documentation examples and never execute, and command output is never re-scanned for further placeholders.
 
 ## Example: Creating a Skill
 

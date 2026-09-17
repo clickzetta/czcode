@@ -1,5 +1,6 @@
 /** @jsxImportSource solid-js */
 import { createEffect, createSignal, For } from "solid-js"
+import { createStore } from "solid-js/store"
 import type { Meta, StoryObj } from "storybook-solidjs-vite"
 import type {
   AssistantMessage as SDKAssistantMessage,
@@ -180,6 +181,15 @@ const writePatch = [
   '+import { AssistantMessage } from "../components/chat/AssistantMessage"',
 ].join("\n")
 
+const tailPatch = [
+  "===================================================================",
+  "--- packages/kilo-vscode/webview-ui/src/components/chat/MessageList.tsx",
+  "+++ packages/kilo-vscode/webview-ui/src/components/chat/MessageList.tsx",
+  "@@ -1,1 +1,1 @@",
+  "-const old = true",
+  "+const next = true",
+].join("\n")
+
 const blockQuestions: QuestionRequest[] = [
   {
     id: "matrix-question-request",
@@ -232,7 +242,7 @@ const failedSuggestion: SuggestionRequest = {
   id: "matrix-suggestion-failed",
   sessionID: SID,
   text: "Re-run the failed visual review.",
-  actions: [{ label: "Retry review", prompt: "/local-review-uncommitted" }],
+  actions: [{ label: "Retry review", prompt: "/review uncommitted" }],
 }
 
 const genericError: NonNullable<SDKAssistantMessage["error"]> = {
@@ -465,7 +475,7 @@ const blocks: SDKPart[] = [
         "*** Begin Patch\n*** Update File: packages/kilo-ui/src/components/message-part.css\n@@\n-gap: 4px;\n+gap: 8px;\n*** End Patch",
     },
     output: "",
-    title: "Patch two files",
+    title: "Patch three files",
     metadata: {
       files: [
         {
@@ -485,6 +495,15 @@ const blocks: SDKPart[] = [
           diff: writePatch,
           additions: 1,
           deletions: 0,
+        },
+        {
+          filePath: "/project/packages/kilo-vscode/webview-ui/src/components/chat/MessageList.tsx",
+          relativePath: "packages/kilo-vscode/webview-ui/src/components/chat/MessageList.tsx",
+          type: "update",
+          patch: tailPatch,
+          diff: tailPatch,
+          additions: 1,
+          deletions: 1,
         },
       ],
     },
@@ -725,15 +744,15 @@ const blocks: SDKPart[] = [
   done(
     "suggest-accepted",
     "suggest",
-    { suggest: "Run a local review.", actions: [{ label: "Review UI", prompt: "/local-review-uncommitted" }] },
+    { suggest: "Run a local review.", actions: [{ label: "Review UI", prompt: "/review uncommitted" }] },
     "Review suggestion accepted",
-    "User accepted the suggestion. Run /local-review-uncommitted.",
-    { accepted: { label: "Review UI", prompt: "/local-review-uncommitted" }, dismissed: false },
+    "User accepted the suggestion. Run /review uncommitted.",
+    { accepted: { label: "Review UI", prompt: "/review uncommitted" }, dismissed: false },
   ),
   done(
     "suggest-dismissed",
     "suggest",
-    { suggest: "Run a local review.", actions: [{ label: "Review UI", prompt: "/local-review-uncommitted" }] },
+    { suggest: "Run a local review.", actions: [{ label: "Review UI", prompt: "/review uncommitted" }] },
     "Review suggestion dismissed",
     "User dismissed the suggestion.",
     { dismissed: true },
@@ -771,14 +790,6 @@ const blocks: SDKPart[] = [
     "Inspect repository",
     "Repository structure:\npackages/\n  kilo-vscode/\n  kilo-ui/",
     { ecosystems: ["TypeScript"], dependency_files: ["package.json"], depth: 2, truncated: false },
-  ),
-  done(
-    "codebase-search",
-    "codebase_search",
-    { query: "Where is the tool renderer selected?" },
-    "Search codebase",
-    "### packages/kilo-ui/src/components/message-part.tsx\nThe registry selects a renderer by exact tool ID.",
-    { count: 1 },
   ),
   done(
     "semantic-search",
@@ -918,7 +929,6 @@ for (const key of [
   "task_status:matrix-call-task-status",
   "repo_clone:matrix-call-repo-clone",
   "repo_overview:matrix-call-repo-overview",
-  "codebase_search:matrix-call-codebase-search",
   "semantic_search:matrix-call-semantic-search",
   "kilo_local_recall:matrix-call-local-recall",
   "agent_manager:matrix-call-agent-manager",
@@ -1050,7 +1060,7 @@ export const SearchPreviews: Story = {
     }
     const retry = {
       ...session,
-      busySince: () => undefined,
+      busyTiming: () => undefined,
       permissions: () => [],
       questions: () => [],
       statusInfo: () => ({ type: "retry", attempt: 2, message: "Rate limited", next: 0 }),
@@ -1227,7 +1237,292 @@ export const SearchPreviews: Story = {
                 </div>
               </div>
             </section>
+            <section class="tool-call-lab-panel tool-call-lab-panel-wide">
+              <div class="tool-call-lab-panel-header">
+                <span class="tool-call-lab-panel-title">Chart renderers</span>
+                <span class="tool-call-lab-panel-note">
+                  Chart.js chart tool rendered with production ChartTool component.
+                </span>
+              </div>
+              <div class="tool-call-lab-stack">
+                <div class="tool-call-lab-example">
+                  <span class="tool-call-lab-example-label">Bar chart</span>
+                  <AssistantMessage
+                    message={base}
+                    parts={[
+                      done(
+                        "chart-bar-preview",
+                        "chart",
+                        { title: "Bar chart" },
+                        "Render chart",
+                        JSON.stringify({
+                          type: "bar",
+                          data: {
+                            labels: ["A", "B", "C", "D", "E"],
+                            datasets: [{ label: "Value", data: [28, 55, 43, 91, 81] }],
+                          },
+                        }),
+                      ),
+                    ]}
+                  />
+                </div>
+                <div class="tool-call-lab-example">
+                  <span class="tool-call-lab-example-label">Line plot</span>
+                  <AssistantMessage
+                    message={base}
+                    parts={[
+                      done(
+                        "chart-line-preview",
+                        "chart",
+                        { title: "Line plot" },
+                        "Render chart",
+                        JSON.stringify({
+                          type: "line",
+                          data: {
+                            labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"],
+                            datasets: [{ label: "Value", data: [12, 28, 19, 45, 38, 62, 55, 74], fill: false }],
+                          },
+                        }),
+                      ),
+                    ]}
+                  />
+                </div>
+                <div class="tool-call-lab-example">
+                  <span class="tool-call-lab-example-label">Scatter plot</span>
+                  <AssistantMessage
+                    message={base}
+                    parts={[
+                      done(
+                        "chart-scatter-preview",
+                        "chart",
+                        { title: "Scatter plot" },
+                        "Render chart",
+                        JSON.stringify({
+                          type: "scatter",
+                          data: {
+                            datasets: [
+                              {
+                                label: "Points",
+                                data: [
+                                  { x: 2, y: 14 },
+                                  { x: 5, y: 38 },
+                                  { x: 8, y: 22 },
+                                  { x: 11, y: 61 },
+                                  { x: 14, y: 44 },
+                                  { x: 17, y: 73 },
+                                  { x: 20, y: 55 },
+                                  { x: 23, y: 88 },
+                                  { x: 26, y: 67 },
+                                  { x: 29, y: 95 },
+                                ],
+                              },
+                            ],
+                          },
+                        }),
+                      ),
+                    ]}
+                  />
+                </div>
+                <div class="tool-call-lab-example">
+                  <span class="tool-call-lab-example-label">Temporal (time series)</span>
+                  <AssistantMessage
+                    message={base}
+                    parts={[
+                      done(
+                        "chart-temporal-preview",
+                        "chart",
+                        { title: "Time series" },
+                        "Render chart",
+                        JSON.stringify({
+                          type: "line",
+                          data: {
+                            labels: [
+                              "Jan",
+                              "Feb",
+                              "Mar",
+                              "Apr",
+                              "May",
+                              "Jun",
+                              "Jul",
+                              "Aug",
+                              "Sep",
+                              "Oct",
+                              "Nov",
+                              "Dec",
+                            ],
+                            datasets: [
+                              {
+                                label: "Value",
+                                data: [120, 145, 132, 178, 163, 201, 194, 223, 215, 248, 237, 271],
+                                fill: true,
+                              },
+                            ],
+                          },
+                        }),
+                      ),
+                    ]}
+                  />
+                </div>
+                <div class="tool-call-lab-example">
+                  <span class="tool-call-lab-example-label">Pie chart</span>
+                  <AssistantMessage
+                    message={base}
+                    parts={[
+                      done(
+                        "chart-pie-preview",
+                        "chart",
+                        { title: "Pie chart" },
+                        "Render chart",
+                        JSON.stringify({
+                          type: "pie",
+                          data: {
+                            labels: ["A", "B", "C", "D"],
+                            datasets: [{ data: [30, 50, 15, 5] }],
+                          },
+                        }),
+                      ),
+                    ]}
+                  />
+                </div>
+                <div class="tool-call-lab-example">
+                  <span class="tool-call-lab-example-label">Doughnut chart</span>
+                  <AssistantMessage
+                    message={base}
+                    parts={[
+                      done(
+                        "chart-doughnut-preview",
+                        "chart",
+                        { title: "Doughnut chart" },
+                        "Render chart",
+                        JSON.stringify({
+                          type: "doughnut",
+                          data: {
+                            labels: ["A", "B", "C", "D"],
+                            datasets: [{ data: [40, 25, 20, 15] }],
+                          },
+                        }),
+                      ),
+                    ]}
+                  />
+                </div>
+                <div class="tool-call-lab-example">
+                  <span class="tool-call-lab-example-label">Radar chart</span>
+                  <AssistantMessage
+                    message={base}
+                    parts={[
+                      done(
+                        "chart-radar-preview",
+                        "chart",
+                        { title: "Radar chart" },
+                        "Render chart",
+                        JSON.stringify({
+                          type: "radar",
+                          data: {
+                            labels: ["Speed", "Strength", "Agility", "Intelligence", "Endurance"],
+                            datasets: [
+                              { label: "Player A", data: [80, 60, 75, 90, 70] },
+                              { label: "Player B", data: [55, 85, 60, 65, 80] },
+                            ],
+                          },
+                        }),
+                      ),
+                    ]}
+                  />
+                </div>
+                <div class="tool-call-lab-example">
+                  <span class="tool-call-lab-example-label">Bubble chart</span>
+                  <AssistantMessage
+                    message={base}
+                    parts={[
+                      done(
+                        "chart-bubble-preview",
+                        "chart",
+                        { title: "Bubble chart" },
+                        "Render chart",
+                        JSON.stringify({
+                          type: "bubble",
+                          data: {
+                            datasets: [
+                              {
+                                label: "Dataset",
+                                data: [
+                                  { x: 5, y: 20, r: 10 },
+                                  { x: 15, y: 35, r: 20 },
+                                  { x: 25, y: 15, r: 8 },
+                                  { x: 35, y: 50, r: 15 },
+                                  { x: 45, y: 30, r: 25 },
+                                ],
+                              },
+                            ],
+                          },
+                        }),
+                      ),
+                    ]}
+                  />
+                </div>
+              </div>
+            </section>
           </div>
+        </SessionContext.Provider>
+      </StoryProviders>
+    )
+  },
+}
+
+/**
+ * A question resolves before it completes: the backend publishes
+ * question.replied first, then the tool result lands. "Resolve" drops the live
+ * request while the tool part is still running, so the row must keep rendering
+ * the interactive dock (held) instead of unmounting to an empty row and
+ * snapping the transcript for a frame.
+ */
+export const QuestionResolveStability: Story = {
+  render: () => {
+    const request: QuestionRequest = {
+      ...blockQuestions[0]!,
+      id: "matrix-question-resolve",
+      tool: { messageID: MID, callID: "matrix-call-question-resolve" },
+    }
+    const [asked, setAsked] = createSignal(true)
+    // A store keeps the part proxy stable across the status flip, so the row
+    // reconciles in place the same way a streaming part does.
+    const [part, setPart] = createStore<ToolPart>({
+      id: "matrix-question-resolve-part",
+      sessionID: SID,
+      messageID: MID,
+      type: "tool",
+      callID: "matrix-call-question-resolve",
+      tool: "question",
+      state: running({ questions: request.questions }, "Ask design question"),
+    })
+    const session = {
+      ...mockSessionValue({ id: SID, status: "busy", questions: [request] }),
+      questions: () => (asked() ? [request] : []),
+      messages: () => [base],
+    }
+    return (
+      <StoryProviders data={defaultMockData} sessionID={SID} status="busy" questions={[request]}>
+        <SessionContext.Provider value={session as any}>
+          <button data-testid="resolve-question" onClick={() => setAsked(false)}>
+            resolve question
+          </button>
+          <button
+            data-testid="complete-question"
+            onClick={() =>
+              setPart(
+                "state",
+                completed(
+                  { questions: request.questions },
+                  "Question answered",
+                  'User has answered your questions: "Which visual family should this new block follow?"="Tool row".',
+                  { answers: [["Tool row"]] },
+                ),
+              )
+            }
+          >
+            complete question
+          </button>
+          <AssistantMessage message={base} parts={[part]} />
         </SessionContext.Provider>
       </StoryProviders>
     )

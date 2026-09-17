@@ -1,5 +1,7 @@
+import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { SessionProjector } from "@opencode-ai/core/session/projector"
 import { expect } from "bun:test"
-import { Effect, Layer } from "effect"
+import { Effect } from "effect"
 import { RecallSearch } from "../../src/kilocode/session/recall-search"
 import { Instance } from "../../src/kilocode/instance"
 import { Session } from "../../src/session/session"
@@ -9,13 +11,13 @@ import { ProviderV2 } from "@opencode-ai/core/provider"
 import { ModelV2 } from "@opencode-ai/core/model"
 import { MessageID, PartID, type SessionID } from "../../src/session/schema"
 import { Database } from "@opencode-ai/core/database/database"
-import { eq } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import { seedProject } from "../fixture/fixture"
 import { testEffect } from "../lib/effect"
 
 type Stored<T> = T extends unknown ? Omit<T, "id" | "sessionID" | "messageID"> : never
 
-const it = testEffect(Layer.mergeAll(Session.defaultLayer, Database.defaultLayer))
+const it = testEffect(LayerNode.compile(LayerNode.group([Session.node, SessionProjector.node, Database.node])))
 
 const add = Effect.fn("RecallSearchTest.add")(function* (
   sessionID: SessionID,
@@ -69,6 +71,83 @@ function run(query: string, signal?: AbortSignal) {
   })
 }
 it.instance(
+  "uses the recall covering index when available",
+  () =>
+    Effect.gen(function* () {
+      yield* seedProject
+      const sessions = yield* Session.Service
+      const session = yield* sessions.create({ title: "Planner" })
+      const { db } = yield* Database.Service
+      const plan = yield* db
+        .all<{
+          detail: string
+        }>(sql`EXPLAIN QUERY PLAN ${RecallSearch.query([session.id], ["needle"], { sessionID: "", partID: "" })}`)
+        .pipe(Effect.orDie)
+      expect(plan.some((row) => row.detail.includes("recall_part_search_idx"))).toBe(true)
+      const roles = yield* db
+        .all<{ detail: string }>(sql`EXPLAIN QUERY PLAN ${RecallSearch.messages([MessageID.ascending()], true)}`)
+        .pipe(Effect.orDie)
+      expect(roles.some((row) => row.detail.includes("COVERING INDEX recall_message_role_idx"))).toBe(true)
+    }),
+  { git: true },
+)
+
+it.instance(
+  "falls back to plain message lookups when the role index disappears",
+  () =>
+    Effect.gen(function* () {
+      yield* seedProject
+      const sessions = yield* Session.Service
+      const session = yield* sessions.create({ title: "Role index" })
+      yield* add(session.id, "user", { type: "text", text: "role-index-needle" })
+      // Create the indexes without preparing an indexed lookup, so the drop surfaces at prepare time.
+      expect((yield* run("role-index-absent")).results).toEqual([])
+      const { db } = yield* Database.Service
+      yield* db.run(sql`DROP INDEX recall_message_role_idx`).pipe(Effect.orDie)
+      const result = yield* run("role-index-needle")
+      expect(result.results.map((item) => item.id)).toEqual([session.id])
+      expect(result.results[0]?.matches.map((item) => item.source)).toEqual(["user"])
+      expect((yield* run("role-index-needle")).results.map((item) => item.id)).toEqual([session.id])
+    }),
+  { git: true },
+)
+
+it.instance(
+  "recreates the recall index lazily after it is missing",
+  () =>
+    Effect.gen(function* () {
+      yield* seedProject
+      const sessions = yield* Session.Service
+      const session = yield* sessions.create({ title: "Lazy index" })
+      yield* add(session.id, "user", { type: "text", text: "lazy index needle" })
+      const { db } = yield* Database.Service
+      const names = sql`SELECT name FROM sqlite_master WHERE type = 'index' AND name LIKE 'recall_%' ORDER BY name`
+      yield* db.run(sql`DROP INDEX recall_part_search_idx`).pipe(Effect.orDie)
+      yield* db.run(sql`DROP INDEX recall_message_role_idx`).pipe(Effect.orDie)
+      expect(yield* db.all(names)).toEqual([])
+      expect((yield* run("lazy index needle")).results.map((item) => item.id)).toEqual([session.id])
+      expect(yield* db.all(names)).toEqual([{ name: "recall_message_role_idx" }, { name: "recall_part_search_idx" }])
+    }),
+  { git: true },
+)
+
+it.instance(
+  "continues searching when lazy index creation fails",
+  () =>
+    Effect.gen(function* () {
+      yield* seedProject
+      const sessions = yield* Session.Service
+      const session = yield* sessions.create({ title: "Unavailable index" })
+      yield* add(session.id, "user", { type: "text", text: "fallback needle" })
+      const { db } = yield* Database.Service
+      yield* db.run(sql`DROP INDEX recall_part_search_idx`).pipe(Effect.orDie)
+      yield* db.run(sql`PRAGMA query_only = ON`).pipe(Effect.orDie)
+      expect((yield* run("fallback needle")).results.map((item) => item.id)).toEqual([session.id])
+    }),
+  { git: true },
+)
+
+it.instance(
   "searches titles and terms distributed across transcript messages",
   () =>
     Effect.gen(function* () {
@@ -89,6 +168,67 @@ it.instance(
       yield* add(user.id, "user", { type: "text", text: "ranking-needle" })
       yield* add(assistant.id, "assistant", { type: "text", text: "ranking-needle" })
       expect((yield* run("ranking-needle")).results.map((item) => item.id)).toEqual([title.id, user.id, assistant.id])
+    }),
+  { git: true },
+)
+
+it.instance(
+  "ranks whole-word matches above inner-word matches",
+  () =>
+    Effect.gen(function* () {
+      yield* seedProject
+      const sessions = yield* Session.Service
+      const inner = yield* sessions.create({ title: "Inner" })
+      const whole = yield* sessions.create({ title: "Whole" })
+      yield* add(inner.id, "user", { type: "text", text: "the category filter concatenates values" })
+      yield* add(whole.id, "user", { type: "text", text: "the category filter and the cat photo" })
+      const result = yield* run("cat")
+      expect(result.results.map((item) => item.id)).toEqual([whole.id, inner.id])
+      expect(result.results[0]?.matches[0]?.text).toContain("cat photo")
+      expect(result.partial).toBe(false)
+    }),
+  { git: true },
+)
+
+it.instance(
+  "returns flagged partial matches only when no session contains every term",
+  () =>
+    Effect.gen(function* () {
+      yield* seedProject
+      const sessions = yield* Session.Service
+      const most = yield* sessions.create({ title: "Most terms" })
+      const few = yield* sessions.create({ title: "Few terms" })
+      yield* add(most.id, "user", { type: "text", text: "alpha-needle and beta-needle" })
+      yield* add(few.id, "user", { type: "text", text: "alpha-needle alone" })
+
+      const partial = yield* run("alpha-needle beta-needle gamma-needle")
+      expect(partial.partial).toBe(true)
+      expect(partial.results.map((item) => [item.id, item.missing])).toEqual([[most.id, ["gamma-needle"]]])
+
+      const full = yield* run("alpha-needle beta-needle")
+      expect(full.partial).toBe(false)
+      expect(full.results.map((item) => [item.id, item.missing])).toEqual([[most.id, undefined]])
+      expect((yield* run("gamma-needle delta-needle")).results).toEqual([])
+    }),
+  { git: true },
+)
+
+it.instance(
+  "matches typos against session titles and ranks them below exact matches",
+  () =>
+    Effect.gen(function* () {
+      yield* seedProject
+      const sessions = yield* Session.Service
+      const fuzzy = yield* sessions.create({ title: "Optimize recall search" })
+      const exact = yield* sessions.create({ title: "recal serch literal" })
+      yield* sessions.create({ title: "Unrelated" })
+
+      expect((yield* run("recal serch")).results.map((item) => item.id)).toEqual([exact.id, fuzzy.id])
+      expect((yield* run("optimize saerch")).results.map((item) => item.id)).toEqual([fuzzy.id])
+      expect((yield* run("rcall")).results.map((item) => item.id)).toEqual([fuzzy.id])
+      expect((yield* run("recl")).results).toEqual([])
+      expect((yield* run("optimise")).results.map((item) => item.id)).toEqual([fuzzy.id])
+      expect((yield* run("optimising")).results).toEqual([])
     }),
   { git: true },
 )
@@ -282,7 +422,7 @@ it.instance(
       const result = yield* run("last-session-needle")
       expect(result.results).toHaveLength(1)
       expect(result.sessions).toBe(143)
-      expect(result.parts).toBe(1_102)
+      expect(result.candidates).toBe(1)
     }),
   { git: true },
 )
@@ -296,26 +436,29 @@ it.instance(
       const session = yield* sessions.create({ title: "Large session" })
       yield* add(session.id, "user", { type: "text", text: "job_id reached 100%" })
       yield* add(session.id, "user", { type: "text", text: `${"x".repeat(1_000)} Compatibility ＦＯＯ marker` })
+      yield* add(session.id, "user", { type: "text", text: "control\u0000byte then ＷＩＤＥ-needle" })
       yield* add(session.id, "user", {
         type: "text",
         text: `terminal ${"x".repeat(20_000)} terminal needle ${"y".repeat(20_000)}`,
       })
       for (let index = 0; index < 1_100; index++) {
-        yield* add(session.id, "user", { type: "text", text: `noise ${index}` })
+        yield* add(session.id, "user", { type: "text", text: `paged noise ${index}` })
       }
 
       expect((yield* run("job_id 100%")).results.map((item) => item.id)).toEqual([session.id])
       const compatibility = yield* run("foo")
       expect(compatibility.results.map((item) => item.id)).toEqual([session.id])
       expect(compatibility.results[0]?.matches[0]?.text).toContain("ＦＯＯ")
+      expect((yield* run("wide-needle")).results.map((item) => item.id)).toEqual([session.id])
       const snippet = (yield* run("terminal needle")).results[0]?.matches[0]?.text ?? ""
       expect(snippet).toContain("terminal needle")
       expect(snippet.length).toBeLessThan(370)
+      expect((yield* run("paged noise")).results.map((item) => item.id)).toEqual([session.id])
 
       const database = yield* Database.Service
       const controller = new AbortController()
       const pending = Effect.runPromise(
-        run("absent-needle", controller.signal).pipe(Effect.provideService(Database.Service, database)),
+        run("paged noise", controller.signal).pipe(Effect.provideService(Database.Service, database)),
       )
       queueMicrotask(() => controller.abort(new Error("cancelled recall search")))
       const error = yield* Effect.promise(() => pending.catch((value: unknown) => value))

@@ -10,7 +10,7 @@ import {
 } from "@opentui/core"
 import type { CommandContext } from "@opentui/keymap"
 import { createEffect, createMemo, onMount, createSignal, onCleanup, on, Show, Switch, Match } from "solid-js"
-import "opentui-spinner/solid"
+import { registerOpencodeSpinner } from "../register-spinner"
 import path from "path"
 import { fileURLToPath } from "url"
 import { useLocal } from "../../context/local"
@@ -33,7 +33,7 @@ import { promptOffsetWidth } from "../../prompt/display"
 import { createStore, produce, unwrap } from "solid-js/store"
 import { usePromptHistory, type PromptInfo } from "../../prompt/history"
 import { computePromptTraits } from "../../prompt/traits"
-import { expandPastedTextPlaceholders, expandTrackedPastedText } from "../../prompt/part"
+import { expandPastedPlaceholder, expandPastedTextPlaceholders, expandTrackedPastedText } from "../../prompt/part"
 import { usePromptStash } from "../../prompt/stash"
 import { DialogStash } from "../dialog-stash"
 import { type AutocompleteRef, Autocomplete } from "./autocomplete"
@@ -55,9 +55,9 @@ import { useArgs } from "../../context/args"
 // kilocode_change start
 import { KiloSessionTuiSync } from "@/kilocode/session/tui-sync"
 import { slashMatches } from "@/kilocode/cli/cmd/command-display"
-import * as AgentRequirements from "@/kilocode/cli/agent-requirements"
 import { createCostAlertController } from "@/kilocode/cli/cmd/tui/cost-alert"
 import { MemoryPrompt } from "@/kilocode/cli/cmd/tui/component/memory-prompt"
+import { GoalPrompt } from "@/kilocode/cli/cmd/tui/component/goal"
 // kilocode_change end
 import { KILO_BASE_MODE, useBindings, useCommandShortcut, useLeaderActive, useOpencodeKeymap } from "../../keymap"
 import { useTuiConfig } from "../../config"
@@ -67,6 +67,8 @@ import { useVim, VimModeIndicator, vimToggleCommand } from "@/kilocode/cli/cmd/t
 import { usePromptWorkspace } from "./workspace"
 import { usePromptMove } from "./move"
 import { readLocalAttachment } from "./local-attachment"
+
+registerOpencodeSpinner()
 
 export type PromptProps = {
   sessionID?: string
@@ -172,6 +174,7 @@ export function Prompt(props: PromptProps) {
   const toast = useToast()
   const nudge = useNudge() // kilocode_change
   const status = createMemo(() => sync.data.session_status?.[props.sessionID ?? ""] ?? { type: "idle" })
+  const goal = createMemo(() => GoalPrompt.read(sync.session.get(props.sessionID ?? "")?.metadata)) // kilocode_change
   const history = usePromptHistory()
   const stash = usePromptStash()
   const keymap = useOpencodeKeymap()
@@ -231,6 +234,9 @@ export function Prompt(props: PromptProps) {
     bumpCursor: () => setCursorVersion((value) => value + 1),
     cursorVersion: () => cursorVersion(),
   })
+  const interruptible = createMemo(
+    () => status().type !== "idle" || (goal()?.active === true && (!vim.vimEnabled() || vim.vimMode() === "normal")),
+  )
   // kilocode_change end
   const currentProviderLabel = createMemo(() => local.model.parsed().provider)
   const hasRightContent = createMemo(() => Boolean(props.right))
@@ -307,7 +313,7 @@ export function Prompt(props: PromptProps) {
     mode: "normal" | "shell"
     extmarkToPartIndex: Map<number, number>
     interrupt: number
-    exitPress: number
+    exitPress: number // kilocode_change - track double ctrl+c to exit
     placeholder: number
   }>({
     placeholder: randomIndex(list().length),
@@ -318,7 +324,7 @@ export function Prompt(props: PromptProps) {
     mode: "normal",
     extmarkToPartIndex: new Map(),
     interrupt: 0,
-    exitPress: 0,
+    exitPress: 0, // kilocode_change
   })
 
   createEffect(
@@ -331,6 +337,7 @@ export function Prompt(props: PromptProps) {
     ),
   )
 
+  // kilocode_change start - sync local agent/model whenever newest user message changes
   let syncedKey: string | undefined
   createEffect(() => {
     const sessionID = props.sessionID
@@ -355,6 +362,7 @@ export function Prompt(props: PromptProps) {
       }
     }
   })
+  // kilocode_change end
 
   const promptCommands = createMemo(() =>
     [
@@ -418,8 +426,9 @@ export function Prompt(props: PromptProps) {
         name: "session.interrupt",
         category: "Session",
         hidden: true,
-        enabled: status().type !== "idle",
+        enabled: interruptible(), // kilocode_change
         run: () => {
+          if (!interruptible()) return // kilocode_change
           if (auto()?.visible) return
           if (!input.focused) return
           // TODO: this should be its own command
@@ -620,6 +629,7 @@ export function Prompt(props: PromptProps) {
       "prompt.stash.pop",
       "prompt.stash.list",
       "prompt.vim.toggle", // kilocode_change
+      "prompt.skills", // kilocode_change
       "session.interrupt",
       "workspace.set",
       "session.move",
@@ -680,11 +690,13 @@ export function Prompt(props: PromptProps) {
     props.ref?.(undefined)
   })
 
+  // kilocode_change start - close autocomplete while blocking overlays hide the prompt
   createEffect(() => {
     if (props.visible === false || props.disabled) {
       auto()?.dismiss()
     }
   })
+  // kilocode_change end
 
   createEffect(() => {
     if (!input || input.isDestroyed) return
@@ -858,7 +870,9 @@ export function Prompt(props: PromptProps) {
     return {
       target: inputTarget,
       enabled: inputTarget() !== undefined && !props.disabled,
-      bindings: tuiConfig.keybinds.get("prompt.paste"),
+      // kilocode_change start
+      bindings: tuiConfig.keybinds.gather("prompt.input", ["prompt.paste", "input.buffer.home", "input.buffer.end"]),
+      // kilocode_change end
     }
   })
 
@@ -1080,29 +1094,6 @@ export function Prompt(props: PromptProps) {
       return false
     }
 
-    // kilocode_change start - gate TUI sends on declared agent requirements
-    const requirements = await AgentRequirements.check({
-      client: sdk.client,
-      agent: agent.name,
-      directory: project.instance.directory() || sdk.directory || process.cwd(),
-    }).catch((error) => {
-      toast.show({
-        message: errorMessage(error),
-        variant: "error",
-      })
-      return undefined
-    })
-    if (!requirements) return false
-    if (!requirements.ok) {
-      toast.show({
-        title: "Agent requirements",
-        message: requirements.error.data.message,
-        variant: "error",
-      })
-      return false
-    }
-    // kilocode_change end
-
     const workspaceSession = props.sessionID ? sync.session.get(props.sessionID) : undefined
     const workspaceID = workspaceSession?.workspaceID
     const workspaceStatus = workspaceID ? (project.workspace.status(workspaceID) ?? "error") : undefined
@@ -1192,7 +1183,7 @@ export function Prompt(props: PromptProps) {
       move.startSubmit()
       void sdk.client.session.shell({
         sessionID,
-        agent: local.agent.current()?.name ?? "",
+        agent: local.agent.current()?.name ?? "", // kilocode_change
         model: {
           providerID: selectedModel.providerID,
           modelID: selectedModel.modelID,
@@ -1216,59 +1207,42 @@ export function Prompt(props: PromptProps) {
         sessionID,
         command: command.slice(1),
         arguments: args,
-        agent: local.agent.current()?.name ?? "",
+        agent: local.agent.current()?.name ?? "", // kilocode_change
         model: `${selectedModel.providerID}/${selectedModel.modelID}`,
         variant,
         parts: nonTextParts.filter((x) => x.type === "file"),
-      })
+      }).then((result) => GoalPrompt.feedback(command.slice(1), args, result, toast)) // kilocode_change
     } else {
       move.startSubmit()
-      // kilocode_change start
-      // czcode_change start — passive ALHF: detect dissatisfaction signals in user text
-      const lowerText = inputText.toLowerCase()
-      const dissatisfactionPatterns = [
-        // Chinese
-        "不对", "错了", "不是这样", "重新", "不行", "不好", "有问题", "不正确",
-        "不符合", "不满意", "再来", "重来", "不对劲",
-        // English
-        "wrong", "incorrect", "not right", "redo", "try again", "that's not",
-        "that is not", "no that", "not what i",
-      ]
-      if (dissatisfactionPatterns.some((p) => lowerText.includes(p))) {
-        const { Telemetry, TelemetryEvent } = await import("@kilocode/kilo-telemetry")
-        Telemetry.track(TelemetryEvent.USER_DISSATISFIED, { sessionID, agent: local.agent.current()?.name })
-      }
-      // czcode_change end
-      // kilocode_change end
       sdk.client.session
-      .prompt(
-        {
-          sessionID,
-          ...selectedModel,
-          agent: agent.name,
-          model: selectedModel,
-          variant,
-          parts: [
-            ...editorParts,
-            {
-              type: "text",
-              text: inputText,
-            },
-            ...nonTextParts,
-          ],
-        },
-        { throwOnError: true },
-      )
-      .catch((error) => {
-        toast.show({
-          title: "Failed to send prompt",
-          message: errorMessage(error),
-          variant: "error",
+        .prompt(
+          {
+            sessionID,
+            ...selectedModel,
+            agent: agent.name,
+            model: selectedModel,
+            variant,
+            parts: [
+              ...editorParts,
+              {
+                type: "text",
+                text: inputText,
+              },
+              ...nonTextParts,
+            ],
+          },
+          { throwOnError: true },
+        )
+        .catch((error) => {
+          toast.show({
+            title: "Failed to send prompt",
+            message: errorMessage(error),
+            variant: "error",
+          })
         })
-      })
       if (editorParts.length > 0) editor.markSelectionSent()
     }
-    toast.dismiss()
+    toast.dismiss() // kilocode_change - dismiss persistent config warning on first submit
     history.append({
       ...store.prompt,
       mode: currentMode,
@@ -1333,6 +1307,15 @@ export function Prompt(props: PromptProps) {
   async function pasteInputText(text: string) {
     const normalizedText = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n")
     const pastedContent = normalizedText.trim()
+    // kilocode_change start - a second identical paste expands the collapsed placeholder
+    if (expandPastedPlaceholder(input, promptPartTypeId, store.extmarkToPartIndex, store.prompt.parts, pastedContent)) {
+      const value = input.plainText
+      setStore("prompt", "input", value)
+      auto()?.onInput(value)
+      syncExtmarksWithPromptParts()
+      return
+    }
+    // kilocode_change end
     const filepath = pastedFilepath(pastedContent, terminalEnvironment.platform)
     const isUrl = /^(https?):\/\//.test(filepath)
     if (!isUrl) {
@@ -1456,7 +1439,7 @@ export function Prompt(props: PromptProps) {
     if (store.mode === "shell") return theme.primary
     const agent = local.agent.current()
     if (!agent) return theme.border
-    return local.agent.color(agent.name ?? "")
+    return local.agent.color(agent.name ?? "") // kilocode_change
   })
 
   const showVariant = createMemo(() => {
@@ -1490,7 +1473,7 @@ export function Prompt(props: PromptProps) {
       status().type !== "idle"
         ? (local.agent.list().find((a) => a.name === lastUserMessage()?.agent) ?? local.agent.current())
         : local.agent.current()
-    const color = agent ? local.agent.color(agent.name ?? "") : theme.border
+    const color = agent ? local.agent.color(agent.name ?? "") : theme.border // kilocode_change
     return {
       frames: createFrames({
         color,
@@ -1557,7 +1540,7 @@ export function Prompt(props: PromptProps) {
                   return
                 }
                 // kilocode_change start - route keys through the vim layer when enabled
-                if (vim.vimOnKey(e)) {
+                if (!(e.name === "escape" && interruptible()) && vim.vimOnKey(e)) {
                   e.preventDefault()
                   e.stopPropagation()
                   return
@@ -1621,10 +1604,12 @@ export function Prompt(props: PromptProps) {
                   {(agent) => (
                     <>
                       <text fg={fadeColor(highlight(), agentMetaAlpha())}>
+                        {/* kilocode_change start */}
                         {store.mode === "shell"
                           ? "Shell"
                           : (local.agent.current()?.displayName ??
                             Locale.titlecase(local.agent.current()?.name ?? ""))}{" "}
+                        {/* kilocode_change end */}
                       </text>
                       {/* kilocode_change start - vim mode indicator */}
                       <VimModeIndicator
@@ -1638,26 +1623,29 @@ export function Prompt(props: PromptProps) {
                         alpha={agentMetaAlpha}
                       />
                       {/* kilocode_change end */}
-                      <Show when={store.mode === "normal"}>
-                        <box flexDirection="row" gap={1}>
-                          <text fg={fadeColor(theme.textMuted, modelMetaAlpha())}>·</text>
-                          <text
-                            flexShrink={0}
-                            fg={fadeColor(leader() ? theme.textMuted : theme.text, modelMetaAlpha())}
-                          >
-                            {local.model.parsed().model}
-                          </text>
-                          <text fg={fadeColor(theme.textMuted, modelMetaAlpha())}>{currentProviderLabel()}</text>
-                          <Show when={showVariant()}>
-                            <text fg={fadeColor(theme.textMuted, variantMetaAlpha())}>·</text>
-                            <text>
-                              <span style={{ fg: fadeColor(theme.warning, variantMetaAlpha()), bold: true }}>
-                                {local.model.variant.current()}
-                              </span>
-                            </text>
-                          </Show>
-                        </box>
+                      <Show when={store.mode === "normal" && local.permission.mode === "auto"}>
+                        <text fg={fadeColor(theme.textMuted, agentMetaAlpha())}>auto</text>
                       </Show>
+                      <Show when={store.mode === "normal"}>
+                      <box flexDirection="row" gap={1}>
+                        <text fg={fadeColor(theme.textMuted, modelMetaAlpha())}>·</text>
+                        <text
+                          flexShrink={0}
+                          fg={fadeColor(leader() ? theme.textMuted : theme.text, modelMetaAlpha())}
+                        >
+                          {local.model.parsed().model}
+                        </text>
+                        <text fg={fadeColor(theme.textMuted, modelMetaAlpha())}>{currentProviderLabel()}</text>
+                        <Show when={showVariant()}>
+                          <text fg={fadeColor(theme.textMuted, variantMetaAlpha())}>·</text>
+                          <text>
+                            <span style={{ fg: fadeColor(theme.warning, variantMetaAlpha()), bold: true }}>
+                              {local.model.variant.current()}
+                            </span>
+                          </text>
+                        </Show>
+                      </box>
+                    </Show>
                     </>
                   )}
                 </Show>
@@ -1699,7 +1687,7 @@ export function Prompt(props: PromptProps) {
         </box>
         <box width="100%" flexDirection="row" justifyContent="space-between">
           <Switch>
-            <Match when={status().type !== "idle"}>
+            <Match when={status().type !== "idle" || goal()?.active /* kilocode_change */}>
               <box
                 flexDirection="row"
                 gap={1}
@@ -1829,10 +1817,13 @@ export function Prompt(props: PromptProps) {
                 <text fg={theme.accent}>(new working copy)</text>
               </box>
             </Match>
+            {/* kilocode_change start - Kilo already shows the working directory in its sidebar */}
             <Match when={true}>{props.hint ?? <text />}</Match>
+            {/* kilocode_change end */}
           </Switch>
           <Show when={status().type !== "retry"}>
             <box gap={2} flexDirection="row">
+              {/* kilocode_change start - show "ctrl+c again to exit" hint */}
               <Show when={store.exitPress > 0}>
                 <text fg={theme.primary}>
                   ctrl+c <span style={{ fg: theme.primary }}>again to exit</span>

@@ -243,9 +243,9 @@ General settings include:
 |---|---|---|
 | Security Agent enabled | Off until you turn it on | Turning it on queues an initial sync for the selected repository scope. |
 | Repository selection | Selected repositories during setup | Choose all accessible repositories or selected repositories. |
-| Triage model | Kilo Balanced | Used for initial triage and exploitability recommendations. |
-| Analysis model | Kilo Balanced | Used for sandbox analysis and result extraction. |
-| Remediation model | Kilo Balanced | Used by Cloud Agent for remediation PR work. |
+| Triage model | Kilo Efficient | Used for initial triage and exploitability recommendations. |
+| Analysis model | Kilo Efficient | Used for sandbox analysis and result extraction. |
+| Remediation model | Kilo Efficient | Used by Cloud Agent for remediation PR work. |
 | Analysis mode | Auto | Auto, Shallow, or Deep. |
 
 #### Turn Security Agent on or off
@@ -271,7 +271,7 @@ Security Agent uses a separate model for each stage:
 - The Analysis model runs sandbox analysis and extracts the result.
 - The Remediation model is used by Cloud Agent to prepare remediation pull requests.
 
-Kilo Balanced is the default for all three stages. You can change each model independently. The model recorded in finding details is the model used when that analysis or remediation attempt ran. AI triage, sandbox analysis, and remediation consume Kilo Code credits.
+Kilo Efficient is the default for all three stages. You can change each model independently. The model recorded in finding details is the model used when that analysis or remediation attempt ran. AI triage, sandbox analysis, and remediation consume Kilo Code credits.
 
 #### Choose an analysis mode
 
@@ -375,9 +375,11 @@ SLA notifications require both SLA tracking and SLA notifications to be enabled.
 
 ## Notification delivery
 
-Security Agent currently sends notifications only by email.
+Security Agent sends notifications by email and mobile push.
 
-Notification kinds:
+Mobile push covers analysis completion or failure, and remediation being queued, opening a pull request, failing, being blocked, needing no changes, or being cancelled. These updates go to the owning user for personal accounts or organization owners, subject to their security notification preferences.
+
+Email notification kinds:
 
 | Kind | When eligible |
 |---|---|
@@ -407,6 +409,8 @@ The audit report shows Security Finding activity recorded for an owner during a 
 
 - `/security-agent/audit-report`
 - `/organizations/:organizationId/security-agent/audit-report`
+
+You can also open the audit report in the mobile app to see the report period and each finding's recorded activity.
 
 The audit report is based on activity recorded by Kilo. It does not prove that every historical event is present, show repository scan coverage, or provide aggregate SLA compliance.
 
@@ -480,7 +484,7 @@ The following capabilities are not yet implemented but are being considered for 
 
 - GitLab support for Security Agent findings and remediation.
 - Security Finding sources beyond Dependabot alerts, such as npm audit and SBOM analysis.
-- Notification channels beyond email.
+- Notification channels beyond email and mobile push.
 - Historical replay when you enable New-finding Notifications.
 - Analysis and remediation without queue delays. This work currently runs through queues and can be delayed by account capacity or worker backlog.
 - Automatic finding updates based on the full remediation PR lifecycle. A finding currently closes only when Dependabot reports it fixed or someone dismisses it.

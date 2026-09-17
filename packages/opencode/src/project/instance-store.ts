@@ -1,4 +1,5 @@
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
+import { makeGlobalNode, Node } from "@opencode-ai/core/effect/app-node"
 import { GlobalBus } from "@/bus/global"
 import { serviceUse } from "@opencode-ai/core/effect/service-use"
 import { WorkspaceContext } from "@/control-plane/workspace-context"
@@ -8,7 +9,6 @@ import { FSUtil } from "@opencode-ai/core/fs-util"
 import { Context, Deferred, Duration, Effect, Exit, Layer, Scope } from "effect"
 import { context as instanceContext, type InstanceContext } from "./instance-context" // kilocode_change
 import { InstanceBootstrap } from "./bootstrap-service"
-import { InstanceBootstrap as InstanceBootstrapGraph } from "./bootstrap"
 import * as Project from "./project"
 
 export interface LoadInput {
@@ -24,6 +24,9 @@ export interface Interface {
   readonly disposeDirectory: (directory: string) => Effect.Effect<void>
   readonly disposeAll: () => Effect.Effect<void>
   readonly provide: <A, E, R>(input: LoadInput, effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>
+  // kilocode_change start
+  readonly list: () => Effect.Effect<InstanceContext[]>
+  // kilocode_change end
 }
 
 export class Service extends Context.Service<Service, Interface>()("@opencode/InstanceStore") {}
@@ -34,7 +37,7 @@ interface Entry {
   readonly deferred: Deferred.Deferred<InstanceContext>
 }
 
-export const layer: Layer.Layer<Service, never, Project.Service | InstanceBootstrap.Service> = Layer.effect(
+const layer: Layer.Layer<Service, never, Project.Service | InstanceBootstrap.Service> = Layer.effect(
   Service,
   Effect.gen(function* () {
     const project = yield* Project.Service
@@ -60,8 +63,9 @@ export const layer: Layer.Layer<Service, never, Project.Service | InstanceBootst
               )
         // kilocode_change start - run bootstrap inside the Instance ALS so KilocodeBootstrap
         // (and anything it forks via Effect.forkDetach) sees Instance.directory.
+        const runtime = yield* Effect.context<never>()
         const ready = bootstrap.run.pipe(Effect.provideService(InstanceRef, ctx)) as Effect.Effect<void>
-        yield* Effect.promise(() => instanceContext.provide(ctx, () => Effect.runPromise(ready)))
+        yield* Effect.promise(() => instanceContext.provide(ctx, () => Effect.runPromiseWith(runtime)(ready)))
         // kilocode_change end
         return ctx
       }).pipe(Effect.withSpan("InstanceStore.boot"))
@@ -105,7 +109,9 @@ export const layer: Layer.Layer<Service, never, Project.Service | InstanceBootst
 
     const disposeContext = Effect.fn("InstanceStore.disposeContext")(function* (ctx: InstanceContext) {
       yield* Effect.logInfo("disposing instance", { directory: ctx.directory })
-      yield* Effect.promise(() => instanceContext.provide(ctx, () => runDisposers(ctx.directory))) // kilocode_change
+      yield* Effect.promise(() =>
+        instanceContext.provide(ctx, () => runDisposers(ctx.directory, WorkspaceContext.workspaceID)),
+      ) // kilocode_change
       yield* emitDisposed({ directory: ctx.directory, project: ctx.project.id })
     })
 
@@ -151,8 +157,8 @@ export const layer: Layer.Layer<Service, never, Project.Service | InstanceBootst
               const exit = yield* Deferred.await(previous.deferred).pipe(Effect.exit)
               yield* Effect.promise(() =>
                 Exit.isSuccess(exit)
-                  ? instanceContext.provide(exit.value, () => runDisposers(directory))
-                  : runDisposers(directory),
+                  ? instanceContext.provide(exit.value, () => runDisposers(directory, WorkspaceContext.workspaceID))
+                  : runDisposers(directory, WorkspaceContext.workspaceID),
               )
               // kilocode_change end
               yield* emitDisposed({ directory, project: input.project?.id })
@@ -220,11 +226,28 @@ export const layer: Layer.Layer<Service, never, Project.Service | InstanceBootst
     const provide = <A, E, R>(input: LoadInput, effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> =>
       load(input).pipe(Effect.flatMap((ctx) => effect.pipe(Effect.provideService(InstanceRef, ctx))))
 
+    // kilocode_change start - loaded instance contexts for project-scoped operations
+    const list = (): Effect.Effect<InstanceContext[]> =>
+      Effect.forEach([...cache.values()], (entry) =>
+        Deferred.isDone(entry.deferred).pipe(
+          Effect.flatMap((done) =>
+            done
+              ? Deferred.await(entry.deferred).pipe(
+                  Effect.exit,
+                  Effect.map((exit) => (Exit.isSuccess(exit) ? exit.value : undefined)),
+                )
+              : Effect.succeed(undefined),
+          ),
+        ),
+      ).pipe(Effect.map((contexts) => contexts.filter((ctx): ctx is InstanceContext => ctx !== undefined)))
+    // kilocode_change end
+
     yield* Effect.addFinalizer(() => disposeAll().pipe(Effect.ignore))
 
     return Service.of({
       load,
       reload,
+      list, // kilocode_change
       dispose,
       disposeDirectory,
       disposeAll,
@@ -233,8 +256,12 @@ export const layer: Layer.Layer<Service, never, Project.Service | InstanceBootst
   }),
 )
 
-export const defaultLayer = layer.pipe(Layer.provide(Project.defaultLayer))
+export const bootstrapNode = LayerNode.unbound(InstanceBootstrap.Service, Node.tags.values.global)
 
-export const node = LayerNode.make(layer, [Project.node, InstanceBootstrapGraph.node])
+export const node = makeGlobalNode({
+  service: Service,
+  layer: layer,
+  deps: [Project.node, bootstrapNode],
+})
 
 export * as InstanceStore from "./instance-store"

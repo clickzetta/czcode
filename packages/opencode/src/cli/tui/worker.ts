@@ -15,31 +15,23 @@ import { ensureProcessMetadata } from "@opencode-ai/core/util/opencode-process" 
 import { createWorkerRemoteExit } from "@/kilocode/cli/cmd/tui/remote-exit-worker" // kilocode_change
 import { createWorkerShutdown } from "@/cli/tui/worker-shutdown" // kilocode_change
 import { KiloSessions } from "@/kilo-sessions/kilo-sessions" // kilocode_change
-// czcode_change start - init telemetry in worker process
-import { Telemetry } from "@kilocode/kilo-telemetry"
-import { Global } from "@opencode-ai/core/global"
-import { InstallationVersion } from "@opencode-ai/core/installation/version"
-// czcode_change end
 
 ensureProcessMetadata("worker") // kilocode_change - retain worker role and parent run correlation
 await KiloLog.init() // kilocode_change - keep compatibility logs off the TUI terminal
-
-// czcode_change start - init telemetry early in worker so skill/revert/abort events are captured
-;(async () => {
-  const globalCfg = await Effect.runPromise(
-    Effect.serviceOption(Config.Service).pipe(
-      Effect.map((opt) => (opt._tag === "Some" ? opt.value.getGlobal() : Effect.succeed(null as any))),
-      Effect.flatten,
-    ),
-  ).catch(() => null as any)
-  await Telemetry.init({
-    dataPath: Global.Path.data,
-    version: InstallationVersion,
-    enabled: globalCfg?.experimental?.openTelemetry !== false,
-  })
-})()
-// czcode_change end
 Heap.start()
+
+// kilocode_change start - keep upstream's keep-alive intent but never swallow the error silently
+const onUnhandledRejection = (error: unknown) => {
+  console.error("worker unhandledRejection", error)
+}
+
+const onUncaughtException = (error: Error) => {
+  console.error("worker uncaughtException", error)
+}
+// kilocode_change end
+
+process.on("unhandledRejection", onUnhandledRejection)
+process.on("uncaughtException", onUncaughtException)
 
 // Subscribe to global events and forward them via RPC
 GlobalBus.on("event", (event) => {
@@ -54,6 +46,8 @@ const runShutdown = createWorkerShutdown({
   dispose: () => InstanceRuntime.disposeAllInstances(),
   stopServer: async () => {
     if (server) await server.stop(true)
+    process.off("unhandledRejection", onUnhandledRejection)
+    process.off("uncaughtException", onUncaughtException)
   },
 })
 // kilocode_change end
@@ -110,12 +104,12 @@ export const rpc = {
   },
   async shutdown() {
     remoteExit.shutdown() // kilocode_change
-    await Telemetry.shutdown() // czcode_change — flush pending telemetry events before worker exits
     await runShutdown() // kilocode_change - drain → dispose → stopServer
     // kilocode_change start - Clear the Rpc message channel so the worker's event loop can drain and
     // exit naturally. Without this, the active onmessage handle keeps the
     // worker alive even after all async work is done.
     onmessage = null
+    // kilocode_change end
   },
 }
 

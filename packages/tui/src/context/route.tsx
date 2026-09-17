@@ -14,27 +14,13 @@ export type SessionRoute = {
   prompt?: PromptInfo
 }
 
-// kilocode_change start
-export type KiloClawRoute = {
-  type: "kiloclaw"
-}
-// kilocode_change end
-
 export type PluginRoute = {
   type: "plugin"
   id: string
   data?: Record<string, unknown>
 }
 
-// czcode_change start
-export type SingClawRoute = {
-  type: "singclaw"
-  context?: string // czcode_change — last query result from czcode session
-  returnTo?: { type: "session"; sessionID: string } // czcode_change — where to go on Esc
-}
-// czcode_change end
-
-export type Route = HomeRoute | SessionRoute | PluginRoute | KiloClawRoute | SingClawRoute // czcode_change
+export type Route = HomeRoute | SessionRoute | PluginRoute
 
 export const { use: useRoute, provider: RouteProvider } = createSimpleContext({
   name: "Route",

@@ -1,4 +1,6 @@
-# Contributing to czcode
+# Contributing to Kilo CLI
+
+See [the Documentation for details on contributing](https://kilo.ai/docs/contributing).
 
 ## TL;DR
 
@@ -8,6 +10,7 @@ There are lots of ways to contribute to the project:
 - **Documentation:** Improve existing docs or create new guides
 - **Bug Reports:** Report issues you encounter
 - **Feature Requests:** Suggest new features or improvements
+- **Community Support:** Help other users in the community
 
 The Kilo Community is [on Discord](https://kilo.ai/discord).
 
@@ -42,8 +45,8 @@ The Kilo Community is [on Discord](https://kilo.ai/discord).
 - Install dependencies and start the CLI from the repo root:
 
   ```bash
-  ~/.bun/bin/bun install
-  ~/.bun/bin/bun dev
+  bun install
+  bun dev
   ```
 
   `bun dev` and `bun run dev` both run the local CLI. For the VS Code extension, use `bun run extension`.
@@ -146,16 +149,50 @@ bun turbo test:ci --filter=@kilocode/kilo-jetbrains
 
 ### Running against a different directory
 
-By default, `bun dev` runs czcode in the `packages/opencode` directory. To run it against a different directory:
+By default, `bun dev` runs Kilo CLI in the `packages/opencode` directory. To run it against a different directory or repository:
 
 ```bash
-~/.bun/bin/bun dev <directory>
+bun dev <directory>
 ```
 
-To run czcode in the root of the repo itself:
+To run Kilo CLI in the root of the repo itself:
 
 ```bash
-~/.bun/bin/bun dev .
+bun dev .
+```
+
+### Running Kilo CLI from any folder
+
+`bin/kilodev` is a self-locating launcher that runs this checkout from wherever you invoke it. Running it with no arguments launches the TUI pointed at the caller's directory; any arguments are forwarded to the CLI unchanged.
+
+One-shot install (recommended). From the repo root:
+
+```bash
+./bin/kilodev dev-setup
+```
+
+This detects your shell, shows exactly what it will add, asks for confirmation, writes an idempotent block to your rc file, and saves a timestamped backup of the original. Re-running is safe — it only rewrites when the snippet has changed.
+
+Useful flags:
+
+- `--yes` — skip the confirmation prompt (good for CI/containers).
+- `--print` — just print the snippet, don't touch any file (pipe-friendly).
+- `--dry-run` — show what would change without writing.
+- `--shell <zsh|bash|fish|powershell>` — override shell detection.
+- `--rc <path>` — override the rc file.
+
+Manual alternatives (equivalent, no CLI invocation needed):
+
+- Unix: add `alias kilodev='/path/to/kilocode/bin/kilodev'` to `~/.zshrc` / `~/.bashrc`, or `fish_add_path /path/to/kilocode/bin`.
+- Windows: add `C:\path\to\kilocode\bin` to PATH (System Environment Variables), or add `function kilodev { & "C:\path\to\kilocode\bin\kilodev.cmd" @args }` to `$PROFILE`.
+
+Then from anywhere:
+
+```bash
+cd ~/some/project
+kilodev                      # opens TUI with project = ~/some/project
+kilodev dev-setup --print    # prints the alias line (scripting)
+kilodev run --dir "$PWD" "…" # subcommands pass through; use --dir for run/serve
 ```
 
 ### Building a "local" binary
@@ -166,24 +203,34 @@ To compile a standalone executable:
 ./packages/opencode/script/build.ts --single
 ```
 
-### Understanding bun dev vs czcode
+Then run it with:
 
-During development, `bun dev` is the local equivalent of the built `czcode` command:
+```bash
+./packages/opencode/dist/@kilocode/cli-<platform>/bin/kilo
+```
+
+Replace `<platform>` with your platform (e.g., `darwin-arm64`, `linux-x64`).
+
+### Understanding bun dev vs kilo
+
+During development, `bun dev` is the local equivalent of the built `kilo` command. Both run the same CLI interface:
 
 ```bash
 # Development (from project root)
-~/.bun/bin/bun dev --help
-~/.bun/bin/bun dev serve
+bun dev --help           # Show all available commands
+bun dev serve            # Start headless API server
 
 # Production
-czcode --help
-czcode serve
+kilo --help          # Show all available commands
+kilo serve           # Start headless API server
 ```
 
 ### Testing with a local backend
 
+To point the CLI at a local backend (e.g., a locally running Kilo API server on port 3000), set the `KILO_API_URL` environment variable:
+
 ```bash
-CZCODE_API_URL=http://localhost:3000 ~/.bun/bin/bun dev
+KILO_API_URL=http://localhost:3000 bun dev
 ```
 
 This redirects all gateway traffic (auth, model listing, provider routing, profile, etc.) to your local server. The default is `https://api.kilo.ai`.
@@ -229,7 +276,7 @@ Maintainers may close PRs that appear to be submitted without credible contribut
 
 Do not submit batches of agent-generated, untested, or weakly reviewed PRs.
 
-Please keep concurrent PRs focused and limited. As a rule, open no more than three PRs at a time, especially if you are a new contributor. Prioritize high-impact or high-priority issues first instead of opening many speculative fixes. If a contributor opens a large batch of low-value or duplicative PRs, maintainers may close the batch and ask the contributor to choose one PR to reopen, focus, and bring up to the documented review bar before submitting more.
+Prioritize high-impact or high-priority issues first instead of opening many speculative fixes. If a contributor opens a large batch of low-value or duplicative PRs, maintainers may close the batch and ask the contributor to choose one PR to reopen, focus, and bring up to the documented review bar before submitting more.
 
 For issues, do not mass-create tickets through automation or agents. Search existing issues first, open issues only when you have enough context for someone to act, and prioritize the most important reports instead of filing every possible finding. Maintainers may close duplicate, low-signal, automated, or weakly reviewed issues without action.
 
@@ -302,23 +349,3 @@ Maintainers may also close issues or PRs that disregard the contribution guide, 
 - **Variables:** Prefer `const`.
 - **Naming:** Concise single-word identifiers when descriptive.
 - **Runtime APIs:** Use Bun helpers (e.g., `Bun.file()`).
-
-## czcode_change Annotation Rules
-
-When modifying files shared with the upstream (kilocode), annotate every change with a `czcode_change` marker. See [CLAUDE.md](CLAUDE.md) for the full annotation guide.
-
-## Pull Request Expectations
-
-- **UI Changes:** Include screenshots or videos (before/after).
-- **Logic Changes:** Explain how you verified it works.
-- **PR Titles:** Follow conventional commit standards (`feat:`, `fix:`, `docs:`, etc.).
-
-## PR Titles
-
-Use conventional commit style PR titles such as:
-
-- `feat: add execute_sql tool`
-- `fix: correct Lakehouse connection timeout`
-- `docs: update upstream sync instructions`
-- `chore: bump kilocode to v7.x.y`
-- `refactor: extract SQL classifier`

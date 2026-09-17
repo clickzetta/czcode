@@ -1,3 +1,4 @@
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { afterEach, describe, expect, test } from "bun:test"
 import { Effect, Layer, Option } from "effect"
 import { NodeFileSystem, NodePath } from "@effect/platform-node"
@@ -17,12 +18,13 @@ import { Git } from "../../../src/git"
 import { FSUtil } from "@opencode-ai/core/fs-util"
 import { EffectFlock } from "@opencode-ai/core/util/effect-flock"
 import { Filesystem } from "../../../src/util/filesystem"
-import { provide as withInstanceProvide } from "../../../src/kilocode/instance"
+import { provideTestInstance } from "../../fixture/fixture"
 import { Npm } from "@opencode-ai/core/npm"
 import { HttpClient } from "effect/unstable/http"
 import { disposeAllInstances, tmpdir } from "../../fixture/fixture"
+import { LayerNodePlatform } from "@opencode-ai/core/effect/app-node-platform"
 
-const infra = CrossSpawnSpawner.defaultLayer.pipe(
+const infra = AppNodeBuilder.build(CrossSpawnSpawner.node).pipe(
   Layer.provideMerge(Layer.mergeAll(NodeFileSystem.layer, NodePath.layer)),
 )
 const emptyAccount = Layer.mock(Account.Service)({
@@ -35,22 +37,17 @@ const emptyAuth = Layer.mock(Auth.Service)({
 const noopNpm = Layer.mock(Npm.Service)({
   install: () => Effect.void,
   add: () => Effect.die("not implemented"),
-  which: () => Effect.succeed(Option.none()),
+  which: () => Effect.succeed(undefined),
 })
 const unexpectedHttp = HttpClient.make((request) =>
   Effect.die(`unexpected http request: ${request.method} ${request.url}`),
 )
-const layer = Config.layer.pipe(
-  Layer.provide(Git.defaultLayer),
-  Layer.provide(EffectFlock.defaultLayer),
-  Layer.provide(FSUtil.defaultLayer),
-  Layer.provide(Env.defaultLayer),
-  Layer.provide(emptyAuth),
-  Layer.provide(emptyAccount),
-  Layer.provideMerge(infra),
-  Layer.provide(noopNpm),
-  Layer.provide(Layer.succeed(HttpClient.HttpClient, unexpectedHttp)),
-)
+const layer = AppNodeBuilder.build(Config.node, [
+  [Auth.node, emptyAuth],
+  [Account.node, emptyAccount],
+  [Npm.node, noopNpm],
+  [LayerNodePlatform.httpClient, Layer.succeed(HttpClient.HttpClient, unexpectedHttp)],
+]).pipe(Layer.provideMerge(infra))
 
 const load = () => Effect.runPromise(Config.Service.use((svc) => svc.get()).pipe(Effect.scoped, Effect.provide(layer)))
 describe("kilocode default indexing plugin", () => {
@@ -86,20 +83,20 @@ describe("kilocode default indexing plugin", () => {
 
     try {
       await using tmp = await tmpdir({
-      init: async (dir) => {
-        await Filesystem.write(
-          path.join(dir, "opencode.json"),
-          JSON.stringify({
-            $schema: "https://app.kilo.ai/config.json",
-            plugin: ["global-plugin-1"],
-          }),
-        )
-      },
-    })
+        init: async (dir) => {
+          await Filesystem.write(
+            path.join(dir, "opencode.json"),
+            JSON.stringify({
+              $schema: "https://app.kilo.ai/config.json",
+              plugin: ["global-plugin-1"],
+            }),
+          )
+        },
+      })
 
-    await withInstanceProvide({
-      directory: tmp.path,
-      fn: async () => {
+      await provideTestInstance({
+        directory: tmp.path,
+        fn: async () => {
           const config = await load()
           expect(hasIndexingPlugin(config.plugin ?? [])).toBe(false)
         },

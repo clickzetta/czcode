@@ -1,11 +1,9 @@
 import path from "path"
-import { pathToFileURL } from "url"
 import { Effect, Schema } from "effect"
 import { Ripgrep } from "@opencode-ai/core/ripgrep"
 import { Skill } from "../skill"
 import * as Tool from "./tool"
 import DESCRIPTION from "./skill.txt"
-import { Telemetry, TelemetryEvent } from "@kilocode/kilo-telemetry" // czcode_change
 // kilocode_change start - gate + run shell injection in skill bodies
 import { Config } from "@/config/config"
 import { Shell } from "@opencode-ai/core/shell"
@@ -43,7 +41,6 @@ export const SkillTool = Tool.define(
             always: [params.name],
             metadata: {},
           })
-          Telemetry.track(TelemetryEvent.SKILL_USED, { skill: params.name, sessionID: ctx.sessionID, agent: ctx.agent }) // czcode_change — track which skills are used
 
           // kilocode_change start - render `!`cmd`` shell injection, gated by trust + kill-switch + batch approval
           const cfg = yield* config.get()
@@ -79,7 +76,7 @@ export const SkillTool = Tool.define(
           // kilocode_change end
 
           const dir = path.dirname(info.location)
-          const base = pathToFileURL(dir).href
+          const base = dir
           const files = yield* ripgrep.find({
             cwd: dir,
             pattern: "!**/SKILL.md",

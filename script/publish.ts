@@ -3,6 +3,7 @@
 import { Script } from "@opencode-ai/script"
 import { $ } from "bun"
 import { fileURLToPath } from "url"
+import { apply } from "./kilocode/changeset-version" // kilocode_change
 
 console.log("=== publishing ===\n")
 
@@ -12,32 +13,10 @@ const jetbrainsPin = await Bun.file(jetbrainsPkg).text()
 // kilocode_change end
 
 // kilocode_change start - consume changesets on the publish runner so changelog
-// changes are included in the release commit. Previously this ran in the
-// version job on a separate runner whose workspace was discarded.
-{
-  await $`bun install`
-  const paths = ["packages/kilo-vscode/CHANGELOG.md", "packages/opencode/CHANGELOG.md"]
-  const before = new Map<string, string>()
-  for (const p of paths) {
-    before.set(
-      p,
-      await Bun.file(p)
-        .text()
-        .catch(() => ""),
-    )
-  }
-  await $`bunx changeset version`
-  // Changeset computes its own version from package.json, but we use
-  // Script.version. Fix the heading in any changelog that was modified.
-  for (const p of paths) {
-    const content = await Bun.file(p)
-      .text()
-      .catch(() => "")
-    if (content !== before.get(p)) {
-      await Bun.write(p, content.replace(/^## .+$/m, `## ${Script.version}`))
-    }
-  }
-}
+// changes are included in the release commit. The same step runs in the
+// build-vscode job so the packaged VSIX ships the current changelog.
+await $`bun install`
+await apply(Script.version)
 // kilocode_change end
 
 const pkgjsons = await Array.fromAsync(
@@ -122,6 +101,8 @@ await import(`../packages/sdk/js/script/publish.ts`)
 console.log("\n=== plugin ===\n")
 await import(`../packages/plugin/script/publish.ts`)
 
+// kilocode_change - Kilo does not publish the upstream-owned @opencode-ai/ui package
+
 // kilocode_change start
 console.log("\n=== vscode ===\n")
 await import(`../packages/kilo-vscode/script/publish.ts`)
@@ -152,7 +133,8 @@ async function createJetbrainsPinPr() {
     console.log(`Skipping JetBrains CLI pin bump PR for pre-release v${Script.version}`)
     return
   }
-  const result = await $`bun .kilo/skills/release-jetbrains/script/set-pin.ts --version ${Script.version} --pr`.nothrow()
+  const result =
+    await $`bun .kilo/skills/release-jetbrains/script/set-pin.ts --version ${Script.version} --pr`.nothrow()
   const out = result.stdout.toString().trim()
   const err = result.stderr.toString().trim()
   if (result.exitCode === 0) {
@@ -164,6 +146,8 @@ async function createJetbrainsPinPr() {
   console.warn("JetBrains CLI pin bump PR creation failed; release will continue.")
   if (out) console.warn(out)
   if (err) console.warn(err)
-  console.warn("::warning title=JetBrains CLI pin bump PR failed::Release completed, but the JetBrains CLI pin bump PR was not created. Check the logs above and create it manually if needed.")
+  console.warn(
+    "::warning title=JetBrains CLI pin bump PR failed::Release completed, but the JetBrains CLI pin bump PR was not created. Check the logs above and create it manually if needed.",
+  )
 }
 // kilocode_change end

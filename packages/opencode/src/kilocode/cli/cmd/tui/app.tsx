@@ -7,7 +7,8 @@
 
 import { createEffect, createMemo, on, onCleanup } from "solid-js"
 import { useKeyboard, useRenderer } from "@opentui/solid"
-import { TextAttributes } from "@opentui/core"
+import { resolveRenderLib, TextAttributes } from "@opentui/core"
+import { KiloTerminalActivity } from "./terminal-activity"
 import * as Clipboard from "@tui/clipboard"
 import { useBindings } from "@tui/keymap"
 import { useSDK } from "@tui/context/sdk"
@@ -26,10 +27,10 @@ import { useIndexingWarnings } from "@/kilocode/cli/cmd/tui/indexing-warning"
 import { KiloTerminalTitle } from "./terminal-title"
 import type { KiloTitleIcon } from "./title-icon"
 import { Session as SessionApi } from "@/session/session"
+import { useCaffeination } from "./caffeination"
+import { useLinkInteractions } from "@tui/kilocode/link-interactions"
 
 // Re-export so upstream can render the route without importing directly
-export { KiloClawView } from "@/kilocode/claw/view"
-export { SingClawView } from "@/kilocode/singclaw/view" // czcode_change
 export { KiloTerminalTitle } from "./terminal-title"
 
 // Hot reload TUI-local settings (keybinds/theme/ui) when changed from the Kilo Console.
@@ -42,13 +43,13 @@ export { KiloTuiConfig } from "@/kilocode/cli/cmd/tui/context/tui-config"
 // ---------------------------------------------------------------------------
 
 /** Default terminal window title. */
-export const APP_TITLE = "ClickZetta CLI" // czcode_change
+export const APP_TITLE = "Kilo CLI"
 
 /** Public docs URL shown in the command palette. */
-export const DOCS_URL = "https://www.yunqi.tech/documents" // czcode_change
+export const DOCS_URL = "https://kilo.ai/docs"
 
 /** Human-readable product name used in user-facing messages. */
-export const APP_NAME = "ClickZetta" // czcode_change
+export const APP_NAME = "Kilo"
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -78,12 +79,24 @@ export function useSessionEffects(deps: {
   sdk: ReturnType<typeof useSDK>
   sync: ReturnType<typeof useSync>
 }) {
+  useLinkInteractions()
   const pty = process.env.KILO_PTY_ID
   const viewerId = crypto.randomUUID()
   const renderer = useRenderer()
   const session = createMemo(() => (deps.route.data.type === "session" ? deps.route.data.sessionID : undefined))
   let active = true
   const meta = { prev: "" }
+
+  KiloTerminalActivity.use({
+    enabled: process.env.KILO_TERMINAL_ACTIVITY,
+    session,
+    data: deps.sync.data,
+    subscribe: (handler) =>
+      deps.sdk.event.on("event", (event) => {
+        if (event.payload.type !== "sync") handler(event.payload)
+      }),
+    write: (data) => resolveRenderLib().writeOut(renderer.rendererPtr, data),
+  })
 
   function send() {
     const id = session()
@@ -197,24 +210,6 @@ export function getTerminalTitle(input: {
       indicator: "none",
     }
   }
-
-  if (input.route.data.type === "kiloclaw") {
-    return {
-      title: KiloTerminalTitle.format({ base: input.base, title: "KiloClaw", indicator: "none", icon: input.icon }),
-      active: false,
-      indicator: "none",
-    }
-  }
-
-  // czcode_change start - SingClaw route terminal title
-  if (input.route.data.type === "singclaw") {
-    return {
-      title: KiloTerminalTitle.format({ base: input.base, title: "SingClaw", indicator: "none", icon: input.icon }),
-      active: false,
-      indicator: "none",
-    }
-  }
-  // czcode_change end
 }
 
 // ---------------------------------------------------------------------------
@@ -241,7 +236,7 @@ export function handleSessionError(error: unknown, toast: ReturnType<typeof useT
  * One-shot initialiser called from the App component body.
  *
  * - Injects TUI dependencies into kilo-gateway
- * - Registers Kilo Gateway commands (profile, teams, kiloclaw, etc.)
+ * - Registers Kilo Gateway commands (profile, teams, etc.)
  * - Registers the auto-approve toggle command
  */
 export function init() {
@@ -267,8 +262,9 @@ export function init() {
     TextAttributes,
   })
 
-  // Register Kilo Gateway commands (profile, teams, kiloclaw, remote, etc.)
+  // Register Kilo Gateway commands (profile, teams, remote, etc.)
   registerKiloCommands(useSDK)
+  useCaffeination()
 
   // Register auto-approve toggle
   useBindings(() => ({
@@ -290,10 +286,12 @@ export function init() {
         name: "permission.allow_everything",
         get title() {
           return isAllowEverything(sync.data.config.permission)
-            ? "Disable auto-approve mode"
-            : "Enable auto-approve mode"
+            ? "Disable saved auto-approve"
+            : "Enable saved auto-approve"
         },
-        desc: "Toggle auto-approve for all permission prompts, saved to global config",
+        // kilocode_change - the saved rule is server side, so it also stops VS Code, JetBrains and
+        // headless runs from prompting
+        desc: "Toggle auto-approve for all permission prompts, saved to global config and shared with every client",
         category: "System",
         slashName: "auto-approve",
         slashAliases: ["autoapprove", "approve-all", "approveall"],

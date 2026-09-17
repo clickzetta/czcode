@@ -25,10 +25,12 @@ export interface ConfigCollectionEntry {
 export type ConfigCollections = Record<string, ConfigCollectionEntry[]>
 
 export interface CommandConfig {
-  template: string
+  template?: string
   description?: string
   agent?: string
-  model?: string
+  model?: string | null
+  variant?: string | null
+  subtask?: boolean
 }
 
 export interface SkillsConfig {
@@ -48,17 +50,17 @@ export interface WatcherConfig {
 
 export interface ExperimentalConfig {
   batch_tool?: boolean
-  codebase_search?: boolean
   image_generation?: boolean
   image_generation_model?: string
-  agent_requirements?: boolean
+  task_model_selection?: boolean
   native_notebook_tools?: boolean
   speech_to_text_model?: string
+  speech_to_text_base_url?: string
+  speech_to_text_api_key?: string
   primary_tools?: string[]
   continue_loop_on_deny?: boolean
   mcp_timeout?: number
-  swe_pruner?: boolean
-  swe_pruner_model?: string
+  disable_paste_summary?: boolean
 }
 
 export interface SandboxConfig {
@@ -133,6 +135,8 @@ export interface BrowserSettings {
 
 export type TerminalCommandDisplay = "expanded" | "collapsed"
 export type CodeEditDisplay = "expanded" | "collapsed"
+export type McpToolDisplay = "expanded" | "collapsed"
+export type ReasoningDisplay = "expanded" | "preview" | "headline"
 
 export interface Config {
   permission?: PermissionConfig
@@ -154,6 +158,7 @@ export interface Config {
   remote_control?: boolean
   terminal_command_display?: TerminalCommandDisplay
   code_edit_display?: CodeEditDisplay
+  mcp_tool_display?: McpToolDisplay
   hide_prompt_training_models?: boolean
   share?: "manual" | "auto" | "disabled"
   username?: string
@@ -165,6 +170,8 @@ export interface Config {
   tools?: Record<string, boolean>
   web_search?: boolean
   auto_collapse_reasoning?: boolean
+  reasoning_display?: ReasoningDisplay
+  shared_agent_board?: boolean
   experimental?: ExperimentalConfig
   sandbox?: SandboxConfig
   indexing?: IndexingConfig
@@ -173,4 +180,5 @@ export interface Config {
 export interface FeatureFlags {
   indexing: boolean
   sandboxControls: boolean
+  backgroundSubagents: boolean
 }

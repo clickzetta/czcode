@@ -37,6 +37,12 @@ const ROOT = path.resolve(import.meta.dir, "..")
 const SOURCE_EXTS = new Set([".ts", ".tsx", ".js", ".jsx", ".yml", ".yaml", ".toml", ".sh", ".bash", ".zsh"])
 const SCOPES = [
   "packages/opencode",
+  "packages/core",
+  "packages/llm",
+  "packages/schema",
+  "packages/protocol",
+  "packages/server",
+  "packages/tui",
   "packages/extensions",
   "packages/ui",
   "packages/shared",
@@ -115,9 +121,7 @@ function isUpstreamMerge() {
 
 function isExempt(file: string) {
   const norm = file.replaceAll("\\", "/").toLowerCase()
-  // czcode_change start - also exempt czcode-specific paths
-  if (norm.split("/").some((part) => part.includes("kilocode") || part.startsWith("kilo-") || part.includes("czcode") || part.startsWith("cz-"))) return true
-  // czcode_change end
+  if (norm.split("/").some((part) => part.includes("kilocode") || part.startsWith("kilo-"))) return true
   return EXEMPT_SCOPES.some((scope) => norm === scope || norm.startsWith(`${scope}/`))
 }
 
@@ -198,10 +202,8 @@ function content(file: string) {
 }
 // kilocode_change end
 
-// czcode_change start - also accept czcode_change markers
-// Matches the start of a kilocode_change or czcode_change marker in JS, JSX, YAML, TOML, and shell comments.
-const MARKER_PREFIX = /(?:\/\/|\{?\s*\/\*|#)\s*(?:kilocode_change|czcode_change)\b/
-// czcode_change end
+// Matches the start of a kilocode_change marker in JS, JSX, YAML, TOML, and shell comments.
+const MARKER_PREFIX = /(?:\/\/|\{?\s*\/\*|#)\s*kilocode_change\b/
 
 function hasMarker(line: string) {
   return MARKER_PREFIX.test(line)
@@ -211,9 +213,9 @@ function coveredLines(text: string): { lines: string[]; covered: Set<number> } {
   const lines = text.split(/\r?\n/)
   const covered = new Set<number>()
 
-  // Whole-file annotation: first non-shebang non-empty line is a kilocode_change/czcode_change - new file marker.
+  // Whole-file annotation: first non-shebang non-empty line is a kilocode_change - new file marker.
   const first = lines.find((x) => x.trim() !== "" && !x.startsWith("#!"))
-  if (first?.match(/(?:\/\/|\{?\s*\/\*|#)\s*(?:kilocode_change|czcode_change)\s*-\s*new\s*file\b/)) { // czcode_change
+  if (first?.match(/(?:\/\/|\{?\s*\/\*|#)\s*kilocode_change\s*-\s*new\s*file\b/)) {
     for (let i = 1; i <= lines.length; i++) covered.add(i)
     return { lines, covered }
   }
@@ -223,13 +225,13 @@ function coveredLines(text: string): { lines: string[]; covered: Set<number> } {
     const n = i + 1
     const line = lines[i] ?? ""
 
-    if (line.match(/(?:\/\/|\{?\s*\/\*|#)\s*(?:kilocode_change|czcode_change)\s+start\b/)) { // czcode_change
+    if (line.match(/(?:\/\/|\{?\s*\/\*|#)\s*kilocode_change\s+start\b/)) {
       block = true
       covered.add(n)
       continue
     }
 
-    if (line.match(/(?:\/\/|\{?\s*\/\*|#)\s*(?:kilocode_change|czcode_change)\s+end\b/)) { // czcode_change
+    if (line.match(/(?:\/\/|\{?\s*\/\*|#)\s*kilocode_change\s+end\b/)) {
       covered.add(n)
       block = false
       continue

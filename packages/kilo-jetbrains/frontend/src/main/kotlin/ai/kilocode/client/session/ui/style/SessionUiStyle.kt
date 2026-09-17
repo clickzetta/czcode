@@ -5,15 +5,83 @@ import com.intellij.ui.JBColor
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import java.awt.Color
+import java.awt.Component
+import java.awt.Font
+import javax.swing.UIManager
 
 /** Static style tokens owned by the chat session UI. */
 object SessionUiStyle {
+    /**
+     * The session palette is driven by three authored keys; everything else is derived:
+     * - [sessionBackground] paints the whole session backdrop (containers stay transparent over it).
+     * - [codeBlockBackground] is the single raised surface (code blocks, tool/shell output, prompt bubble, prompt input).
+     * - [foreground] is normal text and links; [Text.Secondary] owns secondary session text.
+     *
+     * [View.Dialog.bgColor] adds a fourth, derived surface for outlined dialog cards
+     * ([ai.kilocode.client.session.views.base.DialogView]) — a contrast shift off [sessionBackground],
+     * distinct from both the backdrop and [codeBlockBackground] — bordered by
+     * [View.Dialog.outlineColor], the midpoint between the backdrop and that surface.
+     */
+    object Colors {
+        /**
+         * Recess applied to the raised editor surface to derive a distinct backdrop. Used both when
+         * the panel-background key is missing and when the panel background is identical to the
+         * raised surface (e.g. Islands Dark/Darcula), so the prompt bubble/input and other raised
+         * surfaces still stand out. [UiStyle.Colors.contrast] lightens dark themes and darkens light
+         * themes, matching how generic themes separate the backdrop from editor content.
+         */
+        private const val SESSION_DELTA = 8
+
+        /**
+         * Whole session backdrop: follows the panel (chrome) background, distinct from raised
+         * surfaces. When the panel background matches the raised surface — so raised surfaces would
+         * be invisible against it — the backdrop is shifted by [SESSION_DELTA] instead.
+         *
+         * Not a `namedColor`: `JBColor.namedColor` resolves through theme `"*"` wildcard rules by
+         * suffix (`name.endsWith("background")`), so any theme with a `*.background` rule would
+         * hijack this key and skip the fallback below. We read an exact override key ourselves and
+         * otherwise compute the backdrop, wrapped in `JBColor.lazy` so it re-resolves on LaF changes.
+         */
+        fun sessionBackground(): Color = JBColor.lazy {
+            UIManager.getColor("Kilo.Session.background") ?: run {
+                val raised = codeBlockBackground()
+                val panel = UIManager.getColor("Panel.background") ?: raised
+                if (panel.rgb == raised.rgb) UiStyle.Colors.contrast(raised, SESSION_DELTA) else panel
+            }
+        }
+
+        /** Single raised surface (code blocks, tool/shell output, prompt bubble, prompt input): the editor background. */
+        fun codeBlockBackground(): Color = JBColor.namedColor(
+            "Kilo.Session.codeBlockBackground",
+            UiStyle.Colors.editorBackground(),
+        )
+
+        fun foreground(): Color = JBColor.namedColor(
+            "Kilo.Session.foreground",
+            UiStyle.Colors.fg(),
+        )
+    }
+
+    /** Text roles used by session UI labels and transcript chrome. */
+    object Text {
+        object Secondary {
+            private const val BACKGROUND_BLEND = 0.35f
+
+            fun foreground(): Color = JBColor.lazy {
+                UiStyle.Colors.blend(Colors.foreground(), Colors.sessionBackground(), BACKGROUND_BLEND)
+            }
+
+            fun font(style: SessionEditorStyle): Font = style.regularFont
+        }
+    }
+
     object Transcript {
-        fun bgColor(): Color = UiStyle.Colors.bg()
+        fun bgColor(): Color = Colors.sessionBackground()
     }
 
     /** Geometry for the transcript list and its scroll behavior. */
     object SessionLayout {
+        const val READABLE_COLUMNS = 98
         const val GAP = 3
         const val USER_PROMPT_GAP = 10
         const val TRANSCRIPT_SCROLLBAR_PADDING = 10
@@ -26,16 +94,44 @@ object SessionUiStyle {
 
         const val USER_PROMPT_INDENT = 100
         const val SCROLL_INCREMENT = 48
+
+        fun readableWidth(component: Component, font: Font): Int {
+            val width = component.getFontMetrics(font).charWidth('0').coerceAtLeast(1)
+            return width * READABLE_COLUMNS
+        }
     }
 
     /** Shared tokens for individual transcript views and session views. */
     object View {
+        /**
+         * Corner arc (unscaled) for raised session blocks: the user prompt bubble and the
+         * collapsed card hover fill. Scale with [JBUI.scale] at the call site.
+         */
+        const val BLOCK_ARC = 8
+
         object Layout {
             const val GAP = 5
             const val VERTICAL_PADDING = 7
+            /** Header vertical padding for the compact card variant (e.g. reasoning). */
+            const val COMPACT_VERTICAL_PADDING = 5
             const val HORIZONTAL_PADDING = 12
             const val BODY_EXTRA_HEIGHT = 16
         }
+
+        /**
+         * Left inset for expanded card content that should read as nested under the header — the diff
+         * body's filename row and the auto-approve rule rows both use it. Reuse this wherever expanded
+         * content needs indenting so the amount stays consistent across cards.
+         */
+        fun contentIndent() = UiStyle.Gap.pad()
+
+        /**
+         * Standard transparent inset separating an expanded card header from its content, and
+         * separating stacked content surfaces inside a [ai.kilocode.client.session.ui.SessionContentPanel].
+         * Matches the gap between views in the transcript ([SessionLayout.GAP]), so a card's internal
+         * spacing reads the same as the spacing between cards.
+         */
+        fun contentGap() = JBUI.scale(SessionLayout.GAP)
 
         /**
          * Single source of truth for the spacing of every session-card header (see `PartHeader`).
@@ -62,20 +158,34 @@ object SessionUiStyle {
             const val MAX_WIDTH = 350
             const val WIDE_MAX_WIDTH = MAX_WIDTH * 2
             const val MAX_HEIGHT = 450
+
+            /**
+             * Band kept above and below a body that scrolls sideways, so its scrollbar clears the
+             * content instead of landing on the last line of it. Doubles the balloon's own 6px vertical
+             * inset, because a body with a scrollbar is one whose first and last line would otherwise
+             * sit against the balloon edge with a bar over them.
+             */
+            const val SCROLL_PADDING = 12
         }
 
         internal const val BORDER_DELTA = 80
         internal const val HOVER_BORDER_ALPHA = 0.18f
         internal const val HOVER_FILL_ALPHA = 0.10f
 
-        object Surface {
-            fun bgColor(): Color = UiStyle.Colors.editorBackground()
+        /** Shift applied to the backdrop for the dialog-card surface — enough to read as its own panel. */
+        internal const val DIALOG_DELTA = 12
 
-            fun headerBgColor(): Color = UiStyle.Colors.editorBackground()
+        /** Dialog border position between the backdrop and the card surface: the midpoint of the two. */
+        internal const val OUTLINE_BLEND = 0.5f
+
+        object Surface {
+            fun bgColor(): Color = Colors.sessionBackground()
+
+            fun headerBgColor(): Color = Colors.sessionBackground()
 
             /** Subtle hover fill, softer than the session-view outline. */
             fun headerHoverBgColor(): Color = JBColor.lazy {
-                UiStyle.Colors.blend(headerBgColor(), Outline.hoverColor(), HOVER_FILL_ALPHA)
+                UiStyle.Colors.blend(Colors.sessionBackground(), Outline.hoverColor(), HOVER_FILL_ALPHA)
             }
         }
 
@@ -83,7 +193,7 @@ object SessionUiStyle {
             fun color(): Color = UiStyle.Colors.contentBorder()
 
             fun brightColor(): Color = JBColor.lazy {
-                UiStyle.Colors.contrast(UiStyle.Colors.editorBackground(), BORDER_DELTA)
+                UiStyle.Colors.contrast(Colors.sessionBackground(), BORDER_DELTA)
             }
 
             /** Subtle hover outline, stronger than the hover fill. */
@@ -94,12 +204,36 @@ object SessionUiStyle {
             fun width(): Int = JBUI.scale(1)
         }
 
+        /** Filled surface and border for outlined dialog cards (question, permission, login, outcome, revert). */
+        object Dialog {
+            /**
+             * Card fill for [ai.kilocode.client.session.views.base.DialogView] when outlined.
+             * Derived from the backdrop rather than a theme key so the card reads as a raised
+             * surface in every theme while staying distinct from [Colors.codeBlockBackground],
+             * which the code/diff bodies nested inside these cards paint.
+             */
+            fun bgColor(): Color = JBColor.lazy {
+                UiStyle.Colors.contrast(Colors.sessionBackground(), DIALOG_DELTA)
+            }
+
+            /**
+             * Card border: the midpoint between the backdrop and [bgColor], so the edge reads as a
+             * soft transition between the two surfaces instead of the hard line
+             * [Outline.brightColor] draws for a card that has no fill of its own.
+             */
+            fun outlineColor(): Color = JBColor.lazy {
+                UiStyle.Colors.blend(Colors.sessionBackground(), bgColor(), OUTLINE_BLEND)
+            }
+        }
+
         /** Prompt input dimensions and chrome inside the session view. */
         object Prompt {
+            fun bgColor(_style: SessionEditorStyle): Color = Colors.codeBlockBackground()
+
             const val EDITOR_LINES = 1
             const val EDITOR_CHROME = 16
             const val SEND_BUTTON_SIZE = 24
-            const val CORNER_ARC = 6
+            const val CORNER_ARC = 10
             const val FOCUS_WIDTH = 2
             const val PANEL_VERTICAL_PADDING = 8
             const val PANEL_HORIZONTAL_PADDING = 12
@@ -108,6 +242,8 @@ object SessionUiStyle {
             const val SHELL_HORIZONTAL_PADDING = 8
             // Horizontal editor inset intentionally matches vertical shell padding to balance text and chrome.
             const val EDITOR_HORIZONTAL_INSET = SHELL_VERTICAL_PADDING
+            // Caps a pasted block rendered in the transcript prompt bubble; matches Tool.BODY_LINES.
+            const val PASTE_BLOCK_LINES = 15
 
             fun separator(): Color = JBColor.namedColor(
                 "EditorTabs.underTabsBorderColor",
@@ -121,6 +257,8 @@ object SessionUiStyle {
             const val CARD_HEIGHT = 59
             const val CLOSE_SIZE = 18
             const val CORNER_ARC = 8
+            const val CHIP_HEIGHT = 28
+            const val CHIP_ICON_GAP = 6
         }
 
         /** Full-session file drop overlay geometry and colors. */
@@ -133,7 +271,7 @@ object SessionUiStyle {
             private const val SCRIM_ALPHA = 210
 
             fun scrim(): Color = JBColor.lazy {
-                val bg = UiStyle.Colors.bg()
+                val bg = Colors.sessionBackground()
                 Color(bg.red, bg.green, bg.blue, SCRIM_ALPHA)
             }
 
@@ -143,7 +281,6 @@ object SessionUiStyle {
         /** Reasoning block preview sizing. */
         object Reasoning {
             const val BODY_LINES = 5
-            const val HEADER_VERTICAL_PADDING = 5
             const val BODY_VERTICAL_PADDING = 4
             const val BODY_HORIZONTAL_PADDING = 8
         }
@@ -187,9 +324,20 @@ object SessionUiStyle {
             fun topPadding(): Int = VIEWPORT_TOP_PADDING + UiStyle.Gap.lg()
         }
 
+        object Diagram {
+            const val MAX_HEIGHT = 480
+            const val PADDING = 16
+            const val EMPTY_HEIGHT = 96
+        }
+
         /** Permission session-view command preview limits. */
         object Permission {
             const val COMMAND_LINES = 3
+        }
+
+        /** Outcome/error footer card preview limits. */
+        object Outcome {
+            const val ERROR_LINES = 5
         }
 
         /** Tool session-view preview limits and state colors. */
@@ -199,11 +347,20 @@ object SessionUiStyle {
             const val DIFF_LINES = 20
             const val PREVIEW_LIMIT = 20_000
 
-            fun pending(): Color = UiStyle.Colors.weak()
+            /**
+             * Total unified-diff line count above which the hover popup and inline body stop building
+             * embedded editors and show an "open in a diff tab" placeholder instead. Each embedded
+             * editor holds the whole diff document, and reinitializing it walks every line on the EDT,
+             * so an uncapped large diff freezes the UI. Above this the platform diff viewer (which
+             * streams file diffs on background threads) handles it.
+             */
+            const val DIFF_MAX_LINES = 2_000
 
-            fun running(): Color = UiStyle.Colors.fg()
+            fun pending(): Color = Text.Secondary.foreground()
 
-            fun completed(): Color = UiStyle.Colors.weak()
+            fun running(): Color = Colors.foreground()
+
+            fun completed(): Color = Text.Secondary.foreground()
 
             fun error(): Color = UiStyle.Colors.errorLabelForeground()
         }
@@ -228,7 +385,7 @@ object SessionUiStyle {
         val TOOL: Color = JBColor.namedColor("Kilo.Session.Timeline.Tool", Color(0x00, 0x7a, 0xcc))
         val SUCCESS: Color = JBColor.namedColor("Label.successForeground", UIUtil.getLabelSuccessForeground())
         val ERROR: Color = JBColor.namedColor("Kilo.Session.Timeline.Error", UIUtil.getErrorForeground())
-        val TEXT: Color = JBColor.namedColor("Kilo.Session.Timeline.Text", UIUtil.getContextHelpForeground())
+        val TEXT: Color = Text.Secondary.foreground()
         val STEP: Color = JBColor.namedColor("Kilo.Session.Timeline.Step", JBColor.border())
     }
 }

@@ -1,3 +1,5 @@
+import { cloudProviderDict } from "./cloud-provider"
+
 export const anacondaDesktopDict = {
   "provider.anaconda.title.connect": "Conectar Anaconda Desktop",
   "provider.anaconda.title.manage": "Administrar Anaconda Desktop",
@@ -52,9 +54,28 @@ export const anacondaDesktopDict = {
 } as const
 
 export const dict = {
+  "session.goal.complete": "Completo (según el modelo)",
+  "session.goal.blocked": "Bloqueado",
+  "session.goal.restart": "Reiniciar objetivo",
   ...anacondaDesktopDict,
+  ...cloudProviderDict,
+  "task.swarm.title": "Tablero",
+  "task.swarm.refresh": "Actualizar",
+  "task.swarm.reset": "Restablecer tablero",
+  "task.swarm.resetTitle": "¿Restablecer este tablero?",
+  "task.swarm.resetDescription":
+    "¿Borrar los mensajes visibles? Las conversaciones y las tareas en curso no cambian. Los agentes pueden publicar nuevos mensajes.",
+  "task.swarm.loading": "Cargando tablero...",
+  "task.swarm.failed": "No se pudo cargar o restablecer el tablero. Intenta actualizarlo.",
 
   "command.provider.connect": "Conectar proveedor",
+
+  "session.activity.waiting": "Esperando una respuesta o aprobación.",
+  "session.activity.error": "Error o conexión perdida.",
+  "session.activity.retry": "Reintentando automáticamente.",
+  "session.activity.busy": "En curso.",
+  "session.activity.done": "Turno completado.",
+  "session.activity.idle": "No está en ejecución.",
 
   "command.session.new": "Nueva sesión",
   "command.session.show.changes": "Mostrar cambios",
@@ -74,31 +95,6 @@ export const dict = {
   "revert.disabled.agentBusy": "Espera a que el agente termine",
   "command.session.compact": "Compactar sesión",
   "command.session.export": "Exportar transcripción de la sesión",
-
-  "agentRequirements.skill.installed": "Instalada",
-  "agentRequirements.skill.checkFailed": "La comprobación de la habilidad falló",
-  "agentRequirements.skill.missing": "No instalada",
-  "agentRequirements.mcp.connected": "Conectado",
-  "agentRequirements.mcp.checkFailed": "La comprobación de MCP falló",
-  "agentRequirements.mcp.missing": "No conectado",
-  "agentRequirements.extension.installed": "Instalada",
-  "agentRequirements.extension.checkFailed": "La comprobación de la extensión de VS Code falló",
-  "agentRequirements.extension.missing": "No instalada",
-  "agentRequirements.extension.description": "Instala las extensiones que faltan en VS Code.",
-  "agentRequirements.group.skills": "Habilidades",
-  "agentRequirements.group.mcps": "MCPs",
-  "agentRequirements.group.extensions": "Extensiones de VS Code",
-  "agentRequirements.blocked.title": "Requisitos previos del agente {{agent}}",
-  "agentRequirements.blocked.description":
-    "Este agente necesita las siguientes herramientas antes de poder ejecutarse.",
-  "agentRequirements.prompt.blocked": "Completa primero las comprobaciones requeridas para usar este agente",
-  "agentRequirements.action.openMarketplace": "Abrir Marketplace",
-  "agentRequirements.error.unknownAgent": "No se pudo encontrar el agente seleccionado.",
-  "agentRequirements.error.malformedDeclaration": "Este agente tiene una declaración de requisitos no válida.",
-  "agentRequirements.error.discoveryFailed": "Kilo no pudo comprobar las habilidades disponibles.",
-  "agentRequirements.error.mcpStatusFailed": "Kilo no pudo comprobar el estado del servidor MCP.",
-  "agentRequirements.error.scopeMismatch": "Esta comprobación de requisitos del agente ya no está activa.",
-  "agentRequirements.error.requestFailed": "Kilo no pudo comprobar los requisitos del agente.",
 
   "dialog.provider.search.placeholder": "Buscar proveedores",
   "dialog.provider.empty": "No se encontraron proveedores",
@@ -164,6 +160,7 @@ export const dict = {
   "model.group.auto": "Modelos automáticos",
   "model.group.recommended": "Recomendado",
   "model.group.favorites": "Favoritos",
+  "model.group.mostUsed": "Más usados",
   "model.favorite.add": "Añadir a favoritos",
   "model.favorite.remove": "Eliminar de favoritos",
 
@@ -196,19 +193,22 @@ export const dict = {
   "common.saving": "Guardando...",
   "common.default": "Predeterminado",
 
+  "prompt.worktrees.title": "Worktrees",
+  "prompt.worktrees.search": "Buscar Worktrees",
   "prompt.thinking.tooltip": "Esfuerzo de razonamiento",
   "prompt.action.send": "Enviar",
+  "prompt.action.continue": "Continuar",
   "prompt.action.send.blocked": "Responda o descarte la pregunta pendiente primero",
   "prompt.action.send.recording": "Transcribir y enviar",
   "prompt.action.stop": "Detener",
   "prompt.action.enhance": "Mejorar prompt",
+  "prompt.paste.expand": "Haz clic para expandir el texto pegado",
   "prompt.action.autoApprove.enable": "Activar aprobación automática",
   "prompt.action.autoApprove.disable": "Desactivar aprobación automática",
   "prompt.action.autoApprove.enabled":
     "La aprobación automática está activada. Las solicitudes de permisos se aprobarán automáticamente.",
   "prompt.action.autoApprove.disabled":
     "La aprobación automática está desactivada. Haz clic para aprobar solicitudes de permisos automáticamente.",
-  "prompt.action.resetModel": "Restablecer modelo al predeterminado",
   "prompt.action.enhanceDescription":
     "El botón 'Mejorar el mensaje' ayuda a mejorar tu petición proporcionando contexto adicional, aclaraciones o reformulaciones. Intenta escribir una petición aquí y haz clic en el botón nuevamente para ver cómo funciona.",
   "prompt.action.indexing": "Configuración de indexación",
@@ -232,7 +232,9 @@ export const dict = {
   "prompt.action.sandbox.description.disabledNetworkAllowed":
     "Haz clic para restringir las escrituras en el sistema de archivos. El acceso a la red seguirá permitido según la configuración de tu sandbox.",
 
-  "speechToText.tooltip.start": "Iniciar entrada de voz con Kilo Gateway",
+  "speechToText.tooltip.start": "Iniciar entrada de voz",
+  "speechToText.tooltip.shortcut":
+    "Toca o pulsa Cmd/Ctrl+K para iniciar o detener la grabación; mantén pulsado mientras hablas y suéltalo para transcribir y enviar.",
   "speechToText.tooltip.starting": "Iniciando el micrófono... Espera antes de hablar.",
   "speechToText.tooltip.stop": "Detener captura",
   "speechToText.tooltip.transcribing": "Transcribiendo... Haz clic para cancelar.",
@@ -270,7 +272,11 @@ export const dict = {
   "notification.permission.title": "Permiso requerido",
   "notification.permission.titleSubagent": "Permiso requerido (subagente)",
   "notification.permission.titleSkillShell": "¿Ejecutar comandos de shell de la habilidad «{{skill}}»?",
+  "notification.permission.titleSandboxEscalation": "¿Permitir la operación de Git fuera del entorno aislado?",
   "ui.permission.manageAutoApprove": "Gestionar reglas de aprobación automática",
+  "ui.permission.reject": "Rechazar",
+  "ui.permission.feedbackPlaceholder": "Dile a Kilo qué debe hacer de otra forma",
+  "ui.permission.feedbackHint": "Enter para rechazar, Esc para cancelar",
   "ui.permission.doomLoop.prompt": "Se detectó un posible bucle en la herramienta {{tool}}. ¿Continuar ejecutando?",
   "ui.permission.doomLoop.rule": "Continuar llamadas a {{tool}}",
   "ui.permission.rule.addToAllowed": "Añadir a la lista de permitidos",
@@ -305,6 +311,7 @@ export const dict = {
   "ui.approval.source.yolo": "por el modo de aprobación automática (YOLO)",
   "ui.approval.source.session": "por una regla de aprobación automática de sesión",
   "ui.approval.source.default": "de forma predeterminada",
+  "ui.approval.outsideWorkspace": "(fuera de tu espacio de trabajo: {{file}})",
 
   "session.tab.review": "Revisión",
   "session.review.filesChanged": "{{count}} Archivos Cambiados",
@@ -314,6 +321,13 @@ export const dict = {
   "session.messages.loadEarlier": "Cargar mensajes anteriores",
   "session.messages.loading": "Cargando mensajes...",
 
+  "sidebar.topBar.label": "Navegación de Kilo Code",
+  "sidebar.topBar.newTask": "Nueva Tarea",
+  "sidebar.topBar.history": "Historial",
+  "sidebar.topBar.agentManager": "Agent Manager",
+  "sidebar.topBar.marketplace": "Marketplace",
+  "sidebar.topBar.profile": "Perfil",
+  "sidebar.topBar.settings": "Configuración",
   "sidebar.session.newSession": "Nueva Sesión",
   "sidebar.session.newSession.tooltip": "Inicia una nueva conversación manteniendo intacta la sesión actual.",
   "sidebar.session.newWorktree": "Nuevo Worktree",
@@ -453,6 +467,7 @@ export const dict = {
   "settings.providers.tag.customProvider": "Proveedor personalizado",
   "settings.providers.connected.environmentDescription": "Conectado desde tus variables de entorno",
   "settings.providers.action.signInChatGPT": "Iniciar sesión con ChatGPT",
+  "settings.providers.action.changeApiKey": "Cambiar clave API",
   "settings.providers.custom.description": "Añade un proveedor personalizado por URL base.",
   "settings.providers.subagentModel.title": "Modelo de subagente",
   "settings.providers.subagentModel.description":
@@ -485,45 +500,8 @@ export const dict = {
   "provider.custom.models.name.placeholder": "Nombre para mostrar",
   "provider.custom.models.reasoning.label": "Razonamiento",
   "provider.custom.models.modalities.image": "Imagen",
-  "provider.custom.models.variants.label": "Variantes",
-  "provider.custom.models.variants.add": "Añadir variante",
-  "provider.custom.models.variants.remove": "Eliminar variante",
-  "provider.custom.models.variants.name.label": "Nombre",
-  "provider.custom.models.variants.name.placeholder": "p. ej. thinking",
-  "provider.custom.models.variants.option.unset": "(no establecido)",
-  "provider.custom.models.variants.enableThinking.label": "Habilitar pensamiento (p. ej. Alibaba)",
-  "provider.custom.models.variants.enableThinking.placeholder": "enable_thinking",
-  "provider.custom.models.variants.enableThinking.true": "true",
-  "provider.custom.models.variants.enableThinking.false": "false",
-  "provider.custom.models.variants.thinking.label": "Tipo de pensamiento (p. ej. Z.ai)",
-  "provider.custom.models.variants.thinking.placeholder": "thinking",
-  "provider.custom.models.variants.thinking.enabled": "enabled",
-  "provider.custom.models.variants.thinking.disabled": "disabled",
-  "provider.custom.models.variants.thinking.adaptive": "adaptive",
-  "provider.custom.models.variants.splitReasoning.label": "Split reasoning (required for e.g. MiniMax)",
-  "provider.custom.models.variants.splitReasoning.placeholder": "reasoning_split",
-  "provider.custom.models.variants.splitReasoning.true": "true",
-  "provider.custom.models.variants.splitReasoning.false": "false",
-  "provider.custom.models.variants.chatTemplateArgs.label":
-    "Activar pensamiento mediante args de plantilla de chat (ej. Hugging Face)",
-  "provider.custom.models.variants.chatTemplateArgs.placeholder": "chat_template_args",
-  "provider.custom.models.variants.chatTemplateArgs.true": "true",
-  "provider.custom.models.variants.chatTemplateArgs.false": "false",
-  "provider.custom.models.variants.reasoningEffort.label": "Esfuerzo de razonamiento",
-  "provider.custom.models.variants.reasoningEffort.placeholder": "reasoningEffort",
-  "provider.custom.models.variants.reasoningEffort.none": "none",
-  "provider.custom.models.variants.reasoningEffort.minimal": "minimal",
-  "provider.custom.models.variants.reasoningEffort.low": "low",
-  "provider.custom.models.variants.reasoningEffort.medium": "medium",
-  "provider.custom.models.variants.reasoningEffort.high": "high",
-  "provider.custom.models.variants.reasoningEffort.xhigh": "xhigh",
-  "provider.custom.models.variants.outputEffort.label": "Output effort (e.g. Anthropic)",
-  "provider.custom.models.variants.outputEffort.placeholder": "effort",
-  "provider.custom.models.variants.outputEffort.low": "low",
-  "provider.custom.models.variants.outputEffort.medium": "medium",
-  "provider.custom.models.variants.outputEffort.high": "high",
-  "provider.custom.models.variants.outputEffort.xhigh": "xhigh",
-  "provider.custom.models.variants.outputEffort.max": "max",
+  "provider.custom.models.toggleReasoning": "Alternar razonamiento para todos",
+  "provider.custom.models.toggleImages": "Alternar imagen para todos",
   "provider.custom.models.remove": "Eliminar modelo",
   "provider.custom.models.add": "Añadir modelo",
   "provider.custom.models.fetch.authError":
@@ -538,6 +516,7 @@ export const dict = {
   "provider.custom.models.fetch.search": "Buscar modelos\u2026",
   "provider.custom.models.fetch.add": "Añadir {{count}} modelo(s)",
   "provider.custom.edit.title": "Editar proveedor",
+  "provider.custom.edit.advanced": "Editar la configuración avanzada en el archivo de configuración JSON",
   "provider.custom.headers.label": "Headers (opcional)",
   "provider.custom.headers.key.label": "Header",
   "provider.custom.headers.key.placeholder": "Header-Name",
@@ -701,10 +680,50 @@ export const dict = {
   "profile.action.login": "Iniciar sesión con Kilo Code",
   "profile.balance.title": "Saldo",
   "profile.balance.refresh": "Actualizar saldo",
+  "profile.usage.title": "Planes y uso",
+  "profile.usage.description": "Cuota y saldos del plan actual",
+  "profile.usage.refresh": "Actualizar uso del proveedor",
+  "profile.usage.empty": "No se detectaron fuentes de uso de proveedores.",
+  "profile.usage.source.direct": "Directo",
+  "profile.usage.state.stale": "Se muestran los últimos datos de uso actualizados.",
+  "profile.usage.state.unavailable": "Datos de uso no disponibles.",
+  "profile.usage.state.empty": "No se informaron límites de uso.",
+  "profile.usage.plan.pastDue": "Plan: Pago atrasado",
+  "profile.usage.plan.canceling": "Plan: Se cancela al final del período",
+  "profile.usage.plan.unknown": "Plan: Estado desconocido",
+  "profile.usage.action.manage": "Gestionar",
+  "profile.usage.action.managePlan": "Gestionar {{plan}}",
+  "profile.usage.routing": "La facturación del plan está activa. El enrutamiento de Kilo Gateway está {{state}}.",
+  "profile.usage.routingState.disabled": "deshabilitado",
+  "profile.usage.routingState.missing": "ausente",
+  "profile.usage.routingState.replaced": "reemplazado",
+  "profile.usage.routingState.unknown": "desconocido",
+  "profile.usage.window.used": "{{value}} usado",
+  "profile.usage.window.remaining": "{{value}} restante",
+  "profile.usage.window.remainingOf": "{{value}} de {{limit}} restantes",
+  "profile.usage.window.usedOf": "{{value}} de {{limit}} usados",
+  "profile.usage.window.quota": "Cuota",
+  "profile.usage.window.daily": "Cuota diaria",
+  "profile.usage.window.weekly": "Cuota semanal",
+  "profile.usage.window.monthly": "Cuota mensual",
+  "profile.usage.window.hours": "Cuota de {{count}} horas",
+  "profile.usage.window.days": "Cuota de {{count}} días",
+  "profile.usage.window.weeks": "Cuota de {{count}} semanas",
+  "profile.usage.window.months": "Cuota de {{count}} meses",
+  "profile.usage.window.shared": "Compartida",
+  "profile.usage.window.scoped": "{{resource}} · {{period}}",
+  "profile.usage.reset": "Se restablece el {{date}}",
+  "profile.usage.status.unknown": "Desconocido",
+  "profile.usage.status.unlimited": "Ilimitado",
+  "profile.usage.status.notInPlan": "No incluido en el plan",
+  "profile.usage.status.exhausted": "Agotado",
   "profile.action.dashboard": "Panel",
   "profile.action.topUp": "Recargar",
   "profile.pass.subscribe": "Obtén Kilo Pass para añadir créditos y ganar bonificaciones",
   "profile.pass.bonus": "Bonificación",
+  "profile.pass.usage": "Uso de este mes",
+  "profile.pass.paid": "Pagado",
+  "profile.pass.meter": "Uso mensual de Kilo Pass",
   "profile.pass.renews": "Se renueva",
   "profile.action.logout": "Cerrar sesión",
 
@@ -753,6 +772,14 @@ export const dict = {
   "session.outcome.interrupted": "Turno interrumpido",
   "session.outcome.error": "Turno fallido",
   "session.outcome.finish": "Motivo de finalización: {{reason}}",
+  "session.goal.label": "Objetivo",
+  "prompt.goal.set": "Establecer objetivo",
+  "prompt.goal.start": "Iniciar objetivo",
+  "session.goal.active": "Activo",
+  "session.goal.paused": "En pausa",
+  "session.goal.pause": "Pausar",
+  "session.goal.resume": "Reanudar",
+  "session.goal.clear": "Borrar objetivo",
   "session.costAlert.header": "Alerta de coste de sesión",
   "session.costAlert.continue": "Continuar",
   "session.costAlert.question":
@@ -825,7 +852,7 @@ export const dict = {
   "settings.agentBehaviour.subtab.skills": "Habilidades",
 
   "settings.browser.description":
-    "Cuando está activado, el agente de IA puede interactuar con páginas web: navegar, hacer clic, escribir y capturar pantallas. Se abrirá una ventana de Chrome para que puedas ver al agente trabajar.",
+    "Configura la automatización de navegador integrada basada en Playwright. Kilo puede navegar, interactuar y capturar pantallas de páginas web en tus sesiones.",
   "settings.browser.enable.title": "Activar automatización del navegador",
   "settings.browser.enable.description": "Registrar el servidor Playwright MCP con el backend CLI.",
   "settings.browser.systemChrome.title": "Usar Chrome del sistema",
@@ -853,7 +880,17 @@ export const dict = {
   "settings.notifications.enable.title": "Activar las notificaciones sonoras",
   "settings.notifications.enable.description":
     "Reproducir sonidos cuando las sesiones finalicen, se produzca un error o se requiera tu intervención",
+  "settings.notifications.workbench.title": "Activar las notificaciones de VS Code",
+  "settings.notifications.workbench.description":
+    "Mostrar notificaciones de VS Code cuando Kilo complete una tarea o requiera tu intervención",
+  "settings.notifications.os.title": "Activar las notificaciones del sistema operativo",
+  "settings.notifications.os.description":
+    "Mostrar alertas de notificación nativas del sistema operativo cuando Kilo complete una tarea o requiera tu intervención mientras VS Code no está activo.",
   "settings.notifications.testSound": "Probar",
+  "settings.notifications.testOS": "Probar",
+  "settings.notifications.testOS.testing": "Enviando notificación de prueba…",
+  "settings.notifications.testOS.success": "Notificación de prueba enviada.",
+  "settings.notifications.testOS.error": "Error al enviar la notificación de prueba",
   "settings.notifications.sound.default": "Predeterminado",
   "settings.notifications.sound.system": "Sistema",
   "settings.notifications.sound.description":
@@ -869,17 +906,28 @@ export const dict = {
   "settings.experimental.lsp.description": "Habilitar integración del protocolo de servidor de lenguaje",
   "settings.experimental.batch.title": "Herramienta por lotes",
   "settings.experimental.batch.description": "Habilitar procesamiento por lotes de llamadas a herramientas",
-  "settings.experimental.codebaseSearch.title": "Búsqueda de código",
-  "settings.experimental.codebaseSearch.description":
-    "Habilitar búsqueda por lenguaje natural con IA en toda la base de código",
   "settings.experimental.imageGeneration.title": "Generación de imágenes",
   "settings.experimental.imageGeneration.description": "Habilitar generación de imágenes con IA",
+  "settings.agentBehaviour.sharedAgentBoard.title": "Kilo Swarm",
+  "settings.agentBehaviour.sharedAgentBoard.description":
+    "Comparte un tablero entre una sesión principal y sus subagentes de tareas, incluidos los subagentes anidados. Úsalo para intentos de solución en paralelo o trabajos complementarios, no para todas las tareas.",
   "settings.experimental.imageGenerationModel.title": "Modelo de imagen",
   "settings.experimental.imageGenerationModel.description": "Modelo de generación de imágenes",
   "settings.experimental.imageGenerationModel.placeholder": "Predeterminado (Auto Router)",
 
+  "settings.models.speechToTextModel.customDescription":
+    "ID del modelo que se envía a tu endpoint de transcripción propio, por ejemplo whisper-1.",
+  "settings.models.speechToTextModel.customPlaceholder": "whisper-1",
+  "settings.models.speechToTextBaseUrl.title": "URL base de voz a texto",
+  "settings.models.speechToTextBaseUrl.description":
+    "Usa una API de transcripción compatible con OpenAI en lugar de Kilo Gateway. Los modelos se leen de /models y el audio se envía a /audio/transcriptions. Déjalo vacío para usar Kilo Gateway.",
+  "settings.models.speechToTextBaseUrl.placeholder": "https://api.openai.com/v1",
+  "settings.models.speechToTextApiKey.title": "Clave de API de voz a texto",
+  "settings.models.speechToTextApiKey.description":
+    "Token de portador que se envía a la URL base de transcripción propia. Se guarda en tu archivo de configuración de Kilo.",
+  "settings.models.speechToTextApiKey.placeholder": "sk-...",
   "settings.models.speechToText.disabledDescription":
-    "Habilita e inicia sesión en el proveedor Kilo para usar Speech to Text. Actualmente, Speech to Text solo es compatible con Kilo Gateway.",
+    "Habilita e inicia sesión en el proveedor Kilo para usar Speech to Text, o define abajo una URL base de transcripción propia.",
   "settings.models.speechToTextModel.title": "Modelo de voz a texto",
   "settings.models.speechToTextModel.description":
     "Elige el modelo de transcripción de Kilo Gateway para la entrada de voz.",
@@ -895,19 +943,19 @@ export const dict = {
 
   "settings.sandboxing.allowedHosts.title": "Destinos de red permitidos",
   "settings.sandboxing.allowedHosts.description":
-    "Destinos de host y puerto DNS para el tráfico de proxy HTTP y HTTPS en zona de pruebas. GitHub CLI y HTTPS Git suelen necesitar github.com:443 y api.github.com:443. Los cambios se aplican a las sesiones nuevas.",
+    "Destinos de host y puerto DNS para el tráfico de proxy HTTP y HTTPS en zona de pruebas. GitHub CLI y HTTPS Git suelen necesitar github.com:443 y api.github.com:443.",
   "settings.sandboxing.writablePaths.title": "Rutas de escritura adicionales",
   "settings.sandboxing.writablePaths.description":
     "Rutas del sistema de archivos adicionales donde el sandbox permite escritura (por ej., /tmp, /var/log). Se combinan con las rutas de escritura predeterminadas cuando el sandbox está activo.",
-  "settings.experimental.swePruner.title": "SWE-Pruner",
-  "settings.experimental.swePruner.description":
-    "Activar SWE-Pruner: poda de los resultados extensos de las herramientas de lectura, búsqueda y shell que tiene en cuenta la tarea y está guiada por una pregunta de enfoque proporcionada por el agente",
-  "settings.experimental.swePrunerModel.title": "Modelo de SWE-Pruner",
-  "settings.experimental.swePrunerModel.description":
-    "Modelo usado para podar las salidas de herramientas; por defecto, el modelo pequeño configurado",
   "settings.experimental.multiProject.title": "Agent Manager Multi-Proyecto",
+  "settings.experimental.claudeMigration.title": "Migración de Claude Code",
+  "settings.experimental.claudeMigration.description":
+    "Importar una vez las instrucciones globales CLAUDE.md compatibles, habilidades simples y definiciones MCP desactivadas. Los archivos originales de Claude no se modifican; reinicia el backend después de activar.",
   "settings.experimental.multiProject.description":
     "Habilitar la gestión de sesiones y worktrees en múltiples repositorios en Agent Manager. El repositorio del workspace actual es siempre el proyecto predeterminado.",
+  "settings.experimental.taskModelSelection.title": "Selección de modelo de subagente de Task",
+  "settings.experimental.taskModelSelection.description":
+    "Permite seleccionar explícitamente el modelo, proveedor y esfuerzo de razonamiento de los subagentes de Task.",
   "settings.experimental.mcpTimeout.title": "Tiempo de espera MCP (ms)",
   "settings.experimental.mcpTimeout.description": "Tiempo de espera para solicitudes del servidor MCP en milisegundos",
   "settings.experimental.remote.title": "Control Remote",
@@ -1022,6 +1070,9 @@ export const dict = {
   "settings.agentBehaviour.instructionFiles": "Archivos de instrucciones adicionales",
   "settings.agentBehaviour.instructionFiles.description":
     "Rutas a archivos de instrucciones adicionales incluidos en el prompt del sistema",
+  "settings.agentBehaviour.pushFixes.title": "Enviar correcciones del pull request",
+  "settings.agentBehaviour.pushFixes.description":
+    "Al enviar al agente fallos de CI o comentarios de revisión de un pull request, o al actualizar un worktree desde su base, pedirle que haga commit y push para que el pull request se actualice. Las solicitudes de permiso siguen aplicándose. Desactívalo para hacer los commits manualmente.",
   "settings.agentBehaviour.claudeCompat.heading": "Compatibilidad con Claude Code",
   "settings.agentBehaviour.claudeCompat.title": "Cargar archivos de Claude Code",
   "settings.agentBehaviour.claudeCompat.description":
@@ -1038,6 +1089,9 @@ export const dict = {
     "No hay comandos personalizados configurados. Añada comandos a opencode.json para verlos aquí.",
   "settings.agentBehaviour.workflows.detail.description": "Descripción",
   "settings.agentBehaviour.workflows.detail.template": "Plantilla",
+  "settings.agentBehaviour.workflows.model": "modelo",
+  "settings.agentBehaviour.workflows.variant": "variante",
+  "settings.agentBehaviour.workflows.modelDescription": "Anulación global del modelo",
   "settings.sandboxing.enabled.title": "Sandbox",
   "settings.sandboxing.enabled.description":
     "Ejecutar los comandos de shell del agente dentro de un sandbox a nivel de sistema operativo que restringe las escrituras a los directorios de estado del proyecto y de Kilo",
@@ -1087,6 +1141,12 @@ export const dict = {
   "settings.context.autoCompaction.title": "Compactación automática",
   "settings.context.autoCompaction.description": "Compactar automáticamente el contexto antes de que alcance el límite",
   "settings.context.compaction.title": "Compactación",
+  "settings.context.compactionModel.title": "Modelo de compactación",
+  "settings.context.compactionModel.description":
+    "Modelo utilizado para la compactación automática y manual. Déjalo sin configurar para usar el modelo de chat. El coste, la velocidad y la calidad del resumen dependen del modelo.",
+  "settings.context.compactionModel.useChatModel": "Usar modelo de chat",
+  "settings.context.compactionModel.hint":
+    "Para elegir qué modelo se usa para la compactación, consulta la configuración de Modelos.",
   "settings.context.compactionLimit.title": "Límite de compactación automática",
   "settings.context.compactionLimit.description":
     "Compactar cuando el contexto alcance este porcentaje de la ventana del modelo. Déjalo en blanco para usar solo el búfer de seguridad.",
@@ -1131,25 +1191,37 @@ export const dict = {
   "settings.display.fontSize.title": "Tamaño de fuente",
   "settings.display.fontSize.description":
     "Ajusta el tamaño de fuente de la webview UI de Kilo de forma independiente a VS Code.",
-  "settings.display.reasoningAutoCollapse.title": "Contraer razonamiento automáticamente",
-  "settings.display.reasoningAutoCollapse.description":
-    "Contrae los bloques de razonamiento después de que el agente termine de escribirlos. Déjalo desactivado para mantener el razonamiento expandido, a menos que lo contraigas manualmente.",
+  "settings.display.reasoningDisplay.title": "Bloques de razonamiento",
+  "settings.display.reasoningDisplay.description":
+    "Elige cómo empiezan los bloques de razonamiento. Expandidos muestra el texto completo, Vista previa lo limita a una vista previa breve con desplazamiento, y Encabezado muestra solo el título y el indicador de streaming hasta que lo abras.",
+  "settings.display.reasoningDisplay.expanded": "Expandidos",
+  "settings.display.reasoningDisplay.preview": "Vista previa",
+  "settings.display.reasoningDisplay.headline": "Encabezado",
   "settings.display.shiftTabCycle.title": "Alternar el esfuerzo de razonamiento con Shift+Tab",
   "settings.display.shiftTabCycle.description":
     "Pulsa Shift+Tab en un campo de entrada de prompt para cambiar al siguiente nivel de esfuerzo de razonamiento. Desactívalo para conservar Shift+Tab para la navegación del foco con el teclado.",
-  "settings.display.terminalCommand.title": "Terminal Command Blocks",
-  "settings.display.terminalCommand.description": "Choose whether terminal command blocks start expanded or collapsed.",
-  "settings.display.terminalCommand.expanded": "Expanded",
-  "settings.display.terminalCommand.collapsed": "Collapsed",
+  "settings.display.terminalCommand.title": "Bloques de comandos de terminal",
+  "settings.display.terminalCommand.description":
+    "Elige si los bloques de comandos de terminal aparecen inicialmente expandidos o contraídos.",
+  "settings.display.terminalCommand.expanded": "Expandidos",
+  "settings.display.terminalCommand.collapsed": "Contraídos",
   "settings.display.codeEdit.title": "Bloques de edición de código",
   "settings.display.codeEdit.description":
     "Elige si los bloques de edición de código y de diferencias aparecen inicialmente expandidos o contraídos.",
   "settings.display.codeEdit.expanded": "Expandidos",
   "settings.display.codeEdit.collapsed": "Contraídos",
+  "settings.display.mcpTool.title": "Bloques de herramientas MCP y genéricas",
+  "settings.display.mcpTool.description":
+    "Elige si los bloques de herramientas MCP y genéricas aparecen inicialmente expandidos o contraídos.",
+  "settings.display.mcpTool.expanded": "Expandidos",
+  "settings.display.mcpTool.collapsed": "Contraídos",
 
-  "settings.display.tokenThroughput.title": "Show Token Throughput",
+  "settings.display.tokenThroughput.title": "Mostrar rendimiento de tokens",
   "settings.display.tokenThroughput.description":
-    "Display the text-generation rate (tokens/sec) on the latest assistant message and in the task header. Hidden by default to keep the chat uncluttered.",
+    "Mostrar la velocidad de generación de texto (tokens/sec) en el último mensaje del asistente y en el encabezado de la tarea. Se muestra de forma predeterminada; desactiva esta opción para ocultarla cuando sea necesario.",
+  "settings.display.autoApprovalReason.title": "Mostrar motivo de aprobación automática",
+  "settings.display.autoApprovalReason.description":
+    "Muestra una línea en las llamadas a herramientas que explica por qué se aprobaron automáticamente (regla coincidente, valor predeterminado del agente, modo YOLO, etc.).",
 
   "chat.throughput.tooltip":
     "Average {{speed}} tokens/s for this turn. Includes output and reasoning tokens; excludes tool execution and waiting time.",
@@ -1172,61 +1244,18 @@ export const dict = {
   "question.summary": "{{n}} de {{total}} preguntas",
   "common.review": "Revisar",
 
-  // legacy-migration start
-  "settings.legacyMigration.link": "Migrar desde la versión heredada",
-  "settings.aboutKiloCode.legacyMigration.title": "Migración heredada",
-  "settings.aboutKiloCode.legacyMigration.description":
-    "Migra la configuración de una instalación anterior de Kilo Code, incluyendo las claves API de proveedores y el modelo predeterminado.",
   "settings.aboutKiloCode.rooImport.description":
     "Importa el historial de conversaciones de una instalación de Roo Code.",
   "settings.aboutKiloCode.rooImport.button": "Importar sesiones desde Roo Code",
 
-  // Screen 1 — What's New
-  "migration.whatsNew.title": "Novedades en Kilo Code",
-  "migration.whatsNew.subtitle": "Hemos reconstruido la extensión sobre una base más rápida y eficiente.",
-  "migration.whatsNew.features.performance.title": "Rendimiento de agente más rápido",
-  "migration.whatsNew.features.performance.detail":
-    "Las llamadas a herramientas en paralelo y los subagentes permiten que tu agente aborde más a la vez — así pasas menos tiempo esperando y más tiempo entregando.",
-  "migration.whatsNew.features.interface.title": "Interfaz optimizada",
-  "migration.whatsNew.features.interface.detail": "Menos distracciones, más fácil y rápido de leer.",
-  "migration.whatsNew.features.agentManager.title": "Administrador de agentes",
-  "migration.whatsNew.features.agentManager.detail":
-    "Una interfaz unificada para ejecutar múltiples agentes en paralelo, cada uno en su propio worktree — supervisa el progreso, cambia de contexto y revisa cambios en un solo lugar.",
-  "migration.whatsNew.features.foundation.title": "Base compartida",
-  "migration.whatsNew.features.foundation.detail":
-    "Un núcleo pequeño y eficiente en todos los productos Kilo. Una experiencia familiar sin importar cómo elijas trabajar.",
-  "migration.whatsNew.blogLink": "Leer el anuncio completo",
-  "migration.whatsNew.docsLink": "Novedades y preguntas frecuentes",
-  "migration.whatsNew.continue": "Continuar",
-
-  // Screen 2 — Migrate Settings
-  "migration.migrate.title": "Migra tu configuración",
-  "migration.migrate.subtitle":
-    "Encontramos configuraciones de tu instalación anterior. Esto es lo que podemos transferir.",
+  "migration.roo.button": "Importar sesiones",
+  "migration.roo.empty": "No se encontraron sesiones de Roo Code.",
   "migration.migrate.selectLabel": "Selecciona qué migrar",
   "migration.migrate.chatHistory": "Sesiones de chat e historial",
-  "migration.migrate.button": "Migrar configuración",
-  "migration.migrate.skip": "Omitir",
-  "migration.migrate.keysDetected": "{{count}} claves detectadas",
-  "migration.migrate.serversConfigured": "{{count}} servidor(es) configurado(s)",
-  "migration.migrate.modesFound": "{{count}} modo(s) encontrado(s)",
   "migration.migrate.sessionsDetected": "{{count}} sesiones detectadas",
-  "migration.migrate.nothingToMigrate": "No se encontró nada para migrar en la configuración heredada.",
-
-  // Migrate — item labels (reused from old select keys)
-  "migration.select.providers": "Claves API de proveedores",
-  "migration.select.mcpServers": "Servidores MCP",
-  "migration.select.customModes": "Modos personalizados / Agentes",
-  "migration.select.defaultModel": "Modelo predeterminado",
-  "migration.select.autoApproval": "Aprobación automática",
-  "migration.select.language": "Idioma de la interfaz",
-  "migration.select.autocomplete": "Configuración de autocompletado",
 
   // Migrate — completion
   "migration.complete.summary": "{{success}} de {{total}} elementos migrados con éxito.",
-  "migration.complete.cleanup": "Eliminar datos de la configuración heredada",
-  "migration.complete.cleanupDescription":
-    "Esto elimina la configuración antigua del almacenamiento de VS Code. No podrás volver a ejecutar esta migración.",
   "migration.complete.done": "Hecho",
   "migration.error.continue": "Continuar",
   "migration.sessionSummary.title": "Resumen:",
@@ -1258,12 +1287,29 @@ export const dict = {
   "migration.sessionFormat.unknownDate": "Fecha desconocida",
   "migration.sessionFormat.unknown": "Desconocido",
   "migration.sessionFormat.unknownError": "Error desconocido",
-  // legacy-migration end
 
   "error.details.show": "Detalles",
 
   "task.todos.progress": "{{done}}/{{total}} tareas completadas",
   "task.todos.allDone": "{{count}} tareas completadas",
+  "task.backgroundAgents.running.one": "1 agente en segundo plano",
+  "task.backgroundAgents.running.many": "{{count}} agentes en segundo plano",
+  "task.backgroundAgents.more": "+{{count}} más",
+  "task.backgroundAgents.open": "Abrir agente en segundo plano",
+  "task.backgroundAgents.openAll": "Abrir todos los agentes en segundo plano",
+  "task.backgroundAgents.cancel": "Detener",
+  "task.backgroundAgents.continueInBackground": "Continuar en segundo plano",
+  "task.backgroundAgents.waiting": "Un agente en segundo plano necesita tu entrada",
+  "task.backgroundAgents.needsInput": "Necesita entrada",
+  "task.backgroundAgents.dismiss": "Descartar",
+  "task.backgroundAgents.clearFinished": "Borrar completados",
+  "task.backgroundAgents.summary": "{{running}} de {{total}} agentes en segundo plano en ejecución",
+  "task.backgroundAgents.status.running": "En ejecución",
+  "task.backgroundAgents.status.completed": "Completado",
+  "task.backgroundAgents.status.cancelled": "Cancelado",
+  "task.backgroundAgents.status.error": "Error",
+  "task.backgroundAgents.untitled": "Agente en segundo plano",
+  "task.backgroundAgents.stopAll": "Detener todos ({{count}})",
   "settings.saveBar.unsavedChanges": "Cambios sin guardar",
   "settings.saveBar.discard": "Descartar",
   "settings.saveBar.save": "Guardar",
@@ -1291,6 +1337,18 @@ export const dict = {
     "Archivos modificados por Kilo durante la sesión actual, basado en snapshots por turno. Se reinicia al empezar una nueva sesión.",
   "diffViewer.group.session": "Sesión",
   "diffViewer.group.git": "Git",
+  "diffViewer.comment.saveLocal": "Guardar localmente",
+  "diffViewer.comment.sendToAgent": "Enviar al agente",
+  "diffViewer.comment.postToGithub": "Publicar en GitHub",
+  "diffViewer.comment.loadFailed": "No se pudieron cargar los cambios del pull request.",
+  "diffViewer.comment.unavailable": "Esta línea no está disponible en la instantánea actual del pull request.",
+  "diffViewer.comment.prContext": "PR #{{number}}",
+  "diffViewer.comment.openPR": "Abrir pull request",
+  "diffViewer.comment.localChanges": "Cambios locales",
+  "diffViewer.comment.prChanges": "Cambios del PR",
+  "diffViewer.comment.sendToKilo": "Enviar a Kilo",
+  "diffViewer.comment.sendToGithub": "Enviar a GitHub #{{number}}",
+  "diffViewer.comment.chooseDestination": "Elegir destino",
   "diffViewer.notice.snapshotsDisabled":
     "Las instantáneas están deshabilitadas para este repositorio. Edita tus archivos de configuración para mostrar los cambios de la sesión.",
 
@@ -1312,5 +1370,11 @@ export const dict = {
   "chat.search.close": "Cerrar búsqueda",
   "chat.search.invalidRegex": "Expresión regular no válida",
   "chat.search.noResults": "Sin resultados",
+  "settings.experimental.browserAutomation.title": "Navegador integrado",
+  "settings.experimental.browserAutomation.description":
+    "Muestra vistas previas de aplicaciones locales en Agent Manager y expone la herramienta browser_open a las sesiones de Agent Manager.",
+  "settings.experimental.browserAutomation.systemChrome.title": "Usar Chrome del sistema",
+  "settings.experimental.browserAutomation.systemChrome.description":
+    "Usa el Google Chrome instalado para el Navegador integrado. Desactívalo solo si ya hay instalado un navegador Playwright Chromium compatible.",
   "chat.search.searchingHistory": "Buscando en mensajes anteriores…",
 }

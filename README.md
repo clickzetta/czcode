@@ -1,442 +1,168 @@
-# czcode — ClickZetta Lakehouse AI Agent
-
-czcode 是专为 ClickZetta Lakehouse 用户打造的终端 AI Agent，使用 Claude、Qwen 等大模型驱动。
-
 <p align="center">
-  <a href="https://yunqi.tech"><img width="200" alt="ClickZetta logo" src="https://github.com/user-attachments/assets/bdb0c174-b9fd-40ad-a47b-f3aab9b54e8d" /></a>
+  English | <a href="translations/README.zh.md">简体中文</a> | <a href="translations/README.zht.md">繁體中文</a> | <a href="translations/README.ko.md">한국어</a> | <a href="translations/README.de.md">Deutsch</a> | <a href="translations/README.es.md">Español</a> | <a href="translations/README.fr.md">Français</a> | <a href="translations/README.it.md">Italiano</a> | <a href="translations/README.da.md">Dansk</a> | <a href="translations/README.ja.md">日本語</a> | <a href="translations/README.pl.md">Polski</a> | <a href="translations/README.ru.md">Русский</a> | <a href="translations/README.bs.md">Bosanski</a> | <a href="translations/README.ar.md">العربية</a> | <a href="translations/README.no.md">Norsk</a> | <a href="translations/README.br.md">Português (Brasil)</a> | <a href="translations/README.th.md">ไทย</a> | <a href="translations/README.tr.md">Türkçe</a> | <a href="translations/README.uk.md">Українська</a> | <a href="translations/README.bn.md">বাংলা</a> | <a href="translations/README.gr.md">Ελληνικά</a> | <a href="translations/README.vi.md">Tiếng Việt</a>
 </p>
 
 <p align="center">
-  <strong>ClickZetta czcode — 专为 Lakehouse 数据团队打造的终端 AI Agent</strong>
+  <a href="https://kilo.ai"><img width="250" alt="Kilo Code logo" src="https://github.com/user-attachments/assets/bdb0c174-b9fd-40ad-a47b-f3aab9b54e8d" /></a>
 </p>
+
+<p align="center">The open source coding agent for building with AI in VS Code, JetBrains, or the CLI.</p>
 
 <p align="center">
-  <a href="https://yunqi.tech">官网</a> ·
-  <a href="https://github.com/clickzetta/czcode/releases/latest">下载</a> ·
-  <a href="https://yunqi.tech/documents">文档</a> ·
-  <a href="https://github.com/clickzetta/czcode/issues">反馈</a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=kilocode.Kilo-Code"><img src="https://raster.shields.io/badge/VS_Code_Marketplace-007ACC?style=flat&logo=visualstudiocode&logoColor=white" alt="VS Code Marketplace" height="20"></a>
+  <a href="https://www.npmjs.com/package/@kilocode/cli"><img alt="npm" src="https://raster.shields.io/npm/v/@kilocode/cli?style=flat" height="20" /></a>
+  <a href="https://x.com/kilocode"><img src="https://raster.shields.io/badge/kilocode-000000?style=flat&logo=x&logoColor=white" alt="X (Twitter)" height="20"></a>
+  <a href="https://blog.kilo.ai"><img src="https://raster.shields.io/badge/Blog-555?style=flat&logo=substack&logoColor=white" alt="Blog" height="20"></a>
+  <a href="https://kilo.ai/discord"><img src="https://raster.shields.io/badge/Join%20Discord-5865F2?style=flat&logo=discord&logoColor=white" alt="Discord" height="20"></a>
+  <a href="https://www.reddit.com/r/kilocode/"><img src="https://raster.shields.io/badge/Join%20r%2Fkilocode-D84315?style=flat&logo=reddit&logoColor=white" alt="Reddit" height="20"></a>
 </p>
 
-## 你可以用 czcode 做什么
-
-czcode 覆盖三类场景，通过角色切换在同一个工具里完成：
-
-### 场景一：Lakehouse 数据工作（数据角色）
-
-面向数据分析师、数据工程师、数据科学家、数据运维、数据治理人员。czcode 理解 Lakehouse 的对象模型、SQL 方言和运维体系，可以：
-
-- **自然语言查询**：用中文描述需求，自动生成 SQL 并执行，结果以表格展示
-- **数仓建模**：设计分层架构（ODS/DWD/DWS/ADS 或 Medallion），生成 DDL 和数据管道
-- **数据探查**：`/cz_sample` 采样、`/cz_count` 行数、`/cz_profile` 数据画像
-- **运维管理**：VCluster 启停扩缩容、作业监控、慢查询分析、权限管理
-- **安全确认**：DDL/DML 操作弹窗确认，DROP/TRUNCATE 显示表大小和行数，防止误操作
-
-**角色切换**：
-- **`/agents`** — 弹出完整角色列表，可切换所有角色（数据角色 + code/plan/debug/ask）
-- **`/cz_role`** — 仅显示数据角色列表（数据分析师/工程师/科学家/运维/治理）
-- **Tab 键** — 在输入框按 Tab 循环切换角色
-- **`czcode.jsonc`** 中设置 `default_agent` 固定默认角色
+![Kilo-in-VS-Code-and-CLI](https://github.com/user-attachments/assets/0536ca59-ed81-4512-9e05-d186187a1b52)
 
 ---
 
-### 场景二：Lakehouse 应用开发（Code/Plan 角色 + Lakehouse Skills）
+Kilo Code is an AI coding agent that meets you everywhere you work: [VS Code](https://kilo.ai/landing/vs-code), [JetBrains](https://kilo.ai/features/jetbrains-native), and the [CLI](https://kilo.ai/cli). It's open source with open pricing. You pick from 500+ models, switch between them mid-task, and pay the model provider's rate with zero markup. No API keys required to start.
 
-面向需要基于 Lakehouse 进行应用开发的工程师。czcode 内置 Lakehouse 应用开发 Skills，让 AI 在写代码时自动掌握正确的 SDK 用法和最佳实践：
+### Installation
 
-- **SQL 任务开发**：编写复杂 SQL、调度脚本，理解 ClickZetta SQL 方言和函数
-- **数据应用**：Streamlit 数据看板、dbt 数据转换模型、Jupyter 分析报告
-- **Python 应用集成**：`clickzetta-connector-python` 查询、参数绑定、批量插入；`clickzetta-ingestion-python` BulkLoad 高吞吐写入；`clickzetta-ingestion-python-v2` IGS 实时写入（秒级可查，支持主键表 CDC）；SQLAlchemy dialect
-- **Java SDK**：BulkloadStream 批量写入（列索引 API）、RealtimeStream Kafka 实时写入（列名 API），自动区分两者的 URL 参数差异
-- **Spark / Flink**：Spark DataFrame 读写、Flink CDC 同步（`igs-dynamic-table`）和仅追加模式，自动处理主键表限制
-- **Dynamic Table**：设计自动刷新数据管道，支持参数化刷新（`SESSION_CONFIGS()`），替代传统调度器的 `${bizdate}` 变量
+Pick where you want to run Kilo.
 
-示例：在 `code` 角色下直接描述需求：
+<details open>
+<summary><strong>VS Code</strong></summary>
+
+<br>
+
+Install the [Kilo Code extension](vscode:extension/kilocode.kilo-code) directly, or grab it from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=kilocode.Kilo-Code). Create an account and you'll have access to 500+ models including GPT-5.5, Claude Opus 4.7, Claude Sonnet 4.6, and Gemini 3.1 Pro Preview, all at provider pricing.
+
+</details>
+
+<details open>
+<summary><strong>CLI</strong></summary>
+
+<br>
+
+```bash
+# npm
+npm install -g @kilocode/cli
+
+# curl
+curl -fsSL https://kilo.ai/cli/install | bash
+
+# pnpm
+pnpm add -g @kilocode/cli
+
+# bun
+bun add -g @kilocode/cli
+
+# Homebrew (macOS / Linux)
+brew install Kilo-Org/tap/kilo
+
+# Arch Linux (AUR)
+paru -S kilo-bin
 ```
-用 Java SDK 消费 Kafka topic "orders"，实时写入 Lakehouse 的 realtime_orders 表
-```
-czcode 会自动选择 RealtimeStream（而非 BulkloadStream），使用列名 API，URL 用 `vcluster=` 参数，生成完整可运行的代码。
 
----
+Then run `kilo` in any project directory to start.
 
-### 场景三：通用软件开发（Code/Plan/Debug 角色）
+</details>
 
-czcode 完整继承自 [KiloCode](https://github.com/Kilo-Org/kilocode)，具备完整的通用代码开发能力，与 Lakehouse 无关的项目同样适用：
+<details>
+<summary><strong>JetBrains</strong></summary>
 
-- **多语言支持**：Python、Java、TypeScript、Go、Rust 等
-- **代码生成与重构**：实现功能、重构代码、解释代码
-- **调试**：分析报错、定位 bug、修复问题
-- **项目规划**：`plan` 角色设计架构方案，`debug` 角色专注问题排查
+<br>
 
-**角色切换**：输入 `/agents` 弹出完整角色列表，或按 **Tab 键**循环切换，或在 `czcode.jsonc` 中设置 `default_agent` 固定默认角色。
+Install the [Kilo Code plugin](https://plugins.jetbrains.com/plugin/28350-kilo-code) from the JetBrains Marketplace, or search "Kilo Code" in `Settings → Plugins` inside any JetBrains IDE.
 
----
+</details>
 
-## 安装
+<details>
+<summary><strong>Cloud Agent</strong></summary>
 
-### 第一步：下载安装包
+<br>
 
-前往 [Releases 页面](https://github.com/clickzetta/czcode/releases/latest) 下载对应平台的安装包：
+Run Kilo from the web, no local machine needed, at [app.kilo.ai/cloud](https://app.kilo.ai/cloud).
 
-| 平台 | 文件名 |
+</details>
+
+<details>
+<summary><strong>Code Reviews</strong></summary>
+
+<br>
+
+Set up automated AI code reviews on your pull requests at [app.kilo.ai/code-reviews](https://app.kilo.ai/code-reviews).
+
+</details>
+
+<details>
+<summary>Install the CLI from GitHub Releases (binaries)</summary>
+
+Download the latest binary from the [Releases page](https://github.com/Kilo-Org/kilocode/releases).
+
+| Platform | Asset |
 |---|---|
-| macOS (Apple Silicon) | `czcode-darwin-arm64.zip` |
-| macOS (Intel) | `czcode-darwin-x64.zip` |
-| Linux (x64) | `czcode-linux-x64.tar.gz` |
-| Linux (ARM64) | `czcode-linux-arm64.tar.gz` |
-| Windows (x64) | `czcode-windows-x64.zip` |
+| Windows (most PCs) | `kilo-windows-x64.zip` |
+| macOS (Apple Silicon) | `kilo-darwin-arm64.zip` |
+| macOS (Intel) | `kilo-darwin-x64.zip` |
+| Linux x64 | `kilo-linux-x64.tar.gz` |
+| Linux ARM | `kilo-linux-arm64.tar.gz` |
 
-### 第二步：解压
+Notes: `x64-baseline` is a compatibility build for older CPUs without AVX. `musl` is the statically linked build for Alpine or minimal Docker images without glibc. `kilo-vscode-*.vsix` is the VS Code extension package, not the CLI. `Source code` archives are for building from source.
 
-**macOS / Linux：**
+</details>
 
-```bash
-# macOS (Apple Silicon 示例)
-cd ~/Downloads
-unzip czcode-darwin-arm64.zip
-cd czcode-darwin-arm64
-chmod +x czcode
-```
+### Agents
 
-> **macOS 提示"已损坏，无法打开"**：这是 macOS Gatekeeper 的安全限制，因为二进制未经 Apple 签名。运行以下命令解除限制：
-> ```bash
-> xattr -d com.apple.quarantine ~/Downloads/czcode-darwin-arm64/czcode
-> ```
+Kilo ships with specialized agents you switch between depending on the task. You can also build your own custom agents.
 
-```bash
-# Linux
-cd ~/Downloads
-tar -xzf czcode-linux-x64.tar.gz
-cd czcode-linux-x64
-chmod +x czcode
-```
+- **Code** - The default. Implements and edits code from natural language.
+- **Plan** - Designs architecture and writes implementation plans before any code gets written.
+- **Ask** - Answers questions about your codebase without touching any files.
+- **Debug** - Troubleshoots and traces issues.
+- **Review** - Reviews your changes and surfaces issues across performance, security, style, and test coverage.
 
-**Windows：**
+Learn more about [agents and custom agents](https://kilo.ai/docs/code-with-ai/agents/using-agents).
 
-解压 `czcode-windows-x64.zip` 即可使用。
+### What it does
 
-### 第三步：配置 Lakehouse 连接
+- **Code generation** from natural language, across multiple files.
+- **Inline autocomplete** with ghost-text suggestions and tab to accept.
+- **Self-checking** so the agent reviews and corrects its own work.
+- **Terminal and browser control** to run commands and automate the web.
+- **MCP marketplace** to find and wire up MCP servers that extend what the agent can do.
+- **500+ models** with mid-task switching, so you can match latency, cost, and reasoning to the job.
+
+### Autonomous Mode (CI/CD)
+
+Run `kilo run` with `--auto` for fully autonomous operation with no prompts, built for CI/CD pipelines:
 
 ```bash
-# 交互式配置向导
-cz-cli setup
+kilo run --auto "run tests and fix any failures"
 ```
 
-完成后 czcode 启动时自动连接 Lakehouse。
+`--auto` disables all permission prompts and lets the agent execute any action without confirmation. Only use it in trusted environments.
 
-> **没有 cz-cli？** 手动创建 `~/.clickzetta/profiles.toml`，格式参考 [cz-cli 文档](https://github.com/clickzetta/cz-cli)。
-> **多环境切换**：`CLICKZETTA_PROFILE=uat ./czcode`
+### Documentation
 
-### 第四步：配置 AI 模型
+For configuration and everything else, [head over to the docs](https://kilo.ai/docs).
 
-**方式 A：环境变量（推荐）**
+### Contributing
 
-```bash
-# 添加到 ~/.zshrc 或 ~/.bashrc
-export DASHSCOPE_API_KEY=sk-...
-```
+Contributions are welcome from developers, writers, and everyone in between. Start with the [Contributing Guide](/CONTRIBUTING.md) for environment setup, coding standards, and how to open a pull request. See [RELEASING.md](RELEASING.md) for the VS Code extension and CLI release process, and [packages/kilo-jetbrains/RELEASING.md](packages/kilo-jetbrains/RELEASING.md) for the JetBrains plugin.
 
-> API Key 从 [DashScope 控制台](https://dashscope.console.aliyun.com) 获取。
+Please review our [Code of Conduct](/CODE_OF_CONDUCT.md) before getting involved.
 
-**方式 B：写入 czcode.jsonc**
+### License
 
-在 czcode 运行目录创建 `czcode.jsonc`：
+MIT. You're free to use, modify, and distribute this code, including commercially, as long as you keep the attribution and license notices. See [License](/LICENSE).
 
-```jsonc
-{
-  "model": "alibaba-cn/qwen3.5-plus",
-  "provider": {
-    "alibaba-cn": {
-      "options": { "apiKey": "sk-..." }
-    }
-  }
-}
-```
+### FAQ
 
-> 使用其他模型（Claude/GPT-4o）或自定义 Base URL，详见下方"配置说明"。
+<details>
+<summary>Where did Kilo CLI come from?</summary>
 
-### 第五步：启动
+Kilo CLI is a fork of [OpenCode](https://github.com/anomalyco/opencode), enhanced to work within the Kilo agentic engineering platform.
 
-```bash
-./czcode
-```
+</details>
 
 ---
 
-## 配置说明
-
-czcode 有两层配置，优先级从高到低：
-
-### 1. 项目配置（当前目录）
-
-在 czcode 运行目录创建 `czcode.jsonc`，只影响当前项目：
-
-```jsonc
-{
-  "model": "alibaba-cn/qwen3.5-plus",
-  "default_agent": "lh-analyst",
-  "provider": {
-    "alibaba-cn": {
-      "options": { "apiKey": "sk-..." }  // 也可用环境变量 DASHSCOPE_API_KEY 替代
-    }
-  }
-}
-```
-
-### 2. 全局配置（用户目录）
-
-全局配置在 `~/.config/czcode/config.json`，影响所有项目：
-
-```jsonc
-{
-  "model": "alibaba-cn/qwen3.5-plus",
-  "default_agent": "lh-analyst",
-  "provider": {
-    "alibaba-cn": {
-      "options": { "apiKey": "sk-..." }
-    }
-  }
-}
-```
-
-> **macOS / Linux 路径**：`~/.config/czcode/config.json`（遵循 XDG 规范）
-
-### 默认值
-
-不创建任何配置文件时，czcode 使用以下默认值：
-
-| 配置项 | 默认值 | 说明 |
-|--------|--------|------|
-| `model` | `alibaba-cn/qwen3.5-plus` | 需要环境变量 `DASHSCOPE_API_KEY` 或在 `czcode.jsonc` 中配置 apiKey |
-| `default_agent` | `lh-analyst` | 数据分析师（只读） |
-
-### 更多模型选择
-
-`model` 字段格式为 `<providerID>/<modelID>`，providerID 决定了调用哪个服务端点和使用哪个 API Key：
-
-```jsonc
-{
-  // 阿里云 DashScope（默认，需要 DASHSCOPE_API_KEY）
-  "model": "alibaba-cn/qwen3.5-plus",
-
-  // Anthropic（需要 ANTHROPIC_API_KEY）
-  // "model": "anthropic/claude-sonnet-4-6",
-
-  // OpenAI（需要 OPENAI_API_KEY）
-  // "model": "openai/gpt-4o",
-}
-```
-
-### 自定义 Base URL（代理 / 私有部署）
-
-如果你通过代理或私有部署访问模型，可以在 `provider` 字段里覆盖 base URL 和 API Key：
-
-```jsonc
-{
-  "model": "openai/gpt-4o",
-  "provider": {
-    "openai": {
-      "options": {
-        "baseURL": "https://your-proxy.example.com/v1",
-        "apiKey": "your-key"
-      }
-    }
-  }
-}
-```
-
-对于 OpenAI 兼容接口（如 vLLM、Ollama、LiteLLM、各类国内代理），用 `openai` 作为 providerID 并覆盖 `baseURL` 即可：
-
-```jsonc
-{
-  "model": "openai/your-model-name",
-  "provider": {
-    "openai": {
-      "options": {
-        "baseURL": "http://localhost:11434/v1",  // Ollama 示例
-        "apiKey": "ollama"
-      }
-    }
-  }
-}
-```
-
-### 云器 AI Gateway
-
-云器 AI Gateway 的每个 Endpoint 有独立的访问地址，格式为：
-
-```
-https://<region>.api.clickzetta.com/<workspace>/<endpoint-name>
-```
-
-由于每个模型的 URL 不同，推荐用自定义 providerID 统一管理多个 Endpoint：
-
-```jsonc
-{
-  "model": "cz-gateway/aliyun-deepseek-v4-pro",
-  "provider": {
-    "cz-gateway": {
-      "npm": "@ai-sdk/openai-compatible",
-      "options": {
-        "apiKey": "your-gateway-api-key"
-      },
-      "models": {
-        "aliyun-deepseek-v4-pro": {
-          "name": "DeepSeek V4 Pro (云器)",
-          "provider": {
-            "api": "https://cn-shanghai-alicloud-aimesh.api.clickzetta.com/k227206/aliyun-deepseek-v4-pro"
-          }
-        }
-      }
-    }
-  }
-}
-```
-
-> 详见 [云器 AI Gateway 文档](https://yunqi.tech/documents/AI_Gateway)
-
----
-
-## 三个页面
-
-czcode 有三个主要页面，不同页面能做的事差别很大。
-
-### 欢迎页（启动后的默认页面）
-
-启动 czcode 后首先看到的是欢迎页。在这里你可以：
-
-- **开始新对话**：在输入框输入任何内容，按 Enter 进入对话页
-- **恢复历史对话**：输入 `/sessions` 浏览并恢复之前的对话
-- **切换角色**：按 **Tab 键**循环切换，或输入 `/agents`（所有角色）/ `/cz_role`（数据角色）
-- **切换模型**：输入 `/models`
-- **切换主题**：输入 `/themes`
-
-> 欢迎页没有活跃的 AI 会话，**数据查询类命令在此无法使用**。
-
-### 对话页（AI 工作的主战场）
-
-在欢迎页输入内容后进入对话页。这里是 czcode 的核心，所有 AI 能力都在这里发挥：
-
-- **自然语言对话**：直接描述需求，AI 生成 SQL 并执行，结果以表格展示
-- **工具执行**：AI 可以查询 Lakehouse、读写文件、执行命令
-- **数据探查命令**（仅对话页可用）：
-
-| 命令 | 说明 |
-|------|------|
-| `/cz_sample` | 快速采样：输入表名，执行 `SELECT * LIMIT 5` |
-| `/cz_count` | 行数统计：查看表的总行数 |
-| `/cz_profile` | 数据画像：分析每列的 NULL 比例、唯一值、最大最小值 |
-| `/cz_vcluster` | VCluster 状态：查看所有 VCluster 的运行状态 |
-| `/cz_sql_history` | SQL 历史：浏览本次会话的 SQL 执行记录，选中即复制 |
-
-右侧边栏实时显示 Lakehouse 连接状态（Workspace / Schema / VCluster / User）、Schemas 列表和 VCluster 状态。
-
-### SingClaw 页（本地 AI 服务对话）
-
-输入 `/cz_singclaw` 从任意页面进入 SingClaw 页。[SingClaw](https://www.singclaw.ai/documents/introduction) 是一款本地运行的 AI 数据分析 Agent（Mac/Windows 桌面应用），数据不出本地，适合对数据隐私有要求的场景：
-
-- 与本地 SingClaw 服务进行流式对话
-- 从**对话页**进入时，自动携带当前会话的上下文（最近的 SQL 和数据结果）
-- 从**欢迎页**进入时，为纯对话模式，无会话上下文
-- 对话结束后按 **Esc** 返回原来的页面
-
-> 使用前需要在本地启动 SingClaw（openclaw-gateway），默认连接 `localhost:9999`。详见 [SingClaw 文档](https://www.singclaw.ai/documents/introduction)。
-
----
-
-## 数据角色
-
-czcode 内置 5 个数据角色 + ask 角色，共 6 个，在输入框按 **Tab 键**循环切换，或输入 `/cz_role` 弹出选择列表：
-
-| 角色 | 说明 | 权限 |
-|---|---|---|
-| 数据分析师（默认） | 查询/报表/数据质量探查/BI 连接 | 仅 SELECT，工具层强制只读 |
-| 数据工程师 | 建表/建模/ETL/Pipeline/调度/指标管理 | DDL + DML + SELECT，写操作需确认 |
-| 数据科学家 | Python/Jupyter/EDA/特征工程/模型推理 | 写操作需确认 |
-| 数据运维 | VCluster 管理/查询调优/作业监控/费用分析 | DDL + VCluster ops，写操作需确认 |
-| 数据治理 | 权限/安全/生命周期/合规/共享 | GRANT/REVOKE/POLICY，写操作需确认 |
-| ask | 快速问答，不执行工具，仅对话 | 只读，不调用任何工具 |
-
-> 切换到 Code/Plan/Debug 等通用开发角色后，可进行与 Lakehouse 无关的软件开发任务，详见上方"场景三"。
-
----
-
-## 主要功能
-
-### 自然语言查询
-直接用中文描述需求，czcode 生成 SQL 并执行：
-- SELECT 查询直接执行，结果以表格展示，附带执行耗时（⏱ 1.2s）
-- DDL/DML 操作弹窗确认，危险操作（DROP/TRUNCATE）显示目标表大小、行数、最后修改时间
-
-### 快捷命令
-
-| 命令 | 别名 | 功能 |
-|------|------|------|
-| `/agents` | — | 角色切换：弹出完整列表，切换所有角色（数据角色 + code/plan/debug/ask） |
-| `/cz_role` | `/cz_r` | 角色切换：仅显示数据角色列表 |
-| `/cz_sample` | `/cz_s` | 快速采样：输入表名，自动执行 `SELECT * FROM table LIMIT 5`（仅对话页） |
-| `/cz_count` | `/cz_c` | 行数统计：一键查看表的总行数（仅对话页） |
-| `/cz_profile` | `/cz_p` | 数据画像：自动分析每列的 NULL 比例、唯一值、最大最小值（仅对话页） |
-| `/cz_vcluster` | `/cz_vc` | VCluster 状态：查看所有 VCluster 的运行状态和规格（仅对话页） |
-| `/cz_sql_history` | `/cz_sh` | SQL 历史：浏览当前会话的 SQL 执行记录，选中即复制到剪贴板（仅对话页） |
-| `/cz_singclaw` | `/singclaw` | SingClaw：连接本地 SingClaw 服务进行对话 |
-| `/cz_skill-update` | — | 更新 ClickZetta 领域知识（Skills） |
-| `/cz_skill-fix` | — | 修正 Skill 内容错误 |
-
-### 数仓建模向导
-
-切换到数据工程师角色后，输入"帮我设计数仓分层"，czcode 会：
-1. 自动探索你的数据（SHOW SCHEMAS/TABLES，查表大小）
-2. 给出具体的分层方案选项（传统分层 / Medallion / 混合）
-3. 生成 DDL 模板和数据管道配置
-
-### DDL 确认增强
-
-执行危险操作（DROP/TRUNCATE/ALTER/DELETE）时，确认弹窗会额外显示：
-- 目标表大小（MB）
-- 行数
-- 最后修改时间
-- 支持 UNDROP 的对象会提示恢复命令
-
-### Skills（领域知识）
-
-czcode 内置 ClickZetta Lakehouse 领域 Skills，覆盖 SQL 语法、数据导入、索引管理、VCluster 运维等场景。Skills 随安装包一起分发，无需网络即可使用。
-
-更新 Skills：
-```
-/cz_skill-update
-```
-
-> **国内用户注意**：Skills 更新需要访问 GitHub。如无法访问，请配置代理（如 `export https_proxy=http://127.0.0.1:7890`）后再运行。
-
-报告 Skill 问题：
-- 在对话中运行 `/cz_skill-fix` 写入本地修正
-- 或到 GitHub 提交 Issue：[报告问题](https://github.com/clickzetta/clickzetta-skills/issues/new?template=skill-bug.yml) | [提改进建议](https://github.com/clickzetta/clickzetta-skills/issues/new?template=skill-enhancement.yml)
-
-### cz-cli 集成
-
-czcode 与 [cz-cli](https://github.com/clickzetta/cz-cli) 共享连接配置，并可在数据工程师/数据运维角色中直接调用 cz-cli 命令，实现 Studio 任务管理、运行监控等 czcode 原生不支持的功能：
-
-| 功能 | czcode 原生 | cz-cli 补充 |
-|---|---|---|
-| SQL 查询 | ✅ read_query / write_query | cz-cli sql |
-| 对象浏览 | ✅ list_objects / describe_object | cz-cli table list/describe |
-| Studio 任务管理 | — | ✅ cz-cli task list/deploy/execute |
-| 运行监控/日志 | — | ✅ cz-cli runs list/logs/rerun |
-| 外部数据源探查 | — | ✅ cz-cli datasource list/describe |
-| 多环境切换 | CLICKZETTA_PROFILE | cz-cli --profile |
-
-> 安装 cz-cli：`npm install -g @clickzetta/cz-cli`
-
----
-
-## 开发者文档
-
-如需从源码构建或参与开发，请参阅 [CONTRIBUTING.md](CONTRIBUTING.md) 和 [CLAUDE.md](CLAUDE.md)。
-
----
-
-## 许可证
-
-MIT License
-
-czcode 是 [KiloCode](https://github.com/Kilo-Org/kilocode) 的 fork，KiloCode 是 [OpenCode](https://github.com/anomalyco/opencode) 的 fork。感谢两个上游项目的开源贡献。
+**Join the community** [Discord](https://kilo.ai/discord) | [X](https://x.com/kilocode) | [Reddit](https://www.reddit.com/r/kilocode/)
