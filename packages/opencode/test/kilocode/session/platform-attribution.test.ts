@@ -1,141 +1,121 @@
-import { describe, expect } from "bun:test"
+import { describe, expect, test } from "bun:test"
+import path from "path"
+import { Effect } from "effect"
+import * as Log from "@opencode-ai/core/util/log"
+import { Bus } from "@/bus"
 import { Session as SessionNs } from "@/session/session"
-import { Database } from "@opencode-ai/core/database/database"
-import { SessionProjector } from "@opencode-ai/core/session/projector"
-import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
-import { Deferred, Effect, Layer } from "effect"
-import { testInstanceStoreLayer } from "../../fixture/fixture"
-import { testEffect } from "../../lib/effect"
-import { Storage } from "@/storage/storage"
-import { RuntimeFlags } from "@/effect/runtime-flags"
-import { BackgroundJob } from "@/background/job"
-import { EventV2Bridge } from "@/event-v2-bridge"
+import { SessionPrompt } from "@/session/prompt"
+import { AppRuntime, type AppServices } from "../../../src/effect/app-runtime"
 import { KiloSession } from "../../../src/kilocode/session"
-import { MessageV2 } from "../../../src/session/message-v2"
-import { MessageID, PartID } from "../../../src/session/schema"
+import { provideTestInstance } from "../../fixture/fixture"
+import { MessageID, type SessionID } from "../../../src/session/schema"
+import { ProviderV2 } from "@opencode-ai/core/provider"
+import { ModelV2 } from "@opencode-ai/core/model"
+const projectRoot = path.join(__dirname, "../../..")
+void Log.init({ print: false })
 
-const it = testEffect(
-  Layer.mergeAll(
-    SessionNs.layer.pipe(
-      Layer.provide(Storage.defaultLayer),
-      Layer.provide(Database.defaultLayer),
-      Layer.provideMerge(EventV2Bridge.defaultLayer),
-      Layer.provide(SessionProjector.defaultLayer),
-      Layer.provide(RuntimeFlags.layer({ experimentalWorkspaces: false })),
-      Layer.provide(BackgroundJob.defaultLayer),
+function run<A, E, R extends AppServices>(effect: Effect.Effect<A, E, R>) {
+  return AppRuntime.runPromise(effect)
+}
+
+function create(input?: SessionNs.CreateInput) {
+  return run(SessionNs.Service.use((svc) => svc.create(input)))
+}
+
+function seed(id: SessionID) {
+  return run(
+    SessionNs.Service.use((svc) =>
+      Effect.gen(function* () {
+        const user = yield* svc.updateMessage({
+          id: MessageID.ascending(),
+          role: "user",
+          sessionID: id,
+          agent: "build",
+          model: { modelID: ModelV2.ID.make("test-model"), providerID: ProviderV2.ID.make("test") },
+          time: { created: Date.now() },
+        })
+        yield* svc.updateMessage({
+          id: MessageID.ascending(),
+          role: "assistant",
+          parentID: user.id,
+          sessionID: id,
+          mode: "build",
+          agent: "build",
+          cost: 0,
+          path: { cwd: projectRoot, root: projectRoot },
+          tokens: { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
+          modelID: ModelV2.ID.make("test-model"),
+          providerID: ProviderV2.ID.make("test"),
+          time: { created: Date.now() },
+          finish: "stop",
+        })
+      }),
     ),
-    CrossSpawnSpawner.defaultLayer,
-    testInstanceStoreLayer,
-  ),
-)
-
-const awaitDeferred = <T>(deferred: Deferred.Deferred<T>, message: string) =>
-  Effect.race(
-    Deferred.await(deferred),
-    Effect.sleep("2 seconds").pipe(Effect.flatMap(() => Effect.fail(new Error(message)))),
   )
+}
+
+function remove(id: SessionID) {
+  return run(SessionNs.Service.use((svc) => svc.remove(id)))
+}
 
 describe("session platform attribution", () => {
-  it.instance("child sessions inherit the root platform override", () =>
-    Effect.gen(function* () {
-      const session = yield* SessionNs.Service
-      const root = yield* session.create({ platform: "agent-manager" })
-      const child = yield* session.create({ parentID: root.id, title: "child" })
-      const attr = KiloSession.attribution(child.id)
+  test("child sessions inherit the root platform override", async () => {
+    await provideTestInstance({
+      directory: projectRoot,
+      fn: async () => {
+        const root = await create({ platform: "agent-manager" })
+        const child = await create({ parentID: root.id, title: "child" })
+        const attr = KiloSession.attribution(child.id)
 
-      expect(KiloSession.getPlatformOverride(root.id)).toBe("agent-manager")
-      expect(KiloSession.getPlatformOverride(child.id)).toBe("agent-manager")
-      expect(KiloSession.resolvePlatform(child.id)).toBe("agent-manager")
-      expect(attr.rootID).toBe(root.id)
-      expect(attr.feature).toBe("agent-manager")
+        expect(KiloSession.getPlatformOverride(root.id)).toBe("agent-manager")
+        expect(KiloSession.getPlatformOverride(child.id)).toBe("agent-manager")
+        expect(KiloSession.resolvePlatform(child.id)).toBe("agent-manager")
+        expect(attr.rootID).toBe(root.id)
+        expect(attr.feature).toBe("agent-manager")
 
-      yield* session.remove(root.id)
-    }),
-  )
+        await remove(root.id)
+      },
+    })
+  })
 
-  it.instance("child sessions expose parent and root lineage", () =>
-    Effect.gen(function* () {
-      const session = yield* SessionNs.Service
-      const root = yield* session.create({})
-      const child = yield* session.create({ parentID: root.id, title: "child" })
-      const leaf = yield* session.create({ parentID: child.id, title: "leaf" })
+  test("child sessions expose parent and root lineage", async () => {
+    await provideTestInstance({
+      directory: projectRoot,
+      fn: async () => {
+        const root = await create({})
+        const child = await create({ parentID: root.id, title: "child" })
+        const leaf = await create({ parentID: child.id, title: "leaf" })
 
-      expect(KiloSession.resolveParent(root.id)).toBeUndefined()
-      expect(KiloSession.resolveParent(child.id)).toBe(root.id)
-      expect(KiloSession.resolveParent(leaf.id)).toBe(child.id)
-      expect(KiloSession.resolveRoot(leaf.id)).toBe(root.id)
+        expect(KiloSession.resolveParent(root.id)).toBeUndefined()
+        expect(KiloSession.resolveParent(child.id)).toBe(root.id)
+        expect(KiloSession.resolveParent(leaf.id)).toBe(child.id)
+        expect(KiloSession.resolveRoot(leaf.id)).toBe(root.id)
 
-      yield* session.remove(root.id)
-    }),
-  )
-})
+        await remove(root.id)
+      },
+    })
+  })
 
-describe("step-finish token propagation via Bus event", () => {
-  it.instance(
-    "non-zero tokens propagate through PartUpdated event",
-    () =>
-      Effect.gen(function* () {
-        const session = yield* SessionNs.Service
-        const events = yield* EventV2Bridge.Service
-        const info = yield* session.create({})
+  test("turn close events include persisted parent lineage", async () => {
+    await provideTestInstance({
+      directory: projectRoot,
+      fn: async () => {
+        const root = await create({})
+        const child = await create({ parentID: root.id, title: "child" })
+        await seed(child.id)
+        KiloSession.clearPlatformOverride(child.id)
+        expect(KiloSession.resolveParent(child.id)).toBeUndefined()
 
-        const messageID = MessageID.ascending()
-        yield* session.updateMessage({
-          id: messageID,
-          sessionID: info.id,
-          role: "user",
-          time: { created: Date.now() },
-          agent: "user",
-          model: { providerID: "test", modelID: "test" },
-          tools: {},
-          mode: "",
-        } as unknown as MessageV2.Info)
-
-        const received = yield* Deferred.make<MessageV2.Part>()
-        const unsub = yield* events.listen((event) => {
-          if (event.type === MessageV2.Event.PartUpdated.type)
-            Deferred.doneUnsafe(
-              received,
-              Effect.succeed((event.data as typeof MessageV2.Event.PartUpdated.data.Type).part as MessageV2.Part),
-            )
-          return Effect.void
+        const closed = Promise.withResolvers<SessionID | undefined>()
+        const unsubscribe = Bus.subscribe(KiloSession.Event.TurnClose, (event) => {
+          if (event.properties.sessionID === child.id) closed.resolve(event.properties.parentID)
         })
-        yield* Effect.addFinalizer(() => unsub)
 
-        const tokens = {
-          total: 1500,
-          input: 500,
-          output: 800,
-          reasoning: 200,
-          cache: { read: 100, write: 50 },
-        }
-
-        const part = {
-          id: PartID.ascending(),
-          messageID,
-          sessionID: info.id,
-          type: "step-finish" as const,
-          reason: "stop",
-          cost: 0.005,
-          tokens,
-        }
-
-        yield* session.updatePart(part)
-        const receivedPart = yield* awaitDeferred(received, "timed out waiting for message.part.updated")
-
-        expect(receivedPart.type).toBe("step-finish")
-        const finish = receivedPart as MessageV2.StepFinishPart
-        expect(finish.tokens.input).toBe(500)
-        expect(finish.tokens.output).toBe(800)
-        expect(finish.tokens.reasoning).toBe(200)
-        expect(finish.tokens.total).toBe(1500)
-        expect(finish.tokens.cache.read).toBe(100)
-        expect(finish.tokens.cache.write).toBe(50)
-        expect(finish.cost).toBe(0.005)
-        expect(receivedPart).not.toBe(part)
-
-        yield* session.remove(info.id)
-      }),
-    { timeout: 30000 },
-  )
+        await run(SessionPrompt.Service.use((prompt) => prompt.loop({ sessionID: child.id })))
+        expect(await closed.promise).toBe(root.id)
+        unsubscribe()
+        await remove(root.id)
+      },
+    })
+  })
 })

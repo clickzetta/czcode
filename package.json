@@ -178,9 +178,8 @@
     "@ff-labs/fff-bun@0.9.4": "patches/@ff-labs%2Ffff-bun@0.9.4.patch",
     "pacote@21.5.1": "patches/pacote@21.5.1.patch",
     "mammoth@1.12.0": "patches/mammoth@1.12.0.patch",
-    "solid-js@1.9.10": "patches/solid-js@1.9.10.patch",
-    "@tanstack/solid-virtual@3.13.28": "patches/@tanstack%2Fsolid-virtual@3.13.28.patch",
-    "@tanstack/virtual-core@3.17.0": "patches/@tanstack%2Fvirtual-core@3.17.0.patch",
+    "solid-js@1.9.12": "patches/solid-js@1.9.12.patch",
+    "@tanstack/virtual-core@3.17.3": "patches/@tanstack%2Fvirtual-core@3.17.3.patch",
     "stream-chat@9.38.0": "patches/stream-chat@9.38.0.patch"
   },
   "version": "7.2.49",
