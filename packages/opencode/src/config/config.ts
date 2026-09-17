@@ -58,6 +58,12 @@ import {
 } from "@kilocode/kilo-indexing/config"
 import { unique } from "remeda"
 import { installLocalPluginDependency, needsLocalPluginDependency } from "@/kilocode/config/plugin-deps"
+// czcode_change start — builtin commands (skill-fix, skill-update)
+import { BUILTIN_COMMANDS } from "@/kilocode/commands/builtin"
+const builtinCommandMap = Object.fromEntries(
+  BUILTIN_COMMANDS.map((cmd) => [cmd.name, { description: cmd.description, template: cmd.template }]),
+)
+// czcode_change end
 // kilocode_change end
 import { withTransientReadRetry } from "@/util/effect-http-client"
 import * as Log from "@opencode-ai/core/util/log" // kilocode_change
@@ -399,7 +405,20 @@ const layer = Layer.effect(
       }
       globalStamp = yield* KilocodeGlobalConfigStamp.read(fs, Global.Path.config)
       // kilocode_change end
-      let result: Info = {}
+      // czcode_change start — seed default skills URL and builtin commands
+      // Add bundled skills path (next to the binary) for offline use
+      const bundledSkillsPath = path.join(path.dirname(process.execPath), "clickzetta-skills")
+      const skillsPaths = existsSync(bundledSkillsPath) ? [bundledSkillsPath] : []
+      let result: Info = {
+        skills: {
+          urls: ["https://yunqiqiliang.github.io/clickzetta-skills/.well-known/skills/"],
+          paths: skillsPaths,
+        },
+        command: builtinCommandMap,
+        default_agent: "lh-analyst",
+        model: "alibaba-cn/qwen3.5-plus",
+      }
+      // czcode_change end
       // Seed the default global config with the schema for editor completion, but avoid writing when the user
       // explicitly routes config through env-provided paths or content.
       if (!Flag.KILO_CONFIG && !Flag.KILO_CONFIG_DIR && !Flag.KILO_CONFIG_CONTENT) {
