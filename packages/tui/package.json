@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "name": "@opencode-ai/tui",
-  "version": "7.6.2",
+  "version": "7.2.49",
   "private": true,
   "type": "module",
   "license": "MIT",
@@ -51,6 +51,7 @@
   "dependencies": {
     "@opencode-ai/core": "workspace:*",
     "@kilocode/plugin": "workspace:*",
+    "@kilocode/kilo-telemetry": "workspace:*",
     "@kilocode/sdk": "workspace:*",
     "@opencode-ai/ui": "workspace:*",
     "@opentui/core": "catalog:",
@@ -61,6 +62,7 @@
     "effect": "catalog:",
     "fuzzysort": "catalog:",
     "open": "10.1.2",
+    "opentui-spinner": "catalog:",
     "remeda": "catalog:",
     "strip-ansi": "7.1.2",
     "solid-js": "catalog:"

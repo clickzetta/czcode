@@ -22,7 +22,7 @@ interface StringReplacement {
 }
 
 const STRING_REPLACEMENTS: StringReplacement[] = [
-  // Package names in strings (no trailing \b to allow subpath matching like @opencode-ai/sdk/v2)
+  // Package names in strings (no trailing \b to allow subpath matching like @kilocode/sdk/v2)
   { pattern: /\bopencode-ai\b/g, replacement: "@kilocode/cli" },
   { pattern: /@opencode-ai\/cli(?=\/|"|'|`|$)/g, replacement: "@kilocode/cli" },
   { pattern: /@opencode-ai\/sdk(?=\/|"|'|`|$)/g, replacement: "@kilocode/sdk" },

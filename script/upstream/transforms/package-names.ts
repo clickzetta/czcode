@@ -9,8 +9,8 @@
  * - @opencode-ai/plugin -> @kilocode/plugin
  * - OPENCODE_* -> KILO_* (env variables, excluding OPENCODE_API_KEY)
  * - x-opencode-* -> x-kilo-* (HTTP headers)
- * - opencode.db -> kilo.db (database filename)
- * - window.__OPENCODE__ -> window.__KILO__ (window global)
+ * - kilo.db -> kilo.db (database filename)
+ * - window.__KILO__ -> window.__KILO__ (window global)
  */
 
 import { Glob } from "bun"
@@ -46,13 +46,13 @@ const PACKAGE_PATTERNS = [
   { pattern: /@opencode-ai\/sdk(?=\/|"|'|`|$)/g, replacement: "@kilocode/sdk" },
   { pattern: /@opencode-ai\/plugin(?=\/|"|'|`|$)/g, replacement: "@kilocode/plugin" },
 
-  // In import statements (supports subpaths like @opencode-ai/sdk/v2)
+  // In import statements (supports subpaths like @kilocode/sdk/v2)
   { pattern: /from\s+["']opencode-ai["']/g, replacement: 'from "@kilocode/cli"' },
   { pattern: /from\s+["']@opencode-ai\/cli(\/[^"']*)?["']/g, replacement: 'from "@kilocode/cli$1"' },
   { pattern: /from\s+["']@opencode-ai\/sdk(\/[^"']*)?["']/g, replacement: 'from "@kilocode/sdk$1"' },
   { pattern: /from\s+["']@opencode-ai\/plugin(\/[^"']*)?["']/g, replacement: 'from "@kilocode/plugin$1"' },
 
-  // In require statements (supports subpaths like @opencode-ai/sdk/v2)
+  // In require statements (supports subpaths like @kilocode/sdk/v2)
   { pattern: /require\(["']opencode-ai["']\)/g, replacement: 'require("@kilocode/cli")' },
   { pattern: /require\(["']@opencode-ai\/cli(\/[^"']*)?["']\)/g, replacement: 'require("@kilocode/cli$1")' },
   { pattern: /require\(["']@opencode-ai\/sdk(\/[^"']*)?["']\)/g, replacement: 'require("@kilocode/sdk$1")' },
@@ -68,12 +68,12 @@ const PACKAGE_PATTERNS = [
 
   // SDK public API renames (Opencode → Kilo)
   // Order matters: longer names first to avoid partial matches
-  { pattern: /OpencodeClientConfig/g, replacement: "KiloClientConfig" },
-  { pattern: /createOpencodeClient/g, replacement: "createKiloClient" },
-  { pattern: /createOpencodeServer/g, replacement: "createKiloServer" },
-  { pattern: /createOpencodeTui/g, replacement: "createKiloTui" },
-  { pattern: /OpencodeClient/g, replacement: "KiloClient" },
-  // createOpencode (without suffix) needs negative lookahead to avoid matching createOpencodeClient
+  { pattern: /KiloClientConfig/g, replacement: "KiloClientConfig" },
+  { pattern: /createKiloClient/g, replacement: "createKiloClient" },
+  { pattern: /createKiloServer/g, replacement: "createKiloServer" },
+  { pattern: /createKiloTui/g, replacement: "createKiloTui" },
+  { pattern: /KiloClient/g, replacement: "KiloClient" },
+  // createKilo (without suffix) needs negative lookahead to avoid matching createKiloClient
   { pattern: /\bcreateOpencode\b(?!Client|Server|Tui)/g, replacement: "createKilo" },
 
   // Branding: environment variables (exclude OPENCODE_API_KEY — upstream Zen SaaS key)

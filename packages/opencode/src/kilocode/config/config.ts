@@ -664,7 +664,7 @@ export namespace KilocodeConfig {
   export const CONFIG_DOCS_URL = "https://kilo.ai/docs/getting-started/settings"
 
   /** Stable id for the synthetic "move your opencode config" notification (used for client-side dismissal). */
-  export const OPENCODE_NOTIFICATION_ID = "kilo.local.opencode-config-detected"
+  export const KILO_NOTIFICATION_ID = "kilo.local.opencode-config-detected"
 
   /**
    * Detect leftover opencode config directories. Kilo used to fall back to
@@ -705,7 +705,7 @@ export namespace KilocodeConfig {
     if (found.length === 0) return undefined
     const suffix = found.length > 1 ? ` (and ${found.length - 1} more)` : ""
     return {
-      id: OPENCODE_NOTIFICATION_ID,
+      id: KILO_NOTIFICATION_ID,
       title: "Move your opencode configuration",
       message:
         `Kilo no longer falls back to opencode configuration. ` +

@@ -19,7 +19,7 @@ This section explains how Kilocode custom modes are automatically migrated to Op
 
 ## Overview
 
-Kilocode stores custom modes in YAML files. When Opencode starts, it reads these files and converts them to Opencode's agent format, injecting them via the `OPENCODE_CONFIG_CONTENT` mechanism.
+Kilocode stores custom modes in YAML files. When Opencode starts, it reads these files and converts them to Opencode's agent format, injecting them via the `KILO_CONFIG_CONTENT` mechanism.
 
 ## Source Locations
 

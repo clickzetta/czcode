@@ -23,7 +23,7 @@ import { ensureKiloDiffTheme, KILO_DIFF_THEME } from "../pierre/kilo-diff-theme"
 // ../pierre/kilo-diff-theme so the diff worker pool can register it without
 // importing this module's katex/marked dependencies. This call keeps the markdown
 // highlighter (getSharedHighlighter, below) working. Upstream keeps an inline
-// registerCustomTheme("OpenCode", …) block here — do not restore it on merges;
+// registerCustomTheme("Kilo", …) block here — do not restore it on merges;
 // route registration through ensureKiloDiffTheme() instead.
 ensureKiloDiffTheme()
 // kilocode_change end

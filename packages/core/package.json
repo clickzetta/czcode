@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "version": "7.6.2",
+  "version": "7.2.49",
   "name": "@opencode-ai/core",
   "type": "module",
   "license": "MIT",
@@ -62,9 +62,6 @@
     "drizzle-kit": "catalog:"
   },
   "dependencies": {
-    "@kilocode/kilo-gateway": "workspace:*",
-    "@kilocode/kilo-indexing": "workspace:*",
-    "@kilocode/sandbox": "workspace:*",
     "@effect/opentelemetry": "catalog:",
     "@effect/platform-node": "catalog:",
     "@npmcli/arborist": "9.4.0",
@@ -83,6 +80,7 @@
     "semver": "^7.6.3",
     "xdg-basedir": "5.1.0",
     "zod": "catalog:",
+    "@kilocode/kilo-gateway": "workspace:*",
     "@ai-sdk/alibaba": "1.0.17",
     "@ai-sdk/amazon-bedrock": "4.0.112",
     "@ai-sdk/anthropic": "3.0.82",
@@ -110,6 +108,8 @@
     "google-auth-library": "10.5.0",
     "immer": "11.1.4",
     "venice-ai-sdk-provider": "2.1.1",
+    "@kilocode/kilo-indexing": "workspace:*",
+    "@kilocode/sandbox": "workspace:*",
     "jsonc-parser": "3.3.1",
     "@effect/sql-sqlite-bun": "catalog:",
     "@lydell/node-pty": "catalog:",

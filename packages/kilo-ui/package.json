@@ -1,6 +1,6 @@
 {
   "name": "@kilocode/kilo-ui",
-  "version": "7.6.2",
+  "version": "7.2.49",
   "type": "module",
   "license": "MIT",
   "exports": {
@@ -134,6 +134,7 @@
     "motion-dom": "12.34.3",
     "motion-utils": "12.29.2",
     "strip-ansi": "7.1.2",
+    "@opencode-ai/shared": "workspace:*",
     "chart.js": "4.5.1"
   }
 }

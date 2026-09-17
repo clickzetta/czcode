@@ -1422,7 +1422,7 @@ describe("opencode config migration notice", () => {
 
     await withGlobalConfig(path.join(globalTmp.path, "kilo"), () => {
       const notice = KilocodeConfig.opencodeConfigNotification({ directory: tmp.path, scanProject: true })
-      expect(notice?.id).toBe(KilocodeConfig.OPENCODE_NOTIFICATION_ID)
+      expect(notice?.id).toBe(KilocodeConfig.KILO_NOTIFICATION_ID)
       expect(notice?.message).toContain(path.join(tmp.path, ".opencode"))
       expect(notice?.action?.actionURL).toBe(KilocodeConfig.CONFIG_DOCS_URL)
       expect(notice?.showIn).toEqual(["cli", "extension"])

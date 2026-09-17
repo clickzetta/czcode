@@ -245,10 +245,10 @@ export interface ReconcileOptions extends PackageJsonOptions {
 
 // Package name mappings
 const PACKAGE_NAME_MAP: Record<string, string> = {
-  "opencode-ai": "@kilocode/cli",
-  "@opencode-ai/cli": "@kilocode/cli",
-  "@opencode-ai/sdk": "@kilocode/sdk",
-  "@opencode-ai/plugin": "@kilocode/plugin",
+  "@kilocode/cli": "@kilocode/cli",
+  "@kilocode/cli": "@kilocode/cli",
+  "@kilocode/sdk": "@kilocode/sdk",
+  "@kilocode/plugin": "@kilocode/plugin",
 }
 
 // Kilo-specific dependencies to inject into specific packages

@@ -34,11 +34,11 @@
     "catalog": {
       "@effect/opentelemetry": "4.0.0-beta.83",
       "@effect/platform-node": "4.0.0-beta.83",
-      "@anthropic-ai/sandbox-runtime": "0.0.63",
       "@npmcli/arborist": "9.4.0",
       "@types/bun": "1.3.14",
       "@types/cross-spawn": "6.0.6",
       "@octokit/rest": "22.0.0",
+      "@hono/zod-validator": "0.4.2",
       "@opentui/core": "0.5.11",
       "@opentui/solid": "0.5.11",
       "ulid": "3.0.1",
@@ -51,6 +51,7 @@
       "@cloudflare/workers-types": "4.20251008.0",
       "@openauthjs/openauth": "0.0.0-20250322224806",
       "@pierre/diffs": "1.2.10",
+      "opentui-spinner": "0.0.7",
       "@solid-primitives/storage": "4.3.3",
       "@tailwindcss/vite": "4.1.11",
       "diff": "8.0.4",
@@ -62,7 +63,6 @@
       "cross-spawn": "7.0.6",
       "hono": "4.12.12",
       "hono-openapi": "1.1.2",
-      "ipaddr.js": "2.4.0",
       "fuzzysort": "3.1.0",
       "luxon": "3.6.1",
       "marked": "18.0.7",
@@ -86,9 +86,10 @@
       "vite-plugin-solid": "2.11.10",
       "@lydell/node-pty": "1.2.0-beta.12",
       "@opentui/keymap": "0.5.11",
+      "@anthropic-ai/sandbox-runtime": "0.0.63",
+      "ipaddr.js": "2.4.0",
       "@effect/sql-sqlite-bun": "4.0.0-beta.83",
       "@hono/standard-validator": "0.2.0",
-      "@hono/zod-validator": "0.4.2",
       "sst": "4.13.1",
       "@tanstack/solid-virtual": "3.13.32",
       "@shikijs/stream": "4.2.0",
@@ -97,6 +98,7 @@
     }
   },
   "devDependencies": {
+    "@actions/artifact": "5.0.1",
     "@tsconfig/bun": "catalog:",
     "@types/mime-types": "3.0.1",
     "@typescript/native-preview": "catalog:",
@@ -106,20 +108,20 @@
     "oxlint-tsgolint": "0.21.0",
     "prettier": "3.6.2",
     "semver": "^7.6.0",
+    "sst": "catalog:",
     "turbo": "2.10.2",
     "@types/bun": "catalog:",
     "@changesets/changelog-github": "^0.5.1",
-    "@changesets/cli": "^2.27.10",
-    "@actions/artifact": "5.0.1",
-    "sst": "catalog:"
+    "@changesets/cli": "^2.27.10"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1025.0",
     "@kilocode/plugin": "workspace:*",
     "@opencode-ai/script": "workspace:*",
     "@kilocode/sdk": "workspace:*",
+    "heap-snapshot-toolkit": "1.1.3",
     "typescript": "catalog:",
-    "@aws-sdk/client-s3": "3.933.0",
-    "heap-snapshot-toolkit": "1.1.3"
+    "@morphllm/morphsdk": "0.2.166"
   },
   "repository": {
     "type": "git",
@@ -140,6 +142,7 @@
     "electron"
   ],
   "overrides": {
+    "poe-oauth": "0.0.6",
     "@types/bun": "catalog:",
     "@types/node": "catalog:",
     "effect": "catalog:",
@@ -151,14 +154,14 @@
     "@xmldom/xmldom": ">=0.8.12",
     "smol-toml": ">=1.6.1",
     "fastify": ">=5.8.3",
-    "vite": "7.3.5",
     "diff": "8.0.4",
     "dompurify": "3.4.13",
     "happy-dom": ">=20.8.9",
     "@opentui/core": "catalog:",
     "@opentui/solid": "catalog:",
     "solid-js": "catalog:",
-    "@opentui/keymap": "catalog:"
+    "@opentui/keymap": "catalog:",
+    "vite": "7.3.5"
   },
   "patchedDependencies": {
     "@npmcli/agent@4.0.2": "patches/@npmcli%2Fagent@4.0.2.patch",
@@ -175,9 +178,11 @@
     "@ff-labs/fff-bun@0.9.4": "patches/@ff-labs%2Ffff-bun@0.9.4.patch",
     "pacote@21.5.1": "patches/pacote@21.5.1.patch",
     "mammoth@1.12.0": "patches/mammoth@1.12.0.patch",
-    "@tanstack/virtual-core@3.17.3": "patches/@tanstack%2Fvirtual-core@3.17.3.patch",
-    "solid-js@1.9.12": "patches/solid-js@1.9.12.patch"
+    "solid-js@1.9.10": "patches/solid-js@1.9.10.patch",
+    "@tanstack/solid-virtual@3.13.28": "patches/@tanstack%2Fsolid-virtual@3.13.28.patch",
+    "@tanstack/virtual-core@3.17.0": "patches/@tanstack%2Fvirtual-core@3.17.0.patch",
+    "stream-chat@9.38.0": "patches/stream-chat@9.38.0.patch"
   },
-  "version": "7.6.2",
+  "version": "7.2.49",
   "peerDependencies": {}
 }

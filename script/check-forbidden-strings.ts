@@ -22,7 +22,7 @@ const SELF = path.relative(ROOT, import.meta.path).replaceAll("\\", "/")
 const forbidden: { pattern: string; reason: string; allow?: string[] }[] = [
   { pattern: "opncd.ai/s/", reason: "legacy upstream share URL pattern" },
   {
-    pattern: "github.com/anomalyco/opencode",
+    pattern: "github.com/Kilo-Org/kilocode",
     reason: "upstream repo URL -- should be Kilo-Org/kilocode",
     allow: [
       "AGENTS.md",
