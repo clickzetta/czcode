@@ -110,16 +110,9 @@ chmod +x czcode
 
 czcode 需要 AI 模型才能运行。推荐使用阿里云 DashScope (Qwen 系列)。
 
-**方式 A: 环境变量（推荐）**
+**方式 A: 配置文件（推荐）**
 
-```bash
-# 添加到 ~/.zshrc 或 ~/.bashrc
-export DASHSCOPE_API_KEY=sk-...
-```
-
-**方式 B: 配置文件**
-
-在 czcode 二进制所在目录（如 `~/Downloads/czcode-darwin-arm64`）创建 `czcode.jsonc`:
+在 czcode 可执行文件同级目录（解压后的目录，如 `~/Downloads/czcode-darwin-arm64`）创建 `czcode.jsonc`:
 
 ```jsonc
 {
@@ -132,7 +125,21 @@ export DASHSCOPE_API_KEY=sk-...
 }
 ```
 
-> 📌 API Key 从 [DashScope 控制台](https://dashscope.console.aliyun.com) 获取。使用其他模型（Claude/GPT-4o）或自定义 Base URL，详见下方"配置说明"。
+**方式 B: 环境变量（适合多项目共享）**
+
+```bash
+# 添加到 ~/.zshrc 或 ~/.bashrc
+export DASHSCOPE_API_KEY=sk-...
+
+# 使配置生效（或重启 terminal）
+source ~/.zshrc
+```
+
+> 📌 **API Key 获取**: [DashScope 控制台](https://dashscope.console.aliyun.com)
+> 
+> 📌 **优先级**: 配置文件 > 环境变量（同时存在时配置文件优先）
+> 
+> 📌 **其他模型**: 使用 Claude/GPT-4o 或自定义 Base URL，详见下方"配置说明"
 
 ---
 
@@ -217,8 +224,8 @@ xattr -d com.apple.quarantine ./czcode
 **原因**: 缺少 AI 模型配置。
 
 **解决**:
-- 方式 A: `export DASHSCOPE_API_KEY=sk-...` 并重新启动 terminal
-- 方式 B: 在 czcode 二进制所在目录创建 `czcode.jsonc`（见"步骤 2"）
+- **方案 1（推荐）**: 在 czcode 可执行文件同级目录创建 `czcode.jsonc`（见"步骤 2 - 方式 A"）
+- **方案 2**: 设置环境变量 `export DASHSCOPE_API_KEY=sk-...`，然后 `source ~/.zshrc`（或重启 terminal）
 
 ---
 
