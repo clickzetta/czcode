@@ -71,75 +71,55 @@ czcode 完整继承自 [KiloCode](https://github.com/Kilo-Org/kilocode)，具备
 
 ---
 
-## 安装
+## 快速开始
 
-### 第一步：下载安装包
+### 1. 下载并解压
 
-前往 [Releases 页面](https://github.com/clickzetta/czcode/releases/latest) 下载对应平台的安装包：
+前往 [Releases 页面](https://github.com/clickzetta/czcode/releases/latest) 下载对应平台的安装包。
 
-| 平台 | 文件名 |
-|---|---|
-| macOS (Apple Silicon) | `czcode-darwin-arm64.zip` |
-| macOS (Intel) | `czcode-darwin-x64.zip` |
-| Linux (x64) | `czcode-linux-x64.tar.gz` |
-| Linux (ARM64) | `czcode-linux-arm64.tar.gz` |
-| Windows (x64) | `czcode-windows-x64.zip` |
-
-### 第二步：解压
-
-**macOS / Linux：**
+**macOS (Apple Silicon 示例):**
 
 ```bash
-# macOS (Apple Silicon 示例)
 cd ~/Downloads
 unzip czcode-darwin-arm64.zip
 cd czcode-darwin-arm64
 chmod +x czcode
+
+# macOS 可能提示"已损坏"，运行以下命令解除限制：
+xattr -d com.apple.quarantine ./czcode
 ```
 
-> **macOS 提示"已损坏，无法打开"**：这是 macOS Gatekeeper 的安全限制，因为二进制未经 Apple 签名。运行以下命令解除限制：
-> ```bash
-> xattr -d com.apple.quarantine ~/Downloads/czcode-darwin-arm64/czcode
-> ```
+**Linux (x64 示例):**
 
 ```bash
-# Linux
 cd ~/Downloads
 tar -xzf czcode-linux-x64.tar.gz
 cd czcode-linux-x64
 chmod +x czcode
 ```
 
-**Windows：**
+**Windows:**
 
-解压 `czcode-windows-x64.zip` 即可使用。
+解压 `czcode-windows-x64.zip`，双击 `czcode.exe` 即可使用。
 
-### 第三步：配置 Lakehouse 连接
+> 💡 **建议**: 将解压后的目录移到固定位置（如 `~/bin/czcode`）并加入 PATH，方便全局调用。
 
-```bash
-# 交互式配置向导
-cz-cli setup
-```
+---
 
-完成后 czcode 启动时自动连接 Lakehouse。
+### 2. 配置 AI 模型（必需）
 
-> **没有 cz-cli？** 手动创建 `~/.clickzetta/profiles.toml`，格式参考 [cz-cli 文档](https://github.com/clickzetta/cz-cli)。
-> **多环境切换**：`CLICKZETTA_PROFILE=uat ./czcode`
+czcode 需要 AI 模型才能运行。推荐使用阿里云 DashScope (Qwen 系列)。
 
-### 第四步：配置 AI 模型
-
-**方式 A：环境变量（推荐）**
+**方式 A: 环境变量（推荐）**
 
 ```bash
 # 添加到 ~/.zshrc 或 ~/.bashrc
 export DASHSCOPE_API_KEY=sk-...
 ```
 
-> API Key 从 [DashScope 控制台](https://dashscope.console.aliyun.com) 获取。
+**方式 B: 配置文件**
 
-**方式 B：写入 czcode.jsonc**
-
-在 czcode 运行目录创建 `czcode.jsonc`：
+在 czcode 二进制所在目录（如 `~/Downloads/czcode-darwin-arm64`）创建 `czcode.jsonc`:
 
 ```jsonc
 {
@@ -152,13 +132,93 @@ export DASHSCOPE_API_KEY=sk-...
 }
 ```
 
-> 使用其他模型（Claude/GPT-4o）或自定义 Base URL，详见下方"配置说明"。
+> 📌 API Key 从 [DashScope 控制台](https://dashscope.console.aliyun.com) 获取。使用其他模型（Claude/GPT-4o）或自定义 Base URL，详见下方"配置说明"。
 
-### 第五步：启动
+---
+
+### 3. 配置 Lakehouse 连接（可选）
+
+如果你需要使用 Lakehouse 数据功能（查询、建模、运维），需要配置连接信息。
+
+**方式 A: 使用 cz-cli（推荐）**
 
 ```bash
-./czcode
+# 安装 cz-cli（需要 Node.js）
+npm install -g @clickzetta/cz-cli
+
+# 运行配置向导
+cz-cli setup
 ```
+
+**方式 B: 手动创建配置文件**
+
+如果你没有 Node.js 或不想安装 cz-cli，手动创建 `~/.clickzetta/profiles.toml`:
+
+```toml
+[default]
+instance = "your-instance-name"
+workspace = "your-workspace"
+username = "your-username"
+password = "your-password"
+```
+
+> 💡 **多环境切换**: 在 profiles.toml 中定义多个 profile（如 `[prod]`、`[uat]`），启动时用 `CLICKZETTA_PROFILE=uat ./czcode` 切换。
+
+**方式 C: 跳过 Lakehouse 配置**
+
+如果你只用 czcode 做通用软件开发（Code/Plan/Debug 角色），可以跳过这一步。czcode 启动时会提示 "Lakehouse 未配置"，不影响其他功能。
+
+---
+
+### 4. 启动
+
+```bash
+# 在 czcode 二进制所在目录
+./czcode
+
+# 或者加入 PATH 后全局调用
+czcode
+```
+
+启动后按 Tab 键切换角色，输入 `/help` 查看命令列表。
+
+---
+
+## 常见问题
+
+### ❌ "command not found: cz-cli"
+
+**原因**: cz-cli 未安装。
+
+**解决**:
+- 方案 1: 安装 cz-cli（需要 Node.js）: `npm install -g @clickzetta/cz-cli`
+- 方案 2: 手动创建 `~/.clickzetta/profiles.toml`（见上方"方式 B"）
+- 方案 3: 跳过 Lakehouse 配置，只用通用开发功能
+
+### ❌ macOS "czcode 已损坏，无法打开"
+
+**原因**: macOS Gatekeeper 安全限制（二进制未签名）。
+
+**解决**:
+```bash
+xattr -d com.apple.quarantine ./czcode
+```
+
+### ❌ "Lakehouse 未配置"
+
+**原因**: 缺少 `~/.clickzetta/profiles.toml` 或环境变量。
+
+**解决**:
+- 如果需要 Lakehouse 功能: 完成"步骤 3"配置连接
+- 如果只用通用开发: 忽略此提示，不影响 Code/Plan/Debug 角色
+
+### ❌ "No API key found"
+
+**原因**: 缺少 AI 模型配置。
+
+**解决**:
+- 方式 A: `export DASHSCOPE_API_KEY=sk-...` 并重新启动 terminal
+- 方式 B: 在 czcode 二进制所在目录创建 `czcode.jsonc`（见"步骤 2"）
 
 ---
 
