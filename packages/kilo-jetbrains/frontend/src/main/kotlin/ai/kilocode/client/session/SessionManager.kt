@@ -1,7 +1,10 @@
 package ai.kilocode.client.session
 
+import ai.kilocode.client.session.controller.SessionController
+import ai.kilocode.client.session.ui.empty.EmptySessionPanel
 import ai.kilocode.client.app.Workspace
 import ai.kilocode.rpc.dto.SessionDto
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.DataKey
 
 interface SessionManager {
@@ -12,7 +15,28 @@ interface SessionManager {
 
     fun newSession()
 
-    fun showHistory()
+    /** Whether this surface can open the New Worktree flow (sidebar only). */
+    val supportsNewWorktree: Boolean get() = false
+
+    /** Opens the New Worktree flow. No-op unless [supportsNewWorktree] is true. */
+    fun newWorktree() {}
+
+    /** Whether this surface can move the current chat into a worktree (sidebar only). */
+    val supportsMoveToWorktree: Boolean get() = false
+
+    /** Opens the Move to Worktree flow. No-op unless [supportsMoveToWorktree] is true. */
+    fun moveToWorktree(sessionId: String?, directory: String) {}
+
+    /** Whether this surface can fork a session (Agent Manager worktree editor tabs only). */
+    val supportsFork: Boolean get() = false
+
+    /**
+     * Forks [id] into a new session and opens it. With [messageId] the fork truncates at that
+     * message. [surface] only labels the telemetry. No-op unless [supportsFork] is true.
+     */
+    fun forkSession(id: String, messageId: String? = null, surface: String = "session") {}
+
+    fun showHistory(back: (() -> Unit)? = null)
 
     fun openSession(ref: SessionRef)
 
@@ -23,6 +47,22 @@ interface SessionManager {
     fun activityChanged() {}
 
     fun focusPrompt() {}
+
+    val showsBranchDock: Boolean get() = true
+
+    val hostedInEditorTab: Boolean get() = false
+
+    val readonly: Boolean get() = false
+
+    fun emptyPanel(parent: Disposable, controller: SessionController): EmptySessionPanel = EmptySessionPanel(
+        parent,
+        controller,
+        controller.recents(),
+        history = { showHistory() },
+        activity = { activity() },
+        titles = { titles() },
+        newWorktree = if (supportsNewWorktree) ({ newWorktree() }) else null,
+    )
 
     fun openSession(session: SessionDto) {
         openSession(SessionRef.Local(session))

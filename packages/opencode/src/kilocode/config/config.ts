@@ -2,7 +2,7 @@ import path from "path"
 import { pathToFileURL } from "url"
 import { existsSync } from "fs"
 import { Effect, Schema } from "effect"
-import { applyEdits, modify, parse as parseJsonc } from "jsonc-parser"
+import { applyEdits, modify, parse as parseJsonc, type ParseError } from "jsonc-parser"
 import { mergeDeep } from "remeda"
 import * as Log from "@opencode-ai/core/util/log"
 import { Global } from "@opencode-ai/core/global"
@@ -37,12 +37,11 @@ export namespace KilocodeConfig {
 
   // ── Config file constants ────────────────────────────────────────────
 
-  /** All config file names in precedence order (czcode + kilo + opencode). */
-  // czcode_change - czcode config file names take highest precedence
-  export const ALL_CONFIG_FILES = ["czcode.jsonc", "czcode.json", "kilo.jsonc", "kilo.json", "opencode.jsonc", "opencode.json"] as const
+  /** All config file names in precedence order (kilo + opencode). */
+  export const ALL_CONFIG_FILES = ["kilo.jsonc", "kilo.json", "opencode.jsonc", "opencode.json"] as const
 
   /** Config directory suffixes in update-target preference order. */
-  export const KILO_DIR_SUFFIXES = [".czcode", ".kilo", ".kilocode"] as const // czcode_change - include .czcode
+  export const KILO_DIR_SUFFIXES = [".kilo", ".kilocode"] as const
 
   /**
    * List every project config file the read chain can merge: config files in
@@ -182,11 +181,49 @@ export namespace KilocodeConfig {
     return stripGlobalIndexing(info)
   }
 
-  export function retireIndexingFlag(info: Record<string, unknown>, source: string) {
-    if (!isRecord(info.experimental) || !("semantic_indexing" in info.experimental)) return info
+  /**
+   * Merge discovered agent markdown while preserving routing explicitly defined
+   * in config. Tracking config entries separately keeps normal directory
+   * precedence between markdown files intact.
+   */
+  export function mergeAgentMarkdown(
+    existing: Record<string, ConfigAgentV1.Info>,
+    incoming: Record<string, ConfigAgentV1.Info>,
+    configured: Record<string, ConfigAgentV1.Info>,
+  ) {
+    const result = { ...existing }
+    for (const [name, agent] of Object.entries(incoming)) {
+      const current = result[name]
+      if (!current) {
+        result[name] = agent
+        continue
+      }
+
+      const config = configured[name]
+      if (agent.mode === "primary" && config && config.mode !== "primary") {
+        result[name] = mergeDeep(mergeDeep(current, agent), { ...config, mode: config.mode ?? "all" })
+        continue
+      }
+
+      result[name] = mergeDeep(current, agent)
+    }
+    return result
+  }
+
+  export function retireExperimentalFlags(info: Record<string, unknown>, source: string) {
+    if (!isRecord(info.experimental)) return info
+    const indexing = "semantic_indexing" in info.experimental
+    const codebase = "codebase_search" in info.experimental
+    if (!indexing && !codebase) return info
     const experimental = { ...info.experimental }
-    delete experimental.semantic_indexing
-    log.warn("ignored retired experimental.semantic_indexing config; use indexing.enabled instead", { path: source })
+    if (indexing) {
+      delete experimental.semantic_indexing
+      log.warn("ignored retired experimental.semantic_indexing config; use indexing.enabled instead", { path: source })
+    }
+    if (codebase) {
+      delete experimental.codebase_search
+      log.warn("ignored retired experimental.codebase_search config", { path: source })
+    }
     return { ...info, experimental }
   }
 
@@ -406,6 +443,7 @@ export namespace KilocodeConfig {
   /** Global config file names in read-merge order (lowest-to-highest precedence). */
   // czcode_change - include czcode global config files
   export const GLOBAL_CONFIG_FILES = ["config.json", "czcode.json", "czcode.jsonc", "kilo.json", "kilo.jsonc", "opencode.json", "opencode.jsonc"]
+  const BASH_PERMISSION_MIGRATION = ".bash-permission-migrated"
 
   /**
    * Migrate bash permission for existing users before config is consumed.
@@ -413,36 +451,71 @@ export namespace KilocodeConfig {
    * Existing users (those with at least one global config file or the legacy TOML
    * config) who have no explicit `permission.bash` setting get `bash: "allow"`
    * written to their highest-precedence config file. This preserves their current
-   * behavior now that the new default is `bash: "ask"`.
+   * behavior now that the new default is `bash: "ask"`. A completion marker makes
+   * the migration idempotent so subsequent user edits are not migrated again.
    */
   export async function migrateBashPermission() {
+    const marker = path.join(Global.Path.config, BASH_PERMISSION_MIGRATION)
+    if (existsSync(marker)) return
+    const done = () =>
+      Bun.write(marker, "").then(
+        () => undefined,
+        (err) => log.warn("failed to record bash permission migration", { path: marker, err }),
+      )
     const files = GLOBAL_CONFIG_FILES.map((f) => path.join(Global.Path.config, f))
     const legacy = path.join(Global.Path.config, "config")
     const existing = files.filter((f) => existsSync(f))
     const hasLegacy = existsSync(legacy)
 
     // no global config → new user, they'll get the new bash:ask default
-    if (existing.length === 0 && !hasLegacy) return
+    if (existing.length === 0 && !hasLegacy) return done()
 
     const configs: Array<{ file: string; data: Record<string, unknown> }> = []
+    let hasFailure = false
     // check if any config file already has an explicit bash permission
     for (const file of existing) {
-      const text = await Bun.file(file)
-        .text()
-        .catch(() => "")
-      const data = parseJsonc(text) ?? {}
+      let text: string
+      try {
+        text = await Bun.file(file).text()
+      } catch (err) {
+        hasFailure = true
+        log.warn("skipping bash permission migration due to unreadable config", { file, err })
+        continue
+      }
+      if (text.trim() === "") {
+        const data: Record<string, unknown> = {}
+        configs.push({ file, data })
+        continue
+      }
+      const errors: ParseError[] = []
+      const data = (parseJsonc(text, errors, { allowTrailingComma: true }) as Record<string, unknown> | undefined) ?? {}
+      if (errors.length > 0) {
+        hasFailure = true
+        log.warn("skipping bash permission migration due to malformed config", { file, errors })
+        continue
+      }
       configs.push({ file, data })
-      if (typeof data.permission === "string" || (isRecord(data.permission) && data.permission.bash)) return
+      if (typeof data.permission === "string" || (isRecord(data.permission) && data.permission.bash)) return done()
     }
+
+    if (hasFailure) return
 
     // A schema-only file is generated for editor completion. It does not mean
     // the user predates the bash permission default.
-    if (!hasLegacy && configs.every((item) => Object.keys(item.data).every((key) => key === "$schema"))) return
+    if (!hasLegacy && configs.every((item) => Object.keys(item.data).every((key) => key === "$schema"))) return done()
 
     // also check legacy TOML config for bash permission
     if (hasLegacy) {
-      const toml = await import(pathToFileURL(legacy).href, { with: { type: "toml" } }).catch(() => undefined)
-      if (toml?.default?.permission?.bash) return
+      try {
+        const toml = await import(pathToFileURL(legacy).href, { with: { type: "toml" } })
+        if (toml?.default?.permission?.bash) return done()
+      } catch (err) {
+        log.warn("skipping bash permission migration due to unreadable or malformed legacy config", {
+          path: legacy,
+          err,
+        })
+        return
+      }
     }
 
     // existing user without bash permission → write bash:allow to highest-precedence file
@@ -456,6 +529,7 @@ export namespace KilocodeConfig {
         formattingOptions: { insertSpaces: true, tabSize: 2 },
       })
       await Bun.write(target, applyEdits(text, edits))
+      await done()
       log.info("migrated bash permission to allow for existing user", { path: target })
       return
     }
@@ -463,6 +537,7 @@ export namespace KilocodeConfig {
     const data = parseJsonc(text) ?? {}
     const merged = { ...data, permission: { ...data.permission, bash: "allow" } }
     await Bun.write(target, JSON.stringify(merged, null, 2))
+    await done()
     log.info("migrated bash permission to allow for existing user", { path: target })
   }
 
@@ -492,13 +567,24 @@ export namespace KilocodeConfig {
    * 3. Strip null delete sentinels
    */
   export function mergeConfig(existing: Config.Info, patch: Config.Info): Config.Info {
+    return merge(existing, patch, true)
+  }
+
+  /** Merge an untrusted project layer without changing generic config merge semantics. */
+  export function mergeProject(existing: Config.Info, patch: Config.Info): Config.Info {
+    return merge(existing, patch, false)
+  }
+
+  function merge(existing: Config.Info, patch: Config.Info, clean: boolean): Config.Info {
     const e = { ...existing } as Record<string, unknown>
-    const p = patch as Record<string, unknown>
+    // Shallow-copy patch so MCP extraction (delete p.mcp) never mutates the caller's object.
+    // Callers may probe with mergeConfig({}, patch) then reuse the same patch for a write.
+    const p = { ...patch } as Record<string, unknown>
 
     // Normalize permission scalars before merge
     const existingPerm = e.permission
     const patchPerm = p.permission
-    if (isRecord(existingPerm) && isRecord(patchPerm)) {
+    if (clean && isRecord(existingPerm) && isRecord(patchPerm)) {
       const cloned = { ...existingPerm }
       for (const [key, value] of Object.entries(patchPerm)) {
         const existing = cloned[key]
@@ -509,7 +595,61 @@ export namespace KilocodeConfig {
       e.permission = cloned
     }
 
-    return stripNulls(mergeDeep(e, p) as Record<string, unknown>) as Config.Info
+    // MCP servers merge by name; project URL retargets must not inherit base headers.
+    const existingMcp = e.mcp
+    const patchMcp = p.mcp
+    if (!isRecord(existingMcp) && !isRecord(patchMcp)) {
+      return (clean ? stripNulls(mergeDeep(e, p) as Record<string, unknown>) : mergeDeep(e, p)) as Config.Info
+    }
+
+    delete e.mcp
+    delete p.mcp
+    const merged = (clean ? stripNulls(mergeDeep(e, p) as Record<string, unknown>) : mergeDeep(e, p)) as Config.Info
+    const baseMcp = isRecord(existingMcp) ? (existingMcp as NonNullable<Config.Info["mcp"]>) : undefined
+    const srcMcp = isRecord(patchMcp) ? (patchMcp as NonNullable<Config.Info["mcp"]>) : undefined
+    if (!srcMcp) {
+      if (baseMcp) merged.mcp = baseMcp
+      return merged
+    }
+    if (!baseMcp) {
+      merged.mcp = srcMcp
+      return merged
+    }
+
+    const out: NonNullable<Config.Info["mcp"]> = { ...baseMcp }
+    for (const [name, src] of Object.entries(srcMcp)) {
+      const base = baseMcp[name]
+      if (!isRecord(src) || !isRecord(base)) {
+        out[name] = src
+        continue
+      }
+
+      const kind = "type" in base && (base.type === "local" || base.type === "remote") ? base.type : undefined
+      const next = "type" in src && (src.type === "local" || src.type === "remote") ? src.type : undefined
+      const changed = next !== undefined && next !== kind
+      const seed = changed
+        ? {
+            ...("enabled" in base ? { enabled: base.enabled } : {}),
+            ...("timeout" in base ? { timeout: base.timeout } : {}),
+          }
+        : base
+      const entry = mergeDeep(seed, src) as (typeof out)[string]
+      const srcUrl = "url" in src && typeof src.url === "string" ? src.url : undefined
+      const baseUrl = "url" in base && typeof base.url === "string" ? base.url : undefined
+      const retargeted =
+        kind === "remote" && next !== "local" && srcUrl !== undefined && baseUrl !== undefined && srcUrl !== baseUrl
+      if (!retargeted || !isRecord(entry)) {
+        out[name] = entry
+        continue
+      }
+
+      const { headers: _headers, oauth: _oauth, ...rest } = entry as Record<string, unknown>
+      if ("headers" in src) rest.headers = src.headers
+      if ("oauth" in src) rest.oauth = src.oauth
+      out[name] = rest as (typeof out)[string]
+    }
+    merged.mcp = out
+    return merged
   }
 
   // ── Directory check helper ───────────────────────────────────────────
@@ -525,7 +665,7 @@ export namespace KilocodeConfig {
   export const CONFIG_DOCS_URL = "https://www.yunqi.tech/documents" // czcode_change
 
   /** Stable id for the synthetic "move your opencode config" notification (used for client-side dismissal). */
-  export const OPENCODE_NOTIFICATION_ID = "kilo.local.opencode-config-detected"
+  export const KILO_NOTIFICATION_ID = "kilo.local.opencode-config-detected"
 
   /**
    * Detect leftover opencode config directories. Kilo used to fall back to
@@ -566,7 +706,7 @@ export namespace KilocodeConfig {
     if (found.length === 0) return undefined
     const suffix = found.length > 1 ? ` (and ${found.length - 1} more)` : ""
     return {
-      id: OPENCODE_NOTIFICATION_ID,
+      id: KILO_NOTIFICATION_ID,
       title: "Move your opencode configuration",
       // czcode_change start
       message:

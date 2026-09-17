@@ -13,7 +13,7 @@
  *   --base-branch <name> Base branch to merge into, or HEAD for current branch (default: main)
  *   --dry-run            Preview changes without applying them
  *   --no-push            Don't push branches to remote
- *   --no-worktrees       Don't create reference worktrees for manual resolution
+ *   --no-worktrees       Don't create auxiliary worktrees
  *   --report-only        Only generate conflict report, don't merge
  *   --verbose            Enable verbose logging
  *   --author <name>      Author name for branch prefix (default: from git config)
@@ -42,6 +42,7 @@ import {
 import { transformConflictedScripts, transformAllScripts } from "./transforms/transform-scripts"
 import { transformConflictedExtensions, transformAllExtensions } from "./transforms/transform-extensions"
 import { transformConflictedWeb, transformAllWeb } from "./transforms/transform-web"
+import { transformKiloWeb } from "./transforms/remove-kilo-web"
 import { resolveLockFileConflicts, regenerateLockFiles } from "./transforms/lock-files"
 import { writeVersion } from "./utils/upstream"
 
@@ -258,7 +259,7 @@ async function main() {
 
   if (!(await git.hasUpstreamRemote())) {
     logger.error("No 'upstream' remote found. Please add it:")
-    logger.info("  git remote add upstream git@github.com:Kilo-Org/kilocode.git") // czcode_change
+    logger.info("  git remote add upstream git@github.com:anomalyco/opencode.git")
     process.exit(1)
   }
 
@@ -291,15 +292,9 @@ async function main() {
     // historical convention used by older upstream merges ("[Rr]esolve merge conflicts").
     // Without the lowercase alternative, ~70 past merges are dropped from training on
     // this repo, since most older resolution commits use a lowercase "resolve".
-    logger.info("Training rerere cache from past merge history...")
-    // czcode_change - skip rerere training (worktree creation times out in this environment)
-    const learned = 0
-    // const learned = await git.trainRerere("merge: upstream\\|[Rr]esolve merge conflict")
-    if (learned > 0) {
-      logger.success(`Learned ${learned} conflict resolution(s) from history`)
-    } else {
-      logger.info("No new resolutions to learn from history (cache already up to date)")
-    }
+    // czcode_change start - skip rerere training (worktree creation times out in this environment)
+    logger.info("Skipping rerere history training (czcode: worktree timeout issues)")
+    // czcode_change end
   }
 
   // Step 2: Fetch upstream
@@ -415,6 +410,8 @@ async function main() {
   const author = options.author || (await getAuthor())
   const kiloVersion = await version.getCurrentKiloVersion()
   const dirs = ["packages/ui/src/assets/icons/provider", "packages/ui/src/components/provider-icons"]
+  const kiloBranch = `${author}/kilo-opencode-${targetVersion.tag}`
+  const inplace = options.baseBranch === "HEAD" && currentBranch === kiloBranch
 
   logger.info("Resetting generated provider icons before checkout...")
   await git.restoreDirectories(dirs)
@@ -422,18 +419,27 @@ async function main() {
 
   // Create backup branch
   await git.checkout(config.baseBranch)
-  await git.pull(config.originRemote)
+  if (options.baseBranch !== "HEAD") {
+    await git.pull(config.originRemote)
+  }
+  if (options.baseBranch === "HEAD") {
+    logger.info("Using the checked-out HEAD as the merge base without pulling")
+  }
   const baseSha = await git.getCommitHash("HEAD")
   const backupBranch = await createBackupBranch(config.baseBranch)
   logger.info(`Created backup branch: ${backupBranch}`)
 
   // Create Kilo merge branch
-  const kiloBranch = `${author}/kilo-opencode-${targetVersion.tag}`
-  const kiloBackup = await git.backupAndDeleteBranch(kiloBranch)
-  if (kiloBackup) {
-    logger.info(`Backed up existing branch to: ${kiloBackup}`)
+  if (inplace) {
+    logger.info(`Using the checked-out target branch in place: ${kiloBranch}`)
   }
-  await git.createBranch(kiloBranch)
+  if (!inplace) {
+    const kiloBackup = await git.backupAndDeleteBranch(kiloBranch)
+    if (kiloBackup) {
+      logger.info(`Backed up existing branch to: ${kiloBackup}`)
+    }
+    await git.createBranch(kiloBranch)
+  }
 
   if (options.push) {
     await git.push(config.originRemote, kiloBranch, true)
@@ -446,7 +452,7 @@ async function main() {
   if (opencodeBackup) {
     logger.info(`Backed up existing branch to: ${opencodeBackup}`)
   }
-  await git.checkout(targetVersion.commit, true)
+  await git.checkout(targetVersion.commit)
   await git.createBranch(opencodeBranch)
   logger.info(`Created opencode branch: ${opencodeBranch}`)
 
@@ -468,6 +474,14 @@ async function main() {
   const count = skips.filter((r) => r.action === "removed").length
   if (count > 0) {
     logger.success(`Removed ${count} skipped file(s) from opencode branch`)
+  }
+
+  // Kilo does not ship upstream's embedded web UI command. Remove the known
+  // registration before merging so upstream updates cannot restore it silently.
+  logger.info("Removing unsupported Kilo web command...")
+  const webCommand = await transformKiloWeb({ dryRun: false, verbose: options.verbose })
+  if (webCommand.removals > 0) {
+    logger.success("Removed unsupported Kilo web command registration")
   }
 
   // 6a. Transform package names (opencode-ai -> @kilocode/cli)
@@ -792,26 +806,10 @@ async function main() {
     // Combine git-reported conflicts with files flagged due to kilocode_change markers
     const allManual = [...new Set([...remaining, ...flaggedFiles])]
     if (allManual.length > 0) {
-      // Detect files modified by BOTH branches since merge base.
-      // These are the highest-risk conflicts: picking one side loses the other's changes.
-      const bothModified = await git.getBothModifiedFiles(baseSha, opencodeBranch)
-      const highRiskFiles = allManual.filter((f: string) => bothModified.includes(f))
-      if (highRiskFiles.length > 0) {
-        logger.warn("")
-        logger.warn(`⚠️  ${highRiskFiles.length} HIGH-RISK file(s) — changed by BOTH branches since merge base:`)
-        logger.list(highRiskFiles)
-        logger.info("")
-        logger.info("  CORRECT RESOLUTION: take the *upstream* version, then re-apply czcode changes on top.")
-        logger.info("  ❌  DO NOT simply 'keep ours' — this discards upstream changes entirely.")
-        logger.info("  ✅  git checkout --theirs <file>   # start with upstream")
-        logger.info("  ✅  then re-apply czcode_change blocks from the old version")
-        logger.info("  ✅  verify with: git diff <old-commit> <file>")
-        logger.info("")
-      }
       if (flaggedFiles.length > 0) {
         logger.warn(`${flaggedFiles.length} file(s) were flagged because they contain kilocode_change markers:`)
         logger.list(flaggedFiles)
-        logger.info("  These files have intentional Kilo-specific changes. Take upstream version, re-apply our changes.")
+        logger.info("  These files have intentional Kilo-specific changes. Keep our version or merge carefully.")
         logger.info("")
       }
       if (remaining.length > 0) {
@@ -844,12 +842,12 @@ async function main() {
       logger.info("Next steps:")
       logger.info("  1. Resolve remaining conflicts manually")
       logger.info("  2. git add -A && git commit -m 'resolve merge conflicts'")
-      logger.info("  3. Run typecheck on merge branch:")
-      logger.info("     bun run typecheck")
-      logger.info("     ⚠️  If typecheck fails, missing upstream code was discarded by accident.")
-      logger.info(`  4. git push ${config.originRemote} ${kiloBranch}`)
-      logger.info("  5. Create PR from " + kiloBranch + " to " + config.baseBranch)
+      logger.info(`  3. git push ${config.originRemote} ${kiloBranch}`)
+      logger.info("  4. Create PR from " + kiloBranch + " to " + config.baseBranch)
       logger.info("")
+      logger.info("To rollback:")
+      logger.info(`  git checkout ${config.baseBranch}`)
+      logger.info(`  git reset --hard ${backupBranch}`)
 
       // Exit early - don't continue to finalization steps
       process.exit(1)

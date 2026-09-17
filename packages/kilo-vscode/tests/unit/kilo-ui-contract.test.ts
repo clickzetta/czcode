@@ -182,6 +182,11 @@ describe("Edit tool diff-first click contract (source)", () => {
     expect(editBlock).toMatch(/props\.input\.oldString\s*\?\?\s*""/)
     expect(editBlock).toMatch(/props\.input\.newString\s*\?\?\s*""/)
   })
+
+  it("edit file names leave the parent trigger responsible for inline expansion", () => {
+    expect(editBlock).not.toContain("handleFileClick")
+    expect(editBlock).toContain("handleOpenDiffClick")
+  })
 })
 
 describe("Write and apply_patch patch rendering contracts (source)", () => {
@@ -197,11 +202,38 @@ describe("Write and apply_patch patch rendering contracts (source)", () => {
     expect(writeBlock).toContain('mode="diff"')
   })
 
+  it("write file names leave the parent trigger responsible for inline expansion", () => {
+    expect(writeBlock).not.toContain("handleFileClick")
+    expect(writeBlock).toContain("handleOpenDiffClick")
+  })
+
   it("apply_patch tool can render from patch metadata without before/after", () => {
     expect(patchBlock).toContain("file.patch")
     expect(patchBlock).toContain("normalize({")
     expect(patchBlock).toContain("file: file.relativePath")
     expect(patchBlock).toContain('mode="diff"')
+  })
+
+  it("apply_patch tool exposes the diff action for each file", () => {
+    expect(patchBlock).toContain("data.openDiff")
+    expect(patchBlock).toContain("const allDiffAction = ()")
+    expect(patchBlock).toContain("{allDiffAction()}")
+    expect(patchBlock).not.toContain("data.openFile(file.filePath)")
+  })
+
+  it("apply_patch skips files whose patch has no parsable hunks", () => {
+    expect(patchBlock).toContain("value.fileDiff.hunks.length")
+    expect(patchBlock).toContain('file.type === "add"')
+    expect(patchBlock).toContain("diff.additions === 0")
+    expect(patchBlock).toContain("diff.deletions === 0")
+    expect(patchBlock).toContain("hunk.additionLines")
+    expect(patchBlock).toContain("hunk.deletionLines")
+  })
+
+  it("apply_patch open action preserves every file in a multi-file payload", () => {
+    expect(patchBlock).toContain("const diffs = files().flatMap")
+    expect(patchBlock).toContain("files: diffs")
+    expect(patchBlock).toContain("diffs.length === 1 ? first")
   })
 })
 
@@ -267,14 +299,14 @@ describe("Bash tool static terminal preview (source)", () => {
   it("bash tool passes outputPath from metadata to BashHighlightedOutput", () => {
     expect(block).toContain("props.metadata.outputPath")
   })
-
-  it("bash tool shows the SWE-Pruner kept-lines indicator", () => {
-    expect(block).toContain("swePruned(props.metadata)")
-    expect(block).toContain('i18n.t("ui.tool.swePruned"')
-  })
 })
 
 describe("Expanded tool motion and typography (source)", () => {
+  const reasoning =
+    fs
+      .readFileSync(KILO_MESSAGE_PART_FILE, "utf-8")
+      .match(/PART_MAPPING\["reasoning"\][\s\S]*?(?=\nfunction useToolReveal)/)?.[0] ?? ""
+
   it("animates completed rolling shell details", () => {
     const src = fs.readFileSync(SHELL_ROLLING_FILE, "utf-8")
     expect(src).toContain("useCollapsible({")
@@ -288,6 +320,38 @@ describe("Expanded tool motion and typography (source)", () => {
       /html\[data-theme="kilo-vscode"\] \[data-component="reasoning-part"\][\s\S]*?(?=@keyframes reasoning-pulse)/,
     )?.[0]
     expect(block).toMatch(/\[data-component="markdown"\]\s*\{[^}]*line-height:\s*160%;/)
+  })
+
+  it("animates reasoning details with the mounted collapsible hook", () => {
+    // forceMount is a Collapsible root prop; on Content it is a no-op attribute
+    // and Kobalte presence unmounts the details before the close can animate.
+    expect(reasoning).toMatch(/<Collapsible[^>]*\bforceMount\b[^>]*>/)
+    expect(reasoning).not.toMatch(/<Collapsible\.Content[^>]*forceMount/)
+    expect(reasoning).toContain("useCollapsible(")
+  })
+
+  it("keeps the reasoning viewport capped until a manual open", () => {
+    const css = fs.readFileSync(KILO_MESSAGE_PART_CSS_FILE, "utf-8")
+    const cap = css.match(
+      /\[data-component="reasoning-part"\]\[data-auto-collapse\]:not\(\[data-manual\]\)\s+\[data-slot="reasoning-content"\]\s*\{[^}]*\}/,
+    )?.[0]
+    expect(cap).toContain("max-height: 120px")
+    expect(cap).not.toContain("data-streaming")
+  })
+
+  it("does not smooth streaming reasoning scroll updates", () => {
+    const css = fs.readFileSync(KILO_MESSAGE_PART_CSS_FILE, "utf-8")
+    expect(css).not.toContain("scroll-behavior: smooth")
+  })
+
+  it("settles encrypted reasoning summaries once the stream moved past them", () => {
+    // Encrypted reasoning items only set time.end on their summaries when the
+    // whole item finishes, so the transcript settles them from the part order.
+    expect(reasoning).toContain("if (props.settled) return true")
+    const src = fs.readFileSync(ASSISTANT_MESSAGE_FILE, "utf-8")
+    expect(src).toContain("if (props.message.time.completed) return true")
+    expect(src).toContain("return index >= 0 && index < all.length - 1")
+    expect(src).toContain("settled={settled()}")
   })
 })
 
@@ -341,6 +405,15 @@ describe("AssistantMessage visible row contract (source)", () => {
 
   it("uses the plan exit card only when plan metadata is renderable", () => {
     expect(src).toContain("if (!planExitInfo(part)) return")
+  })
+
+  it("keeps reasoning parts out of the wrapper grow-in clip", () => {
+    // The reasoning header and body bleed 6px past the wrapper, so a grow-in
+    // clip trims their sides while the text streams and releases them when it
+    // stops, resizing the block at the end of the stream.
+    const live = src.match(/const live =[\s\S]*?useGrowIn\(/)?.[0] ?? ""
+    expect(live).toContain('part.type === "text" && !!part.time && !part.time.end')
+    expect(live).not.toContain('part.type === "reasoning"')
   })
 
   it("uses the native recall tool without a separate memory badge", () => {
@@ -423,6 +496,15 @@ describe("BasicTool export contract (runtime)", () => {
       process.exit(0)
     `)
     expect(result.ok, `BasicTool export check failed: ${result.output}`).toBe(true)
+  })
+})
+
+describe("Read tool file link contract (source)", () => {
+  const message = fs.readFileSync(KILO_MESSAGE_PART_FILE, "utf-8")
+
+  it("opens the input file from the custom trigger detail", () => {
+    expect(message).toMatch(/name:\s*"read"[\s\S]*?<ToolTriggerRow[\s\S]*?onClick=/)
+    expect(message).toMatch(/event\.stopPropagation\(\)[\s\S]*?data\.openFile!\(props\.input\.filePath\)/)
   })
 })
 

@@ -1,12 +1,10 @@
 import fs from "fs/promises"
 import path from "path"
 import { describe, expect, test } from "bun:test"
-import { NodeFileSystem } from "@effect/platform-node"
-import { Effect, Layer, Option } from "effect"
-import { FSUtil } from "@opencode-ai/core/fs-util"
+import { Effect, Option } from "effect"
+import { AppNodeBuilder } from "@opencode-ai/core/effect/app-node-builder"
 import { Global } from "@opencode-ai/core/global"
 import { Npm } from "@opencode-ai/core/npm"
-import { EffectFlock } from "@opencode-ai/core/util/effect-flock"
 import { tmpdir } from "./fixture/tmpdir"
 
 const win = process.platform === "win32"
@@ -21,12 +19,7 @@ const writePackage = (dir: string, pkg: Record<string, unknown>) =>
   )
 
 const npmLayer = (cache: string) =>
-  Npm.layer.pipe(
-    Layer.provide(EffectFlock.layer),
-    Layer.provide(FSUtil.layer),
-    Layer.provide(Global.layerWith({ cache, state: path.join(cache, "state") })),
-    Layer.provide(NodeFileSystem.layer),
-  )
+  AppNodeBuilder.build(Npm.node, [[Global.node, Global.layerWith({ cache, state: path.join(cache, "state") })]])
 
 describe("Npm.sanitize", () => {
   test("keeps normal scoped package specs unchanged", () => {
@@ -53,14 +46,16 @@ describe("Npm.add", () => {
     await Bun.write(path.join(tmp.path, "fixture-provider", "index.js"), "export const fixture = true\n")
 
     const spec = `fixture-provider@file:${path.join(tmp.path, "fixture-provider")}`
-    await fs.mkdir(path.join(tmp.path, "cache", "packages", Npm.sanitize(spec)), { recursive: true })
+    const dir = path.join(tmp.path, "cache", "packages", Npm.sanitize(spec)) // kilocode_change
+    await fs.mkdir(dir, { recursive: true }) // kilocode_change
+    await Bun.write(path.join(dir, ".npmrc"), "audit=false\n") // kilocode_change
 
     const entry = await Effect.gen(function* () {
       const npm = yield* Npm.Service
       return yield* npm.add(spec)
     }).pipe(Effect.scoped, Effect.provide(npmLayer(path.join(tmp.path, "cache"))), Effect.runPromise)
 
-    expect(Option.isSome(entry.entrypoint)).toBe(true)
+    expect(entry.entrypoint).toBeDefined()
   })
 })
 
@@ -77,7 +72,7 @@ describe("Npm.install", () => {
         "dev-pkg": "file:./dev-pkg",
       },
     })
-    await Bun.write(path.join(tmp.path, ".npmrc"), "omit=dev\n")
+    await Bun.write(path.join(tmp.path, ".npmrc"), "omit=dev\naudit=false\n") // kilocode_change
     await fs.mkdir(path.join(tmp.path, "prod-pkg"))
     await fs.mkdir(path.join(tmp.path, "dev-pkg"))
     await writePackage(path.join(tmp.path, "prod-pkg"), { name: "prod-pkg" })

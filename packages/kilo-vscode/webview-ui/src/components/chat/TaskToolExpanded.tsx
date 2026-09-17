@@ -11,21 +11,28 @@ import { Component, createEffect, createMemo, createSignal, Index, Show, on, onC
 import { ToolRegistry, ToolProps, getToolInfo } from "@kilocode/kilo-ui/message-part"
 import { BasicTool, initialOpen } from "@kilocode/kilo-ui/basic-tool"
 import { Icon } from "@kilocode/kilo-ui/icon"
+import { AgentAvatar } from "@kilocode/kilo-ui/agent-avatar"
 import { IconButton } from "@kilocode/kilo-ui/icon-button"
 import { Markdown } from "@kilocode/kilo-ui/markdown"
+import { Tooltip } from "@kilocode/kilo-ui/tooltip"
 import { useLanguage } from "../../context/language"
 import { useI18n } from "@kilocode/kilo-ui/context/i18n"
 import { createAutoScroll } from "@kilocode/kilo-ui/hooks"
 import { useSession } from "../../context/session"
 import { useVSCode } from "../../context/vscode"
-import { childID } from "../../context/session-utils"
-import { taskResult, taskRunning, taskVisible } from "./task-tool-state"
+import { useWorktreeMode } from "../../context/worktree-mode"
+import { childID, latestTaskPart } from "../../context/session-utils"
+import { useConfig } from "../../context/config"
+import { openSubagent } from "./open-subagent"
+import { showChildPromotion, taskAvatarStatus, taskResult, taskRunning, taskVisible } from "./task-tool-state"
 
 const TaskToolRenderer: Component<ToolProps> = (props) => {
   const i18n = useI18n()
   const language = useLanguage()
   const session = useSession()
+  const { features } = useConfig()
   const vscode = useVSCode()
+  const worktree = useWorktreeMode()
 
   const childSessionId = () =>
     childID({
@@ -35,7 +42,41 @@ const TaskToolRenderer: Component<ToolProps> = (props) => {
       state: { metadata: props.metadata as { sessionId?: string } },
     })
 
+  const promotable = createMemo(() =>
+    showChildPromotion(
+      childSessionId(),
+      props.partMetadata as Record<string, unknown> | undefined,
+      props.metadata as Record<string, unknown> | undefined,
+      session.allStatusMap(),
+      features().backgroundSubagents,
+      props.readonly,
+      latestTaskPart(
+        props.partID,
+        childSessionId(),
+        session.currentSessionID() ? session.getSessionToolParts(session.currentSessionID()!) : [],
+      ),
+    ),
+  )
+
   const running = createMemo(() => taskRunning(props.status))
+  const avatar = createMemo(() => {
+    const id = childSessionId()
+    return taskAvatarStatus(id, props.status, session.allStatusMap())
+  })
+  // The avatar shimmers until the child session id is known, then plays a
+  // one-shot resolve into the identity glyph. Only an actual unknown-to-known
+  // transition sets this, so a virtualized remount that starts with the id
+  // already known shows the resolved glyph without replaying the animation.
+  const [resolved, setResolved] = createSignal(false)
+  createEffect(
+    on(
+      childSessionId,
+      (id, prev) => {
+        if (id && !prev) setResolved(true)
+      },
+      { defer: true },
+    ),
+  )
   // BasicTool's forceOpen effect only fires onOpenChange on a false->true
   // transition — a virtualized remount that starts with forceOpen already
   // true never transitions, so this local signal must also seed itself from
@@ -50,13 +91,24 @@ const TaskToolRenderer: Component<ToolProps> = (props) => {
     }),
   )
 
+  let synced: string | undefined
   createEffect(() => {
     const id = taskVisible(open(), childSessionId())
+    if (synced === id) return
+    if (synced) session.unsyncSession(synced)
+    synced = id
     if (!id) return
     session.syncSession(id)
   })
+  onCleanup(() => {
+    if (synced) session.unsyncSession(synced)
+  })
 
-  const title = createMemo(() => i18n.t("ui.tool.agent", { type: props.input.subagent_type || props.tool }))
+  const title = createMemo(() =>
+    props.input.subagent_type
+      ? i18n.t("ui.tool.agent", { type: props.input.subagent_type })
+      : i18n.t("ui.tool.agent.default"),
+  )
 
   const description = createMemo(() => {
     const val = props.input.description
@@ -115,18 +167,31 @@ const TaskToolRenderer: Component<ToolProps> = (props) => {
     e.stopPropagation()
     const id = childSessionId()
     if (!id) return
-    vscode.postMessage({ type: "openSubAgentViewer", sessionID: id, title: description() })
+    openSubagent({
+      sessionID: id,
+      title: description(),
+      parentSessionID: session.currentSessionID(),
+      worktree: !!worktree,
+      post: vscode.postMessage,
+    })
+  }
+
+  const background = (e: MouseEvent) => {
+    e.stopPropagation()
+    const id = session.currentSessionID()
+    const child = childSessionId()
+    if (id && child) vscode.postMessage({ type: "promoteBackgroundJob", jobID: child, sessionID: id })
   }
 
   const trigger = () => (
-    <div data-slot="basic-tool-tool-info-structured">
+    <div data-slot="basic-tool-tool-info-structured" data-component="task-tool-heading">
       <div data-slot="basic-tool-tool-info-main">
-        <span data-slot="basic-tool-tool-title" class="capitalize">
-          {title()}
+        <span data-slot="basic-tool-tool-title" title={description() || title()}>
+          {description() || title()}
         </span>
         <Show when={description() || childToolCount() > 0}>
           <span data-slot="basic-tool-tool-subtitle">
-            {description()}
+            {description() ? title() : undefined}
             <Show when={childToolCount() > 0}>
               {description() ? " " : ""}({childToolCount()})
             </Show>
@@ -134,11 +199,22 @@ const TaskToolRenderer: Component<ToolProps> = (props) => {
         </Show>
       </div>
       <Show when={childSessionId()}>
+        <Show when={features().backgroundSubagents && promotable()}>
+          <Tooltip value={language.t("task.backgroundAgents.continueInBackground")} placement="top">
+            <IconButton
+              icon="arrow-down-to-line"
+              size="small"
+              variant="ghost"
+              aria-label={language.t("task.backgroundAgents.continueInBackground")}
+              onClick={background}
+            />
+          </Tooltip>
+        </Show>
         <IconButton
           icon="square-arrow-top-right"
           size="small"
           variant="ghost"
-          aria-label="Open sub-agent in tab"
+          aria-label={worktree ? "Open sub-agent in panel" : "Open sub-agent in tab"}
           onClick={openInTab}
         />
       </Show>
@@ -149,6 +225,17 @@ const TaskToolRenderer: Component<ToolProps> = (props) => {
     <div data-component="tool-part-wrapper">
       <BasicTool
         icon="task"
+        iconNode={
+          <span
+            data-slot="task-agent-avatar"
+            data-clickable={childSessionId() ? "true" : undefined}
+            data-resolve={resolved() ? "true" : undefined}
+            title={childSessionId() ? (worktree ? "Open sub-agent in panel" : "Open sub-agent in tab") : undefined}
+            onClick={childSessionId() ? openInTab : undefined}
+          >
+            <AgentAvatar id={childSessionId() ?? ""} status={avatar()} />
+          </span>
+        }
         status={props.status}
         tool={props.tool}
         partID={props.partID}

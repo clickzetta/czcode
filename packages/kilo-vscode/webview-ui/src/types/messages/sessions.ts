@@ -22,6 +22,7 @@ export interface Message {
   parentID?: string
   path?: { cwd: string; root: string }
   error?: { name: string; data?: Record<string, unknown> }
+  sessionErrorID?: string
   summary?: { title?: string; body?: string; diffs?: unknown[] } | boolean
   cost?: number
   tokens?: TokenUsage
@@ -45,6 +46,12 @@ export interface SessionInfo {
   title?: string
   createdAt: string
   updatedAt: string
+  goal?: {
+    text: string
+    active: boolean
+    status?: "active" | "complete" | "blocked" | "paused"
+    reason?: string
+  } | null
   revert?: {
     messageID: string
     partID?: string

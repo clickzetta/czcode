@@ -5,6 +5,7 @@ import ai.kilocode.client.diff.installDiffGutter
 import ai.kilocode.client.session.model.Tool
 import ai.kilocode.client.session.ui.selection.SessionSelection
 import ai.kilocode.client.session.ui.style.SessionEditorStyle
+import ai.kilocode.client.session.ui.style.SessionUiStyle
 import ai.kilocode.client.ui.md.MdCodeBlockFactory
 import ai.kilocode.client.ui.md.MdCodeBlockOptions
 import ai.kilocode.client.ui.md.MdView
@@ -38,6 +39,10 @@ class ToolMarkdownBody(
     private val chrome: (MdView) -> Unit = {},
 ) : EditBody {
     override var parent: Disposable? = null
+
+    // Single-file diffs over the cap are routed to OverflowBody by EditToolView, and non-diff bodies
+    // (shell/read) are never capped, so this body itself never renders the overflow placeholder.
+    override var overflow: (() -> Unit)? = null
     private var view: MdView? = null
     private var item: Tool? = null
 
@@ -84,8 +89,10 @@ class ToolMarkdownBody(
         md.applyStyle(style)
         md.font = font(style)
         md.foreground = style.editorForeground
-        md.background = style.editorBackground
-        md.preBg = style.editorBackground
+        // The body itself stays transparent (session backdrop); only the code/output panes are the
+        // raised editor-background surface, so the fill tracks the content and its insets exactly.
+        md.opaque = false
+        md.preBg = SessionUiStyle.Colors.codeBlockBackground()
         md.codeFont = style.editorFamily
         md.component.border = JBUI.Borders.empty()
         chrome(md)

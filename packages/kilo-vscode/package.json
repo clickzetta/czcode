@@ -59,6 +59,12 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "configurationDefaults": {
+      "files.watcherExclude": {
+        "**/.kilo/worktrees/**": true,
+        "**/.kilocode/worktrees/**": true
+      }
+    },
     "taskDefinitions": [
       {
         "type": "kilo-worktree-setup",
@@ -191,11 +197,6 @@
         "category": "Kilo Code"
       },
       {
-        "command": "kilo-code.new.openMigrationWizard",
-        "title": "Migrate Settings from Legacy Version",
-        "category": "Kilo Code"
-      },
-      {
         "command": "kilo-code.new.showMemory",
         "title": "Show Project Memory",
         "category": "Kilo Code"
@@ -203,6 +204,11 @@
       {
         "command": "kilo-code.new.toggleMemory",
         "title": "Toggle Project Memory",
+        "category": "Kilo Code"
+      },
+      {
+        "command": "kilo-code.new.toggleCaffeination",
+        "title": "Toggle Keep Awake",
         "category": "Kilo Code"
       },
       {
@@ -246,6 +252,16 @@
         "category": "Kilo Code"
       },
       {
+        "command": "kilo-code.new.agentManager.previousTerminal",
+        "title": "Agent Manager: Previous Terminal",
+        "category": "Kilo Code"
+      },
+      {
+        "command": "kilo-code.new.agentManager.nextTerminal",
+        "title": "Agent Manager: Next Terminal",
+        "category": "Kilo Code"
+      },
+      {
         "command": "kilo-code.new.agentManager.search",
         "title": "Agent Manager: Search Worktrees and Sessions",
         "category": "Kilo Code"
@@ -280,8 +296,13 @@
         "category": "Kilo Code"
       },
       {
-        "command": "kilo-code.new.agentManager.newTerminal",
-        "title": "Agent Manager: New Terminal Tab (Experimental)",
+        "command": "kilo-code.new.agentManager.newTerminalTab",
+        "title": "Agent Manager: New Terminal Tab",
+        "category": "Kilo Code"
+      },
+      {
+        "command": "kilo-code.new.agentManager.newSideTerminal",
+        "title": "Agent Manager: New Sidebar Terminal Tab",
         "category": "Kilo Code"
       },
       {
@@ -303,6 +324,12 @@
         "command": "kilo-code.new.agentManager.openWorktree",
         "title": "Agent Manager: Open Worktree",
         "category": "Kilo Code"
+      },
+      {
+        "command": "kilo-code.new.agentManager.updateFromBase",
+        "title": "Agent Manager: Update from base",
+        "category": "Kilo Code",
+        "enablement": "activeWebviewPanelId == 'kilo-code.new.AgentManagerPanel'"
       },
       {
         "command": "kilo-code.new.agentManager.openPR",
@@ -498,37 +525,37 @@
         {
           "command": "kilo-code.new.sidebarTitle.plusButtonClicked",
           "group": "navigation@0",
-          "when": "view == kilo-code.SidebarProvider"
+          "when": "view == kilo-code.SidebarProvider && !kilo-code.new.isCursor"
         },
         {
           "command": "kilo-code.new.sidebarTitle.historyButtonClicked",
           "group": "navigation@1",
-          "when": "view == kilo-code.SidebarProvider"
+          "when": "view == kilo-code.SidebarProvider && !kilo-code.new.isCursor"
         },
         {
           "command": "kilo-code.new.sidebarTitle.agentManagerOpen",
           "group": "navigation@2",
-          "when": "view == kilo-code.SidebarProvider"
+          "when": "view == kilo-code.SidebarProvider && !kilo-code.new.isCursor"
         },
         {
           "command": "kilo-code.new.sidebarTitle.kiloClawOpen",
           "group": "navigation@3",
-          "when": "view == kilo-code.SidebarProvider"
+          "when": "view == kilo-code.SidebarProvider && !kilo-code.new.isCursor"
         },
         {
           "command": "kilo-code.new.sidebarTitle.marketplaceButtonClicked",
           "group": "navigation@4",
-          "when": "view == kilo-code.SidebarProvider"
+          "when": "view == kilo-code.SidebarProvider && !kilo-code.new.isCursor"
         },
         {
           "command": "kilo-code.new.sidebarTitle.profileButtonClicked",
           "group": "navigation@5",
-          "when": "view == kilo-code.SidebarProvider"
+          "when": "view == kilo-code.SidebarProvider && !kilo-code.new.isCursor"
         },
         {
           "command": "kilo-code.new.sidebarTitle.settingsButtonClicked",
           "group": "navigation@6",
-          "when": "view == kilo-code.SidebarProvider"
+          "when": "view == kilo-code.SidebarProvider && !kilo-code.new.isCursor"
         }
       ],
       "scm/title": [
@@ -554,22 +581,22 @@
         {
           "command": "kilo-code.new.plusButtonClicked",
           "group": "navigation@0",
-          "when": "activeWebviewPanelId == kilo-code.new.TabPanel"
+          "when": "activeWebviewPanelId == kilo-code.new.TabPanel && !kilo-code.new.isCursor"
         },
         {
           "command": "kilo-code.new.historyButtonClicked",
           "group": "navigation@1",
-          "when": "activeWebviewPanelId == kilo-code.new.TabPanel"
+          "when": "activeWebviewPanelId == kilo-code.new.TabPanel && !kilo-code.new.isCursor"
         },
         {
           "command": "kilo-code.new.profileButtonClicked",
           "group": "navigation@2",
-          "when": "activeWebviewPanelId == kilo-code.new.TabPanel"
+          "when": "activeWebviewPanelId == kilo-code.new.TabPanel && !kilo-code.new.isCursor"
         },
         {
           "command": "kilo-code.new.settingsButtonClicked",
           "group": "navigation@3",
-          "when": "activeWebviewPanelId == kilo-code.new.TabPanel"
+          "when": "activeWebviewPanelId == kilo-code.new.TabPanel && !kilo-code.new.isCursor"
         }
       ],
       "editor/context": [
@@ -634,6 +661,11 @@
         "mac": "cmd+shift+g"
       },
       {
+        "command": "-workbench.actions.view.problems",
+        "key": "ctrl+shift+m",
+        "mac": "cmd+shift+m"
+      },
+      {
         "command": "kilo-code.new.agentManagerOpen",
         "key": "ctrl+shift+m",
         "mac": "cmd+shift+m"
@@ -666,6 +698,18 @@
         "command": "kilo-code.new.agentManager.nextTab",
         "key": "ctrl+alt+right",
         "mac": "cmd+alt+right",
+        "when": "activeWebviewPanelId == 'kilo-code.new.AgentManagerPanel'"
+      },
+      {
+        "command": "kilo-code.new.agentManager.previousTerminal",
+        "key": "ctrl+shift+[",
+        "mac": "cmd+shift+[",
+        "when": "activeWebviewPanelId == 'kilo-code.new.AgentManagerPanel'"
+      },
+      {
+        "command": "kilo-code.new.agentManager.nextTerminal",
+        "key": "ctrl+shift+]",
+        "mac": "cmd+shift+]",
         "when": "activeWebviewPanelId == 'kilo-code.new.AgentManagerPanel'"
       },
       {
@@ -702,13 +746,19 @@
         "command": "kilo-code.new.agentManager.newTab",
         "key": "ctrl+t",
         "mac": "cmd+t",
-        "when": "activeWebviewPanelId == 'kilo-code.new.AgentManagerPanel'"
+        "when": "activeWebviewPanelId == 'kilo-code.new.AgentManagerPanel' && !kilo-code.new.agentManagerSideTerminalFocused"
       },
       {
-        "command": "kilo-code.new.agentManager.newTerminal",
+        "command": "kilo-code.new.agentManager.newTerminalTab",
         "key": "ctrl+shift+t",
         "mac": "cmd+shift+t",
-        "when": "activeWebviewPanelId == 'kilo-code.new.AgentManagerPanel'"
+        "when": "activeWebviewPanelId == 'kilo-code.new.AgentManagerPanel' && !kilo-code.new.agentManagerSideTerminalFocused"
+      },
+      {
+        "command": "kilo-code.new.agentManager.newSideTerminal",
+        "key": "ctrl+t",
+        "mac": "cmd+t",
+        "when": "activeWebviewPanelId == 'kilo-code.new.AgentManagerPanel' && kilo-code.new.agentManagerSideTerminalFocused"
       },
       {
         "command": "kilo-code.new.agentManager.closeTab",
@@ -1026,10 +1076,22 @@
           "scope": "application",
           "description": "Allow Agent Manager to manage sessions and worktrees across multiple repositories as projects. The current workspace repository is always the default project; additional projects can be added and persist across restarts."
         },
+        "kilo-code.new.experimental.browserAutomation": {
+          "type": "boolean",
+          "default": false,
+          "scope": "application",
+          "description": "Enable the experimental Agent Manager browser panel and browser_open tool."
+        },
+        "kilo-code.new.experimental.claudeMigration": {
+          "type": "boolean",
+          "default": false,
+          "scope": "application",
+          "description": "Experimental one-time import of supported global Claude Code instructions, simple skills, and disabled MCP definitions into Kilo. The original Claude files are never changed."
+        },
         "kilo-code.new.agentManager.terminalButtonDestination": {
           "type": "string",
           "scope": "application",
-          "default": "vscode",
+          "default": "agentManager",
           "enum": [
             "vscode",
             "agentManager"
@@ -1074,25 +1136,25 @@
           "maximum": 24,
           "description": "Font size in pixels for the Kilo Code webview UI."
         },
-        "kilo-code.new.browserAutomation.enabled": {
-          "type": "boolean",
-          "default": false,
-          "description": "Enable browser automation powered by Playwright. When enabled, the AI agent can interact with web pages in a visible Chrome window."
-        },
         "kilo-code.new.browserAutomation.useSystemChrome": {
           "type": "boolean",
           "default": true,
-          "description": "Use your system's installed Chrome browser instead of downloading a separate Chromium instance."
-        },
-        "kilo-code.new.browserAutomation.headless": {
-          "type": "boolean",
-          "default": false,
-          "description": "Run browser automation in headless mode (no visible window). When disabled, you can watch the agent interact with the browser."
+          "description": "Use system-installed Google Chrome. Disable only when a compatible Playwright Chromium browser is already installed."
         },
         "kilo-code.new.attention.enabled": {
           "type": "boolean",
           "default": false,
           "description": "Play sounds when sessions complete, error, or need input"
+        },
+        "kilo-code.new.attention.notifications": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show VS Code notifications when Kilo completes a task or needs input. Notifications are suppressed while a Kilo panel is active."
+        },
+        "kilo-code.new.attention.OSNotifications": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show native OS notification alerts when Kilo completes a task or needs input while VS Code is not active."
         },
         "kilo-code.new.attention.sound": {
           "type": "string",
@@ -1155,13 +1217,23 @@
         },
         "kilo-code.new.showTokenThroughput": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Show tokens-per-second (prompt-processing / text-generation) badges on assistant messages and the task header"
+        },
+        "kilo-code.new.showAutoApprovalReason": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show a line on tool calls explaining why they were auto-approved (matched rule, agent default, YOLO mode, etc.)"
         },
         "kilo-code.new.chat.shiftTabCyclesVariant": {
           "type": "boolean",
           "default": true,
           "description": "Cycle through reasoning effort variants with Shift+Tab in prompt inputs. Disable to keep Shift+Tab for keyboard focus navigation."
+        },
+        "kilo-code.new.agentManager.pushFixes": {
+          "type": "boolean",
+          "default": true,
+          "description": "Agent Manager: when you send pull request CI failures or review comments to the agent, or update a worktree from its base, ask the agent to commit and push so the pull request updates. Permission prompts still apply. Disable to keep commits manual."
         },
         "kilo-code.new.agentWorkStyle": {
           "type": "string",
@@ -1191,23 +1263,29 @@
   },
   "scripts": {
     "prepare:cli-binary": "bun script/local-bin.ts",
-    "compile": "bun run prepare:cli-binary -- --force && bun run rebuild-sdk && bun run typecheck && bun run lint && node esbuild.js",
-    "watch": "bun run rebuild-sdk && bun run --parallel watch:esbuild watch:tsc",
+    "prepare:sdk": "bun script/prepare-sdk.ts",
+    "build:launch": "bun run prepare:cli-binary && bun run prepare:sdk && bun run build:check:production",
+    "compile": "bun run prepare:cli-binary && bun run prepare:sdk && bun run build:check",
+    "watch": "bun run prepare:sdk && bun run --parallel watch:esbuild watch:tsc",
     "watch:esbuild": "bun run prepare:cli-binary && node esbuild.js --watch",
     "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
     "watch:cli": "bun script/watch-cli.ts",
-    "package": "bun run prepare:cli-binary && bun run rebuild-sdk && bun run typecheck && bun run lint && node esbuild.js --production",
+    "package": "bun run prepare:cli-binary && bun run prepare:sdk && bun run build:check:production",
+    "build:check": "bun run --parallel check-types check-types:webview lint bundle",
+    "build:check:production": "bun run --parallel check-types check-types:webview lint bundle:production",
+    "bundle": "bun esbuild.js",
+    "bundle:production": "bun esbuild.js --production",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "bun run compile-tests && bun run compile && bun run lint",
-    "check-types": "tsc --noEmit",
-    "check-types:webview": "tsc --noEmit --project webview-ui/tsconfig.json",
-    "typecheck": "bun run check-types && bun run check-types:webview",
+    "check-types": "tsgo --noEmit",
+    "check-types:webview": "tsgo --noEmit --project webview-ui/tsconfig.json",
+    "typecheck": "bun run --parallel check-types check-types:webview",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "knip": "knip",
     "check-kilocode-change": "! grep -rIn 'kilocode_change' . ../kilo-ui/ --exclude='package.json' --exclude='*.md' --exclude-dir='node_modules' --exclude-dir='dist' | grep -v '`kilocode_change`'",
-    "lint": "eslint src webview-ui",
+    "lint": "eslint --cache --cache-strategy content --cache-location node_modules/.cache/eslint src webview-ui",
     "test": "vscode-test",
     "test:unit": "bun test tests/unit/ --dots",
     "rebuild-sdk": "bun run --cwd ../sdk/js build",
@@ -1249,7 +1327,11 @@
     "vite-plugin-solid": "2.11.10",
     "@axe-core/playwright": "4.11.3",
     "@storybook/addon-a11y": "10.2.10",
-    "happy-dom": "20.8.9"
+    "happy-dom": "20.8.9",
+    "@babel/core": "^7.28.4",
+    "@babel/preset-typescript": "^7.27.1",
+    "@types/ws": "8.18.1",
+    "babel-preset-solid": "^1.9.9"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
@@ -1287,7 +1369,11 @@
     "@pierre/diffs": "catalog:",
     "@kilocode/kilo-memory": "workspace:*",
     "@kilocode/plugin": "workspace:*",
-    "@opencode-ai/core": "workspace:*"
+    "@opencode-ai/core": "workspace:*",
+    "@vscode/codicons": "^0.0.44",
+    "chromium-bidi": "0.8.0",
+    "playwright-core": "1.57.0",
+    "ws": "8.21.0"
   },
   "peerDependencies": {}
 }
