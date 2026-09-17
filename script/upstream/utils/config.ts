@@ -225,6 +225,7 @@ export const defaultConfig: MergeConfig = {
     "packages/kilo-docs",
     "packages/kilo-i18n",
     "packages/czcode-lakehouse",
+    "packages/clickzetta-js",
     "script/upstream",
   ],
   // czcode_change end
