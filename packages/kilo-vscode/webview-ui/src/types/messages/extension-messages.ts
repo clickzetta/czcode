@@ -1579,6 +1579,15 @@ export type ExtensionMessage =
       success: boolean
       error?: string
     }
+  | {
+      type: "agentManager.createReviewCommentResult"
+      projectId?: string
+      worktreeId: string
+      prNumber: number
+      prUrl: string
+      success: boolean
+      error?: string
+    }
   | { type: "sessionAcknowledged"; sessionID: string; eventID: string }
   | { type: "webviewActiveChanged"; active: boolean }
   | DocumentResultMessage

@@ -16,7 +16,7 @@ interface Draft {
   pending?: string
   error?: string
   preview?: boolean
-  sent?: "reply" | "create" | "edit" | "delete" | "line" | "review"
+  sent?: "reply" | "create" | "edit" | "delete" | "line" | "review" | "diff" | "local"
   event?: "APPROVE" | "REQUEST_CHANGES" | "COMMENT"
 }
 
