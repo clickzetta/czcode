@@ -181,6 +181,6 @@
     "bun-pty@0.4.8": "patches/bun-pty@0.4.8.patch",
     "stream-chat@9.38.0": "patches/stream-chat@9.38.0.patch"
   },
-  "version": "7.2.49",
+  "version": "7.7.3",
   "peerDependencies": {}
 }
