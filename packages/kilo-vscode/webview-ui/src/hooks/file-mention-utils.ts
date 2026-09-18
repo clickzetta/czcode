@@ -24,6 +24,12 @@ export type WorktreeReference = {
   disabled: boolean
 }
 
+export type PromptMentionDrop =
+  | { kind: "worktree"; worktree: WorktreeReference }
+  | { kind: "session"; session: SessionSearchItem }
+  | { kind: "terminal" }
+  | { kind: "file"; path: string }
+
 export const PAST_CHATS_MENTION = "past-chats"
 
 const model = {
