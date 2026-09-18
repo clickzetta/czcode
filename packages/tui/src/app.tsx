@@ -457,7 +457,7 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
 
     await clipboard
       .write?.(text)
-      .then(() => toast.show({ message: "Copied to clipboard", variant: "info", duration: 2000 })) // czcode_change - auto-dismiss
+      .then(() => toast.show({ message: "Copied to clipboard", variant: "info" }))
       .catch(toast.error)
 
     renderer.clearSelection()
@@ -468,8 +468,10 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
     kv.get("paste_summary_enabled", !sync.data.config.experimental?.disable_paste_summary),
   )
 
+  // kilocode_change start
   KiloApp.useSessionEffects({ route, sdk, sync })
   KiloApp.useTuiConfigHotReload()
+  // kilocode_change end
 
   // Update terminal window title based on current route and session
   createEffect(() => {
@@ -1014,7 +1016,7 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
     bindings: tuiConfig.keybinds.gather("app_exit", ["app.exit"]),
   }))
 
-  KiloApp.init()
+  KiloApp.init() // kilocode_change
 
   event.on("tui.command.execute", (evt, { workspace }) => {
     if (workspace !== project.workspace.current()) return
@@ -1105,7 +1107,7 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
     await DialogAlert.show(
       dialog,
       "Update Complete",
-      `Successfully updated to ${KiloApp.APP_NAME} v${result.data.version}. Please restart the application.`,
+      `Successfully updated to ${KiloApp.APP_NAME} v${result.data.version}. Please restart the application.`, // kilocode_change
     )
 
     void exit()
@@ -1150,9 +1152,6 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
               <Show when={route.data.type === "session" ? route.data.sessionID : undefined} keyed>
                 {(_) => <Session />}
               </Show>
-            </Match>
-            <Match when={route.data.type === "kiloclaw"}>
-              <KiloApp.KiloClawView />
             </Match>
           </Switch>
           {plugin()}

@@ -3,7 +3,7 @@ import {
   createContext,
   createEffect,
   createMemo,
-  onCleanup,
+  onCleanup, // kilocode_change
   createSignal,
   For,
   Match,
@@ -53,8 +53,6 @@ import type { PromptInfo } from "../../component/prompt/history"
 import { DialogConfirm } from "../../ui/dialog-confirm"
 import { DialogTimeline } from "./dialog-timeline"
 import { DialogForkFromTimeline } from "./dialog-fork-from-timeline"
-import { Link } from "@tui/ui/link" // czcode_change
-import { t } from "@/kilocode/plugins/czcode-i18n" // czcode_change
 import { DialogSessionRename } from "../../component/dialog-session-rename"
 import { Sidebar } from "./sidebar"
 import { SubagentFooter } from "./subagent-footer.tsx"
@@ -71,6 +69,7 @@ import { useEpilogue } from "../../context/epilogue"
 import { normalizePath } from "../../util/path"
 import { PermissionPrompt } from "./permission"
 import { QuestionPrompt } from "./question"
+// kilocode_change start
 import { Suggest } from "@/kilocode/suggestion/tui/render"
 import { SuggestPrompt } from "@/kilocode/suggestion/tui/prompt"
 import { NetworkPrompt } from "./network"
@@ -102,36 +101,6 @@ import { formatMarkdownTables } from "../../util/markdown"
 import { LocationProvider } from "../../context/location"
 
 addDefaultParsers(parsers.parsers)
-
-// czcode_change start
-function buildSkillReportUrl(skillName: string, sql: string, errorMsg: string): string {
-  const title = encodeURIComponent(t("skillReport.issueTitle", { skillName }))
-  const body = encodeURIComponent(
-    [
-      t("skillReport.bodyHeader"),
-      ``,
-      t("skillReport.bodyDesc", { skillName }),
-      ``,
-      t("skillReport.bodyAction"),
-      ``,
-      `**Skill:** \`${skillName}\``,
-      ``,
-      t("skillReport.sectionSql"),
-      ``,
-      "```sql",
-      sql,
-      "```",
-      ``,
-      t("skillReport.sectionError"),
-      ``,
-      "```",
-      errorMsg,
-      "```",
-    ].join("\n"),
-  )
-  return `https://github.com/clickzetta/clickzetta-skills/issues/new?title=${title}&body=${body}`
-}
-// czcode_change end
 
 const GO_UPSELL_FREE_TIER_LAST_SEEN_AT = "go_upsell_last_seen_at"
 const GO_UPSELL_FREE_TIER_DONT_SHOW = "go_upsell_dont_show"
@@ -183,8 +152,10 @@ const sessionBindingCommands = [
   "session.message.next",
   "session.message.previous",
   "messages.copy",
+  // kilocode_change start - message feedback
   "messages.feedback.up",
   "messages.feedback.down",
+  // kilocode_change end
   "session.copy",
   "session.export",
   "session.child.first",
@@ -282,6 +253,7 @@ export function Session() {
     if (session()?.parentID) return []
     return children().flatMap((x) => sync.data.question[x.id] ?? [])
   })
+  // kilocode_change start
   const suggestions = createMemo(() => {
     if (session()?.parentID) return []
     return children().flatMap((x) => sync.data.suggestion[x.id] ?? [])
@@ -320,6 +292,7 @@ export function Session() {
       blockingSuggestions().length > 0 ||
       network().length > 0,
   )
+  // kilocode_change end
 
   const pending = createMemo(() => {
     const completed = messages().findLast((x) => x.role === "assistant" && x.time.completed)?.id
@@ -363,6 +336,7 @@ export function Session() {
   const editor = useEditorContext()
   onCleanup(MemorySessionTui.attach({ event, toast, sessionID: route.sessionID })) // kilocode_change
 
+  // kilocode_change start - background processes are scoped to the visible session
   function processGroup(sessionID: string) {
     const info = sync.session.get(sessionID)
     return info?.parentID ?? info?.id ?? sessionID
@@ -398,6 +372,7 @@ export function Session() {
   onCleanup(() => {
     stopProcesses(processSessionID)
   })
+  // kilocode_change end
 
   createEffect(() => {
     const sessionID = route.sessionID
@@ -448,6 +423,7 @@ export function Session() {
     if (part.id === lastSwitch) return
 
     if (part.tool === "plan_enter") {
+      // kilocode_change
       local.agent.set("plan")
       lastSwitch = part.id
     }
@@ -1035,6 +1011,7 @@ export function Session() {
         dialog.clear()
       },
     },
+    // kilocode_change start - message feedback
     {
       title: "Rate last assistant message helpful",
       value: "messages.feedback.up",
@@ -1047,6 +1024,7 @@ export function Session() {
       category: "Session",
       run: () => submitFeedback("down", dialog, { toast, session, messages }),
     },
+    // kilocode_change end
     {
       title: "Copy session transcript",
       value: "session.copy",
@@ -1058,14 +1036,16 @@ export function Session() {
         try {
           const sessionData = session()
           if (!sessionData) return
+          // kilocode_change start - fetch all messages from server instead of truncated sync store
           const allMessages = await sdk.client.session.messages({ sessionID: sessionData.id }, { throwOnError: true })
           const sessionMessages = allMessages.data.map((msg) => ({
             info: msg.info,
             parts: msg.parts,
           }))
+          // kilocode_change end
           const transcript = formatTranscript(
             sessionData,
-            sessionMessages,
+            sessionMessages, // kilocode_change
             {
               thinking: showThinking(),
               toolDetails: showDetails(),
@@ -1106,15 +1086,17 @@ export function Session() {
 
           if (options === null) return
 
+          // kilocode_change start - fetch all messages from server instead of truncated sync store
           const allMessages = await sdk.client.session.messages({ sessionID: sessionData.id }, { throwOnError: true })
           const sessionMessages = allMessages.data.map((msg) => ({
             info: msg.info,
             parts: msg.parts,
           }))
+          // kilocode_change end
 
           const transcript = formatTranscript(
             sessionData,
-            sessionMessages,
+            sessionMessages, // kilocode_change
             {
               thinking: options.thinking,
               toolDetails: options.toolDetails,
@@ -1330,11 +1312,13 @@ export function Session() {
                 scrollAcceleration={scrollAcceleration()}
               >
                 <box height={1} />
+                {/* kilocode_change start */}
                 <Show when={session()?.parentID && messages().length === 0}>
                   <box paddingLeft={3}>
                     <text fg={theme.textMuted}>↳ Initializing...</text>
                   </box>
                 </Show>
+                {/* kilocode_change end */}
                 <For each={messages()}>
                   {(message, index) => (
                     <Switch>
@@ -1483,6 +1467,7 @@ export function Session() {
                     />
                   </pluginRuntime.Slot>
                 </Show>
+                {/* kilocode_change end */}
               </box>
             </Show>
             <Toast />
@@ -1898,7 +1883,9 @@ function ReasoningHeader(props: {
 function TextPart(props: { last: boolean; part: TextPart; message: AssistantMessage }) {
   const ctx = use()
   const { theme, syntax } = useTheme()
+  // kilocode_change start - format markdown tables with fixed-width columns
   const content = createMemo(() => formatMarkdownTables(props.part.text.trim()))
+  // kilocode_change end
   return (
     <Show when={props.part.text.trim()}>
       <box ref={(el: BoxRenderable) => alwaysSeparate.add(el)} paddingLeft={3} marginTop={1} flexShrink={0}>
@@ -2034,7 +2021,7 @@ function GenericTool(props: ToolProps) {
 
   return (
     <Show
-      when={props.output && (ctx.showGenericToolOutput() || props.metadata?.skillName)} // czcode_change: always show if skill error
+      when={props.output && ctx.showGenericToolOutput()}
       fallback={
         <InlineTool icon="⚙" pending="Writing command..." complete={true} part={props.part}>
           {props.tool} {input(props.input)}
@@ -2051,22 +2038,6 @@ function GenericTool(props: ToolProps) {
           <Show when={collapsed().overflow}>
             <text fg={theme.textMuted}>{expanded() ? "Click to collapse" : "Click to expand"}</text>
           </Show>
-          {/* czcode_change start */}
-          <Show when={props.metadata?.skillName as string | undefined}>
-            {(skillName) => {
-              const url = buildSkillReportUrl(
-                skillName(),
-                (props.metadata?.failedSql as string) ?? "",
-                (props.metadata?.failedError as string) ?? "",
-              )
-              return (
-                <Link href={url} fg={theme.accent}>
-                  {t("skillReport.tuiLink")}
-                </Link>
-              )
-            }}
-          </Show>
-          {/* czcode_change end */}
         </box>
       </BlockTool>
     </Show>
@@ -2138,6 +2109,7 @@ function SemanticSearch(props: ToolProps) {
     </InlineTool>
   )
 }
+// kilocode_change end
 
 function InlineTool(props: {
   icon: string
@@ -2798,6 +2770,7 @@ function ApplyPatch(props: ToolProps) {
   })
 
   function Diff(p: { diff: string; filePath: string }) {
+    // kilocode_change start
     const hunks = createMemo(() => splitDiffHunks(p.diff))
     return (
       <box paddingLeft={1} flexDirection="column">
@@ -2833,6 +2806,7 @@ function ApplyPatch(props: ToolProps) {
         </For>
       </box>
     )
+    // kilocode_change end
   }
 
   function title(file: { type: string; relativePath: string; filePath: string; deletions: number }) {

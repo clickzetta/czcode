@@ -76,13 +76,14 @@ function app(input?: { password?: string; username?: string }) {
   ).handler
   return {
     request(input: string | URL | Request, init?: RequestInit) {
-      return Effect.promise((): Promise<Response> =>
-        Promise.resolve(
-          handler(
-            input instanceof Request ? input : new Request(new URL(input, "http://localhost"), init),
-            HttpApiApp.context,
+      return Effect.promise(
+        (): Promise<Response> =>
+          Promise.resolve(
+            handler(
+              input instanceof Request ? input : new Request(new URL(input, "http://localhost"), init),
+              HttpApiApp.context,
+            ),
           ),
-        ),
       )
     },
   }
@@ -124,13 +125,14 @@ function uiApp(input?: {
   ).handler
   return {
     request(input: string | URL | Request, init?: RequestInit) {
-      return Effect.promise((): Promise<Response> =>
-        Promise.resolve(
-          handler(
-            input instanceof Request ? input : new Request(new URL(input, "http://localhost"), init),
-            HttpApiApp.context,
+      return Effect.promise(
+        (): Promise<Response> =>
+          Promise.resolve(
+            handler(
+              input instanceof Request ? input : new Request(new URL(input, "http://localhost"), init),
+              HttpApiApp.context,
+            ),
           ),
-        ),
       )
     },
   }
@@ -166,13 +168,14 @@ function routeOrderingApp() {
   return {
     proxiedUrl: () => proxiedUrl,
     request(input: string | URL | Request, init?: RequestInit) {
-      return Effect.promise((): Promise<Response> =>
-        Promise.resolve(
-          handler(
-            input instanceof Request ? input : new Request(new URL(input, "http://localhost"), init),
-            HttpApiApp.context,
+      return Effect.promise(
+        (): Promise<Response> =>
+          Promise.resolve(
+            handler(
+              input instanceof Request ? input : new Request(new URL(input, "http://localhost"), init),
+              HttpApiApp.context,
+            ),
           ),
-        ),
       )
     },
   }

@@ -11,7 +11,6 @@ import { SessionID, MessageID, PartID } from "./schema"
 import { SessionRunState } from "./run-state"
 import { SessionSummary } from "./summary"
 import { KiloSessionRevert } from "@/kilocode/session/revert" // kilocode_change
-import { Telemetry, TelemetryEvent } from "@kilocode/kilo-telemetry" // czcode_change
 
 export const RevertInput = Schema.Struct({
   sessionID: SessionID,
@@ -119,9 +118,6 @@ const layer = Layer.effect(
               diffs: summaryDiffs,
             },
           })
-          // czcode_change start — passive ALHF signal: user reverted AI output
-          Telemetry.track(TelemetryEvent.SESSION_REVERTED, { sessionID: input.sessionID })
-          // czcode_change end
         }),
       )
       // kilocode_change end

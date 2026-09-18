@@ -18,6 +18,22 @@ export interface AnnotationLabels {
   delete: string
 }
 
+export interface CommentFormActions {
+  body: string
+  onBodyChange: (body: string) => void
+  onSave: (body: string, selectedText: string) => void
+  onSend: (body: string, selectedText: string) => void
+  onGithubSuccess: () => void
+  onCancel: () => void
+  onDestination: (value: "local" | "github") => void
+}
+
+export type CommentFormMount = (
+  host: HTMLElement,
+  meta: AnnotationMeta,
+  actions: CommentFormActions,
+) => (() => void) | undefined
+
 export function labels(t: (key: string, params?: UiI18nParams) => string): AnnotationLabels {
   return {
     commentOnLine: (line) => t("agentManager.review.commentOnLine", { line }),

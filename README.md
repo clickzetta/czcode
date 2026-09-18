@@ -108,7 +108,7 @@ chmod +x czcode
 
 ### 2. 配置 AI 模型（必需）
 
-czcode 需要 AI 模型才能运行。推荐使用阿里云 DashScope (Qwen 系列)。
+czcode 需要 AI 模型才能运行。
 
 **方式 A: 配置文件（推荐）**
 

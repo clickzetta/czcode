@@ -954,11 +954,6 @@ function attr(attrs: string, name: string): number {
   return m ? Number(m[1]) : 0
 }
 
-function sum(content: string, name: string): number {
-  return Array.from(content.matchAll(new RegExp(`${name}="(\\d+)"`, "g"))).reduce((n, m) => n + Number(m[1]), 0)
-}
-// kilocode_change end
-
 function esc(s: string): string {
   return s
     .replace(/&/g, "&amp;")

@@ -4,7 +4,6 @@ import { Ripgrep } from "@opencode-ai/core/ripgrep"
 import { Skill } from "../skill"
 import * as Tool from "./tool"
 import DESCRIPTION from "./skill.txt"
-import { Telemetry, TelemetryEvent } from "@kilocode/kilo-telemetry" // czcode_change
 // kilocode_change start - gate + run shell injection in skill bodies
 import { Config } from "@/config/config"
 import { Shell } from "@opencode-ai/core/shell"
@@ -42,7 +41,6 @@ export const SkillTool = Tool.define(
             always: [params.name],
             metadata: {},
           })
-          Telemetry.track(TelemetryEvent.SKILL_USED, { skill: params.name, sessionID: ctx.sessionID, agent: ctx.agent }) // czcode_change — track which skills are used
 
           // kilocode_change start - render `!`cmd`` shell injection, gated by trust + kill-switch + batch approval
           const cfg = yield* config.get()

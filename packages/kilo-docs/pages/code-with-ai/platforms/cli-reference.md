@@ -746,6 +746,42 @@ Options:
   --version  Show version number  [boolean]
 ```
 
+## kilo github
+
+```
+manage GitHub agent
+
+Commands:
+  kilo github install  install the GitHub agent
+  kilo github run      run the GitHub agent
+
+Options:
+  --help     Show help  [boolean]
+  --version  Show version number  [boolean]
+```
+
+### kilo github install
+
+```
+install the GitHub agent
+
+Options:
+  --help     Show help  [boolean]
+  --version  Show version number  [boolean]
+```
+
+### kilo github run
+
+```
+run the GitHub agent
+
+Options:
+  --help     Show help  [boolean]
+  --version  Show version number  [boolean]
+  --event    GitHub mock event to run the agent for  [string]
+  --token    GitHub personal access token (github_pat_********)  [string]
+```
+
 ## kilo pr
 
 ```
@@ -941,8 +977,6 @@ Options:
 
 ## kilo console
 
-Open Kilo Console to manage CLI configuration, including **Settings > CLI > Notifications**. See [CLI Notifications and Sounds](/docs/code-with-ai/platforms/cli#cli-notifications-and-sounds) for the equivalent `tui.json` settings and custom sound overrides.
-
 ```
 open or stop the local Kilo Console (deprecated)
 
@@ -994,17 +1028,20 @@ Options:
 start a Cloud Agent task
 
 Options:
-  --help       Show help  [boolean]
-  --version    Show version number  [boolean]
-  --prompt     prompt for the Cloud Agent  [string] [required]
-  --repo       repository shorthand or URL  [string]
-  --repo-type  repository provider type  [string] [choices: "github", "gitlab", "git"]
-  --branch     repository branch  [string]
-  --model      Cloud Agent model  [string]
-  --mode       Cloud Agent mode  [string]
-  --org-id     Kilo organization ID  [string]
-  --stream     connect to the WebSocket stream and print events as JSONL  [boolean]
+  --help          Show help  [boolean]
+  --version       Show version number  [boolean]
+  --prompt        prompt for the Cloud Agent  [string]
+  --prompt-stdin  read the prompt from standard input  [boolean] [default: false]
+  --repo          repository shorthand or URL  [string]
+  --repo-type     repository provider type  [string] [choices: "github", "gitlab", "git"]
+  --branch        repository branch  [string]
+  --model         Cloud Agent model  [string]
+  --mode          Cloud Agent mode  [string]
+  --org-id        Kilo organization ID  [string]
+  --stream        connect to the WebSocket stream and print events as JSONL  [boolean]
 ```
+
+Provide exactly one of `--prompt` or `--prompt-stdin`. For example, read a multiline prompt from a file with `kilo cloud start --repo owner/repo --prompt-stdin < prompt.txt`.
 
 ### kilo cloud send
 
@@ -1012,11 +1049,14 @@ Options:
 send a follow-up prompt to a Cloud Agent task
 
 Options:
-  --help        Show help  [boolean]
-  --version     Show version number  [boolean]
-  --session-id  Cloud Agent session ID  [string] [required]
-  --prompt      follow-up prompt for the Cloud Agent  [string] [required]
+  --help          Show help  [boolean]
+  --version       Show version number  [boolean]
+  --prompt        prompt for the Cloud Agent  [string]
+  --prompt-stdin  read the prompt from standard input  [boolean] [default: false]
+  --session-id    Cloud Agent session ID  [string] [required]
 ```
+
+Provide exactly one of `--prompt` or `--prompt-stdin`, as with `kilo cloud start`.
 
 ### kilo cloud status
 

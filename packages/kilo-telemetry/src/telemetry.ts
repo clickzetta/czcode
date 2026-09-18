@@ -1,3 +1,4 @@
+import { release } from "node:os"
 import { Client } from "./client.js"
 import { Identity } from "./identity.js"
 import { TelemetryEvent } from "./events.js"
@@ -6,11 +7,14 @@ export interface TelemetryProperties {
   appName: string
   appVersion: string
   platform: string
+  os_name: string
+  os_version: string
+  os_arch: string
   editorName?: string
   vscodeVersion?: string
 }
 
-export type ReviewCommand = "review" | "local-review" | "local-review-uncommitted"
+export type ReviewCommand = "review"
 
 export interface IndexingTelemetryProperties extends Record<string, unknown> {
   source: "scan" | "watcher"
@@ -55,9 +59,12 @@ export namespace Telemetry {
   let initialized = false
   let startTime = 0
   let props: TelemetryProperties = {
-    appName: "czcode", // czcode_change
+    appName: "kilo-cli",
     appVersion: "unknown",
     platform: process.platform,
+    os_name: process.platform,
+    os_version: release(),
+    os_arch: process.arch,
   }
 
   export async function init(options: { dataPath: string; version: string; enabled: boolean }): Promise<void> {
@@ -111,6 +118,9 @@ export namespace Telemetry {
         appName: props.appName,
         appVersion: props.appVersion,
         platform: props.platform,
+        os_name: props.os_name,
+        os_version: props.os_version,
+        os_arch: props.os_arch,
       })
 
       // Link the anonymous machineId to the authenticated email
@@ -125,6 +135,12 @@ export namespace Telemetry {
   // CLI Lifecycle
   export function trackCliStart() {
     track(TelemetryEvent.CLI_START)
+  }
+
+  // Upload queued events without blocking. Call after bootstrap so the flush
+  // overlaps with command execution and shutdown() stays fast (#10242).
+  export function flushInBackground() {
+    Client.flushInBackground()
   }
 
   export function trackCliExit(exitCode?: number) {
@@ -190,7 +206,7 @@ export namespace Telemetry {
 
   export function trackPlanFollowup(
     sessionId: string,
-    choice: "new_session" | "continue" | "custom" | "dismissed" | "keep_refining",
+    choice: "new_session" | "continue" | "keep_refining" | "custom" | "dismissed",
   ) {
     track(TelemetryEvent.PLAN_FOLLOWUP, { sessionId, choice })
   }
@@ -288,38 +304,6 @@ export namespace Telemetry {
 
   export function trackFeedback(props: FeedbackProperties) {
     track(TelemetryEvent.FEEDBACK_SUBMITTED, props)
-  }
-
-  // czcode_change start — passive ALHF feedback signals
-  export function trackSessionReverted(sessionId: string, agentName?: string) {
-    track(TelemetryEvent.SESSION_REVERTED, { sessionId, agentName })
-  }
-
-  export function trackMessageAborted(sessionId: string, agentName?: string) {
-    track(TelemetryEvent.MESSAGE_ABORTED, { sessionId, agentName })
-  }
-
-  export function trackUserDissatisfied(sessionId: string, agentName?: string) {
-    track(TelemetryEvent.USER_DISSATISFIED, { sessionId, agentName })
-  }
-
-  export function trackSkillUsed(skillName: string, sessionId?: string, agentName?: string) {
-    track(TelemetryEvent.SKILL_USED, { skillName, sessionId, agentName })
-  }
-
-  export function trackSkillFeedback(properties: {
-    skillName: string
-    feedbackType: string
-    component: string
-    verified: boolean
-    sessionId?: string
-  }) {
-    track(TelemetryEvent.SKILL_FEEDBACK, properties)
-  }
-  // czcode_change end
-
-  export function flushInBackground(delayMs?: number): void {
-    Client.flushInBackground(delayMs)
   }
 
   export async function shutdown(timeoutMs?: number): Promise<void> {

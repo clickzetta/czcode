@@ -16,13 +16,60 @@ interface Draft {
   pending?: string
   error?: string
   preview?: boolean
-  sent?: "reply" | "create" | "edit" | "delete" | "line" | "review"
+  sent?: "reply" | "create" | "edit" | "delete" | "line" | "review" | "diff" | "local"
   event?: "APPROVE" | "REQUEST_CHANGES" | "COMMENT"
 }
 
-type Props = { projectId?: string; worktreeId: string } & (
+type Props = {
+  projectId?: string
+  worktreeId: string
+  /** Submit on plain Enter. Diff composers keep their existing Enter-to-send behavior. */
+  submitOnEnter?: boolean
+  /** Called when Escape is pressed in the editor. */
+  onEscape?: () => void
+  inline?: boolean
+} & (
   | { action: "reply"; threadId: string }
   | { action: "create"; prNumber: number; prUrl: string }
+  | {
+      projectId?: string
+      worktreeId: string
+      action: "local"
+      file: string
+      side: "LEFT" | "RIGHT"
+      startLine: number
+      endLine: number
+      selectedText: string
+      initialBody?: string
+      onBodyChange?: (body: string) => void
+      onSubmit: (body: string, selectedText: string) => void
+      onSend: (body: string, selectedText: string) => void
+      onCancel: () => void
+    }
+  | {
+      action: "diff"
+      worktreeId: string
+      projectId?: string
+      file: string
+      side: "LEFT" | "RIGHT"
+      startLine: number
+      endLine: number
+      selectedText: string
+      destination: "local" | "github"
+      github?: {
+        prNumber: number
+        prUrl: string
+        snapshotId: string
+        closed: boolean
+      }
+      initialBody?: string
+      onBodyChange?: (body: string) => void
+      onDestinationChange?: (value: "local" | "github") => void
+      onSave: (body: string, selectedText: string) => void
+      onSendKilo: (body: string, selectedText: string) => void
+      onGithubSuccess: () => void
+      onCancel: () => void
+    }
   | (PRTarget & {
       action: "line"
       snapshotId: string
@@ -30,6 +77,8 @@ type Props = { projectId?: string; worktreeId: string } & (
       side: "LEFT" | "RIGHT"
       startLine: number
       endLine: number
+      initialBody?: string
+      onBodyChange?: (body: string) => void
       source?: string
       closed?: boolean
       onCancel: () => void

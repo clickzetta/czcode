@@ -69,59 +69,6 @@ class ReasoningView(
     private var following = false
     private var pinned = false
 
-    private val arrow = JBLabel()
-    private val body = TrackPanel().apply {
-        isOpaque = true
-        background = SessionUiStyle.View.surface()
-        border = JBUI.Borders.empty(
-            JBUI.scale(SessionUiStyle.View.CARD_VERTICAL_PADDING),
-            JBUI.scale(SessionUiStyle.View.CARD_HORIZONTAL_PADDING),
-        )
-    }
-    private val scroll = JBScrollPane(body).apply {
-        border = SessionUiStyle.View.cardTop()
-        isOpaque = true
-        background = SessionUiStyle.View.surface()
-        viewport.background = SessionUiStyle.View.surface()
-        horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
-        verticalScrollBarPolicy = ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED
-    }
-    private val header = JPanel(BorderLayout(JBUI.scale(SessionUiStyle.View.CARD_LAYOUT_GAP), 0)).apply {
-        isOpaque = true
-        background = SessionUiStyle.View.header()
-        border = JBUI.Borders.empty(
-            JBUI.scale(SessionUiStyle.View.CARD_VERTICAL_PADDING),
-            JBUI.scale(SessionUiStyle.View.CARD_HORIZONTAL_PADDING),
-        )
-    }
-    private val title = JBLabel(KiloBundle.message("session.part.reasoning")).apply {
-        foreground = UiStyle.Colors.weak()
-    }
-    private val icon = JBLabel(AllIcons.General.InspectionsEye).apply {
-        foreground = UiStyle.Colors.weak()
-    }
-
-    private var style = SessionEditorStyle.current()
-    private var source = reasoning.content.toString()
-
-    private val click = object : MouseAdapter() {
-        override fun mouseClicked(e: MouseEvent) {
-            if (!canExpand()) return
-            toggle()
-        }
-    }
-
-    private val mouse = object : MouseAdapter() {
-        override fun mouseEntered(e: MouseEvent) {
-            setHover(true)
-        }
-
-        override fun mouseExited(e: MouseEvent) {
-            if (inside(e)) return
-            setHover(false)
-        }
-    }
-
     init {
         applyStyle(style)
         if (bodyVisible()) syncBody()

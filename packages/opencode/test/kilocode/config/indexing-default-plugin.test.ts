@@ -18,7 +18,7 @@ import { Git } from "../../../src/git"
 import { FSUtil } from "@opencode-ai/core/fs-util"
 import { EffectFlock } from "@opencode-ai/core/util/effect-flock"
 import { Filesystem } from "../../../src/util/filesystem"
-import { provide as withInstanceProvide } from "../../../src/kilocode/instance"
+import { provideTestInstance } from "../../fixture/fixture"
 import { Npm } from "@opencode-ai/core/npm"
 import { HttpClient } from "effect/unstable/http"
 import { disposeAllInstances, tmpdir } from "../../fixture/fixture"
@@ -83,20 +83,20 @@ describe("kilocode default indexing plugin", () => {
 
     try {
       await using tmp = await tmpdir({
-      init: async (dir) => {
-        await Filesystem.write(
-          path.join(dir, "opencode.json"),
-          JSON.stringify({
-            $schema: "https://app.kilo.ai/config.json",
-            plugin: ["global-plugin-1"],
-          }),
-        )
-      },
-    })
+        init: async (dir) => {
+          await Filesystem.write(
+            path.join(dir, "opencode.json"),
+            JSON.stringify({
+              $schema: "https://app.kilo.ai/config.json",
+              plugin: ["global-plugin-1"],
+            }),
+          )
+        },
+      })
 
-    await withInstanceProvide({
-      directory: tmp.path,
-      fn: async () => {
+      await provideTestInstance({
+        directory: tmp.path,
+        fn: async () => {
           const config = await load()
           expect(hasIndexingPlugin(config.plugin ?? [])).toBe(false)
         },
