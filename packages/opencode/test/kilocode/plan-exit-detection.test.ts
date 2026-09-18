@@ -10,7 +10,7 @@ import { ModelV2 } from "@opencode-ai/core/model"
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
 import { SessionProjector } from "@opencode-ai/core/session/projector"
 import { Instance } from "../../src/kilocode/instance"
-import { provide as withInstanceProvide } from "../../src/kilocode/instance"
+import { provideTestInstance } from "../fixture/fixture"
 import { PlanFollowup } from "../../src/kilocode/plan-followup"
 import { KiloSessionPrompt } from "../../src/kilocode/session/prompt"
 import { makeRuntime } from "../../src/effect/run-service"
@@ -63,7 +63,7 @@ const model = {
 
 async function withInstance(fn: () => Promise<void>) {
   await using tmp = await tmpdir({ git: true })
-  await withInstanceProvide({ directory: tmp.path, fn })
+  await provideTestInstance({ directory: tmp.path, fn })
 }
 
 async function seed(input: {

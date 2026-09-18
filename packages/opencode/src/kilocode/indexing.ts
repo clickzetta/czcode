@@ -387,7 +387,10 @@ export namespace KiloIndexing {
       warnings.set(key, item)
       void Promise.all(
         [...workspaces].map((workspaceID) =>
-          WorkspaceContext.provide({ workspaceID, fn: () => Bus.publish(Instance.current, Warning, item) }),
+          WorkspaceContext.provide({
+            workspaceID,
+            fn: () => Bus.publish(Instance.current, Warning, item),
+          }),
         ),
       ).catch((err) => {
         log.error("failed to publish indexing warning", { err, workspacePath: dir })

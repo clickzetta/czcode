@@ -251,6 +251,23 @@ describe("tool.registry", () => {
     }),
   )
 
+<<<<<<< HEAD
+||||||| 0b510b27e5
+  it.instance("hides task background parameter unless experimental background subagents are enabled", () =>
+=======
+  // kilocode_change start - the CLI can schedule and cancel its own future wakeups
+  it.instance("exposes the scheduled wakeup tools", () =>
+    Effect.gen(function* () {
+      const registry = yield* ToolRegistry.Service
+      const ids = yield* registry.ids()
+
+      expect(ids).toContain("schedule_wakeup")
+      expect(ids).toContain("cancel_wakeup")
+    }),
+  )
+  // kilocode_change end
+
+>>>>>>> yunqiqiliang/opencode-v7.7.3
   it.instance("does not expose execute unless code mode is enabled", () =>
     Effect.gen(function* () {
       const registry = yield* ToolRegistry.Service

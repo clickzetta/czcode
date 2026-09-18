@@ -31,8 +31,14 @@ export async function fetchMarketplaceData(
   dir: string | undefined,
   roots: readonly vscode.Uri[],
 ): Promise<MarketplaceDataResponse> {
-  const skills = dir ? await fetchSkills(ctx, dir) : undefined
-  return ctx.marketplace.fetchData(project, skills, roots)
+  if (!dir) {
+    throw new Error("Directory is required for fetching marketplace data")
+  }
+  const client = await ctx.connection.getClientAsync(dir)
+  if (!client) {
+    throw new Error("Failed to get Kilo client")
+  }
+  return ctx.marketplace.fetchData(client, project, dir, roots)
 }
 
 export async function installMarketplaceItem(
@@ -48,7 +54,11 @@ export async function installMarketplaceItem(
   }
 
   try {
-    const result = await ctx.marketplace.install(item, opts, project)
+    const client = await ctx.connection.getClientAsync(dir)
+    if (!client) {
+      return { success: false, slug: item.id, error: "Failed to get Kilo client" }
+    }
+    const result = await ctx.marketplace.install(client, item, opts, dir)
     if (result.success) await invalidate(ctx, scope, scope === "project" ? project! : dir)
     return result
   } catch (err) {
@@ -75,7 +85,11 @@ export async function removeMarketplaceItem(
       return result
     }
     if (item.type === "mcp") await removeLegacyMcp(ctx, item.id, project, scope)
-    const result = await ctx.marketplace.remove(item, scope, project)
+    const client = await ctx.connection.getClientAsync(dir)
+    if (!client) {
+      return { success: false, slug: item.id, error: "Failed to get Kilo client" }
+    }
+    const result = await ctx.marketplace.remove(client, item, scope, dir)
     if (result.success) await invalidate(ctx, scope, scope === "project" ? project! : dir)
     return result
   } catch (err) {

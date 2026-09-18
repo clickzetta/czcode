@@ -429,17 +429,9 @@ export const getUsage = (input: {
   const outputTokens = safe(input.usage.outputTokens ?? 0)
   const reasoningTokens = safe(input.usage.reasoningTokens ?? 0)
 
-  const cacheReadInputTokens = safe(
-    input.usage.cacheReadInputTokens ??
-      // czcode_change start - DeepSeek returns prompt_cache_hit_tokens in openaiCompatible metadata
-      // @ts-expect-error
-      input.metadata?.["openaiCompatible"]?.["usage"]?.["prompt_cache_hit_tokens"] ??
-      // czcode_change end
-      0,
-  )
+  const cacheReadInputTokens = safe(input.usage.cacheReadInputTokens ?? 0)
   const cacheWriteInputTokens = safe(
     Number(
-      
       input.usage.cacheWriteInputTokens ??
         input.metadata?.["anthropic"]?.["cacheCreationInputTokens"] ??
         // google-vertex-anthropic returns metadata under "vertex" key
@@ -449,10 +441,6 @@ export const getUsage = (input: {
         input.metadata?.["bedrock"]?.["usage"]?.["cacheWriteInputTokens"] ??
         // @ts-expect-error
         input.metadata?.["venice"]?.["usage"]?.["cacheCreationInputTokens"] ??
-        // czcode_change start - DeepSeek returns prompt_cache_miss_tokens as cache write equivalent
-        // @ts-expect-error
-        input.metadata?.["openaiCompatible"]?.["usage"]?.["prompt_cache_miss_tokens"] ??
-        // czcode_change end
         0,
     ),
   )
@@ -750,6 +738,8 @@ export const layer: Layer.Layer<
                   () => {},
                 ),
               )
+              // kilocode_change - stop a removed session's wakeups holding Keep Awake
+              yield* KiloSession.cancelWakeups(sessionID)
             }
             // kilocode_change - migrated from legacy sync.run/sync.remove to EventV2 (events.publish/remove)
             yield* events.publish(SessionV1.Event.Deleted, { sessionID, info: session })
@@ -758,7 +748,7 @@ export const layer: Layer.Layer<
             yield* Effect.promise(() => SessionExport.onSessionClose(sessionID, workspaceKey)) // kilocode_change
             yield* events.remove(sessionID)
           }),
-        ) // kilocode_change
+        )
         // kilocode_change end
       } catch (error) {
         yield* Effect.logError("failed to remove session", { sessionID, error })
@@ -766,7 +756,7 @@ export const layer: Layer.Layer<
     })
 
     const updateMessage = <T extends SessionV1.Info>(msg: T): Effect.Effect<T> =>
-       Effect.gen(function* () {
+      Effect.gen(function* () {
         // kilocode_change start - ignore FK errors when session was deleted while processor was still running
         yield* KiloSession.runSyncSafe(
           events.publish(SessionV1.Event.MessageUpdated, { sessionID: msg.sessionID, info: msg }),

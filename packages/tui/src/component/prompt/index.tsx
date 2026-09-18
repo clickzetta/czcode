@@ -313,7 +313,7 @@ export function Prompt(props: PromptProps) {
     mode: "normal" | "shell"
     extmarkToPartIndex: Map<number, number>
     interrupt: number
-    exitPress: number
+    exitPress: number // kilocode_change - track double ctrl+c to exit
     placeholder: number
   }>({
     placeholder: randomIndex(list().length),
@@ -324,7 +324,7 @@ export function Prompt(props: PromptProps) {
     mode: "normal",
     extmarkToPartIndex: new Map(),
     interrupt: 0,
-    exitPress: 0,
+    exitPress: 0, // kilocode_change
   })
 
   createEffect(
@@ -337,6 +337,7 @@ export function Prompt(props: PromptProps) {
     ),
   )
 
+  // kilocode_change start - sync local agent/model whenever newest user message changes
   let syncedKey: string | undefined
   createEffect(() => {
     const sessionID = props.sessionID
@@ -361,6 +362,7 @@ export function Prompt(props: PromptProps) {
       }
     }
   })
+  // kilocode_change end
 
   const promptCommands = createMemo(() =>
     [
@@ -688,11 +690,13 @@ export function Prompt(props: PromptProps) {
     props.ref?.(undefined)
   })
 
+  // kilocode_change start - close autocomplete while blocking overlays hide the prompt
   createEffect(() => {
     if (props.visible === false || props.disabled) {
       auto()?.dismiss()
     }
   })
+  // kilocode_change end
 
   createEffect(() => {
     if (!input || input.isDestroyed) return
@@ -1179,7 +1183,7 @@ export function Prompt(props: PromptProps) {
       move.startSubmit()
       void sdk.client.session.shell({
         sessionID,
-        agent: local.agent.current()?.name ?? "",
+        agent: local.agent.current()?.name ?? "", // kilocode_change
         model: {
           providerID: selectedModel.providerID,
           modelID: selectedModel.modelID,
@@ -1203,59 +1207,42 @@ export function Prompt(props: PromptProps) {
         sessionID,
         command: command.slice(1),
         arguments: args,
-        agent: local.agent.current()?.name ?? "",
+        agent: local.agent.current()?.name ?? "", // kilocode_change
         model: `${selectedModel.providerID}/${selectedModel.modelID}`,
         variant,
         parts: nonTextParts.filter((x) => x.type === "file"),
       }).then((result) => GoalPrompt.feedback(command.slice(1), args, result, toast)) // kilocode_change
     } else {
       move.startSubmit()
-      // kilocode_change start
-      // czcode_change start — passive ALHF: detect dissatisfaction signals in user text
-      const lowerText = inputText.toLowerCase()
-      const dissatisfactionPatterns = [
-        // Chinese
-        "不对", "错了", "不是这样", "重新", "不行", "不好", "有问题", "不正确",
-        "不符合", "不满意", "再来", "重来", "不对劲",
-        // English
-        "wrong", "incorrect", "not right", "redo", "try again", "that's not",
-        "that is not", "no that", "not what i",
-      ]
-      if (dissatisfactionPatterns.some((p) => lowerText.includes(p))) {
-        const { Telemetry, TelemetryEvent } = await import("@kilocode/kilo-telemetry")
-        Telemetry.track(TelemetryEvent.USER_DISSATISFIED, { sessionID, agent: local.agent.current()?.name })
-      }
-      // czcode_change end
-      // kilocode_change end
       sdk.client.session
-      .prompt(
-        {
-          sessionID,
-          ...selectedModel,
-          agent: agent.name,
-          model: selectedModel,
-          variant,
-          parts: [
-            ...editorParts,
-            {
-              type: "text",
-              text: inputText,
-            },
-            ...nonTextParts,
-          ],
-        },
-        { throwOnError: true },
-      )
-      .catch((error) => {
-        toast.show({
-          title: "Failed to send prompt",
-          message: errorMessage(error),
-          variant: "error",
+        .prompt(
+          {
+            sessionID,
+            ...selectedModel,
+            agent: agent.name,
+            model: selectedModel,
+            variant,
+            parts: [
+              ...editorParts,
+              {
+                type: "text",
+                text: inputText,
+              },
+              ...nonTextParts,
+            ],
+          },
+          { throwOnError: true },
+        )
+        .catch((error) => {
+          toast.show({
+            title: "Failed to send prompt",
+            message: errorMessage(error),
+            variant: "error",
+          })
         })
-      })
       if (editorParts.length > 0) editor.markSelectionSent()
     }
-    toast.dismiss()
+    toast.dismiss() // kilocode_change - dismiss persistent config warning on first submit
     history.append({
       ...store.prompt,
       mode: currentMode,
@@ -1452,7 +1439,7 @@ export function Prompt(props: PromptProps) {
     if (store.mode === "shell") return theme.primary
     const agent = local.agent.current()
     if (!agent) return theme.border
-    return local.agent.color(agent.name ?? "")
+    return local.agent.color(agent.name ?? "") // kilocode_change
   })
 
   const showVariant = createMemo(() => {
@@ -1486,7 +1473,7 @@ export function Prompt(props: PromptProps) {
       status().type !== "idle"
         ? (local.agent.list().find((a) => a.name === lastUserMessage()?.agent) ?? local.agent.current())
         : local.agent.current()
-    const color = agent ? local.agent.color(agent.name ?? "") : theme.border
+    const color = agent ? local.agent.color(agent.name ?? "") : theme.border // kilocode_change
     return {
       frames: createFrames({
         color,
@@ -1617,10 +1604,12 @@ export function Prompt(props: PromptProps) {
                   {(agent) => (
                     <>
                       <text fg={fadeColor(highlight(), agentMetaAlpha())}>
+                        {/* kilocode_change start */}
                         {store.mode === "shell"
                           ? "Shell"
                           : (local.agent.current()?.displayName ??
                             Locale.titlecase(local.agent.current()?.name ?? ""))}{" "}
+                        {/* kilocode_change end */}
                       </text>
                       {/* kilocode_change start - vim mode indicator */}
                       <VimModeIndicator
@@ -1834,6 +1823,7 @@ export function Prompt(props: PromptProps) {
           </Switch>
           <Show when={status().type !== "retry"}>
             <box gap={2} flexDirection="row">
+              {/* kilocode_change start - show "ctrl+c again to exit" hint */}
               <Show when={store.exitPress > 0}>
                 <text fg={theme.primary}>
                   ctrl+c <span style={{ fg: theme.primary }}>again to exit</span>

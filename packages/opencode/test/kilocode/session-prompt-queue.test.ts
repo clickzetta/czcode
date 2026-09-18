@@ -16,14 +16,14 @@ import { ModelV2 } from "@opencode-ai/core/model"
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
 import { SessionProjector } from "@opencode-ai/core/session/projector"
 import { InstanceStore } from "../../src/project/instance-store"
-import { provide as withInstanceProvide } from "../../src/kilocode/instance"
+import { provideTestInstance } from "../fixture/fixture"
 import { Session } from "../../src/session/session"
 import { MessageV2 } from "../../src/session/message-v2"
 import { SessionCompaction } from "../../src/session/compaction"
 import { SessionPrompt } from "../../src/session/prompt"
 import { MessageID, SessionID } from "../../src/session/schema"
 import * as Log from "@opencode-ai/core/util/log"
-import { disposeTestRuntime, provideInstance, provideTestInstance, testInstanceStoreLayer, tmpdir } from "../fixture/fixture"
+import { disposeTestRuntime, provideInstance, testInstanceStoreLayer, tmpdir } from "../fixture/fixture"
 import { Flag } from "@opencode-ai/core/flag/flag"
 import { remove as cleanup } from "./cleanup"
 import { pollWithTimeout } from "../lib/effect"
@@ -323,7 +323,7 @@ describe("session prompt queue", () => {
     // scope() hides that marker, runLoop never processes the compaction task and
     // instead retries the same oversized request until compaction is exhausted.
     await using tmp = await tmpdir({ git: true })
-    await withInstanceProvide({
+    await provideTestInstance({
       directory: tmp.path,
       fn: async () => {
         const session = await sessions.create({ title: "Queued compaction regression" })
@@ -473,7 +473,7 @@ describe("session prompt queue", () => {
         },
       })
 
-      await withInstanceProvide({
+      await provideTestInstance({
         directory: tmp.path,
         fn: async () =>
           scoped(tmp.path, async (prompt) => {
@@ -757,7 +757,7 @@ describe("session prompt queue", () => {
         },
       })
 
-      await withInstanceProvide({
+      await provideTestInstance({
         directory: tmp.path,
         fn: async () =>
           scoped(tmp.path, async (prompt) => {
@@ -843,7 +843,7 @@ describe("session prompt queue", () => {
     const dismissed = Promise.withResolvers<void>()
     await using tmp = await tmpdir({ git: true })
 
-    await withInstanceProvide({
+    await provideTestInstance({
       directory: tmp.path,
       fn: async () =>
         scoped(tmp.path, async (prompt) => {
@@ -892,7 +892,7 @@ describe("session prompt queue", () => {
     // hasFollowup=true and reject synchronously, before any pending entry or
     // Shown event is published.
     await using tmp = await tmpdir({ git: true })
-    await withInstanceProvide({
+    await provideTestInstance({
       directory: tmp.path,
       fn: async () => {
         const sessionID = SessionID.make("ses_auto_suggestion")

@@ -467,7 +467,6 @@ const layer = Layer.effect(
             values(),
             sortBy(
               [(x) => (cfg.default_agent ? x.name === cfg.default_agent : x.name === "code"), "desc"], // kilocode_change - renamed from "build" to "code"
-              [(x) => x.name.startsWith("lh-"), "desc"], // czcode_change - data agents before coding agents // kilocode_change
               [(x) => x.name, "asc"],
             ),
           )

@@ -1,3 +1,4 @@
+import "./init-projectors"
 
 import { NodeHttpServer } from "@effect/platform-node"
 import { serverUrls } from "@/kilocode/cli/server-urls" // kilocode_change
@@ -8,7 +9,6 @@ import { HttpRouter, HttpServer } from "effect/unstable/http"
 import { OpenApi } from "effect/unstable/httpapi"
 import { createServer } from "node:http"
 import { MDNS } from "./mdns"
-import "./init-projectors"
 import { HttpApiApp } from "./routes/instance/httpapi/server"
 import { disposeMiddleware } from "./routes/instance/httpapi/lifecycle"
 import { WebSocketTracker } from "./routes/instance/httpapi/websocket-tracker"
