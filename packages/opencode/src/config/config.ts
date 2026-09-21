@@ -411,7 +411,7 @@ const layer = Layer.effect(
       const skillsPaths = existsSync(bundledSkillsPath) ? [bundledSkillsPath] : []
       let result: Info = {
         skills: {
-          urls: ["https://yunqiqiliang.github.io/clickzetta-skills/.well-known/skills/"],
+          urls: ["https://clickzetta.github.io/clickzetta-skills/.well-known/skills/"],
           paths: skillsPaths,
         },
         command: builtinCommandMap,
