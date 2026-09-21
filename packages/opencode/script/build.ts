@@ -328,7 +328,7 @@ for (const item of targets) {
       autoloadPackageJson: true,
       target: name.replace(pkg.name, "bun") as any,
       // kilocode_change start
-      outfile: `dist/${name}/bin/kilo`,
+      outfile: `dist/${name}/bin/czcode`, // czcode_change: brand binary as czcode not kilo
       execArgv: [`--user-agent=kilo/${Script.version}`, "--use-system-ca", "--"],
       // kilocode_change end
       windows: {},
@@ -379,7 +379,7 @@ for (const item of targets) {
     const interpreter = interpreters[key]
     if (interpreter) {
       try {
-        await $`patchelf --set-interpreter ${interpreter} dist/${name}/bin/kilo`
+        await $`patchelf --set-interpreter ${interpreter} dist/${name}/bin/czcode` // czcode_change: binary named czcode
         console.log(`patched interpreter for ${name} -> ${interpreter}`)
       } catch {
         console.warn(`patchelf not available, skipping interpreter fix for ${name}`)
@@ -390,7 +390,7 @@ for (const item of targets) {
 
   // Smoke test: only run if binary is for current platform
   if (item.os === process.platform && item.arch === process.arch && !item.abi) {
-    const binaryPath = `dist/${name}/bin/kilo` // kilocode_change
+    const binaryPath = `dist/${name}/bin/czcode` // czcode_change: binary named czcode // kilocode_change
     console.log(`Running smoke test: ${binaryPath} --version`)
     try {
       const versionOutput = await $`${binaryPath} --version`.text()
@@ -452,6 +452,44 @@ for (const item of targets) {
 }
 
 if (Script.release) {
+  // czcode_change start — bundle clickzetta-skills into release archives
+  console.log("Downloading clickzetta-skills for bundling...")
+  const skillsTmp = path.resolve("dist", "_skills_tmp")
+  await $`rm -rf ${skillsTmp}`
+  await $`git clone --depth 1 --branch main https://github.com/clickzetta/clickzetta-skills.git ${skillsTmp}`
+    .quiet()
+    .nothrow()
+  // Remove .git to save space
+  await $`rm -rf ${skillsTmp}/.git`
+
+  for (const key of Object.keys(binaries)) {
+    const binDir = `dist/${key}/bin`
+    await $`cp -r ${skillsTmp} ${binDir}/clickzetta-skills`.quiet().nothrow()
+  }
+  await $`rm -rf ${skillsTmp}`
+  console.log("Bundled clickzetta-skills into all platform archives")
+  // czcode_change end
+
+  // czcode_change start — bundle incremental-skills into release archives
+  console.log("Downloading incremental-skills for bundling...")
+  const incSkillsTmp = path.resolve("dist", "_inc_skills_tmp")
+  await $`rm -rf ${incSkillsTmp}`
+  await $`git clone --depth 1 --branch main https://github.com/clickzetta/incremental-skills.git ${incSkillsTmp}`
+    .quiet()
+    .nothrow()
+  await $`rm -rf ${incSkillsTmp}/.git`
+  // Only keep the skills/ directory — examples/ pollutes the skill registry
+  await $`rm -rf ${incSkillsTmp}/examples`
+
+  for (const key of Object.keys(binaries)) {
+    const binDir = `dist/${key}/bin`
+    await $`mkdir -p ${binDir}/incremental-skills`.quiet().nothrow()
+    await $`cp -r ${incSkillsTmp}/skills/. ${binDir}/incremental-skills/`.quiet().nothrow()
+  }
+  await $`rm -rf ${incSkillsTmp}`
+  console.log("Bundled incremental-skills into all platform archives")
+  // czcode_change end
+
   const archives: string[] = [] // kilocode_change
   for (const key of Object.keys(binaries)) {
     const archive = key.replace(pkg.name, "czcode") // czcode_change: brand release archives as czcode-* not kilo-*
