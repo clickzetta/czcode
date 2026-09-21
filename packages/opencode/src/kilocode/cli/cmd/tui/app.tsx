@@ -30,8 +30,7 @@ import { Session as SessionApi } from "@/session/session"
 import { useCaffeination } from "./caffeination"
 import { useLinkInteractions } from "@tui/kilocode/link-interactions"
 
-// Re-export so upstream can render the route without importing directly
-export { KiloClawView } from "@/kilocode/claw/view"
+// czcode_change: KiloClawView re-export removed — SingClaw/claw view is stripped from czcode
 export { KiloTerminalTitle } from "./terminal-title"
 
 // Hot reload TUI-local settings (keybinds/theme/ui) when changed from the Kilo Console.
