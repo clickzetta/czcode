@@ -184,6 +184,7 @@ export function patchKiloProviderAuth(
 }
 
 export function publicKiloProvider(provider: Provider.Info): Provider.Info {
+  if (!provider) return provider // czcode_change: guard undefined (stale plugin auth for an absent provider)
   if (provider.id !== "kilo") return provider
   return { ...provider, key: undefined, options: omit(provider.options, ["apiKey", "kilocodeToken"]) }
 }

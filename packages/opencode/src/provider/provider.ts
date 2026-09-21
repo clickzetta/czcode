@@ -1133,6 +1133,9 @@ export const ConfigProvidersResult = Schema.Struct({
 export type ConfigProvidersResult = Types.DeepMutable<Schema.Schema.Type<typeof ConfigProvidersResult>>
 
 export function toPublicInfo(provider: Info): Info {
+  // czcode_change: tolerate a missing provider — stale plugin auth (e.g. leftover "kilo" login)
+  // can reference a provider that is no longer in the database, which would crash publicKiloProvider // kilocode_change
+  if (!provider) return provider
   return JSON.parse(
     JSON.stringify(
       {
