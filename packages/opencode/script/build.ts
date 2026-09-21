@@ -454,7 +454,7 @@ for (const item of targets) {
 if (Script.release) {
   const archives: string[] = [] // kilocode_change
   for (const key of Object.keys(binaries)) {
-    const archive = key.replace(pkg.name, "kilo") // kilocode_change
+    const archive = key.replace(pkg.name, "czcode") // czcode_change: brand release archives as czcode-* not kilo-*
     if (key.includes("linux")) {
       // kilocode_change start
       const out = path.resolve("dist", `${archive}.tar.gz`)
