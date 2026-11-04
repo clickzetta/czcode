@@ -1334,7 +1334,7 @@
     "vite-plugin-solid": "2.11.10",
     "@axe-core/playwright": "4.11.3",
     "@storybook/addon-a11y": "10.2.10",
-    "happy-dom": "20.8.9",
+    "happy-dom": "21.0.4",
     "@babel/core": "^7.28.4",
     "@babel/preset-typescript": "^7.27.1",
     "@types/ws": "8.18.1",
